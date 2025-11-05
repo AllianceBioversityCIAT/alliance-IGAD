@@ -55,6 +55,8 @@ Deliver a short Markdown summary showing:
    - Production: ≈ **$110/month**
    - Simple, scalable, and pay-per-use—ideal for MVP validation.
 
+   Path : specs/cost
+
 ----------------------------------------------------------------------
 LIMITS
 ----------------------------------------------------------------------
