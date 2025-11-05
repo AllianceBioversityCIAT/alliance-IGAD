@@ -1,0 +1,135 @@
+IGAD Innovation Hub V2 (MVP Technical Specification)
+Engine Context: Amazon Q + awslabscode-doc-gen-mcp-server (AWS Labs Code Documentation Generator)
+
+----------------------------------------------------------------------
+GOAL
+----------------------------------------------------------------------
+Create a comprehensive Technical Specification Document for the IGAD Innovation Hub (MVP), focusing on simplicity, modular scalability, and cost-efficient design.
+
+The specification must describe:
+• Technical architecture, APIs, data models, workflows, and AI integration.
+• AWS Serverless implementation using React (frontend), Python (backend via Lambda), and DynamoDB (database).
+• Integration with IGAD Knowledge Network (IGAD-KN) for AI-assisted data ingestion and generation.
+
+The MVP includes:
+1. Transversal Components: Login, Home Page, Global Navigation Bar, prompts manager.
+2. Functional Modules: Proposal Writer, Newsletter Generator.
+3. Integration Layer: IGAD AI Assistant connected to IGAD-KN.
+
+Guiding principle: “La simplicidad es la máxima sofisticación.” 
+Keep all design decisions minimal, elegant, and maintainable.
+
+----------------------------------------------------------------------
+OUTPUT
+----------------------------------------------------------------------
+Generate a structured technical specification in Markdown following AWS documentation standards.
+
+Each section must be detailed and implementation-ready for engineering teams.
+
+Sections:
+1. Overview
+   - Purpose, objectives, MVP scope, and user roles.
+   - Guiding principles and simplicity rationale.
+
+2. Architecture
+   - AWS Serverless high-level diagram: API Gateway, Lambda, S3, DynamoDB, Cognito.
+   - Frontend-backend-data interaction overview.
+   - Integration model with IGAD-KN AI service layer.
+
+3. Component Specifications
+   - Auth, Core Services, Proposal Writer, Newsletter.
+   - Transversal UI components: Login, Home, Navbar.
+   - Internal dependencies and communication flows.
+
+4. Data Flow & Workflows
+   - Authentication sequence, proposal creation flow, newsletter personalization.
+   - Event-driven data processing and caching.
+
+5. APIs & Endpoints
+   - RESTful API definitions (methods, parameters, responses, errors).
+   - Authentication headers and error codes.
+
+6. Data Models
+   - DynamoDB table schemas (keys, attributes, indexes).
+   - Entity relationships and scalability design.
+
+7. AI Integration
+   - Prompt orchestration, validation layers, and AI response handling.
+   - IGAD-KN data ingestion pipeline and knowledge retrieval.
+
+8. Security & Compliance
+   - IAM roles, Cognito user pool setup, encryption, monitoring.
+   - Compliance with AWS best practices for identity and logging.
+
+9. Environment & Dependencies
+   - Required AWS services, SDKs, frameworks, CI/CD setup (CodePipeline, Amplify).
+
+10. Scalability & Cost Optimization
+    - Lambda scaling policies, DynamoDB capacity management, cost control mechanisms.
+
+11. Extensibility Plan
+    - Architecture hooks for future modules: Policy Analyzer, Report Generator, Agribusiness.
+    - Version control and modular expansion guidance.
+
+----------------------------------------------------------------------
+LIMITS
+----------------------------------------------------------------------
+- Use only AWS-managed services.
+- Avoid over-engineering; focus on MVP deliverables.
+- Maintain cost-efficiency and scalability balance.
+- Do not include placeholder content unrelated to MVP.
+
+----------------------------------------------------------------------
+DATA
+----------------------------------------------------------------------
+Reference materials:
+• IGAD Innovation Hub Product Profile (030925_V1)
+• INTERNAL IGAD IH Overview (20250917)
+• Figma Mockups: https://riff-break-95216508.figma.site
+
+Use for UI logic, user roles, naming conventions, and layout consistency.
+
+----------------------------------------------------------------------
+EVALUATION
+----------------------------------------------------------------------
+Amazon Q output (via awslabscode-doc-gen-mcp-server) will be evaluated for:
+1. Technical completeness (architecture, data, security, AI).
+2. Implementation readiness for developers.
+3. Alignment with AWS Serverless best practices.
+4. Simplicity and maintainability.
+5. Cost optimization through pay-per-execution design.
+
+----------------------------------------------------------------------
+PARTITIONING STRATEGY
+----------------------------------------------------------------------
+Output must be modularized into the following Markdown documents:
+
+1. specs/architecture/overview.md — Project summary, principles, and MVP context.
+2. specs/architecture/architecture.md — Serverless design, diagrams, components.
+3. specs/architecture/components.md — Module-level specifications and dependencies.
+4. specs/architecture/dataflows.md — Workflow and process documentation.
+5. specs/architecture/api-specs.md — RESTful endpoint definitions and schemas.
+6. specs/architecture/data-models.md — DynamoDB schema documentation.
+7. specs/architecture/ai-integration.md — IGAD AI assistant and IGAD-KN interface.
+8. specs/architecture/security.md — IAM, encryption, and compliance.
+9. specs/architecture/environment.md — Dependencies and CI/CD setup.
+10.specs/architecture/scalability.md — Scaling, optimization, and cost considerations.
+11.specs/architecture/extensibility.md — Future modules and roadmap guidance.
+
+Each file must contain full context without dependency on other files. 
+Cross-references should be expressed as relative links.
+
+----------------------------------------------------------------------
+MCP EXECUTION DIRECTIVE
+----------------------------------------------------------------------
+{
+  "mcp_server": "awslabscode-doc-gen-mcp-server",
+  "task": "generate_specification",
+  "input_type": "structured_prompt",
+  "output_format": "markdown",
+  "domain": "aws_serverless_architecture",
+  "context_level": "detailed",
+  "style": "AWS technical specification",
+  "partition_output": true,
+  "goal": "Create a comprehensive Technical Specification Document for the IGAD Innovation Hub (MVP), focusing on simplicity, modular scalability, and cost-efficient design."
+}
