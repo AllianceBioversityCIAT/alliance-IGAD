@@ -1,0 +1,69 @@
+Cost Estimate
+Engine Context: Amazon Q + awslabs.cost-explorer-mcp-server
+
+----------------------------------------------------------------------
+ROLE & INTENT
+----------------------------------------------------------------------
+ROLE: AWS Cloud Economist & Cost Optimization Specialist  
+INTENT: Estimate the lowest-cost AWS setup for the IGAD Innovation Hub MVP  
+Guiding principle: “La simplicidad es la máxima sofisticación.”
+
+Environments:  
+• Testing (small, developer usage)  
+• Production (initial launch scale)
+
+----------------------------------------------------------------------
+GOAL
+----------------------------------------------------------------------
+Provide a clear, simple monthly cost estimate using AWS Serverless components:
+- Frontend: S3 (static hosting)  
+- Auth: Cognito  
+- API: API Gateway (HTTP APIs)  
+- Compute: Lambda (Python)  
+- Database: DynamoDB (On-Demand)  
+- Storage: S3  
+- Monitoring: CloudWatch  
+- AI: Amazon Bedrock or similar managed LLM  
+
+----------------------------------------------------------------------
+OUTPUT
+----------------------------------------------------------------------
+Deliver a short Markdown summary showing:
+
+1. **Summary Table** – Estimated monthly costs for Testing and Production.
+   | Environment | Services | Monthly Cost (USD) | Note |
+   |--------------|-----------|-------------------|------|
+   | Testing | Full MVP | ~$25–$40 | Minimal dev traffic |
+   | Production | Full MVP | ~$90–$130 | Moderate user base |
+
+2. **Key Assumptions**
+   - Low traffic: ≤ 10K API requests/month (Testing), ≤ 100K (Production)
+   - Lambda: avg 128MB, 100ms execution
+   - DynamoDB On-Demand: minimal reads/writes
+   - S3: ≤ 5GB storage, low data transfer
+   - Bedrock: ≤ 100K tokens/month (Testing), ≤ 500K (Production)
+
+3. **Optimization Tips**
+   - Use HTTP APIs (cheaper than REST APIs)  
+   - Keep DynamoDB On-Demand mode  
+   - Set log retention: 14 days (Testing), 30 days (Production)  
+   - Add CloudFront only if egress costs rise  
+   - Cache frequent AI outputs  
+
+4. **Best Scenario Summary**
+   - Testing: ≈ **$30/month**
+   - Production: ≈ **$110/month**
+   - Simple, scalable, and pay-per-use—ideal for MVP validation.
+
+----------------------------------------------------------------------
+LIMITS
+----------------------------------------------------------------------
+- No complex analytics or search tools  
+- Only essential AWS services for MVP  
+- Use default region (us-east-1) for lowest prices  
+
+----------------------------------------------------------------------
+EVALUATION
+----------------------------------------------------------------------
+Good estimate = clear, simple, low-cost, and easy to scale.  
+Focus on transparency, not precision.

@@ -1,0 +1,103 @@
+Engine Context: Amazon Q + awslabs.aws-diagram-mcp-server (AWS Labs Architecture Diagram Generator)
+
+----------------------------------------------------------------------
+GOAL
+----------------------------------------------------------------------
+Create two PNG-format architecture diagrams for the IGAD Innovation Hub (V2 MVP).  
+These diagrams will visually describe both the **logical system architecture** and the **AWS infrastructure setup** for engineering documentation and stakeholder presentations.
+
+ROLE: IT Architect
+TARGET USE: System Design & Documentation for Amazon Q generated technical specification.
+
+Required Diagrams:
+
+1. **System Architecture Diagram (PNG)**
+   - Depict high-level logical architecture:
+     • Frontend (React web interface)
+     • Backend (Python services on AWS Lambda)
+     • ORD (Operational Resource Dispatcher or Orchestration Layer handling requests)
+     • Database (Amazon DynamoDB)
+     • AI Integration (IGAD AI Assistant linked to IGAD Knowledge Network)
+   - Show data and control flow between components.
+   - Highlight modular boundaries for:
+       - Transversal modules (Login, Home, NavBar)
+       - Functional terminals (Proposal Writer, Newsletter)
+       - AI Assistant and knowledge access layer.
+
+2. **Infrastructure Diagram (PNG)**
+   - Show AWS service-level infrastructure using official AWS icons.
+   - Include:
+     • AWS API Gateway (entry point)
+     • AWS Lambda (backend logic)
+     • Amazon Cognito (authentication)
+     • Amazon DynamoDB (database)
+     • Amazon S3 (frontend hosting & storage)
+     • AWS CloudWatch (logging & monitoring)
+     • Optional: AWS Bedrock / SageMaker (for AI Assistant model hosting)
+   - Represent relationships and network flows.
+   - Group components by tier:
+       - Presentation Layer (User/Browser, CloudFront, S3)
+       - Application Layer (API Gateway, Lambda, Cognito)
+       - Data Layer (DynamoDB)
+       - AI Layer (IGAD-KN integration via AI Assistant)
+
+----------------------------------------------------------------------
+OUTPUT
+----------------------------------------------------------------------
+Generate **two PNG diagrams** with clear labeling, consistent AWS iconography, and logical layout.
+Use AWS architectural visualization standards:
+- Top-down flow for logical diagram.
+- Left-to-right (user to data) for infrastructure diagram.
+- Label arrows with request/response direction and data type.
+- Use color-coded grouping boxes for layers (Frontend, Backend, Data, AI).
+
+Expected Deliverables:
+1. **igad_system_architecture.png** — Logical system-level diagram.
+2. **igad_infrastructure_architecture.png** — AWS infrastructure-level diagram.
+
+the diagrams should be locate in this path specs/architecture/diagrams
+
+----------------------------------------------------------------------
+LIMITS
+----------------------------------------------------------------------
+- Keep visual design minimal and clear (no decorative elements).
+- Maintain simplicity in flow: one request/response path per major use case.
+- Use only AWS official icons and minimal text annotations.
+- Do not include non-MVP modules (Policy Analyzer, Report Generator, Agribusiness).
+
+----------------------------------------------------------------------
+DATA
+----------------------------------------------------------------------
+Reference materials for accuracy:
+• IGAD Innovation Hub Product Profile (030925_V1)
+• INTERNAL IGAD IH Overview (20250917)
+• Figma mockups: https://riff-break-95216508.figma.site
+
+Contextual key:
+• IGAD-KN = IGAD Knowledge Network (data source and repository)
+• IGAD AI Assistant = AI orchestration module querying IGAD-KN
+• ORD = Orchestration layer for backend service coordination
+
+----------------------------------------------------------------------
+EVALUATION
+----------------------------------------------------------------------
+The diagrams must be evaluated on:
+1. **Accuracy** — Correctly represent system and infrastructure components.
+2. **Clarity** — Logical flow and labeling easily interpretable.
+3. **Compliance** — Use of AWS official iconography and layout guidelines.
+4. **Simplicity** — Visual elegance and minimalism reflecting “La simplicidad es la máxima sofisticación.”
+5. **Usability** — Suitable for embedding in technical specification documents.
+
+----------------------------------------------------------------------
+MCP EXECUTION DIRECTIVE
+----------------------------------------------------------------------
+{
+  "mcp_server": "awslabs.aws-diagram-mcp-server",
+  "task": "generate_architecture_diagrams",
+  "input_type": "structured_prompt",
+  "output_format": "png",
+  "domain": "aws_serverless_architecture",
+  "context_level": "detailed",
+  "style": "AWS architecture diagram",
+  "goal": "Produce two architecture diagrams (system-level and infrastructure-level) for IGAD Innovation Hub V2 MVP following the GOLDEN Prompt Skeleton."
+}
