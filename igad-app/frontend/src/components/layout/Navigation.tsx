@@ -1,8 +1,24 @@
 import { Link, useLocation } from 'react-router-dom'
 import { BarChart3, Bell, User } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
 
 export function Navigation() {
   const location = useLocation()
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowSettingsDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   return (
     <nav style={{
@@ -117,22 +133,125 @@ export function Navigation() {
           </div>
 
           {/* Settings Button */}
-          <button style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            width: '36px',
-            height: '36px',
-            background: 'transparent',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer'
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#364153" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-          </button>
+          <div ref={dropdownRef} style={{ position: 'relative' }}>
+            <button 
+              onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '36px',
+                height: '36px',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#364153" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+
+            {/* Settings Dropdown */}
+            {showSettingsDropdown && (
+              <div style={{
+                position: 'absolute',
+                width: '160px',
+                right: '0px',
+                top: '44px',
+                background: '#FFFFFF',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                boxShadow: '0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                zIndex: 50,
+                padding: '4px 0'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  {/* Settings */}
+                  <button style={{
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontFamily: 'Arial',
+                    color: '#374151',
+                    width: '100%',
+                    borderBottom: '1px solid #F3F4F6'
+                  }}>
+                    Settings
+                  </button>
+                  
+                  {/* Prompt Manager */}
+                  <button style={{
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontFamily: 'Arial',
+                    color: '#374151',
+                    width: '100%'
+                  }}>
+                    Prompt Manager
+                  </button>
+                  
+                  {/* API Configuration */}
+                  <button style={{
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontFamily: 'Arial',
+                    color: '#374151',
+                    width: '100%'
+                  }}>
+                    API Configuration
+                  </button>
+                  
+                  {/* Language */}
+                  <button style={{
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontFamily: 'Arial',
+                    color: '#374151',
+                    width: '100%',
+                    borderBottom: '1px solid #F3F4F6'
+                  }}>
+                    Language
+                  </button>
+                  
+                  {/* Help & Support */}
+                  <button style={{
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontFamily: 'Arial',
+                    color: '#374151',
+                    width: '100%'
+                  }}>
+                    Help & Support
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* User Account Button */}
           <button style={{
