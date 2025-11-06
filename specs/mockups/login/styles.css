@@ -1,0 +1,134 @@
+/* Login Section Styles */
+
+/* Container */
+.login-container {
+  width: 1662px;
+  height: 1068px;
+  position: relative;
+  background: #ffffff;
+}
+
+/* Form Container */
+.login-form {
+  width: 460px;
+  height: 698px;
+  margin: 107px auto;
+  padding: 0 142px;
+}
+
+/* Logo Container */
+.logo-container {
+  width: 459px;
+  height: 88px;
+  margin-bottom: 119px;
+}
+
+/* Form Fields */
+.form-group {
+  width: 460px;
+  margin-bottom: 32px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.form-input {
+  width: 460px;
+  height: 45px;
+  padding: 14px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #ffffff;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Password Field */
+.password-field {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Remember Me & Forgot Password */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 459px;
+  height: 20px;
+  margin-bottom: 32px;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+.forgot-password {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+/* Login Button */
+.login-button {
+  width: 459px;
+  height: 43px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-button:hover {
+  background: #1d4ed8;
+}
+
+/* Support Text */
+.support-text {
+  font-size: 14px;
+  color: #6b7280;
+  margin-top: 32px;
+}
+
+/* Background Image */
+.background-image {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 922px;
+  height: 1091px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}

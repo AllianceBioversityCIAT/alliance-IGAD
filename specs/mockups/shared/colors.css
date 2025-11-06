@@ -1,0 +1,141 @@
+/* IGAD Innovation Hub - Color System */
+
+:root {
+  /* Primary Brand Colors */
+  --primary-blue: #2563eb;
+  --primary-blue-hover: #1d4ed8;
+  --primary-blue-light: #eff6ff;
+  --primary-blue-50: #dbeafe;
+  
+  --primary-green: #10b981;
+  --primary-green-hover: #059669;
+  --primary-green-light: #d1fae5;
+  --primary-green-50: #f0fdf4;
+  
+  --primary-amber: #f59e0b;
+  --primary-amber-hover: #d97706;
+  --primary-amber-light: #fef3c7;
+  --primary-amber-50: #fffbeb;
+
+  /* Neutral Grays */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Status Colors */
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --success-dark: #059669;
+  
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --warning-dark: #d97706;
+  
+  --error: #ef4444;
+  --error-light: #fecaca;
+  --error-dark: #dc2626;
+  
+  --info: #3b82f6;
+  --info-light: #dbeafe;
+  --info-dark: #1d4ed8;
+
+  /* Semantic Colors */
+  --background: #ffffff;
+  --background-secondary: #f9fafb;
+  --background-tertiary: #f3f4f6;
+  
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+  --border-focus: #2563eb;
+  
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-inverse: #ffffff;
+
+  /* Interactive States */
+  --hover-bg: #f9fafb;
+  --active-bg: #f3f4f6;
+  --focus-ring: rgba(37, 99, 235, 0.1);
+  
+  /* Badge Colors */
+  --badge-news-bg: #dbeafe;
+  --badge-news-text: #1d4ed8;
+  
+  --badge-insights-bg: #f3e8ff;
+  --badge-insights-text: #7c3aed;
+  
+  --badge-opportunities-bg: #fef3c7;
+  --badge-opportunities-text: #d97706;
+  
+  --badge-resources-bg: #d1fae5;
+  --badge-resources-text: #059669;
+  
+  --badge-required-bg: #fecaca;
+  --badge-required-text: #dc2626;
+  
+  --badge-available-bg: #10b981;
+  --badge-available-text: #ffffff;
+  
+  --badge-coming-soon-bg: #f59e0b;
+  --badge-coming-soon-text: #ffffff;
+
+  /* Progress & Status */
+  --progress-bg: #f3f4f6;
+  --progress-fill: #2563eb;
+  
+  --status-excellent-bg: #d1fae5;
+  --status-excellent-text: #059669;
+  
+  --status-good-bg: #dbeafe;
+  --status-good-text: #1d4ed8;
+  
+  --status-needs-improvement-bg: #fef3c7;
+  --status-needs-improvement-text: #d97706;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.2);
+  
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* Dark mode support (if needed) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1f2937;
+    --background-secondary: #111827;
+    --background-tertiary: #374151;
+    
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-tertiary: #9ca3af;
+    
+    --border: #374151;
+    --border-light: #4b5563;
+  }
+}
+
+/* Utility classes for quick color application */
+.bg-primary { background-color: var(--primary-blue); }
+.bg-success { background-color: var(--success); }
+.bg-warning { background-color: var(--warning); }
+.bg-error { background-color: var(--error); }
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+
+.border-default { border-color: var(--border); }
+.border-focus { border-color: var(--border-focus); }

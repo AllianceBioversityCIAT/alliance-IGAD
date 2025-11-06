@@ -1,0 +1,125 @@
+Agile Delivery Sprints
+ROLE: IT Architect & Agile Delivery Manager
+Principle: “La simplicidad es la máxima sofisticación.”
+
+----------------------------------------------------------------------
+GOAL
+----------------------------------------------------------------------
+Using the existing architecture specifications located in:
+`specs/architecture/design-system/`
+
+Generate **detailed Sprint Plans** to guide the incremental build and deployment of the **IGAD Innovation Hub (MVP)**.  
+Each sprint plan must be delivered as an individual Markdown file, stored in:
+`planning/setup/`
+
+File naming convention:
+- sprint1_infrastructure_setup.md  
+- sprint2_frontend_design.md  
+- sprint3_backend_api.md  
+- sprint4_proposal_writer_mvp.md  
+- sprint5_newsletter_mvp.md  
+- sprint6_prompt_manager_observability.md  
+- sprint7_stabilization_deployment.md  
+
+Each Sprint document must clearly define deliverables, scope, dependencies, and outcomes so that development teams can execute autonomously.
+
+----------------------------------------------------------------------
+OUTPUT
+----------------------------------------------------------------------
+Generate **7 Markdown sprint planning documents**, one per sprint, formatted with clear, standardized sections.
+
+Each file must contain:
+
+### 1. Sprint Goal
+Concise statement of what will be achieved this sprint.
+
+### 2. Key Objectives
+List of high-level functional and technical objectives.
+
+### 3. User Stories / Tasks
+Grouped by epic or component:
+- Infrastructure
+- Frontend
+- Backend
+- AI Integration
+- Prompt Manager (where applicable)
+Each story should be concise, actionable, and linked to an acceptance criterion.
+
+### 4. Deliverables & Definition of Done (DoD)
+Specify tangible outcomes (e.g., working login, deployed API, tested Bedrock integration).
+
+### 5. Dependencies
+Cross-sprint or cross-component dependencies (e.g., “requires Sprint 1 CI/CD setup”).
+
+### 6. Tools & AWS Services Used
+Indicate which AWS or development tools are utilized.
+
+### 7. Acceptance Criteria
+Measurable and verifiable conditions to mark sprint completion.
+
+### 8. Expected Output Location
+Always reference the final deliverable location (e.g., `/frontend`, `/backend`, `/infra`, `/prompts`, `/docs`).
+
+----------------------------------------------------------------------
+LIMITS
+----------------------------------------------------------------------
+- Keep each sprint focused, simple, and deliverable-driven.  
+- Avoid feature creep; refine the MVP in small increments.  
+- Maintain cost optimization—prefer serverless AWS services.  
+- Use Testing and Production environments consistently for validation.
+
+----------------------------------------------------------------------
+DATA
+----------------------------------------------------------------------
+Use as input:
+- `specs/architecture/design-system/frontend_spec.md`
+- `specs/architecture/design-system/backend_ai_spec.md`
+- `specs/architecture/design-system/frontend_backend_prompt_manager.png`
+- Overall IGAD MVP context (Proposal Writer + Newsletter as core terminals).
+
+----------------------------------------------------------------------
+SPRINT STRUCTURE OVERVIEW
+----------------------------------------------------------------------
+| Sprint | Theme | Core Outcome |
+|:--|:--|:--|
+| **1** | Infrastructure Setup | Deploy AWS foundations (Cognito, DynamoDB, API Gateway, Lambda, S3, CloudWatch) and CI/CD pipelines |
+| **2** | Frontend Design System & Auth | Build base UI (Login, Home, Navbar) and integrate Cognito |
+| **3** | Backend API & Data Setup | Implement core Lambda APIs, DynamoDB schema, and testing harness |
+| **4** | Proposal Writer MVP | Deliver end-to-end AI-driven proposal generation via Bedrock |
+| **5** | Newsletter MVP | Deliver personalized newsletter workflow connected to IGAD-KN |
+| **6** | Prompt Manager & Observability | Create reusable prompt lifecycle manager + logs, metrics, audits |
+| **7** | Stabilization & Deployment | QA, cost tuning, documentation, and production deployment checklist |
+
+----------------------------------------------------------------------
+EVALUATION
+----------------------------------------------------------------------
+High-quality output must:
+1. Produce **seven clear, detailed sprint Markdown files** in `planning/setup/`.  
+2. Ensure each sprint is **independent and deliverable-driven**.  
+3. Reflect **simplicity, incremental delivery, and AWS best practices**.  
+4. Provide continuity across sprints with dependencies clearly stated.  
+5. Enable a complete MVP deployment at Sprint 7 without rework.
+
+----------------------------------------------------------------------
+MCP EXECUTION DIRECTIVE
+----------------------------------------------------------------------
+{
+  "mcp_server": "awslabscode-doc-gen-mcp-server",
+  "task": "generate_sprint_plans",
+  "input_type": "structured_prompt",
+  "output_format": "markdown",
+  "domain": "agile_delivery",
+  "context_level": "detailed",
+  "goal": "Generate seven detailed sprint planning Markdown files for the IGAD Innovation Hub MVP, based on architecture specifications from specs/architecture/design-system/.",
+  "output_path": "planning/setup/",
+  "file_naming_pattern": "sprint{n}_{theme}.md",
+  "sprints": [
+    {"n":1, "theme":"infrastructure_setup"},
+    {"n":2, "theme":"frontend_design"},
+    {"n":3, "theme":"backend_api"},
+    {"n":4, "theme":"proposal_writer_mvp"},
+    {"n":5, "theme":"newsletter_mvp"},
+    {"n":6, "theme":"prompt_manager_observability"},
+    {"n":7, "theme":"stabilization_deployment"}
+  ]
+}

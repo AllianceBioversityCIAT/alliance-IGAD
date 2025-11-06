@@ -1,0 +1,262 @@
+/* Home Section Styles */
+
+/* Main Container */
+.home-container {
+  width: 1662px;
+  height: 1810px;
+  background: #ffffff;
+}
+
+/* Top Navigation */
+.top-nav {
+  width: 1662px;
+  height: 65px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Hero Section */
+.hero-section {
+  width: 1504px;
+  height: 478px;
+  margin: 48px 79px;
+  text-align: center;
+}
+
+/* Logo */
+.igad-logo {
+  width: 144px;
+  height: 96px;
+  margin: 0 auto 32px;
+}
+
+/* Main Heading */
+.main-heading {
+  width: 814px;
+  height: 48px;
+  font-size: 48px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 auto 16px;
+  line-height: 1.2;
+}
+
+/* Subtitle */
+.subtitle {
+  width: 768px;
+  height: 65px;
+  font-size: 18px;
+  color: #6b7280;
+  margin: 0 auto 32px;
+  line-height: 1.6;
+}
+
+/* Mission Card */
+.mission-card {
+  width: 896px;
+  height: 189px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 33px;
+  margin: 0 auto;
+}
+
+.mission-divider {
+  width: 48px;
+  height: 2px;
+  background: #d1d5db;
+  margin: 0 auto 16px;
+}
+
+.mission-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.mission-text {
+  font-size: 16px;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Tools Section */
+.tools-section {
+  width: 1536px;
+  height: 990px;
+  margin: 64px 63px;
+}
+
+/* Section Header */
+.section-header {
+  width: 1504px;
+  height: 108px;
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.section-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.section-description {
+  width: 672px;
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Tools Grid */
+.tools-grid {
+  width: 1152px;
+  height: 706px;
+  display: grid;
+  grid-template-columns: repeat(3, 362px);
+  gap: 32px;
+  margin: 0 auto;
+}
+
+/* Tool Card */
+.tool-card {
+  width: 362px;
+  height: 324px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 34px;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.tool-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Card Icon */
+.card-icon {
+  width: 64px;
+  height: 64px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Card Content */
+.card-content {
+  width: 295px;
+  height: 92px;
+  margin-bottom: 32px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.card-description {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Card Button */
+.card-button {
+  width: 295px;
+  height: 36px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-button.available {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.card-button.coming-soon {
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* Status Badge */
+.status-badge {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  padding: 3px 13px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-available {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.badge-coming-soon {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+/* Newsletter Card - Taller */
+.tool-card.newsletter {
+  height: 350px;
+}
+
+/* Footer */
+.footer {
+  width: 1536px;
+  height: 52px;
+  margin: 0 63px;
+  text-align: center;
+}
+
+.footer-text {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* View Docs Button */
+.view-docs-button {
+  position: absolute;
+  right: 121px;
+  top: 864px;
+  width: 122px;
+  height: 56px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+}

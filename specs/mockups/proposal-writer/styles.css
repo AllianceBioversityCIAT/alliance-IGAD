@@ -1,0 +1,541 @@
+/* Proposal Writer Section Styles */
+
+/* Main Container */
+.proposal-container {
+  width: 1662px;
+  min-height: 3315px;
+  background: #ffffff;
+}
+
+/* Top Navigation */
+.proposal-nav {
+  width: 1662px;
+  height: 65px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Section Title */
+.section-title {
+  width: 1662px;
+  height: 65px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Wizard Container */
+.wizard-container {
+  width: 896px;
+  margin: 0 auto;
+  padding: 124px 0;
+}
+
+/* Step Header */
+.step-header {
+  width: 896px;
+  height: 60px;
+  margin-bottom: 32px;
+}
+
+.step-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.step-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.step-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.step-description {
+  font-size: 16px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Progress Sidebar */
+.progress-sidebar {
+  position: fixed;
+  left: 50px;
+  top: 206px;
+  width: 332px;
+  height: 573px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 33px;
+}
+
+.progress-header {
+  margin-bottom: 56px;
+}
+
+.progress-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.progress-percentage {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2563eb;
+  margin-bottom: 12px;
+}
+
+.progress-bar {
+  width: 265px;
+  height: 10px;
+  background: #f3f4f6;
+  border-radius: 5px;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.progress-step-text {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Step Navigation */
+.step-navigation {
+  width: 222px;
+  height: 340px;
+}
+
+.nav-step {
+  width: 222px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  margin-bottom: 24px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.nav-step:hover {
+  background: #f9fafb;
+}
+
+.nav-step.active {
+  background: #eff6ff;
+}
+
+.nav-step.completed {
+  background: #f0fdf4;
+}
+
+.step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.step-circle.pending {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.step-circle.active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.step-circle.completed {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.step-label {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+/* Form Cards */
+.form-card {
+  width: 896px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  margin-bottom: 24px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.card-description {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* File Upload Areas */
+.upload-area {
+  width: 846px;
+  height: 240px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upload-area:hover {
+  border-color: #2563eb;
+  background: #f8faff;
+}
+
+.upload-icon {
+  width: 48px;
+  height: 48px;
+  background: #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.upload-text {
+  font-size: 16px;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.upload-subtext {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.upload-button {
+  width: 105px;
+  height: 36px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Text Areas */
+.form-textarea {
+  width: 846px;
+  height: 128px;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  background: #ffffff;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.textarea-help {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Alert Messages */
+.alert {
+  width: 846px;
+  padding: 13px;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.alert.warning {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+}
+
+.alert-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+
+.alert-text {
+  font-size: 12px;
+  color: #92400e;
+}
+
+/* Navigation Buttons */
+.wizard-navigation {
+  width: 846px;
+  height: 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 32px;
+}
+
+.nav-button {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.nav-button:hover {
+  background: #f9fafb;
+}
+
+.nav-button.primary {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.nav-button.primary:hover {
+  background: #1d4ed8;
+}
+
+.nav-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Step-specific Styles */
+
+/* Step 2 - Concept Review */
+.concept-review-card {
+  background: #f0fdf4;
+  border-color: #10b981;
+}
+
+.fit-assessment {
+  margin-bottom: 24px;
+}
+
+.assessment-badge {
+  background: #10b981;
+  color: #ffffff;
+  padding: 3px 11px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.strengths-list {
+  list-style: none;
+  padding: 0;
+}
+
+.strength-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.strength-icon {
+  width: 16px;
+  height: 16px;
+  background: #10b981;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Step 3 - Structure */
+.section-checklist {
+  list-style: none;
+  padding: 0;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checklist-item:hover {
+  background: #f9fafb;
+}
+
+.checklist-item.expanded {
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.checklist-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checklist-checkbox.checked {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.checklist-content {
+  flex: 1;
+}
+
+.checklist-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.checklist-description {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Code Preview */
+.code-preview {
+  width: 797px;
+  height: 384px;
+  background: #1f2937;
+  border-radius: 8px;
+  padding: 17px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+  color: #f9fafb;
+  overflow-y: auto;
+  margin: 16px 0;
+}
+
+/* Review Feedback */
+.feedback-section {
+  margin: 24px 0;
+}
+
+.feedback-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.feedback-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.feedback-content {
+  flex: 1;
+}
+
+.feedback-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.feedback-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.badge-excellent {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.badge-good {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-needs-improvement {
+  background: #fef3c7;
+  color: #d97706;
+}
