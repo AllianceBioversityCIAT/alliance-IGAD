@@ -1,0 +1,517 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* IGAD Innovation Hub - Exact Figma Colors */
+
+:root {
+  /* IGAD Brand Colors - Exact Figma specifications */
+  --igad-primary: #016630;
+  --igad-secondary: #008236;
+  --igad-button-green: #00A63E;
+  --igad-light-green: #DCFCE7;
+  --igad-border-green: #B9F8CF;
+  
+  /* Exact colors from mockups */
+  --primary-blue: #2563eb;
+  --primary-blue-hover: #1d4ed8;
+  --primary-blue-light: #eff6ff;
+  --primary-blue-50: #dbeafe;
+  
+  --primary-green: #10b981;
+  --primary-amber: #f59e0b;
+  --error: #ef4444;
+
+  /* Exact grays from mockups */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Exact semantic colors */
+  --background: #ffffff;
+  --background-secondary: #f9fafb;
+  --border: #e5e7eb;
+  --border-light: #d1d5db;
+  --border-focus: #2563eb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #374151;
+}
+
+/* LOGIN PAGE STYLES - Matching Figma Design */
+.login-page {
+  display: flex;
+  min-height: 100vh;
+  background: var(--background);
+}
+
+/* Left Column - Form */
+.login-form-column {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  max-width: 50%;
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 460px;
+}
+
+/* IGAD Logo */
+.login-logo {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.logo-image {
+  height: 88px;
+  width: auto;
+}
+
+/* Form Header */
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--igad-primary);
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.login-subtitle {
+  font-size: 1rem;
+  color: #4A5565;
+  line-height: 1.5;
+}
+
+/* Form Styles */
+.login-form {
+  width: 100%;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.login-input {
+  width: 100%;
+  height: 45px;
+  padding: 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: var(--background);
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--igad-primary);
+  box-shadow: 0 0 0 3px rgba(1, 102, 48, 0.1);
+}
+
+/* Password Field */
+.password-field {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* Form Options */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+  background: #F3F3F5;
+}
+
+.checkbox-label {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.forgot-password {
+  font-size: 0.875rem;
+  color: var(--igad-button-green);
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+/* Login Button */
+.login-button {
+  width: 100%;
+  height: 43px;
+  background: var(--igad-button-green);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 400;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  transition: background-color 0.2s ease;
+}
+
+.login-button:hover:not(:disabled) {
+  background: var(--igad-secondary);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-arrow {
+  font-size: 1.2rem;
+}
+
+/* Spinner */
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Support Text */
+.support-text {
+  font-size: 0.875rem;
+  color: #4A5565;
+  text-align: center;
+}
+
+.support-link {
+  color: var(--igad-button-green);
+  text-decoration: none;
+}
+
+.support-link:hover {
+  text-decoration: underline;
+}
+
+/* Right Column - Background Image */
+.login-image-column {
+  flex: 1;
+  position: relative;
+  max-width: 50%;
+}
+
+.login-background-image {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(220, 252, 231, 0.22) 0%, rgba(0, 255, 135, 0.19) 50%, rgba(0, 166, 62, 0.4) 100%);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.login-background-image::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(251, 245, 241, 0.38);
+  mix-blend-mode: luminosity;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-page {
+    flex-direction: column;
+  }
+  
+  .login-form-column,
+  .login-image-column {
+    max-width: 100%;
+  }
+  
+  .login-image-column {
+    min-height: 200px;
+  }
+  
+  .login-form-column {
+    padding: 1rem;
+  }
+  
+  .login-title {
+    font-size: 1.75rem;
+  }
+}
+
+/* IGAD Component Classes - Matching Figma specifications */
+.home-container {
+  max-width: 1504px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  background: var(--background);
+}
+
+.hero-section {
+  width: 100%;
+  height: 574px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 48px 80px;
+  border-bottom: 1px solid var(--igad-light-green);
+  background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+}
+
+.tool-card {
+  position: relative;
+  padding: 32px;
+  border-radius: 16px;
+  background: #FFFFFF;
+  border: 2px solid var(--igad-border-green);
+}
+
+.tool-card.coming-soon {
+  border: 2px solid #E5E7EB;
+  opacity: 0.75;
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Focus Styles */
+*:focus {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* Button Styles */
+.btn-primary {
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-blue-hover);
+}
+
+.btn-secondary {
+  background-color: var(--gray-100);
+  color: var(--text-primary);
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--gray-200);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-ghost:hover {
+  background-color: var(--gray-100);
+}
+
+/* Form Styles - Exact Mockup Match */
+.form-input {
+  width: 100%;
+  height: 45px;
+  padding: 14px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--background);
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  border-color: var(--border-focus);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-label {
+  display: block;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.form-error {
+  color: var(--error);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Login Page Styles - Exact Mockup Match */
+.login-container {
+  width: 100vw;
+  height: 100vh;
+  background: var(--background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-form {
+  width: 460px;
+  padding: 48px;
+  background: var(--background);
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.login-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.login-subtitle {
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.form-group {
+  margin-bottom: 32px;
+}
+
+.form-actions {
+  margin-top: 32px;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.link {
+  color: var(--primary-blue);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .home-container,
+  .dashboard-container {
+    padding: 24px 16px;
+  }
+  
+  .hero-section {
+    padding: 24px 40px;
+    height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-form {
+    width: 100%;
+    margin: 16px;
+    padding: 32px 24px;
+  }
+  
+  .hero-section {
+    padding: 24px 20px;
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "environment": "production",
+  "region": "us-east-1",
+  "resourcePrefix": "igad-prod",
+  "apiGateway": {
+    "stage": "prod"
+  },
+  "lambda": {
+    "memorySize": 256,
+    "timeout": 30
+  },
+  "dynamodb": {
+    "billingMode": "ON_DEMAND",
+    "pointInTimeRecovery": true
+  },
+  "cognito": {
+    "passwordPolicy": {
+      "minLength": 12,
+      "requireLowercase": true,
+      "requireUppercase": true,
+      "requireDigits": true,
+      "requireSymbols": true
+    },
+    "mfaConfiguration": "OPTIONAL"
+  },
+  "s3": {
+    "versioning": true,
+    "encryption": "S3_MANAGED"
+  },
+  "cloudwatch": {
+    "logRetention": 30
+  }
+}

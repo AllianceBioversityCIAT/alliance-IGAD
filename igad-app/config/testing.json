@@ -1,0 +1,32 @@
+{
+  "environment": "testing",
+  "region": "us-east-1",
+  "resourcePrefix": "igad-testing",
+  "apiGateway": {
+    "stage": "test"
+  },
+  "lambda": {
+    "memorySize": 128,
+    "timeout": 30
+  },
+  "dynamodb": {
+    "billingMode": "ON_DEMAND"
+  },
+  "cognito": {
+    "passwordPolicy": {
+      "minLength": 8,
+      "requireLowercase": true,
+      "requireUppercase": true,
+      "requireDigits": true,
+      "requireSymbols": true
+    },
+    "mfaConfiguration": "OFF"
+  },
+  "s3": {
+    "versioning": false,
+    "encryption": "S3_MANAGED"
+  },
+  "cloudwatch": {
+    "logRetention": 7
+  }
+}

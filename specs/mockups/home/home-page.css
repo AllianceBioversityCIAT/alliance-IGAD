@@ -1,0 +1,2326 @@
+/* Home */
+
+position: relative;
+width: 1662px;
+height: 1810px;
+left: 376px;
+top: 251px;
+
+background: #FFFFFF;
+border-radius: 0px;
+
+
+/* LandingPage */
+
+position: absolute;
+width: 1662px;
+height: 1809.5px;
+left: 0px;
+top: 0px;
+
+background: #FFFFFF;
+border-radius: 0px;
+
+
+/* Container */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 48px 79px 1px;
+
+position: absolute;
+width: 1662px;
+height: 574.5px;
+left: 0px;
+top: 65px;
+
+background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+border-bottom: 1px solid #DCFCE7;
+border-radius: 0px;
+
+
+/* Container */
+
+width: 1504px;
+height: 477.5px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* IgadLogo */
+
+position: absolute;
+width: 144px;
+height: 96px;
+left: 680px;
+top: 0px;
+
+background: url(image.png);
+border-radius: 0px;
+
+
+/* Heading 1 */
+
+position: absolute;
+width: 1504px;
+height: 48px;
+left: 0px;
+top: 128px;
+
+border-radius: 0px;
+
+
+/* AI-Powered Agricultural Intelligence Hub */
+
+position: absolute;
+width: 814px;
+height: 48px;
+left: 345.22px;
+top: -5px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 48px;
+line-height: 48px;
+/* identical to box height, or 100% */
+text-align: center;
+letter-spacing: -1.2px;
+
+color: #016630;
+
+
+
+/* Paragraph */
+
+position: absolute;
+width: 768px;
+height: 65px;
+left: 368px;
+top: 192px;
+
+border-radius: 0px;
+
+
+/* Empowering agricultural experts across the IGAD re */
+
+position: absolute;
+width: 768px;
+height: 65px;
+left: 0.47px;
+top: -3px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 20px;
+line-height: 32px;
+/* or 162% */
+text-align: center;
+
+color: #008236;
+
+
+
+/* Card */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 32px 0px 32px 32px;
+gap: 40px;
+
+position: absolute;
+width: 896px;
+height: 188.5px;
+left: 304px;
+top: 289px;
+
+background: rgba(255, 255, 255, 0.8);
+border: 1px solid #B9F8CF;
+box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+border-radius: 14px;
+
+
+/* LandingPage */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px 0.015625px 0px 0px;
+gap: 16px;
+
+width: 830px;
+height: 24px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Container */
+
+width: 48px;
+height: 2px;
+
+background: #00A63E;
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Text */
+
+width: 372.64px;
+height: 24px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* PEACE, PROSPERITY AND REGIONAL INTEGRATION */
+
+position: absolute;
+width: 403px;
+height: 24px;
+left: -15px;
+top: -2px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 24px;
+/* identical to box height, or 150% */
+text-align: center;
+
+color: #016630;
+
+
+
+/* Container */
+
+width: 48px;
+height: 2px;
+
+background: #00A63E;
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+
+/* LandingPage */
+
+width: 830px;
+height: 58.5px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+
+/* Supporting the Intergovernmental Authority on Deve */
+
+position: absolute;
+width: 817px;
+height: 59px;
+left: 6.59px;
+top: -2px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 18px;
+line-height: 29px;
+/* or 162% */
+text-align: center;
+
+color: #364153;
+
+
+
+/* Container */
+
+position: absolute;
+width: 1536px;
+height: 990px;
+left: 63px;
+top: 639.5px;
+
+border-radius: 0px;
+
+
+/* Container */
+
+position: absolute;
+width: 1504px;
+height: 108px;
+left: 16px;
+top: 64px;
+
+border-radius: 0px;
+
+
+/* Heading 2 */
+
+position: absolute;
+width: 1504px;
+height: 36px;
+left: 0px;
+top: 0px;
+
+border-radius: 0px;
+
+
+/* AI-Powered Tools & Services */
+
+position: absolute;
+width: 387px;
+height: 36px;
+left: 558.83px;
+top: -3px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 30px;
+line-height: 36px;
+/* identical to box height, or 120% */
+text-align: center;
+
+color: #016630;
+
+
+
+/* Paragraph */
+
+position: absolute;
+width: 672px;
+height: 56px;
+left: 416px;
+top: 52px;
+
+border-radius: 0px;
+
+
+/* Choose from our suite of specialized tools designe */
+
+position: absolute;
+width: 652px;
+height: 56px;
+left: 10.47px;
+top: -1px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 18px;
+line-height: 28px;
+/* or 156% */
+text-align: center;
+
+color: #4A5565;
+
+
+
+/* Container */
+
+position: absolute;
+width: 1152px;
+height: 706px;
+left: 192px;
+top: 220px;
+
+border-radius: 0px;
+
+
+/* Card */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 362.66px;
+height: 324px;
+left: 0px;
+top: 0px;
+
+background: #FFFFFF;
+opacity: 0.75;
+border: 2px solid #E5E7EB;
+border-radius: 14px;
+
+
+/* LandingPage */
+
+position: absolute;
+width: 294.66px;
+height: 256px;
+left: 34px;
+top: 34px;
+
+border-radius: 0px;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px 16px 0px;
+
+position: absolute;
+width: 64px;
+height: 64px;
+left: 0px;
+top: 0px;
+
+background: #F3F4F6;
+border-radius: 14px;
+
+
+/* Icon */
+
+width: 32px;
+height: 32px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 2.66667px solid #6A7282;
+
+
+/* Vector */
+
+position: absolute;
+left: 75%;
+right: 25%;
+top: 37.5%;
+bottom: 29.17%;
+
+border: 2.66667px solid #6A7282;
+
+
+/* Vector */
+
+position: absolute;
+left: 54.17%;
+right: 45.83%;
+top: 20.83%;
+bottom: 29.17%;
+
+border: 2.66667px solid #6A7282;
+
+
+/* Vector */
+
+position: absolute;
+left: 33.33%;
+right: 66.67%;
+top: 58.33%;
+bottom: 29.17%;
+
+border: 2.66667px solid #6A7282;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 12px;
+
+position: absolute;
+width: 294.66px;
+height: 92px;
+left: 0px;
+top: 88px;
+
+border-radius: 0px;
+
+
+/* Heading 3 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 294.66px;
+height: 28px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Report Generator */
+
+width: 294.66px;
+height: 28px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 20px;
+line-height: 28px;
+/* identical to box height, or 140% */
+
+color: #101828;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* Paragraph */
+
+width: 294.66px;
+height: 52px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Generate comprehensive agricultural and policy rep */
+
+position: absolute;
+width: 291px;
+height: 52px;
+left: 0px;
+top: -2px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 26px;
+/* or 162% */
+
+color: #4A5565;
+
+
+
+/* Button */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 294.66px;
+height: 36px;
+left: 0px;
+top: 220px;
+
+background: #FFFFFF;
+opacity: 0.5;
+border: 1px solid rgba(0, 0, 0, 0.1);
+border-radius: 8px;
+
+
+/* Coming Soon */
+
+position: absolute;
+width: 85px;
+height: 20px;
+left: 104.28px;
+top: 6px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #0A0A0A;
+
+
+
+/* LandingPage */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 4px 12px;
+
+position: absolute;
+width: 98.08px;
+height: 26px;
+left: 246.58px;
+top: 18px;
+
+background: #F3F4F6;
+border: 1px solid #E5E7EB;
+border-radius: 3.35544e+07px;
+
+
+/* Coming Soon */
+
+width: 73px;
+height: 16px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #4A5565;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Card */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 362.67px;
+height: 324px;
+left: 394.66px;
+top: 0px;
+
+background: #FFFFFF;
+opacity: 0.75;
+border: 2px solid #E5E7EB;
+border-radius: 14px;
+
+
+/* LandingPage */
+
+position: absolute;
+width: 294.67px;
+height: 256px;
+left: 34px;
+top: 34px;
+
+border-radius: 0px;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px 16px 0px;
+
+position: absolute;
+width: 64px;
+height: 64px;
+left: 0px;
+top: 0px;
+
+background: #F3F4F6;
+border-radius: 14px;
+
+
+/* Icon */
+
+width: 32px;
+height: 32px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 69.42%;
+right: 12.5%;
+top: 69.42%;
+bottom: 12.5%;
+
+border: 2.66667px solid #6A7282;
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 20.83%;
+top: 12.5%;
+bottom: 20.83%;
+
+border: 2.66667px solid #6A7282;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 12px;
+
+position: absolute;
+width: 294.67px;
+height: 92px;
+left: 0px;
+top: 88px;
+
+border-radius: 0px;
+
+
+/* Heading 3 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 294.67px;
+height: 28px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Policy Analyzer */
+
+width: 294.67px;
+height: 28px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 20px;
+line-height: 28px;
+/* identical to box height, or 140% */
+
+color: #101828;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* Paragraph */
+
+width: 294.67px;
+height: 52px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Analyze and review regional policies for agricultu */
+
+position: absolute;
+width: 280px;
+height: 52px;
+left: 0px;
+top: -2px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 26px;
+/* or 162% */
+
+color: #4A5565;
+
+
+
+/* Button */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 294.67px;
+height: 36px;
+left: 0px;
+top: 220px;
+
+background: #FFFFFF;
+opacity: 0.5;
+border: 1px solid rgba(0, 0, 0, 0.1);
+border-radius: 8px;
+
+
+/* Coming Soon */
+
+position: absolute;
+width: 85px;
+height: 20px;
+left: 104.3px;
+top: 6px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #0A0A0A;
+
+
+
+/* LandingPage */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 4px 12px;
+
+position: absolute;
+width: 98.08px;
+height: 26px;
+left: 246.59px;
+top: 18px;
+
+background: #F3F4F6;
+border: 1px solid #E5E7EB;
+border-radius: 3.35544e+07px;
+
+
+/* Coming Soon */
+
+width: 73px;
+height: 16px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #4A5565;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Card */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 362.66px;
+height: 324px;
+left: 789.33px;
+top: 0px;
+
+background: #FFFFFF;
+border: 2px solid #B9F8CF;
+border-radius: 14px;
+
+
+/* LandingPage */
+
+position: absolute;
+width: 294.66px;
+height: 256px;
+left: 34px;
+top: 34px;
+
+border-radius: 0px;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px 16px 0px;
+
+position: absolute;
+width: 64px;
+height: 64px;
+left: 0px;
+top: 0px;
+
+background: #DCFCE7;
+border-radius: 14px;
+
+
+/* Icon */
+
+width: 32px;
+height: 32px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 2.66667px solid #008236;
+
+
+/* Vector */
+
+position: absolute;
+left: 33.32%;
+right: 8.35%;
+top: 8.35%;
+bottom: 33.32%;
+
+border: 2.66667px solid #008236;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 12px;
+
+position: absolute;
+width: 294.66px;
+height: 92px;
+left: 0px;
+top: 88px;
+
+border-radius: 0px;
+
+
+/* Heading 3 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 294.66px;
+height: 28px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Proposal Writer */
+
+width: 294.66px;
+height: 28px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 20px;
+line-height: 28px;
+/* identical to box height, or 140% */
+
+color: #101828;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* Paragraph */
+
+width: 294.66px;
+height: 52px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Create compelling funding proposals for agricultur */
+
+position: absolute;
+width: 286px;
+height: 52px;
+left: 0px;
+top: -2px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 26px;
+/* or 162% */
+
+color: #4A5565;
+
+
+
+/* Button */
+
+position: absolute;
+width: 294.66px;
+height: 36px;
+left: 0px;
+top: 220px;
+
+background: #00A63E;
+border-radius: 8px;
+
+
+/* Launch Tool */
+
+position: absolute;
+width: 76px;
+height: 20px;
+left: 93.42px;
+top: 6px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #FFFFFF;
+
+
+
+/* Icon */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 185.23px;
+top: 10px;
+
+border-radius: 0px;
+
+
+/* Vector */
+
+position: absolute;
+left: 20.83%;
+right: 20.83%;
+top: 50%;
+bottom: 50%;
+
+border: 1.33333px solid #FFFFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 50%;
+right: 20.83%;
+top: 20.83%;
+bottom: 20.83%;
+
+border: 1.33333px solid #FFFFFF;
+
+
+/* LandingPage */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 4px 12px;
+
+position: absolute;
+width: 73.52px;
+height: 26px;
+left: 271.14px;
+top: 18px;
+
+background: #DCFCE7;
+border: 1px solid #B9F8CF;
+border-radius: 3.35544e+07px;
+
+
+/* Available */
+
+width: 49px;
+height: 16px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #016630;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Card */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 362.66px;
+height: 350px;
+left: 0px;
+top: 356px;
+
+background: #FFFFFF;
+border: 2px solid #B9F8CF;
+border-radius: 14px;
+
+
+/* LandingPage */
+
+position: absolute;
+width: 294.66px;
+height: 282px;
+left: 34px;
+top: 34px;
+
+border-radius: 0px;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px 16px 0px;
+
+position: absolute;
+width: 64px;
+height: 64px;
+left: 0px;
+top: 0px;
+
+background: #DCFCE7;
+border-radius: 14px;
+
+
+/* Icon */
+
+width: 32px;
+height: 32px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 8.33%;
+right: 8.33%;
+top: 29.17%;
+bottom: 45.84%;
+
+border: 2.66667px solid #008236;
+
+
+/* Vector */
+
+position: absolute;
+left: 8.33%;
+right: 8.33%;
+top: 16.67%;
+bottom: 16.67%;
+
+border: 2.66667px solid #008236;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 12px;
+
+position: absolute;
+width: 294.66px;
+height: 118px;
+left: 0px;
+top: 88px;
+
+border-radius: 0px;
+
+
+/* Heading 3 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 294.66px;
+height: 28px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Newsletter Generator */
+
+width: 294.66px;
+height: 28px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 20px;
+line-height: 28px;
+/* identical to box height, or 140% */
+
+color: #101828;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* Paragraph */
+
+width: 294.66px;
+height: 78px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Create engaging newsletters on agricultural innova */
+
+position: absolute;
+width: 243px;
+height: 78px;
+left: 0px;
+top: -2px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 26px;
+/* or 162% */
+
+color: #4A5565;
+
+
+
+/* Button */
+
+position: absolute;
+width: 294.66px;
+height: 36px;
+left: 0px;
+top: 246px;
+
+background: #00A63E;
+border-radius: 8px;
+
+
+/* Launch Tool */
+
+position: absolute;
+width: 76px;
+height: 20px;
+left: 93.42px;
+top: 6px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #FFFFFF;
+
+
+
+/* Icon */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 185.23px;
+top: 10px;
+
+border-radius: 0px;
+
+
+/* Vector */
+
+position: absolute;
+left: 20.83%;
+right: 20.83%;
+top: 50%;
+bottom: 50%;
+
+border: 1.33333px solid #FFFFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 50%;
+right: 20.83%;
+top: 20.83%;
+bottom: 20.83%;
+
+border: 1.33333px solid #FFFFFF;
+
+
+/* LandingPage */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 4px 12px;
+
+position: absolute;
+width: 73.52px;
+height: 26px;
+left: 271.14px;
+top: 18px;
+
+background: #DCFCE7;
+border: 1px solid #B9F8CF;
+border-radius: 3.35544e+07px;
+
+
+/* Available */
+
+width: 49px;
+height: 16px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #016630;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Card */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 362.67px;
+height: 350px;
+left: 394.66px;
+top: 356px;
+
+background: #FFFFFF;
+opacity: 0.75;
+border: 2px solid #E5E7EB;
+border-radius: 14px;
+
+
+/* LandingPage */
+
+position: absolute;
+width: 294.67px;
+height: 256px;
+left: 34px;
+top: 34px;
+
+border-radius: 0px;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px 16px 0px;
+
+position: absolute;
+width: 64px;
+height: 64px;
+left: 0px;
+top: 0px;
+
+background: #F3F4F6;
+border-radius: 14px;
+
+
+/* Icon */
+
+width: 32px;
+height: 32px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 66.67%;
+right: 8.33%;
+top: 29.17%;
+bottom: 45.83%;
+
+border: 2.66667px solid #6A7282;
+
+
+/* Vector */
+
+position: absolute;
+left: 8.33%;
+right: 8.33%;
+top: 29.17%;
+bottom: 29.17%;
+
+border: 2.66667px solid #6A7282;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 12px;
+
+position: absolute;
+width: 294.67px;
+height: 92px;
+left: 0px;
+top: 88px;
+
+border-radius: 0px;
+
+
+/* Heading 3 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 294.67px;
+height: 28px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Agribusiness Hub */
+
+width: 294.67px;
+height: 28px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 20px;
+line-height: 28px;
+/* identical to box height, or 140% */
+
+color: #101828;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* Paragraph */
+
+width: 294.67px;
+height: 52px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Connect with agribusiness development opportunitie */
+
+position: absolute;
+width: 282px;
+height: 78px;
+left: 0px;
+top: -2px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 26px;
+/* or 162% */
+
+color: #4A5565;
+
+
+
+/* Button */
+
+box-sizing: border-box;
+
+position: absolute;
+width: 294.67px;
+height: 36px;
+left: 0px;
+top: 220px;
+
+background: #FFFFFF;
+opacity: 0.5;
+border: 1px solid rgba(0, 0, 0, 0.1);
+border-radius: 8px;
+
+
+/* Coming Soon */
+
+position: absolute;
+width: 85px;
+height: 20px;
+left: 104.3px;
+top: 6px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #0A0A0A;
+
+
+
+/* LandingPage */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 4px 12px;
+
+position: absolute;
+width: 98.08px;
+height: 26px;
+left: 246.59px;
+top: 18px;
+
+background: #F3F4F6;
+border: 1px solid #E5E7EB;
+border-radius: 3.35544e+07px;
+
+
+/* Coming Soon */
+
+width: 73px;
+height: 16px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #4A5565;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px 16px;
+gap: 8px;
+
+position: absolute;
+width: 1536px;
+height: 52px;
+left: 63px;
+top: 1725.5px;
+
+background: #016630;
+border-radius: 0px;
+
+
+/* Paragraph */
+
+width: 1504px;
+height: 24px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* © 2024 IGAD - Intergovernmental Authority on Devel */
+
+position: absolute;
+width: 427px;
+height: 24px;
+left: 538.75px;
+top: -2px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 24px;
+/* identical to box height, or 150% */
+text-align: center;
+
+color: #DCFCE7;
+
+
+
+/* Paragraph */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 1504px;
+height: 20px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Advancing agricultural innovation and regional int */
+
+width: 1504px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+text-align: center;
+
+color: #B9F8CF;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px;
+gap: 8px;
+
+position: absolute;
+width: 121.55px;
+height: 56px;
+left: 1516.45px;
+top: 864px;
+
+background: #155DFC;
+box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+border-radius: 8px;
+
+
+/* Icon */
+
+width: 16px;
+height: 16px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 50%;
+right: 50%;
+top: 29.17%;
+bottom: 12.5%;
+
+border: 1.33333px solid #FFFFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 8.33%;
+right: 8.33%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 1.33333px solid #FFFFFF;
+
+
+/* LandingPage */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 65.55px;
+height: 20px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* View Docs */
+
+width: 66px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #FFFFFF;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* TopNavBar */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px 40px 1px;
+
+position: absolute;
+width: 1662px;
+height: 65px;
+left: 0px;
+top: 0px;
+
+background: #FFFFFF;
+border-bottom: 1px solid #E5E7EB;
+box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);
+border-radius: 0px;
+
+
+/* Container */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: space-between;
+align-items: center;
+padding: 0px;
+gap: 1072.8px;
+
+width: 1582px;
+height: 64px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* IgadLogo */
+
+width: 96px;
+height: 64px;
+
+background: url(image.png);
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Container */
+
+width: 371.2px;
+height: 36px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px;
+gap: 14px;
+
+position: absolute;
+width: 118.97px;
+height: 32px;
+left: 0px;
+top: 2px;
+
+border-radius: 8px;
+
+
+/* Icon */
+
+width: 16px;
+height: 16px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 58.33%;
+top: 12.5%;
+bottom: 50%;
+
+border: 1.33333px solid #364153;
+
+
+/* Vector */
+
+position: absolute;
+left: 58.33%;
+right: 12.5%;
+top: 12.5%;
+bottom: 66.67%;
+
+border: 1.33333px solid #364153;
+
+
+/* Vector */
+
+position: absolute;
+left: 58.33%;
+right: 12.5%;
+top: 50%;
+bottom: 12.5%;
+
+border: 1.33333px solid #364153;
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 58.33%;
+top: 66.67%;
+bottom: 12.5%;
+
+border: 1.33333px solid #364153;
+
+
+/* TopNavBar */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 68.97px;
+height: 20px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Dashboard */
+
+width: 69px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #364153;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+position: absolute;
+width: 36px;
+height: 36px;
+left: 170.97px;
+top: 0px;
+
+border-radius: 8px;
+
+
+/* Icon */
+
+width: 16px;
+height: 16px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 12.43%;
+right: 12.43%;
+top: 8.33%;
+bottom: 8.33%;
+
+border: 1.33333px solid #364153;
+
+
+/* Vector */
+
+position: absolute;
+left: 37.5%;
+right: 37.5%;
+top: 37.5%;
+bottom: 37.5%;
+
+border: 1.33333px solid #364153;
+
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+position: absolute;
+width: 156.23px;
+height: 36px;
+left: 214.97px;
+top: 0px;
+
+border-radius: 8px;
+
+
+/* TopNavBar */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 32px;
+height: 32px;
+
+background: #000000;
+border-radius: 3.35544e+07px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Icon */
+
+width: 16px;
+height: 16px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 20.83%;
+right: 20.83%;
+top: 62.5%;
+bottom: 12.5%;
+
+border: 1.33333px solid #FFFFFF;
+
+
+/* Vector */
+
+position: absolute;
+left: 33.33%;
+right: 33.33%;
+top: 12.5%;
+bottom: 54.17%;
+
+border: 1.33333px solid #FFFFFF;
+
+
+/* TopNavBar */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 76.23px;
+height: 20px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* My Account */
+
+width: 73px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #364153;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Button */
+
+position: absolute;
+width: 36px;
+height: 36px;
+left: 126.97px;
+top: 0px;
+
+border-radius: 8px;
+
+
+/* Icon */
+
+position: absolute;
+width: 16px;
+height: 16px;
+left: 10px;
+top: 10px;
+
+border-radius: 0px;
+
+
+/* Vector */
+
+position: absolute;
+left: 42.78%;
+right: 42.78%;
+top: 87.5%;
+bottom: 8.33%;
+
+border: 1.33333px solid #364153;
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 8.33%;
+bottom: 29.17%;
+
+border: 1.33333px solid #364153;
+
+
+/* Badge */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px;
+gap: 4px;
+
+position: absolute;
+width: 20px;
+height: 20px;
+left: 20px;
+top: -4px;
+
+background: #FB2C36;
+border-radius: 8px;
+
+
+/* 2 */
+
+width: 7px;
+height: 16px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 12px;
+line-height: 16px;
+/* identical to box height, or 133% */
+
+color: #FFFFFF;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
