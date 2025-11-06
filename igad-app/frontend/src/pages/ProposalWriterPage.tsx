@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { Layout } from '@/components/layout/Layout'
+import { Upload, FileText, Users, Target } from 'lucide-react'
+import styles from './ProposalWriterPage.module.css'
 
 export function ProposalWriterPage() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -6,7 +9,7 @@ export function ProposalWriterPage() {
   const [textInputs, setTextInputs] = useState<{[key: string]: string}>({})
 
   const steps = [
-    { id: 1, title: 'Information Consolidation', completed: true },
+    { id: 1, title: 'Information Consolidation', completed: false },
     { id: 2, title: 'Content Review', completed: false },
     { id: 3, title: 'Structure & Validation', completed: false },
     { id: 4, title: 'Proposal Review', completed: false },
@@ -29,204 +32,203 @@ export function ProposalWriterPage() {
     }))
   }
 
-  return (
-    <div className="proposal-writer-page">
-      {/* Left Sidebar - Progress & Navigation */}
-      <div className="proposal-sidebar">
-        <div className="proposal-header">
-          <h2 className="proposal-title">Proposal Writer</h2>
-        </div>
+  const renderStep1 = () => (
+    <div className={styles.content}>
+      <h2 className={styles.sectionTitle}>Information Consolidation</h2>
+      <p style={{ marginBottom: '32px', color: '#6B7280' }}>
+        Upload relevant documents and provide key information to help generate your proposal.
+      </p>
 
-        <div className="proposal-progress">
-          <div className="progress-label">Proposal Progress</div>
-          <div className="progress-percentage">20%</div>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: '20%' }}></div>
+      <div className={styles.grid}>
+        {/* Project Documents Upload */}
+        <div className={styles.uploadSection}>
+          <div className={styles.uploadIcon}>
+            <FileText size={48} />
           </div>
-          <div className="progress-step">Step 1 of 5</div>
+          <h3 className={styles.uploadTitle}>Project Documents</h3>
+          <p className={styles.uploadDescription}>
+            Upload project plans, research papers, or related documents
+          </p>
+          <input
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.txt"
+            onChange={(e) => handleFileUpload('project-docs', e.target.files)}
+            className={styles.hiddenInput}
+            id="project-docs"
+          />
+          <label htmlFor="project-docs" className={styles.uploadButton}>
+            Choose Files
+          </label>
+          {uploadedFiles['project-docs'] && (
+            <div className={styles.fileList}>
+              {uploadedFiles['project-docs'].map((file, index) => (
+                <div key={index} className={styles.fileItem}>
+                  <FileText size={16} />
+                  {file.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="steps-navigation">
-          {steps.map((step) => (
-            <div 
-              key={step.id}
-              className={`step-item ${step.id === currentStep ? 'active' : ''} ${step.completed ? 'completed' : ''}`}
-            >
-              <div className="step-number">{step.id}</div>
-              <div className="step-title">{step.title}</div>
+        {/* Budget Information Upload */}
+        <div className={styles.uploadSection}>
+          <div className={styles.uploadIcon}>
+            <Target size={48} />
+          </div>
+          <h3 className={styles.uploadTitle}>Budget Information</h3>
+          <p className={styles.uploadDescription}>
+            Upload budget templates, cost estimates, or financial data
+          </p>
+          <input
+            type="file"
+            multiple
+            accept=".pdf,.xls,.xlsx,.csv"
+            onChange={(e) => handleFileUpload('budget-info', e.target.files)}
+            className={styles.hiddenInput}
+            id="budget-info"
+          />
+          <label htmlFor="budget-info" className={styles.uploadButton}>
+            Choose Files
+          </label>
+          {uploadedFiles['budget-info'] && (
+            <div className={styles.fileList}>
+              {uploadedFiles['budget-info'].map((file, index) => (
+                <div key={index} className={styles.fileItem}>
+                  <Target size={16} />
+                  {file.name}
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+        </div>
+
+        {/* Team Information Upload */}
+        <div className={styles.uploadSection}>
+          <div className={styles.uploadIcon}>
+            <Users size={48} />
+          </div>
+          <h3 className={styles.uploadTitle}>Team Information</h3>
+          <p className={styles.uploadDescription}>
+            Upload CVs, team profiles, or organizational charts
+          </p>
+          <input
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx"
+            onChange={(e) => handleFileUpload('team-info', e.target.files)}
+            className={styles.hiddenInput}
+            id="team-info"
+          />
+          <label htmlFor="team-info" className={styles.uploadButton}>
+            Choose Files
+          </label>
+          {uploadedFiles['team-info'] && (
+            <div className={styles.fileList}>
+              {uploadedFiles['team-info'].map((file, index) => (
+                <div key={index} className={styles.fileItem}>
+                  <Users size={16} />
+                  {file.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="proposal-main">
-        {/* Breadcrumb and Actions */}
-        <div className="proposal-header-bar">
-          <div className="breadcrumb">
-            <span className="breadcrumb-back">←</span>
-            <span className="breadcrumb-text">Proposal Writer</span>
-          </div>
-          <button className="prompt-manager-btn">Prompt Manager</button>
-        </div>
+      {/* Text Input Sections */}
+      <div className={styles.textSection}>
+        <label className={styles.textLabel}>Project Overview</label>
+        <textarea
+          className={styles.textArea}
+          placeholder="Provide a brief overview of your project, its objectives, and expected outcomes..."
+          value={textInputs['project-overview'] || ''}
+          onChange={(e) => handleTextChange('project-overview', e.target.value)}
+        />
+      </div>
 
-        <div className="step-header">
-          <h1 className="step-title">Step 1: Information Consolidation</h1>
-          <p className="step-description">Gather all necessary content, RFPs, reference proposals, existing work, and initial concepts</p>
-          <div className="step-progress-info">
-            <span className="step-counter">Step 1 of 5</span>
-          </div>
-        </div>
+      <div className={styles.textSection}>
+        <label className={styles.textLabel}>Target Audience & Beneficiaries</label>
+        <textarea
+          className={styles.textArea}
+          placeholder="Describe who will benefit from this project and how it will impact the agricultural sector..."
+          value={textInputs['target-audience'] || ''}
+          onChange={(e) => handleTextChange('target-audience', e.target.value)}
+        />
+      </div>
 
-        <div className="information-progress">
-          <div className="progress-header">
-            <h3 className="progress-title">Information Gathering Progress</h3>
-            <div className="progress-counter">0/3 sections complete</div>
-          </div>
-          <div className="progress-bar-main">
-            <div className="progress-fill-main" style={{ width: '0%' }}></div>
-          </div>
-        </div>
-
-        <div className="content-sections">
-          {/* RFP / Call for Proposals Section */}
-          <div className="content-section">
-            <div className="section-header">
-              <div className="section-icon">📄</div>
-              <div className="section-info">
-                <h3 className="section-title">RFP / Call for Proposals</h3>
-                <p className="section-description">Upload the official Request for Proposals document. This is essential for understanding donor requirements and evaluation criteria.</p>
-              </div>
-            </div>
-            
-            <div className="upload-area">
-              <div className="upload-icon">📁</div>
-              <p className="upload-text">Drop RFP file here or click to upload</p>
-              <p className="upload-formats">Supports PDF, DOC, DOCX files up to 10MB</p>
-              <button className="choose-file-btn">Choose File</button>
-            </div>
-            
-            <div className="missing-document-warning">
-              <span className="warning-icon">⚠️</span>
-              <span className="warning-text">Missing RFP Document</span>
-              <p className="warning-description">Upload your guidelines if not included in the main RFP document</p>
-            </div>
-          </div>
-
-          {/* Reference Proposals Section */}
-          <div className="content-section">
-            <div className="section-header">
-              <div className="section-icon">📋</div>
-              <div className="section-info">
-                <h3 className="section-title">Reference Proposals</h3>
-                <p className="section-description">Upload successful proposals to this donor or similar calls. These help understand donor preferences and winning strategies.</p>
-              </div>
-            </div>
-            
-            <div className="upload-area">
-              <div className="upload-icon">📁</div>
-              <p className="upload-text">Drop reference proposals here or click to upload</p>
-              <p className="upload-formats">Multiple files supported</p>
-              <button className="choose-files-btn">Choose Files</button>
-            </div>
-          </div>
-
-          {/* Existing Work & Experience Section */}
-          <div className="content-section">
-            <div className="section-header">
-              <div className="section-icon">📊</div>
-              <div className="section-info">
-                <h3 className="section-title">Existing Work & Experience</h3>
-                <p className="section-description">Describe your organization's relevant experience, ongoing projects, and previous work that relates to this call.</p>
-              </div>
-            </div>
-            
-            <div className="text-input-area">
-              <textarea
-                className="experience-textarea"
-                placeholder="Describe your relevant experience, ongoing projects, previous work with similar donors, institutional strengths, partnerships, and any preliminary research or activities related to this call."
-                value={textInputs.experience || ''}
-                onChange={(e) => handleTextChange('experience', e.target.value)}
-                rows={4}
-              />
-              <div className="character-count">
-                <span className="current-count">{textInputs.experience?.length || 0}</span> characters
-                <span className="max-count">Please provide more detail (minimum 50 characters)</span>
-              </div>
-            </div>
-
-            <div className="supporting-documents">
-              <h4 className="supporting-title">Supporting Documents (Optional)</h4>
-              <p className="supporting-description">Upload additional documents like organizational profiles, previous project reports, or technical papers.</p>
-              
-              <div className="upload-area-small">
-                <div className="upload-icon">📁</div>
-                <p className="upload-text">Drop supporting files here</p>
-                <button className="add-files-btn">Add Files</button>
-              </div>
-            </div>
-          </div>
-
-          {/* Initial Concept or Direction Section */}
-          <div className="content-section">
-            <div className="section-header">
-              <div className="section-icon">💡</div>
-              <div className="section-info">
-                <h3 className="section-title">Initial Concept or Direction</h3>
-                <p className="section-description">Share your initial ideas, approach, or hypothesis for this proposal. You can have formal or upload a document outlining your concept.</p>
-              </div>
-            </div>
-            
-            <div className="text-input-area">
-              <textarea
-                className="concept-textarea"
-                placeholder="Describe your initial concept, proposed approach, target beneficiaries, expected outcomes, implementation strategy, or any specific insights."
-                value={textInputs.concept || ''}
-                onChange={(e) => handleTextChange('concept', e.target.value)}
-                rows={6}
-              />
-              <div className="character-count">
-                <span className="current-count">{textInputs.concept?.length || 0}</span> characters
-                <span className="max-count">Please provide more detail about your concept (minimum 100 characters) or upload a document</span>
-              </div>
-            </div>
-
-            <div className="concept-upload">
-              <h4 className="upload-title">Or Upload Concept Document</h4>
-              <p className="upload-description">Upload an existing Word document, PDF, or slide deck outlining your concept instead</p>
-              
-              <div className="upload-area-small">
-                <div className="upload-icon">📁</div>
-                <p className="upload-text">Drop concept document here</p>
-                <button className="choose-file-btn">Choose File</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Next Steps Section */}
-        <div className="next-steps">
-          <h3 className="next-steps-title">Next Steps</h3>
-          <p className="next-steps-description">Once you complete this information gathering, our AI will analyze your inputs and provide:</p>
-          <ul className="next-steps-list">
-            <li>Fill assessments between your work and RFP requirements</li>
-            <li>Specific suggestions for strengthening your proposal</li>
-            <li>Checklist of mandatory RFP items to address</li>
-            <li>Team skills and roles analysis</li>
-            <li>Project overview with objectives and milestones</li>
-          </ul>
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="step-navigation">
-          <button className="btn-previous" disabled>
-            ← Previous
-          </button>
-          <button className="btn-next">
-            Next →
-          </button>
-        </div>
+      <div className={styles.textSection}>
+        <label className={styles.textLabel}>Funding Requirements</label>
+        <textarea
+          className={styles.textArea}
+          placeholder="Specify the total funding needed, key budget categories, and funding timeline..."
+          value={textInputs['funding-requirements'] || ''}
+          onChange={(e) => handleTextChange('funding-requirements', e.target.value)}
+        />
       </div>
     </div>
+  )
+
+  return (
+    <Layout>
+      <div className={styles.container}>
+        {/* Header */}
+        <div className={styles.header}>
+          <div className={styles.headerContent}>
+            <h1 className={styles.title}>Proposal Writer</h1>
+            <p className={styles.subtitle}>
+              Create compelling funding proposals for agricultural projects and development initiatives
+            </p>
+          </div>
+        </div>
+
+        {/* Progress Steps */}
+        <div className={styles.progressContainer}>
+          <div className={styles.progressSteps}>
+            {steps.map((step, index) => (
+              <div key={step.id} className={styles.step}>
+                <div className={`${styles.stepNumber} ${
+                  step.id === currentStep ? styles.stepNumberActive :
+                  step.completed ? styles.stepNumberCompleted : styles.stepNumberPending
+                }`}>
+                  {step.id}
+                </div>
+                <span className={`${styles.stepTitle} ${
+                  step.id === currentStep ? styles.stepTitleActive :
+                  step.completed ? styles.stepTitleCompleted : styles.stepTitlePending
+                }`}>
+                  {step.title}
+                </span>
+                {index < steps.length - 1 && (
+                  <div className={`${styles.stepConnector} ${
+                    step.completed ? styles.stepConnectorCompleted : styles.stepConnectorPending
+                  }`} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Step Content */}
+          {currentStep === 1 && renderStep1()}
+
+          {/* Navigation Buttons */}
+          <div className={styles.buttonGroup}>
+            <button 
+              className={`${styles.button} ${styles.buttonSecondary}`}
+              disabled={currentStep === 1}
+            >
+              Previous
+            </button>
+            <button 
+              className={`${styles.button} ${styles.buttonPrimary}`}
+              onClick={() => setCurrentStep(2)}
+            >
+              Next Step
+            </button>
+          </div>
+        </div>
+      </div>
+    </Layout>
   )
 }

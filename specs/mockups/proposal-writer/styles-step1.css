@@ -21,7 +21,7 @@ gap: 32px;
 
 position: absolute;
 width: 896px;
-height: 2934px;
+height: 2708px;
 left: 499px;
 top: 206px;
 
@@ -152,131 +152,6 @@ font-weight: 400;
 font-size: 16px;
 line-height: 24px;
 /* identical to box height, or 150% */
-
-color: #717182;
-
-
-
-/* Container */
-
-/* Auto layout */
-display: flex;
-flex-direction: column;
-align-items: flex-start;
-padding: 0px;
-
-width: 92px;
-height: 40px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-flex-grow: 0;
-
-
-/* Container */
-
-width: 100px;
-height: 20px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 0;
-
-
-/* Stage: */
-
-position: absolute;
-width: 41px;
-height: 20px;
-left: 1px;
-top: -2px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-text-align: right;
-
-color: #717182;
-
-
-
-/* Text */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-align-items: flex-start;
-padding: 0px;
-
-position: absolute;
-width: 49.91px;
-height: 19px;
-left: 41.3px;
-top: 0px;
-
-border-radius: 0px;
-
-
-/* Scoping */
-
-width: 51px;
-height: 20px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-text-align: right;
-
-color: #155DFC;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 0;
-
-
-/* Container */
-
-width: 92px;
-height: 20px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-align-self: stretch;
-flex-grow: 0;
-
-
-/* 1 of 5 */
-
-position: absolute;
-width: 36px;
-height: 20px;
-left: 55.84px;
-top: -2px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-text-align: right;
 
 color: #717182;
 
@@ -475,7 +350,7 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* 0/3 */
+/* 0/2 */
 
 position: absolute;
 width: 36px;
@@ -515,9 +390,9 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* sections complete */
+/* sections required */
 
-width: 97px;
+width: 92px;
 height: 16px;
 
 font-family: 'Arial';
@@ -581,6 +456,328 @@ display: flex;
 flex-direction: column;
 align-items: flex-start;
 padding: 24px 0px 24px 24px;
+gap: 36px;
+
+width: 896px;
+height: 286px;
+
+background: #F0FDF4;
+border: 1px solid #B9F8CF;
+border-radius: 14px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* ProposalStep1 */
+
+width: 846px;
+height: 28px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Next Steps */
+
+position: absolute;
+width: 89px;
+height: 28px;
+left: 0px;
+top: -1px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 18px;
+line-height: 28px;
+/* identical to box height, or 156% */
+
+color: #016630;
+
+
+
+/* ProposalStep1 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 846px;
+height: 20px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Once you complete this information gathering, our  */
+
+width: 846px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #008236;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* ProposalStep1 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 4px;
+
+width: 846px;
+height: 116px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 1;
+
+
+/* List Item */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 846px;
+height: 20px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Fit assessment between your work and RFP requireme */
+
+width: 846px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #008236;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* List Item */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 846px;
+height: 20px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Specific suggestions for strengthening your propos */
+
+width: 846px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #008236;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* List Item */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 846px;
+height: 20px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Checklist of mandatory RFP items to address */
+
+width: 846px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #008236;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* List Item */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 846px;
+height: 20px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Team skills and roles analysis */
+
+width: 846px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #008236;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* List Item */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+width: 846px;
+height: 20px;
+
+border-radius: 0px;
+
+/* Inside auto layout */
+flex: none;
+order: 4;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Project roadmap with deadlines and milestones */
+
+width: 846px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+
+color: #008236;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* Card */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 24px 0px 24px 24px;
 gap: 40px;
 
 width: 896px;
@@ -592,7 +789,7 @@ border-radius: 14px;
 
 /* Inside auto layout */
 flex: none;
-order: 1;
+order: 2;
 align-self: stretch;
 flex-grow: 0;
 
@@ -708,10 +905,10 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* RFP / Call for Proposals */
+/* RFP / Call for Proposals* */
 
 position: absolute;
-width: 193px;
+width: 200px;
 height: 28px;
 left: 0px;
 top: -1px;
@@ -772,178 +969,6 @@ flex-grow: 0;
 
 box-sizing: border-box;
 
-width: 846px;
-height: 240px;
-
-border: 2px solid #D1D5DC;
-border-radius: 10px;
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-flex-grow: 1;
-
-
-/* Icon */
-
-position: absolute;
-width: 48px;
-height: 48px;
-left: 399px;
-top: 34px;
-
-border-radius: 0px;
-
-
-/* Vector */
-
-position: absolute;
-left: 50%;
-right: 50%;
-top: 12.5%;
-bottom: 37.5%;
-
-border: 4px solid #99A1AF;
-
-
-/* Vector */
-
-position: absolute;
-left: 29.17%;
-right: 29.17%;
-top: 12.5%;
-bottom: 66.67%;
-
-border: 4px solid #99A1AF;
-
-
-/* Vector */
-
-position: absolute;
-left: 12.5%;
-right: 12.5%;
-top: 62.5%;
-bottom: 12.5%;
-
-border: 4px solid #99A1AF;
-
-
-/* Paragraph */
-
-position: absolute;
-width: 778px;
-height: 28px;
-left: 34px;
-top: 98px;
-
-border-radius: 0px;
-
-
-/* Drop RFP file here or click to upload */
-
-position: absolute;
-width: 290px;
-height: 28px;
-left: 243.81px;
-top: -1px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 18px;
-line-height: 28px;
-/* identical to box height, or 156% */
-text-align: center;
-
-color: #0A0A0A;
-
-
-
-/* Paragraph */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-align-items: flex-start;
-padding: 0px;
-
-position: absolute;
-width: 778px;
-height: 20px;
-left: 34px;
-top: 134px;
-
-border-radius: 0px;
-
-
-/* Supports PDF, DOC, DOCX files up to 10MB */
-
-width: 778px;
-height: 20px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-text-align: center;
-
-color: #717182;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* SlotClone */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-justify-content: center;
-align-items: center;
-padding: 8px 16px;
-gap: 8px;
-
-position: absolute;
-width: 104.69px;
-height: 36px;
-left: 370.66px;
-top: 170px;
-
-background: #166534;
-border-radius: 8px;
-
-
-/* Choose File */
-
-width: 75px;
-height: 20px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-text-align: center;
-
-color: #FFFFFF;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 0;
-
-
-/* ProposalStep1 */
-
-box-sizing: border-box;
-
 /* Auto layout */
 display: flex;
 flex-direction: column;
@@ -959,7 +984,7 @@ border-radius: 10px;
 
 /* Inside auto layout */
 flex: none;
-order: 2;
+order: 1;
 flex-grow: 0;
 
 
@@ -1121,6 +1146,178 @@ order: 0;
 flex-grow: 0;
 
 
+/* ProposalStep1 */
+
+box-sizing: border-box;
+
+width: 846px;
+height: 240px;
+
+border: 2px solid #D1D5DC;
+border-radius: 10px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 1;
+
+
+/* Icon */
+
+position: absolute;
+width: 48px;
+height: 48px;
+left: 399px;
+top: 34px;
+
+border-radius: 0px;
+
+
+/* Vector */
+
+position: absolute;
+left: 50%;
+right: 50%;
+top: 12.5%;
+bottom: 37.5%;
+
+border: 4px solid #99A1AF;
+
+
+/* Vector */
+
+position: absolute;
+left: 29.17%;
+right: 29.17%;
+top: 12.5%;
+bottom: 66.67%;
+
+border: 4px solid #99A1AF;
+
+
+/* Vector */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 62.5%;
+bottom: 12.5%;
+
+border: 4px solid #99A1AF;
+
+
+/* Paragraph */
+
+position: absolute;
+width: 778px;
+height: 28px;
+left: 34px;
+top: 98px;
+
+border-radius: 0px;
+
+
+/* Drop RFP file here or click to upload */
+
+position: absolute;
+width: 290px;
+height: 28px;
+left: 243.81px;
+top: -1px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 18px;
+line-height: 28px;
+/* identical to box height, or 156% */
+text-align: center;
+
+color: #0A0A0A;
+
+
+
+/* Paragraph */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 0px;
+
+position: absolute;
+width: 778px;
+height: 20px;
+left: 34px;
+top: 134px;
+
+border-radius: 0px;
+
+
+/* Supports PDF, DOC, DOCX files up to 10MB */
+
+width: 778px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+text-align: center;
+
+color: #717182;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* SlotClone */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 8px 16px;
+gap: 8px;
+
+position: absolute;
+width: 104.69px;
+height: 36px;
+left: 370.66px;
+top: 170px;
+
+background: #166534;
+border-radius: 8px;
+
+
+/* Choose File */
+
+width: 75px;
+height: 20px;
+
+font-family: 'Arial';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* identical to box height, or 143% */
+text-align: center;
+
+color: #FFFFFF;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
 /* Card */
 
 box-sizing: border-box;
@@ -1141,7 +1338,7 @@ border-radius: 14px;
 
 /* Inside auto layout */
 flex: none;
-order: 2;
+order: 3;
 align-self: stretch;
 flex-grow: 0;
 
@@ -1502,7 +1699,7 @@ border-radius: 14px;
 
 /* Inside auto layout */
 flex: none;
-order: 3;
+order: 4;
 align-self: stretch;
 flex-grow: 0;
 
@@ -2066,7 +2263,7 @@ border-radius: 14px;
 
 /* Inside auto layout */
 flex: none;
-order: 4;
+order: 5;
 align-self: stretch;
 flex-grow: 0;
 
@@ -2182,10 +2379,10 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* Initial Concept or Direction */
+/* Initial Concept or Direction* */
 
 position: absolute;
-width: 212px;
+width: 219px;
 height: 28px;
 left: 0px;
 top: -1px;
@@ -2608,487 +2805,6 @@ text-align: center;
 
 color: #0A0A0A;
 
-
-
-/* Card */
-
-box-sizing: border-box;
-
-/* Auto layout */
-display: flex;
-flex-direction: column;
-align-items: flex-start;
-padding: 24px 0px 24px 24px;
-gap: 36px;
-
-width: 896px;
-height: 286px;
-
-background: #F0FDF4;
-border: 1px solid #B9F8CF;
-border-radius: 14px;
-
-/* Inside auto layout */
-flex: none;
-order: 5;
-align-self: stretch;
-flex-grow: 0;
-
-
-/* ProposalStep1 */
-
-width: 846px;
-height: 28px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 0;
-
-
-/* Next Steps */
-
-position: absolute;
-width: 89px;
-height: 28px;
-left: 0px;
-top: -1px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 18px;
-line-height: 28px;
-/* identical to box height, or 156% */
-
-color: #016630;
-
-
-
-/* ProposalStep1 */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-align-items: flex-start;
-padding: 0px;
-
-width: 846px;
-height: 20px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-flex-grow: 0;
-
-
-/* Once you complete this information gathering, our  */
-
-width: 846px;
-height: 20px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-
-color: #008236;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* ProposalStep1 */
-
-/* Auto layout */
-display: flex;
-flex-direction: column;
-align-items: flex-start;
-padding: 0px;
-gap: 4px;
-
-width: 846px;
-height: 116px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 2;
-flex-grow: 1;
-
-
-/* List Item */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-align-items: flex-start;
-padding: 0px;
-
-width: 846px;
-height: 20px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-align-self: stretch;
-flex-grow: 0;
-
-
-/* Fit assessment between your work and RFP requireme */
-
-width: 846px;
-height: 20px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-
-color: #008236;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* List Item */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-align-items: flex-start;
-padding: 0px;
-
-width: 846px;
-height: 20px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-align-self: stretch;
-flex-grow: 0;
-
-
-/* Specific suggestions for strengthening your propos */
-
-width: 846px;
-height: 20px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-
-color: #008236;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* List Item */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-align-items: flex-start;
-padding: 0px;
-
-width: 846px;
-height: 20px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 2;
-align-self: stretch;
-flex-grow: 0;
-
-
-/* Checklist of mandatory RFP items to address */
-
-width: 846px;
-height: 20px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-
-color: #008236;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* List Item */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-align-items: flex-start;
-padding: 0px;
-
-width: 846px;
-height: 20px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 3;
-align-self: stretch;
-flex-grow: 0;
-
-
-/* Team skills and roles analysis */
-
-width: 846px;
-height: 20px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-
-color: #008236;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* List Item */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-align-items: flex-start;
-padding: 0px;
-
-width: 846px;
-height: 20px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 4;
-align-self: stretch;
-flex-grow: 0;
-
-
-/* Project roadmap with deadlines and milestones */
-
-width: 846px;
-height: 20px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-
-color: #008236;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* Card */
-
-box-sizing: border-box;
-
-/* Auto layout */
-display: flex;
-flex-direction: column;
-align-items: flex-start;
-padding: 24px 0px 24px 24px;
-
-width: 896px;
-height: 86px;
-
-background: #FFFFFF;
-border: 1px solid rgba(0, 0, 0, 0.1);
-border-radius: 14px;
-
-/* Inside auto layout */
-flex: none;
-order: 2;
-align-self: stretch;
-flex-grow: 0;
-
-
-/* ProposalWriterWizard */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-justify-content: space-between;
-align-items: center;
-padding: 0px;
-gap: 663.73px;
-
-width: 846px;
-height: 36px;
-
-border-radius: 0px;
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* Button */
-
-box-sizing: border-box;
-
-width: 104.02px;
-height: 36px;
-
-background: #FFFFFF;
-opacity: 0.5;
-border: 1px solid rgba(0, 0, 0, 0.1);
-border-radius: 8px;
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 0;
-
-
-/* Icon */
-
-position: absolute;
-width: 16px;
-height: 16px;
-left: 13px;
-top: 10px;
-
-border-radius: 0px;
-
-
-/* Vector */
-
-position: absolute;
-left: 37.5%;
-right: 37.5%;
-top: 25%;
-bottom: 25%;
-
-border: 1.33333px solid #0A0A0A;
-
-
-/* Previous */
-
-position: absolute;
-width: 55px;
-height: 20px;
-left: 37px;
-top: 6px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-
-color: #0A0A0A;
-
-
-
-/* Button */
-
-width: 78.25px;
-height: 36px;
-
-background: #155DFC;
-border-radius: 8px;
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-flex-grow: 0;
-
-
-/* Next */
-
-position: absolute;
-width: 29px;
-height: 20px;
-left: 12px;
-top: 6px;
-
-font-family: 'Arial';
-font-style: normal;
-font-weight: 400;
-font-size: 14px;
-line-height: 20px;
-/* identical to box height, or 143% */
-
-color: #FFFFFF;
-
-
-
-/* Icon */
-
-position: absolute;
-width: 16px;
-height: 16px;
-left: 50.25px;
-top: 10px;
-
-border-radius: 0px;
-
-
-/* Vector */
-
-position: absolute;
-left: 37.5%;
-right: 37.5%;
-top: 25%;
-bottom: 25%;
-
-border: 1.33333px solid #FFFFFF;
 
 
 /* TopNavBar */
