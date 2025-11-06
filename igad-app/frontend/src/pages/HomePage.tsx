@@ -589,31 +589,6 @@ export function HomePage() {
           Advancing agricultural innovation and regional integration
         </p>
       </div>
-
-      {/* View Docs Button */}
-      <button style={{
-        position: 'absolute',
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '8px',
-        width: '121.55px',
-        height: '56px',
-        right: '145px',
-        top: '864px',
-        background: '#155DFC',
-        boxShadow: '0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1)',
-        borderRadius: '8px',
-        border: 'none',
-        fontFamily: 'Arial',
-        fontSize: '14px',
-        color: '#FFFFFF',
-        cursor: 'pointer'
-      }}>
-        <div style={{ width: '16px', height: '16px', background: '#FFFFFF' }} />
-        View Docs
-      </button>
     </div>
   )
 }
