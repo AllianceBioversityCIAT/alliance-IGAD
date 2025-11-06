@@ -1,0 +1,203 @@
+
+ROLE: Senior Software Architect
+Principle: “La simplicidad es la máxima sofisticación.”
+
+# --------------------------------------------------------------------
+# GOAL
+# --------------------------------------------------------------------
+Design a simple, serverless system for the IGAD Innovation Hub (V2 MVP) split into:
+1) FRONTEND (React): architecture, project structure, UI/UX design.
+2) BACKEND (AWS CDK + Lambda Python): architecture, project structure, APIs, data models, observability.
+Include a cross-cutting PROMPT MANAGER for AI prompt lifecycle (templates, versioning, retrieval, feedback) used by:
+- Proposal Writer terminal
+- Newsletter terminal
+AI is backed by Amazon Bedrock and integrates with IGAD-KN for context enrichment.
+
+Deliverables MUST be generated and written under:
+`specs/architecture/design-system/`
+  - `frontend_spec.md`
+  - `backend_ai_spec.md`
+  - `frontend_backend_prompt_manager.png`
+
+Authoritative baseline for requirements: `specs/architecture/`
+
+# --------------------------------------------------------------------
+# OUTPUT
+# --------------------------------------------------------------------
+Produce THREE artifacts + one embedded Prompt Manager spec:
+
+A) FRONTEND SPEC (Markdown, for Senior Frontend Developer) — **use `awslabsfrontend-mcp-server` as source generator, then compile via `awslabscode-doc-gen-mcp-server`**
+Include:
+- Goals & Scope (Login, Home, Global Navbar; Proposal Writer; Newsletter)
+- Tech stack (React + optional TypeScript, Vite/Next.js, Tailwind; ESLint/Prettier)
+- Project structure (src/pages, src/components, src/features/*, src/lib, src/services/api, src/state)
+- Routing & Auth (Cognito Hosted UI / tokens; protected routes)
+- Data access layer (API client, retry/backoff, error mapping)
+- Prompt Manager UI (select template/version, preview, feedback widget)
+- AI UX patterns (prompt hints, loading/progress, citations/feedback)
+- Accessibility & i18n basics; responsive layout tokens
+- Performance (code-split, cache, PRPL hints; S3/CloudFront notes)
+- Testing (unit/integration), minimal CI hooks
+- Env/config strategy (.env, runtime config)
+
+B) BACKEND/AI SPEC (Markdown, for Senior Backend/AI Developer) — **use `awslabscdk-mcp-server` as source generator, then compile via `awslabscode-doc-gen-mcp-server`**
+Include:
+- Serverless architecture: API Gateway (HTTP) → Lambda (Python) → DynamoDB (On-Demand); S3; Cognito; CloudWatch/X-Ray; Bedrock
+- Repository layout: `/infra` (CDK), `/src` (handlers, services), `/tests`
+- API design: resources, methods, request/response DTOs, auth (JWT/Cognito), error model
+- Data model: DynamoDB tables
+  * `users(pk=user#<id>)`
+  * `prompts(pk=prompt#<id>, sk=version#<n>)` + GSI by tag/type
+  * `proposals(pk=proposal#<id>)`
+  * `newsletters(pk=newsletter#<id>)`
+  * `audit_logs(pk=log#<ts>)`
+- Prompt Manager service:
+  * CRUD templates (create/update/get/list), versioning, tags, ownership
+  * Context enrichment (IGAD-KN fetch), safe prompt assembly, guardrails
+  * Bedrock client (model selection, max tokens, temperature, stop sequences)
+  * Usage logging + feedback endpoint (`/prompts/feedback`)
+  * IAM least-privilege, per-route authZ via Cognito groups (admin/editor/consumer)
+- Observability: structured logs (JSON), metrics (p50/p95 latency, token use), alarms, log retention
+- Performance/Cost: Lambda mem/duration tuning, cold-start mitigation, batch writes, on-demand tables
+- Testing: unit (handler/service), contract tests for APIs, local mocks for Bedrock/DynamoDB
+- Deployment: CDK stacks per env (Testing, Production), minimal pipelines
+
+C) UML / ARCHITECTURE DIAGRAM (PNG) — **use `awslabsaws-diagram-mcp-server`**
+Show:
+- Browser → (CloudFront/S3) → React App
+- Cognito (AuthN/AuthZ)
+- API Gateway (HTTP) → Lambda (REST handlers)
+- DynamoDB (tables above), S3 (artifacts)
+- Bedrock (LLM) ↔ Prompt Manager (in backend)
+- IGAD-KN context fetch in AI path
+- Labeled arrows: Auth, Fetch Prompts, Execute Prompt, Store/Read Data, Log
+
+# --------------------------------------------------------------------
+# LIMITS
+# --------------------------------------------------------------------
+- MVP-only: Login, Home, Navbar; Proposal Writer; Newsletter; Prompt Manager.
+- Serverless, low-cost defaults (us-east-1, API GW HTTP, DynamoDB On-Demand).
+- No heavy extras (e.g., Kinesis, EMR, complex search) unless strictly required by `specs/architecture`.
+- Keep designs concise and directly implementable by senior engineers.
+
+# --------------------------------------------------------------------
+# DATA
+# --------------------------------------------------------------------
+- Use `specs/architecture/` contents (architecture spec, decisions, domain model) as the primary source.
+- Figma mockups (for UI flow) if referenced in `specs/architecture`.
+- AWS services: Cognito, API Gateway HTTP, Lambda (Python), DynamoDB, S3, CloudWatch/X-Ray, Bedrock.
+- IGAD-KN as external context source.
+
+# --------------------------------------------------------------------
+# EVALUATION
+# --------------------------------------------------------------------
+Success = documents and diagram:
+- Aligned with `specs/architecture`, minimal & extensible.
+- Clear folder structures, API contracts, data models, IAM policies.
+- Prompt Manager well-scoped, versioned, auditable, easy to call from FE.
+- Files written to `specs/architecture/design-system/` with the exact filenames.
+
+# --------------------------------------------------------------------
+# MCP EXECUTION DIRECTIVES
+# --------------------------------------------------------------------
+
+## 1) Generate Frontend System Design (source)
+{
+  "mcp_server": "awslabsfrontend-mcp-server",
+  "task": "synthesize_frontend_design",
+  "input_type": "structured_prompt",
+  "output_format": "json",
+  "goal": "Derive a concise, implementation-ready React frontend design with Prompt Manager UI hooks from specs/architecture.",
+  "context": {
+    "baseline_path": "specs/architecture/",
+    "framework": "React",
+    "features": ["Login","Home","GlobalNavbar","ProposalWriter","Newsletter"],
+    "auth": "Cognito",
+    "api": "API Gateway (HTTP)",
+    "state": ["React Query","Zustand"],
+    "style": ["Tailwind","Design tokens"],
+    "prompt_manager_ui": true,
+    "constraints": ["simplicity","accessibility","low-cost"]
+  },
+  "output_path": "specs/architecture/design-system/frontend_design.json"
+}
+
+## 2) Generate Backend/AI System Design (source)
+{
+  "mcp_server": "awslabscdk-mcp-server",
+  "task": "synthesize_backend_design",
+  "input_type": "structured_prompt",
+  "output_format": "json",
+  "goal": "Derive a concise, implementation-ready serverless backend/AI design incl. Prompt Manager + Bedrock integration from specs/architecture.",
+  "context": {
+    "baseline_path": "specs/architecture/",
+    "runtime": "Python3.11 on AWS Lambda",
+    "api": "API Gateway (HTTP)",
+    "db": "DynamoDB On-Demand",
+    "storage": "S3",
+    "auth": "Cognito",
+    "observability": ["CloudWatch","X-Ray"],
+    "ai": {
+      "provider": "Amazon Bedrock",
+      "features": ["prompt orchestration","guardrails","token budgeting","tracing"],
+      "context_source": "IGAD-KN"
+    },
+    "prompt_manager": {
+      "tables": ["prompts","audit_logs"],
+      "ops": ["create","update","get","list","feedback"],
+      "versioning": true,
+      "rbac": ["admin","editor","consumer"]
+    },
+    "envs": ["testing","production"],
+    "constraints": ["serverless","least-privilege","simplicity"]
+  },
+  "output_path": "specs/architecture/design-system/backend_design.json"
+}
+
+## 3) Compile FRONTEND SPEC (Markdown)
+{
+  "mcp_server": "awslabscode-doc-gen-mcp-server",
+  "task": "generate_specification",
+  "input_type": "composed",
+  "sources": ["specs/architecture/design-system/frontend_design.json"],
+  "output_format": "markdown",
+  "domain": "frontend_system_design",
+  "style": "AWS technical specification",
+  "goal": "Produce a senior-ready 'frontend_spec.md' with all sections defined in OUTPUT A.",
+  "output_path": "specs/architecture/design-system/frontend_spec.md"
+}
+
+## 4) Compile BACKEND/AI SPEC (Markdown)
+{
+  "mcp_server": "awslabscode-doc-gen-mcp-server",
+  "task": "generate_specification",
+  "input_type": "composed",
+  "sources": ["specs/architecture/design-system/backend_design.json"],
+  "output_format": "markdown",
+  "domain": "backend_ai_system_design",
+  "style": "AWS technical specification",
+  "goal": "Produce a senior-ready 'backend_ai_spec.md' with all sections defined in OUTPUT B, including Prompt Manager.",
+  "output_path": "specs/architecture/design-system/backend_ai_spec.md"
+}
+
+## 5) Create UML / Architecture Diagram (PNG)
+{
+  "mcp_server": "awslabsaws-diagram-mcp-server",
+  "task": "generate_architecture_diagram",
+  "input_type": "structured_prompt",
+  "output_format": "png",
+  "goal": "Render 'frontend_backend_prompt_manager.png' showing FE↔BE↔AI flows and Prompt Manager position.",
+  "context": {
+    "layers": ["Frontend(React)","Auth(Cognito)","API(API GW HTTP)","Compute(Lambda/Python)","Data(DynamoDB,S3)","AI(Bedrock)","Context(IGAD-KN)","PromptManager(Service)"],
+    "edges": [
+      "Browser→CloudFront/S3→React",
+      "React→Cognito(OAuth/OpenID)",
+      "React→API GW (JWT)",
+      "API GW→Lambda→DynamoDB/S3",
+      "Lambda↔Bedrock via PromptManager",
+      "PromptManager↔DynamoDB(prompts) & ↔IGAD-KN(context)"
+    ],
+    "style": "AWS official icons; minimal labels; clear flows"
+  },
+  "output_path": "specs/architecture/design-system/frontend_backend_prompt_manager.png"
+}
