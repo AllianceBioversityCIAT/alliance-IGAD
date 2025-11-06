@@ -30,12 +30,16 @@ export function Navigation() {
         margin: '0 auto'
       }}>
         {/* IGAD Logo */}
-        <div style={{
-          width: '96px',
-          height: '64px',
-          background: '#D1D5DB',
-          borderRadius: '8px'
-        }} />
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <img 
+            src="/igad-logo.png" 
+            alt="IGAD Innovation Hub" 
+            style={{
+              height: '56px',
+              width: 'auto'
+            }}
+          />
+        </Link>
 
         {/* Navigation Buttons */}
         <div style={{

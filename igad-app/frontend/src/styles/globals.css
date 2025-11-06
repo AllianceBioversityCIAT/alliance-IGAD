@@ -277,27 +277,619 @@
   mix-blend-mode: luminosity;
 }
 
+/* PROPOSAL WRITER STYLES - Matching Figma Design */
+.proposal-writer-page {
+  display: flex;
+  min-height: calc(100vh - 65px); /* Account for navbar */
+  background: var(--background);
+}
+
+/* Left Sidebar - Exact Figma Specifications */
+.proposal-sidebar {
+  width: 280px;
+  background: #EDFDF5; /* Light green background from Figma */
+  border-right: 1px solid #E8EBED;
+  padding: 2rem 1.5rem;
+  flex-shrink: 0;
+}
+
+.proposal-header {
+  margin-bottom: 2rem;
+}
+
+.proposal-title {
+  font-size: 20.76px; /* Exact from Figma */
+  font-weight: 400;
+  color: #0A0A0A;
+  margin: 0;
+  line-height: 25px;
+}
+
+/* Progress Section - Exact Figma */
+.proposal-progress {
+  margin-bottom: 3rem;
+  padding-bottom: 1px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.progress-label {
+  font-size: 16px;
+  color: #0A0A0A;
+  margin-bottom: 0.5rem;
+  font-weight: 400;
+}
+
+.progress-percentage {
+  font-size: 16px;
+  font-weight: 400;
+  color: #166534;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: rgba(22, 101, 52, 0.2);
+  border-radius: 50px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #166534;
+  transition: width 0.3s ease;
+  width: 20%; /* 20% as shown in Figma */
+}
+
+.progress-step {
+  font-size: 14px;
+  color: #717182;
+  font-weight: 400;
+}
+
+/* Steps Navigation - Exact Figma */
+.steps-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  position: relative;
+  padding: 0;
+}
+
+.step-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 40px;
+  width: 2px;
+  height: 64px;
+  background: #D1D5DC;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #E5E7EB;
+  color: #6A7282;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+.step-item.active .step-number {
+  background: #166534;
+  color: #FFFFFF;
+  box-shadow: 0px 0px 0px 4px #DCFCE7;
+}
+
+.step-title {
+  font-size: 14px; /* Smaller size for step titles */
+  color: #6A7282;
+  font-weight: 400;
+  line-height: 20px;
+  margin-top: 8px;
+  opacity: 0.4;
+}
+
+.step-item.active .step-title {
+  color: #101828;
+  opacity: 1;
+}
+
+/* Main Content Area */
+.proposal-main {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background: var(--background);
+}
+
+/* Header Bar */
+.proposal-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #E8EBED;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 20.76px; /* Match Figma */
+  color: #0A0A0A;
+  font-weight: 400;
+}
+
+.breadcrumb-back {
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.breadcrumb-text {
+  font-weight: 400;
+}
+
+.prompt-manager-btn {
+  background: #00A63E;
+  color: white;
+  border: none;
+  border-radius: 7.33px; /* Exact from Figma */
+  padding: 7.33px 22.9px;
+  font-size: 12.83px; /* Exact from Figma */
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.prompt-manager-btn:hover {
+  background: var(--igad-secondary);
+}
+
+/* Step Header */
+.step-header {
+  margin-bottom: 2rem;
+}
+
+.step-title {
+  font-size: 24px; /* Exact from Figma */
+  font-weight: 400;
+  color: #0A0A0A;
+  margin-bottom: 0.5rem;
+  line-height: 32px;
+}
+
+.step-description {
+  font-size: 16px; /* Exact from Figma */
+  color: #717182;
+  margin-bottom: 1rem;
+  line-height: 24px;
+}
+
+.step-progress-info {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.step-counter {
+  font-size: 14px; /* Exact from Figma */
+  color: #717182;
+  line-height: 20px;
+}
+
+/* Information Progress */
+.information-progress {
+  background: #EFF6FF; /* Exact from Figma */
+  border: 1px solid #BEDBFF; /* Exact from Figma */
+  border-radius: 14px; /* Exact from Figma */
+  padding: 24px; /* Exact from Figma */
+  margin-bottom: 2rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.progress-title {
+  font-size: 18px; /* Exact from Figma */
+  font-weight: 400;
+  color: #193CB8; /* Exact from Figma */
+  margin: 0;
+  line-height: 28px;
+}
+
+.progress-counter {
+  font-size: 24px; /* Exact from Figma */
+  color: #193CB8; /* Exact from Figma */
+  font-weight: 400;
+  line-height: 32px;
+}
+
+.progress-bar-main {
+  width: 100%;
+  height: 8px; /* Exact from Figma */
+  background: #BEDBFF; /* Exact from Figma */
+  border-radius: 50px;
+  overflow: hidden;
+}
+
+.progress-fill-main {
+  height: 100%;
+  background: #155DFC; /* Exact from Figma */
+  transition: width 0.3s ease;
+  width: 0%; /* Start at 0 */
+}
+
+/* Content Sections */
+.content-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px; /* Exact from Figma */
+  margin-bottom: 2rem;
+}
+
+.content-section {
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Exact from Figma */
+  border-radius: 14px; /* Exact from Figma */
+  padding: 24px 0px 24px 24px; /* Exact from Figma */
+  background: #FFFFFF;
+}
+
+.section-header {
+  display: flex;
+  gap: 32px; /* Exact from Figma */
+  margin-bottom: 40px; /* Exact from Figma */
+}
+
+.section-icon {
+  font-size: 20px; /* Exact from Figma */
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-info {
+  flex: 1;
+}
+
+.section-title {
+  font-size: 18px; /* Exact from Figma */
+  font-weight: 400;
+  color: #0A0A0A;
+  margin: 0 0 8px 0; /* Exact from Figma */
+  line-height: 28px;
+}
+
+.section-description {
+  font-size: 14px; /* Exact from Figma */
+  color: #717182;
+  line-height: 20px;
+  margin: 0;
+}
+
+/* Upload Areas */
+.upload-area {
+  border: 2px solid #D1D5DC; /* Exact from Figma */
+  border-radius: 10px; /* Exact from Figma */
+  padding: 34px; /* Exact from Figma */
+  text-align: center;
+  background: #FFFFFF;
+  margin-bottom: 1rem;
+  height: 240px; /* Exact from Figma */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.upload-area-small {
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Exact from Figma */
+  border-radius: 10px;
+  padding: 17px; /* Exact from Figma */
+  text-align: center;
+  background: #FFFFFF;
+  height: 126px; /* Exact from Figma */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.upload-icon {
+  font-size: 48px; /* Larger for main upload areas */
+  margin-bottom: 0.5rem;
+  color: #99A1AF; /* Exact from Figma */
+}
+
+.upload-area-small .upload-icon {
+  font-size: 24px; /* Smaller for small upload areas */
+}
+
+.upload-text {
+  font-size: 18px; /* Exact from Figma for main areas */
+  color: #0A0A0A;
+  margin: 0;
+  line-height: 28px;
+}
+
+.upload-area-small .upload-text {
+  font-size: 14px; /* Exact from Figma for small areas */
+  line-height: 20px;
+}
+
+.upload-formats {
+  font-size: 14px; /* Exact from Figma */
+  color: #717182;
+  margin: 0;
+  line-height: 20px;
+}
+
+.choose-file-btn,
+.choose-files-btn,
+.add-files-btn {
+  background: #166534; /* Exact from Figma */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px; /* Exact from Figma */
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 8px;
+}
+
+.choose-files-btn {
+  background: #FFFFFF; /* White for "Choose Files" */
+  color: #0A0A0A;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.add-files-btn {
+  background: #FFFFFF; /* White for "Add Files" */
+  color: #0A0A0A;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.choose-file-btn:hover,
+.choose-files-btn:hover,
+.add-files-btn:hover {
+  opacity: 0.9;
+}
+
+/* Warning Messages */
+.missing-document-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+}
+
+.warning-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.warning-text {
+  font-weight: 500;
+  color: #92400e;
+  font-size: 0.875rem;
+}
+
+.warning-description {
+  font-size: 0.75rem;
+  color: #92400e;
+  margin: 0.25rem 0 0 0;
+}
+
+/* Text Input Areas */
+.text-input-area {
+  margin-bottom: 1.5rem;
+}
+
+.experience-textarea,
+.concept-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.experience-textarea:focus,
+.concept-textarea:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.character-count {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.current-count {
+  font-weight: 500;
+}
+
+/* Supporting Documents */
+.supporting-documents,
+.concept-upload {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.supporting-title,
+.upload-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.supporting-description,
+.upload-description {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 1rem 0;
+}
+
+/* Next Steps */
+.next-steps {
+  background: #F0FDF4; /* Exact from Figma */
+  border: 1px solid #B9F8CF; /* Exact from Figma */
+  border-radius: 14px; /* Exact from Figma */
+  padding: 24px; /* Exact from Figma */
+  margin-bottom: 2rem;
+}
+
+.next-steps-title {
+  font-size: 18px; /* Exact from Figma */
+  font-weight: 400;
+  color: #016630; /* Exact from Figma */
+  margin: 0 0 20px 0; /* Exact from Figma */
+  line-height: 28px;
+}
+
+.next-steps-description {
+  font-size: 14px; /* Exact from Figma */
+  color: #008236; /* Exact from Figma */
+  margin: 0 0 1rem 0;
+  line-height: 20px;
+}
+
+.next-steps-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Exact from Figma */
+}
+
+.next-steps-list li {
+  font-size: 14px; /* Exact from Figma */
+  color: #008236; /* Exact from Figma */
+  margin: 0;
+  padding: 0;
+  line-height: 20px;
+  position: relative;
+}
+
+.next-steps-list li::before {
+  content: '✓';
+  color: #008236;
+  font-weight: 400;
+  margin-right: 8px;
+}
+
+/* Navigation Buttons */
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  padding: 24px; /* Exact from Figma */
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Exact from Figma */
+  border-radius: 14px; /* Exact from Figma */
+}
+
+.btn-previous,
+.btn-next {
+  height: 36px; /* Exact from Figma */
+  border-radius: 8px;
+  font-size: 14px; /* Exact from Figma */
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 20px;
+}
+
+.btn-previous {
+  background: #FFFFFF;
+  color: #0A0A0A;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Exact from Figma */
+  padding: 0 13px; /* Exact from Figma */
+  opacity: 0.5; /* Exact from Figma for disabled state */
+}
+
+.btn-previous:hover:not(:disabled) {
+  opacity: 0.7;
+}
+
+.btn-previous:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-next {
+  background: #155DFC; /* Exact from Figma */
+  color: #FFFFFF;
+  border: none;
+  padding: 0 12px; /* Exact from Figma */
+}
+
+.btn-next:hover {
+  background: #1d4ed8;
+}
+
 /* Responsive Design */
-@media (max-width: 768px) {
-  .login-page {
+@media (max-width: 1024px) {
+  .proposal-writer-page {
     flex-direction: column;
   }
   
-  .login-form-column,
-  .login-image-column {
-    max-width: 100%;
-  }
-  
-  .login-image-column {
-    min-height: 200px;
-  }
-  
-  .login-form-column {
+  .proposal-sidebar {
+    width: 100%;
     padding: 1rem;
   }
   
-  .login-title {
-    font-size: 1.75rem;
+  .steps-navigation {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  
+  .step-item {
+    flex-shrink: 0;
   }
 }
 

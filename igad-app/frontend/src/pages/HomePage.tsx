@@ -17,13 +17,16 @@ export function HomePage() {
       }}>
         <div style={{ width: '100%', maxWidth: '1504px', margin: '0 auto' }}>
           {/* IGAD Logo */}
-          <div style={{
-            width: '144px',
-            height: '96px',
-            margin: '0 auto 32px',
-            background: '#D1D5DB',
-            borderRadius: '8px'
-          }} />
+          <div style={{ margin: '0 auto 32px', textAlign: 'center' }}>
+            <img 
+              src="/igad-logo.png" 
+              alt="IGAD Innovation Hub" 
+              style={{
+                height: '96px',
+                width: 'auto'
+              }}
+            />
+          </div>
           
           {/* Main Heading */}
           <h1 style={{
