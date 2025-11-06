@@ -1,0 +1,251 @@
+/* LoginPage Styles */
+
+.container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 50%;
+  padding: 40px;
+  background-image: url(/textura.png);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 118.71px;
+  width: 460px;
+  max-width: 100%;
+}
+
+.logo {
+  width: 459px;
+  height: 87px;
+  max-width: 100%;
+}
+
+.formContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 31.8px;
+  width: 100%;
+}
+
+.formHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 11.87px;
+  width: 100%;
+}
+
+.title {
+  font-family: Arial;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 35.6px;
+  line-height: 44px;
+  text-align: center;
+  letter-spacing: -0.02em;
+  color: #016630;
+  margin: 0;
+  width: 100%;
+}
+
+.subtitle {
+  font-family: Arial;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 16.62px;
+  line-height: 31px;
+  text-align: center;
+  color: #4a5565;
+  margin: 0;
+  width: 100%;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16.62px;
+  width: 100%;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16.62px;
+  width: 100%;
+}
+
+.label {
+  font-family: Arial;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 20.775px;
+  line-height: 120%;
+  color: #101828;
+}
+
+.input {
+  padding: 12.465px;
+  background: #ffffff;
+  border: 1.18714px solid #d1d5db;
+  border-radius: 7.12286px;
+  font-family: Inter;
+  font-size: 14px;
+  color: #969696;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.passwordField {
+  position: relative;
+  width: 100%;
+}
+
+.passwordInput {
+  padding-right: 40px;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.errorText {
+  color: #fb2c36;
+  font-size: 12px;
+}
+
+.formOptions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 21.37px;
+}
+
+.checkboxGroup {
+  display: flex;
+  align-items: center;
+  gap: 11.92px;
+  font-family: Arial;
+  font-size: 13.9106px;
+  color: #0a0a0a;
+}
+
+.checkbox {
+  width: 19.87px;
+  height: 19.87px;
+  background: #f3f3f5;
+  border: 1.18714px solid rgba(0, 0, 0, 0.1);
+  border-radius: 3.56143px;
+}
+
+.forgotPassword {
+  font-family: Arial;
+  font-size: 13.9106px;
+  color: #00a63e;
+  text-decoration: none;
+}
+
+.submitButton {
+  width: 100%;
+  height: 42.74px;
+  background: #00a63e;
+  border-radius: 9.49714px;
+  border: none;
+  color: #ffffff;
+  font-family: Arial;
+  font-size: 16.62px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11.87px;
+  margin-top: 31.8px;
+}
+
+.supportText {
+  font-family: Arial;
+  font-size: 13.9106px;
+  color: #4a5565;
+  text-align: center;
+  margin: 31.8px 0 0 0;
+}
+
+.supportLink {
+  color: #00a63e;
+}
+
+.rightColumn {
+  width: 50%;
+  height: 100vh;
+  position: relative;
+}
+
+.backgroundImage {
+  width: 100%;
+  height: 100%;
+  background-image: url(/fondologin.png);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url(/transparencia.png);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+  
+  .leftColumn,
+  .rightColumn {
+    width: 100%;
+  }
+  
+  .rightColumn {
+    height: 40vh;
+  }
+  
+  .formContainer {
+    width: 100%;
+    gap: 60px;
+  }
+  
+  .logo {
+    width: 100%;
+    height: auto;
+  }
+}

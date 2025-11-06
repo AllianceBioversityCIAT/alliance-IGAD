@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { FileText, Mail, Users, TrendingUp, Filter } from 'lucide-react'
+import styles from './DashboardPage.module.css'
 
 const metrics = [
   {

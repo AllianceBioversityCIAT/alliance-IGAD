@@ -1,15 +1,20 @@
 import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/Button'
+import { ArrowLeft } from 'lucide-react'
+import styles from './NotFoundPage.module.css'
 
 export function NotFoundPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-6xl font-bold text-gray-900">404</h1>
-        <p className="text-xl text-gray-600 mt-4">Page not found</p>
-        <Button asChild className="mt-6">
-          <Link to="/">Go Home</Link>
-        </Button>
+    <div className={styles.container}>
+      <div className={styles.content}>
+        <h1 className={styles.errorCode}>404</h1>
+        <h2 className={styles.title}>Page Not Found</h2>
+        <p className={styles.description}>
+          The page you're looking for doesn't exist or has been moved.
+        </p>
+        <Link to="/" className={styles.button}>
+          <ArrowLeft size={16} />
+          Back to Home
+        </Link>
       </div>
     </div>
   )

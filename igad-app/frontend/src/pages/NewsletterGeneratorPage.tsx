@@ -1,8 +1,14 @@
+import styles from './NewsletterGeneratorPage.module.css'
+
 export function NewsletterGeneratorPage() {
   return (
-    <div className="newsletter-generator-container">
-      <h1>Newsletter Generator</h1>
-      <p>6-step wizard coming soon...</p>
+    <div className={styles.container}>
+      <div className={styles.content}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Newsletter Generator</h1>
+          <p className={styles.subtitle}>6-step wizard coming soon...</p>
+        </div>
+      </div>
     </div>
   )
 }

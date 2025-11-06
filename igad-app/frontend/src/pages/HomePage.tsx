@@ -1,62 +1,29 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, BarChart3, Search, Edit, Mail, Briefcase } from 'lucide-react'
+import styles from './HomePage.module.css'
 
 export function HomePage() {
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100vh', background: '#FFFFFF' }}>
+    <div className={styles.container}>
       {/* Hero Section */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: 'clamp(24px, 5vw, 48px) clamp(16px, 8vw, 79px) 1px',
-        width: '100%',
-        minHeight: '574px',
-        background: 'linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%)',
-        borderBottom: '1px solid #DCFCE7'
-      }}>
-        <div style={{ width: '100%', maxWidth: '1504px', margin: '0 auto' }}>
+      <div className={styles.heroSection}>
+        <div className={styles.heroContainer}>
           {/* IGAD Logo */}
-          <div style={{ margin: '0 auto 32px', textAlign: 'center' }}>
+          <div className={styles.logoContainer}>
             <img 
               src="/igad-logo.png" 
               alt="IGAD Innovation Hub" 
-              style={{
-                height: 'clamp(60px, 8vw, 96px)',
-                width: 'auto'
-              }}
+              className={styles.logo}
             />
           </div>
           
           {/* Main Heading */}
-          <h1 style={{
-            width: '100%',
-            textAlign: 'center',
-            fontFamily: 'Arial',
-            fontWeight: '400',
-            fontSize: 'clamp(28px, 5vw, 48px)',
-            lineHeight: '1.2',
-            letterSpacing: '-1.2px',
-            color: '#016630',
-            marginBottom: '16px',
-            padding: '0 16px'
-          }}>
+          <h1 className={styles.title}>
             AI-Powered Agricultural Intelligence Hub
           </h1>
           
           {/* Subtitle */}
-          <p style={{
-            width: '100%',
-            maxWidth: '768px',
-            margin: '0 auto 48px',
-            textAlign: 'center',
-            fontFamily: 'Arial',
-            fontWeight: '400',
-            fontSize: 'clamp(16px, 2.5vw, 20px)',
-            lineHeight: '1.6',
-            color: '#008236',
-            padding: '0 16px'
-          }}>
+          <p className={styles.subtitle}>
             Empowering agricultural experts across the IGAD region with intelligent tools for policy analysis, report generation, and strategic communication
           </p>
           
@@ -70,7 +37,7 @@ export function HomePage() {
             width: '100%',
             maxWidth: '896px',
             minHeight: '188px',
-            margin: '0 auto',
+            margin: '0 auto 48px auto',
             background: 'rgba(255, 255, 255, 0.8)',
             border: '1px solid #B9F8CF',
             boxShadow: '0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1)',
