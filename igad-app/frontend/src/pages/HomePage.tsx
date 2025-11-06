@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, BarChart3, Search, Edit, Mail, Briefcase } from 'lucide-react'
 
 export function HomePage() {
   return (
@@ -9,9 +9,9 @@ export function HomePage() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
-        padding: '48px 79px 1px',
+        padding: 'clamp(24px, 5vw, 48px) clamp(16px, 8vw, 79px) 1px',
         width: '100%',
-        height: '574px',
+        minHeight: '574px',
         background: 'linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%)',
         borderBottom: '1px solid #DCFCE7'
       }}>
@@ -22,7 +22,7 @@ export function HomePage() {
               src="/igad-logo.png" 
               alt="IGAD Innovation Hub" 
               style={{
-                height: '96px',
+                height: 'clamp(60px, 8vw, 96px)',
                 width: 'auto'
               }}
             />
@@ -34,27 +34,30 @@ export function HomePage() {
             textAlign: 'center',
             fontFamily: 'Arial',
             fontWeight: '400',
-            fontSize: '48px',
-            lineHeight: '48px',
+            fontSize: 'clamp(28px, 5vw, 48px)',
+            lineHeight: '1.2',
             letterSpacing: '-1.2px',
             color: '#016630',
-            marginBottom: '16px'
+            marginBottom: '16px',
+            padding: '0 16px'
           }}>
             AI-Powered Agricultural Intelligence Hub
           </h1>
           
           {/* Subtitle */}
           <p style={{
-            width: '768px',
+            width: '100%',
+            maxWidth: '768px',
             margin: '0 auto 48px',
             textAlign: 'center',
             fontFamily: 'Arial',
             fontWeight: '400',
-            fontSize: '20px',
-            lineHeight: '32px',
-            color: '#008236'
+            fontSize: 'clamp(16px, 2.5vw, 20px)',
+            lineHeight: '1.6',
+            color: '#008236',
+            padding: '0 16px'
           }}>
-            Empowering agricultural experts across the IGAD region with cutting-edge AI tools
+            Empowering agricultural experts across the IGAD region with intelligent tools for policy analysis, report generation, and strategic communication
           </p>
           
           {/* Mission Card */}
@@ -62,10 +65,11 @@ export function HomePage() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-start',
-            padding: '32px 0px 32px 32px',
-            gap: '40px',
-            width: '896px',
-            height: '188px',
+            padding: 'clamp(16px, 4vw, 32px) clamp(16px, 4vw, 32px) clamp(16px, 4vw, 32px) clamp(16px, 4vw, 32px)',
+            gap: 'clamp(16px, 3vw, 24px)',
+            width: '100%',
+            maxWidth: '896px',
+            minHeight: '188px',
             margin: '0 auto',
             background: 'rgba(255, 255, 255, 0.8)',
             border: '1px solid #B9F8CF',
@@ -103,22 +107,25 @@ export function HomePage() {
               textAlign: 'center',
               color: '#364153'
             }}>
-              Supporting the Intergovernmental Authority on Development in advancing agricultural innovation and regional integration
+              Supporting the Intergovernmental Authority on Development's mission through advanced AI tools that enhance agricultural productivity, policy development, and regional cooperation across East Africa.
             </p>
           </div>
         </div>
       </div>
 
       {/* Tools Section */}
-      <div style={{ padding: '64px 63px', width: '100%' }}>
+      <div style={{ 
+        padding: 'clamp(32px, 8vw, 64px) clamp(16px, 8vw, 63px)', 
+        width: '100%' 
+      }}>
         <div style={{ width: '100%', maxWidth: '1504px', margin: '0 auto' }}>
           {/* Section Header */}
-          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 'clamp(32px, 8vw, 64px)' }}>
             <h2 style={{
               fontFamily: 'Arial',
               fontWeight: '400',
-              fontSize: '30px',
-              lineHeight: '36px',
+              fontSize: 'clamp(24px, 4vw, 30px)',
+              lineHeight: '1.2',
               textAlign: 'center',
               color: '#016630',
               marginBottom: '16px'
@@ -142,10 +149,11 @@ export function HomePage() {
           {/* Tools Grid */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 362px)',
-            gap: '32px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 'clamp(16px, 4vw, 32px)',
             justifyContent: 'center',
-            width: '1152px',
+            width: '100%',
+            maxWidth: '1200px',
             margin: '0 auto'
           }}>
             {/* Report Generator - Coming Soon */}
@@ -170,7 +178,7 @@ export function HomePage() {
                 borderRadius: '14px',
                 marginBottom: '24px'
               }}>
-                <div style={{ width: '32px', height: '32px', border: '2.67px solid #6A7282' }} />
+                <BarChart3 size={32} color="#6A7282" strokeWidth={2.67} />
               </div>
               <h3 style={{
                 fontFamily: 'Arial',
@@ -248,7 +256,7 @@ export function HomePage() {
                 borderRadius: '14px',
                 marginBottom: '24px'
               }}>
-                <div style={{ width: '32px', height: '32px', border: '2.67px solid #6A7282' }} />
+                <Search size={32} color="#6A7282" strokeWidth={2.67} />
               </div>
               <h3 style={{
                 fontFamily: 'Arial',
@@ -325,7 +333,7 @@ export function HomePage() {
                 borderRadius: '14px',
                 marginBottom: '24px'
               }}>
-                <div style={{ width: '32px', height: '32px', border: '2.67px solid #008236' }} />
+                <Edit size={32} color="#008236" strokeWidth={2.67} />
               </div>
               <h3 style={{
                 fontFamily: 'Arial',
@@ -409,7 +417,7 @@ export function HomePage() {
                 borderRadius: '14px',
                 marginBottom: '24px'
               }}>
-                <div style={{ width: '32px', height: '32px', border: '2.67px solid #008236' }} />
+                <Mail size={32} color="#008236" strokeWidth={2.67} />
               </div>
               <h3 style={{
                 fontFamily: 'Arial',
@@ -494,7 +502,7 @@ export function HomePage() {
                 borderRadius: '14px',
                 marginBottom: '24px'
               }}>
-                <div style={{ width: '32px', height: '32px', border: '2.67px solid #6A7282' }} />
+                <Briefcase size={32} color="#6A7282" strokeWidth={2.67} />
               </div>
               <h3 style={{
                 fontFamily: 'Arial',
@@ -557,36 +565,34 @@ export function HomePage() {
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: '0px 16px',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
         gap: '8px',
-        width: '100%',
-        height: '52px',
-        background: '#016630'
+        maxWidth: '1400px',
+        margin: '0 auto 32px auto',
+        background: '#016630',
+        borderRadius: '8px'
       }}>
         <p style={{
-          width: '100%',
-          textAlign: 'center',
           fontFamily: 'Arial',
-          fontWeight: '400',
           fontSize: '16px',
           lineHeight: '24px',
+          textAlign: 'center',
           color: '#DCFCE7',
-          margin: '0'
+          margin: 0
         }}>
           © 2024 IGAD - Intergovernmental Authority on Development
         </p>
         <p style={{
-          width: '100%',
-          textAlign: 'center',
           fontFamily: 'Arial',
-          fontWeight: '400',
           fontSize: '14px',
           lineHeight: '20px',
-          color: '#B9F8CF',
-          margin: '0'
+          textAlign: 'center',
+          color: '#FFFFFF',
+          margin: 0
         }}>
-          Advancing agricultural innovation and regional integration
+          Advancing agricultural innovation and regional integration through technology
         </p>
       </div>
     </div>

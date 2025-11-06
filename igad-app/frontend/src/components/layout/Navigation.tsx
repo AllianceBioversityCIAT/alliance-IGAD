@@ -47,21 +47,18 @@ export function Navigation() {
           alignItems: 'center',
           gap: '16px'
         }}>
-          {/* Dashboard Button */}
-          <Link
-            to="/dashboard"
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              background: location.pathname === '/dashboard' ? '#F3F4F6' : 'transparent'
-            }}
-          >
+          {/* Dashboard Button - Disabled */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '14px',
+            padding: '6px 12px',
+            borderRadius: '8px',
+            opacity: 0.5,
+            cursor: 'not-allowed'
+          }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#364153" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="7" height="7"/>
               <rect x="14" y="3" width="7" height="7"/>
@@ -76,10 +73,10 @@ export function Navigation() {
             }}>
               Dashboard
             </span>
-          </Link>
+          </div>
 
-          {/* Notifications Button */}
-          <button style={{
+          {/* Notifications Button - Disabled */}
+          <div style={{
             position: 'relative',
             display: 'flex',
             justifyContent: 'center',
@@ -87,9 +84,9 @@ export function Navigation() {
             width: '36px',
             height: '36px',
             background: 'transparent',
-            border: 'none',
             borderRadius: '8px',
-            cursor: 'pointer'
+            opacity: 0.5,
+            cursor: 'not-allowed'
           }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#364153" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
@@ -117,6 +114,24 @@ export function Navigation() {
                 2
               </span>
             </div>
+          </div>
+
+          {/* Settings Button */}
+          <button style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '36px',
+            height: '36px',
+            background: 'transparent',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer'
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#364153" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
           </button>
 
           {/* User Account Button */}
