@@ -6,13 +6,35 @@ from typing import Dict, List, Optional, Any
 import asyncio
 import json
 import uuid
+import os
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Import auth service
+from .simple_cognito import SimpleCognitoService
 
 # Mock data storage (replace with DynamoDB in production)
 proposals_db = {}
 security = HTTPBearer()
 
-app = FastAPI(title="IGAD Proposal Writer API", version="1.0.0")
+app = FastAPI(
+    title="IGAD Proposal Writer API", 
+    version="1.0.0",
+    description="AI-powered proposal generation platform for IGAD Innovation Hub",
+    docs_url="/docs",
+    health_url="/health",
+    api_prefix="/api"
+)
+
+# Initialize Cognito service
+cognito_service = SimpleCognitoService(
+    user_pool_id=os.getenv("COGNITO_USER_POOL_ID"),
+    client_id=os.getenv("COGNITO_CLIENT_ID"),
+    region=os.getenv("AWS_REGION", "us-east-1")
+)
 
 # CORS middleware
 app.add_middleware(
@@ -45,26 +67,6 @@ class AIImproveRequest(BaseModel):
     section_id: str
     improvement_type: str = "general"
 
-# Mock auth
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    # Mock user - in production, validate JWT token
-    return {"user_id": "mock-user-123", "email": "user@example.com"}
-
-# Mock Bedrock client
-class MockBedrockClient:
-    async def generate_content(self, prompt: str, **kwargs):
-        # Simulate AI processing delay
-        await asyncio.sleep(2)
-        
-        return {
-            "content": f"AI-generated content based on: {prompt[:100]}...\n\nThis is a mock response that would normally come from Amazon Bedrock Claude 3. The content would be contextually relevant to the proposal section and include professional language suitable for funding proposals.",
-            "tokens_used": 150,
-            "generation_time": 2.0,
-            "model_id": "anthropic.claude-3-sonnet-20240229-v1:0"
-        }
-
-bedrock_client = MockBedrockClient()
-
 # Routes
 @app.get("/")
 async def root():
@@ -80,6 +82,47 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy", "service": "igad-proposal-writer"}
+
+@app.post("/api/auth/login")
+async def login(credentials: dict):
+    """Mock login endpoint"""
+    email = credentials.get("email")
+    password = credentials.get("password")
+    
+    # Mock validation
+    if email and password:
+        user_data = {
+            "user_id": "mock-user-123",
+            "email": email,
+            "role": "user",
+            "name": "IGAD User"
+        }
+        
+        token = auth_middleware.create_mock_token(user_data)
+        
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": user_data,
+            "expires_in": 3600
+        }
+    
+    raise HTTPException(status_code=401, detail="Invalid credentials")
+
+@app.post("/api/auth/logout")
+async def logout():
+    """Mock logout endpoint"""
+    return {"message": "Logged out successfully"}
+
+@app.get("/api/auth/me")
+async def get_current_user_info(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get current user information"""
+    user = auth_middleware.verify_token(credentials)
+    return {"user": user}
+
+# Mock auth dependency
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    return auth_middleware.verify_token(credentials)
 
 @app.post("/api/proposals")
 async def create_proposal(
@@ -305,3 +348,102 @@ async def get_suggestions(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# Simple test auth endpoint
+@app.post("/auth/test")
+async def test_auth():
+    """Test auth endpoint"""
+    return {"message": "Auth endpoint working", "status": "ok"}
+
+# Cognito Authentication Endpoints
+@app.post("/auth/login")
+async def cognito_login(credentials: dict):
+    """Cognito login endpoint"""
+    try:
+        username = credentials.get("username") or credentials.get("email")
+        password = credentials.get("password")
+        
+        if not username or not password:
+            raise HTTPException(status_code=400, detail="Username and password required")
+        
+        print(f"Attempting login for: {username}")
+        result = cognito_service.authenticate_user(username, password)
+        print(f"Login result: {result}")
+        
+        if not result['success']:
+            raise HTTPException(status_code=401, detail=result.get('message', 'Authentication failed'))
+        
+        return {
+            "access_token": result['access_token'],
+            "token_type": "bearer",
+            "expires_in": result['expires_in']
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Login exception: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Login error: {str(e)}")
+
+@app.post("/auth/create-user")
+async def create_user(user_data: dict):
+    """Create new user in Cognito"""
+    username = user_data.get("username")
+    email = user_data.get("email")
+    password = user_data.get("password")
+    
+    if not all([username, email, password]):
+        raise HTTPException(status_code=400, detail="Username, email, and password required")
+    
+    result = await cognito_service.create_user(
+        username=username,
+        email=email,
+        password=password,
+        temporary_password=False
+    )
+    
+    if not result['success']:
+        raise HTTPException(status_code=400, detail=result.get('message', 'User creation failed'))
+    
+    return {"message": "User created successfully", "username": result['username']}
+@app.post("/auth/forgot-password")
+async def forgot_password(request: dict):
+    """Initiate forgot password flow"""
+    try:
+        username = request.get("username")
+        if not username:
+            raise HTTPException(status_code=400, detail="Username is required")
+        
+        result = cognito_service.forgot_password(username)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Failed to send reset code'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Forgot password error: {str(e)}")
+
+@app.post("/auth/reset-password")
+async def reset_password(request: dict):
+    """Reset password with confirmation code"""
+    try:
+        username = request.get("username")
+        code = request.get("code")
+        new_password = request.get("new_password")
+        
+        if not all([username, code, new_password]):
+            raise HTTPException(status_code=400, detail="Username, code, and new password are required")
+        
+        result = cognito_service.confirm_forgot_password(username, code, new_password)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Failed to reset password'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Reset password error: {str(e)}")

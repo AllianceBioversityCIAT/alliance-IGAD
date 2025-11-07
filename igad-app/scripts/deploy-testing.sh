@@ -4,24 +4,19 @@ set -e
 echo "🚀 IGAD Innovation Hub - Testing Environment Deployment"
 echo "======================================================"
 
-# Validate AWS profile
-CURRENT_PROFILE=$(aws configure get profile 2>/dev/null || echo "default")
-if [ "$CURRENT_PROFILE" != "IBD-DEV" ]; then
-    echo "❌ ERROR: Must use IBD-DEV profile"
-    echo "Run: aws configure set profile IBD-DEV"
-    exit 1
-fi
+# Set AWS profile
+export AWS_PROFILE=IBD-DEV
 
 # Validate AWS region
-CURRENT_REGION=$(aws configure get region 2>/dev/null || echo "")
+CURRENT_REGION=$(aws configure get region --profile IBD-DEV 2>/dev/null || echo "")
 if [ "$CURRENT_REGION" != "us-east-1" ]; then
     echo "❌ ERROR: Must deploy to us-east-1 region"
-    echo "Run: aws configure set region us-east-1"
+    echo "Run: aws configure set region us-east-1 --profile IBD-DEV"
     exit 1
 fi
 
 echo "✅ AWS profile and region validated"
-echo "   Profile: $CURRENT_PROFILE"
+echo "   Profile: IBD-DEV"
 echo "   Region: $CURRENT_REGION"
 
 # Check if we're in the right directory (igad-app root)
@@ -43,11 +38,11 @@ fi
 
 # Bootstrap CDK if needed
 echo "🔧 Bootstrapping CDK..."
-npx cdk bootstrap --context environment=testing
+npx cdk bootstrap --profile IBD-DEV --context environment=testing
 
 # Deploy infrastructure
 echo "🚀 Deploying to Testing environment..."
-npx cdk deploy --context environment=testing --require-approval never
+npx cdk deploy --profile IBD-DEV --context environment=testing --require-approval never
 
 echo ""
 echo "✅ Testing deployment completed successfully!"

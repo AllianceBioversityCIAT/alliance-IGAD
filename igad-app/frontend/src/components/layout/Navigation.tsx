@@ -1,16 +1,25 @@
 import { Link, useLocation } from 'react-router-dom'
 import { BarChart3, Bell, User } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
+import { authService } from '../../services/authService'
 
 export function Navigation() {
   const location = useLocation()
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
+  const [showUserDropdown, setShowUserDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const userDropdownRef = useRef<HTMLDivElement>(null)
+  
+  const userEmail = authService.getUserEmail()
+  const isAuthenticated = authService.isAuthenticated()
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowSettingsDropdown(false)
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setShowUserDropdown(false)
       }
     }
 
@@ -254,41 +263,159 @@ export function Navigation() {
           </div>
 
           {/* User Account Button */}
-          <button style={{
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: '16px',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              width: '32px',
-              height: '32px',
-              background: '#000000',
-              borderRadius: '50%'
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </div>
-            <span style={{
-              fontFamily: 'Arial',
-              fontSize: '14px',
-              lineHeight: '20px',
-              color: '#364153'
-            }}>
-              My Account
-            </span>
-          </button>
+          <div ref={userDropdownRef} style={{ position: 'relative' }}>
+            <button 
+              onClick={() => setShowUserDropdown(!showUserDropdown)}
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '16px',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '32px',
+                height: '32px',
+                background: '#000000',
+                borderRadius: '50%'
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <span style={{
+                  fontFamily: 'Arial',
+                  fontSize: '14px',
+                  lineHeight: '20px',
+                  color: '#364153'
+                }}>
+                  {isAuthenticated && userEmail ? userEmail : 'Login'}
+                </span>
+              </div>
+            </button>
+
+            {/* User Dropdown */}
+            {showUserDropdown && (
+              <div style={{
+                position: 'absolute',
+                width: '200px',
+                right: '0px',
+                top: '44px',
+                background: '#FFFFFF',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                boxShadow: '0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                zIndex: 50,
+                padding: '4px 0'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  {isAuthenticated ? (
+                    <>
+                      {/* User Info */}
+                      <div style={{
+                        padding: '12px 16px',
+                        borderBottom: '1px solid #F3F4F6'
+                      }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontFamily: 'Arial',
+                          color: '#374151',
+                          fontWeight: 'bold'
+                        }}>
+                          {userEmail}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          fontFamily: 'Arial',
+                          color: '#6B7280'
+                        }}>
+                          Authenticated
+                        </div>
+                      </div>
+                      
+                      {/* Profile */}
+                      <button style={{
+                        padding: '12px 16px',
+                        background: 'transparent',
+                        border: 'none',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontFamily: 'Arial',
+                        color: '#374151',
+                        width: '100%'
+                      }}>
+                        Profile
+                      </button>
+                      
+                      {/* Account Settings */}
+                      <button style={{
+                        padding: '12px 16px',
+                        background: 'transparent',
+                        border: 'none',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontFamily: 'Arial',
+                        color: '#374151',
+                        width: '100%',
+                        borderBottom: '1px solid #F3F4F6'
+                      }}>
+                        Account Settings
+                      </button>
+                      
+                      {/* Logout */}
+                      <button 
+                        onClick={() => authService.logout()}
+                        style={{
+                          padding: '12px 16px',
+                          background: 'transparent',
+                          border: 'none',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontFamily: 'Arial',
+                          color: '#DC2626',
+                          width: '100%'
+                        }}
+                      >
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                    <Link 
+                      to="/login"
+                      style={{
+                        padding: '12px 16px',
+                        textDecoration: 'none',
+                        fontSize: '14px',
+                        fontFamily: 'Arial',
+                        color: '#374151',
+                        width: '100%',
+                        display: 'block'
+                      }}
+                    >
+                      Login
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>

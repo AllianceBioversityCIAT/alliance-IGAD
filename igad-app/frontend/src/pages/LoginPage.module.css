@@ -249,3 +249,12 @@
     height: auto;
   }
 }
+.errorMessage {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}

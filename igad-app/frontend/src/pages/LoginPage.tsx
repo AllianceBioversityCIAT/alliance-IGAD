@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { authService } from '../services/authService'
 import styles from './LoginPage.module.css'
 
 interface LoginForm {
@@ -13,20 +14,41 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>()
+  const [error, setError] = useState<string | null>(null)
+  
+  // Get remembered email if exists
+  const rememberedEmail = authService.getUserEmail() || ''
+  const wasRemembered = localStorage.getItem('remember_me') === 'true'
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
+    defaultValues: {
+      email: rememberedEmail,
+      rememberMe: wasRemembered,
+      password: ''
+    }
+  })
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true)
+    setError(null)
+    
     try {
-      // TODO: Implement Cognito authentication in Sprint 3
-      console.log('Login attempt:', data)
-      // Simulate login for now
-      setTimeout(() => {
-        navigate('/')
-        setIsLoading(false)
-      }, 1000)
+      console.log('Form data:', data); // Debug log
+      const response = await authService.login({
+        username: data.email,
+        password: data.password
+      })
+      
+      // Store the token and user email
+      authService.setToken(response.access_token, data.rememberMe)
+      authService.setUserEmail(data.email, data.rememberMe)
+      
+      // Navigate to dashboard
+      navigate('/')
     } catch (error) {
       console.error('Login error:', error)
+      setError(error instanceof Error ? error.message : 'Login failed')
+    } finally {
       setIsLoading(false)
     }
   }
@@ -59,6 +81,13 @@ export function LoginPage() {
 
             {/* Login Form */}
             <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
+              {/* Error Message */}
+              {error && (
+                <div className={styles.errorMessage}>
+                  {error}
+                </div>
+              )}
+              
               {/* Email Field */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>
@@ -118,7 +147,7 @@ export function LoginPage() {
                   />
                   Remember me
                 </label>
-                <a href="#" className={styles.forgotPassword}>
+                <a href="/forgot-password" className={styles.forgotPassword}>
                   Forgot password?
                 </a>
               </div>

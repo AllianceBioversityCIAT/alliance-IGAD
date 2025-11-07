@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { IgadHubStack } from '../lib/igad-hub-stack';
+import { IgadHubStackSimple } from '../lib/igad-hub-stack-simple';
 
 const app = new cdk.App();
 
@@ -12,22 +12,22 @@ const environment = app.node.tryGetContext('environment') || 'testing';
 const config = {
   testing: {
     stackName: 'igad-testing-stack',
-    resourcePrefix: 'igad-testing',
-    domainName: undefined
+    resourcePrefix: 'igad-testing'
   },
   production: {
     stackName: 'igad-prod-stack',
-    resourcePrefix: 'igad-prod',
-    domainName: undefined
+    resourcePrefix: 'igad-prod'
   }
-};
+} as const;
 
-new IgadHubStack(app, config[environment].stackName, {
+type Environment = keyof typeof config;
+const env = environment as Environment;
+
+new IgadHubStackSimple(app, config[env].stackName, {
   env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
+    account: '569113802249',
     region: 'us-east-1'
   },
-  environment,
-  resourcePrefix: config[environment].resourcePrefix,
-  domainName: config[environment].domainName
+  environment: env,
+  resourcePrefix: config[env].resourcePrefix
 });

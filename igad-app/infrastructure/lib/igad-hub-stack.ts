@@ -4,7 +4,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
-import * as apigateway from 'aws-cdk-lib/aws-apigatewayv2';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
@@ -75,7 +75,7 @@ export class IgadHubStack extends cdk.Stack {
       tableName: `${resourcePrefix}-main-table`,
       partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.ON_DEMAND,
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: environment === 'production',
       removalPolicy: environment === 'production' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY
     });
@@ -143,12 +143,12 @@ def handler(event, context):
     // Grant DynamoDB permissions
     table.grantReadWriteData(placeholderFunction);
 
-    // HTTP API Gateway
-    const httpApi = new apigateway.HttpApi(this, 'HttpApi', {
-      apiName: `${resourcePrefix}-api`,
-      corsPreflight: {
+    // REST API Gateway
+    const api = new apigateway.RestApi(this, 'RestApi', {
+      restApiName: `${resourcePrefix}-api`,
+      defaultCorsPreflightOptions: {
         allowOrigins: ['http://localhost:3000', 'https://localhost:3000'],
-        allowMethods: [apigateway.CorsHttpMethod.ANY],
+        allowMethods: apigateway.Cors.ALL_METHODS,
         allowHeaders: ['Content-Type', 'Authorization']
       }
     });
@@ -197,8 +197,8 @@ def handler(event, context):
     });
 
     new cdk.CfnOutput(this, 'ApiUrl', {
-      value: httpApi.url!,
-      description: 'HTTP API Gateway URL'
+      value: api.url,
+      description: 'REST API Gateway URL'
     });
   }
 }
