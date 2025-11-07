@@ -1,21 +1,30 @@
-import { Edit } from 'lucide-react'
+import { Target } from 'lucide-react'
 import { StepProps } from './stepConfig'
 import styles from './proposalWriter.module.css'
 
 export function Step2ContentGeneration({ formData, setFormData }: StepProps) {
   return (
-    <div className={styles.wizardContainer}>
+    <div className={styles.mainContent}>
+      {/* Header */}
       <div className={styles.stepHeader}>
-        <h2 className={styles.stepTitle}>Content Generation</h2>
-        <p className={styles.stepDescription}>
-          AI-powered content generation based on your uploaded documents and inputs.
+        <h1 className={styles.stepMainTitle}>Step 2: Concept Review</h1>
+        <p className={styles.stepMainDescription}>
+          AI review of your high-level concept with fit assessment and elaboration suggestions
         </p>
       </div>
-      <div className={styles.stepContent}>
-        <div className={styles.placeholderContent}>
-          <Edit size={64} />
-          <h3>Content Generation in Progress</h3>
-          <p>This step will generate proposal content using AI based on your inputs.</p>
+
+      {/* Analysis Content */}
+      <div className={styles.analysisContainer}>
+        <div className={styles.analysisIcon}>
+          <Target size={64} />
+        </div>
+        <h2 className={styles.analysisTitle}>Analyzing Your Concept</h2>
+        <p className={styles.analysisDescription}>
+          Our AI is reviewing your initial concept to provide comprehensive feedback on alignment, strengths, and areas for development.
+        </p>
+        <div className={styles.analysisStatus}>
+          <div className={styles.loadingDot}></div>
+          <span className={styles.analysisStatusText}>Analyzing concept...</span>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ProposalLayout } from './components/ProposalLayout'
 import { Step1InformationConsolidation } from './Step1InformationConsolidation'
 import { Step2ContentGeneration } from './Step2ContentGeneration'
@@ -72,6 +73,7 @@ export function ProposalWriterPage() {
       disabled={currentStep === 1}
       onClick={handlePreviousStep}
     >
+      <ChevronLeft size={16} />
       Previous
     </button>,
     <button 
@@ -81,6 +83,7 @@ export function ProposalWriterPage() {
       disabled={currentStep === 5}
     >
       {currentStep === 5 ? 'Complete' : 'Next'}
+      <ChevronRight size={16} />
     </button>
   ]
 

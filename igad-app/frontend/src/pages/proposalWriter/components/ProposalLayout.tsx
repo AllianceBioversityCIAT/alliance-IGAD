@@ -1,3 +1,4 @@
+import React from 'react'
 import { ProposalSecondaryNavbar } from './ProposalSecondaryNavbar'
 import { ProposalSidebar } from './ProposalSidebar'
 import styles from '../proposalWriter.module.css'
