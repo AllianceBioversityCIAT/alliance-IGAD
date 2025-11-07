@@ -1,28 +1,83 @@
+import { useEffect } from 'react'
 import { FileText, AlertTriangle } from 'lucide-react'
+import { useProposal } from '../../hooks/useProposal'
 import { StepProps } from './stepConfig'
 import styles from './proposalWriter.module.css'
 
-export function Step1InformationConsolidation({ formData, setFormData }: StepProps) {
-  const handleFileUpload = (section: string, files: FileList | null) => {
+interface Step1Props extends StepProps {
+  proposalId?: string
+}
+
+export function Step1InformationConsolidation({ formData, setFormData, proposalId }: Step1Props) {
+  const { proposal, updateFormData, isUpdating } = useProposal(proposalId)
+
+  // Load existing data when proposal is loaded
+  useEffect(() => {
+    if (proposal) {
+      setFormData({
+        uploadedFiles: {}, // Files would need to be reconstructed from file names
+        textInputs: proposal.text_inputs || {}
+      })
+    }
+  }, [proposal, setFormData])
+
+  const handleFileUpload = async (section: string, files: FileList | null) => {
     if (files) {
+      const newFiles = Array.from(files)
+      const updatedFiles = {
+        ...formData.uploadedFiles,
+        [section]: newFiles
+      }
+      
       setFormData(prev => ({
         ...prev,
-        uploadedFiles: {
-          ...prev.uploadedFiles,
-          [section]: Array.from(files)
-        }
+        uploadedFiles: updatedFiles
       }))
+
+      // Save to backend if we have a proposal ID
+      if (proposalId) {
+        try {
+          await updateFormData({
+            uploadedFiles: updatedFiles,
+            textInputs: formData.textInputs
+          })
+        } catch (error) {
+          console.error('Failed to save file upload:', error)
+        }
+      }
     }
   }
 
-  const handleTextChange = (section: string, value: string) => {
+  const handleTextChange = async (section: string, value: string) => {
+    const updatedInputs = {
+      ...formData.textInputs,
+      [section]: value
+    }
+    
     setFormData(prev => ({
       ...prev,
-      textInputs: {
-        ...prev.textInputs,
-        [section]: value
-      }
+      textInputs: updatedInputs
     }))
+
+    // Save to backend if we have a proposal ID (debounced)
+    if (proposalId) {
+      try {
+        await updateFormData({
+          uploadedFiles: formData.uploadedFiles,
+          textInputs: updatedInputs
+        })
+      } catch (error) {
+        console.error('Failed to save text input:', error)
+      }
+    }
+  }
+
+  const getUploadedFileCount = (section: string) => {
+    return formData.uploadedFiles[section]?.length || 0
+  }
+
+  const hasRequiredFiles = () => {
+    return getUploadedFileCount('rfp-document') > 0
   }
 
   return (
@@ -45,12 +100,17 @@ export function Step1InformationConsolidation({ formData, setFormData }: StepPro
             </p>
           </div>
           <div className={styles.progressCardStats}>
-            <span className={styles.progressCount}>0/3</span>
+            <span className={styles.progressCount}>
+              {hasRequiredFiles() ? '1' : '0'}/3
+            </span>
             <span className={styles.progressLabel}>sections complete</span>
           </div>
         </div>
         <div className={styles.progressCardBar}>
-          <div className={styles.progressCardFill} style={{ width: '1%' }} />
+          <div 
+            className={styles.progressCardFill} 
+            style={{ width: hasRequiredFiles() ? '33%' : '1%' }} 
+          />
         </div>
       </div>
 
@@ -82,15 +142,17 @@ export function Step1InformationConsolidation({ formData, setFormData }: StepPro
         </div>
 
         {/* Missing RFP Warning */}
-        <div className={styles.warningCard}>
-          <AlertTriangle className={styles.warningIcon} size={16} />
-          <div className={styles.warningContent}>
-            <p className={styles.warningTitle}>Missing RFP Document</p>
-            <p className={styles.warningDescription}>
-              Upload donor guidelines if not included in the main RFP document
-            </p>
+        {!hasRequiredFiles() && (
+          <div className={styles.warningCard}>
+            <AlertTriangle className={styles.warningIcon} size={16} />
+            <div className={styles.warningContent}>
+              <p className={styles.warningTitle}>Missing RFP Document</p>
+              <p className={styles.warningDescription}>
+                Upload donor guidelines if not included in the main RFP document
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Upload Area */}
         <div className={styles.uploadArea}>
@@ -103,10 +165,23 @@ export function Step1InformationConsolidation({ formData, setFormData }: StepPro
             onChange={(e) => handleFileUpload('rfp-document', e.target.files)}
             className={styles.hiddenInput}
             id="rfp-document"
+            disabled={isUpdating}
           />
           <label htmlFor="rfp-document" className={styles.uploadButton}>
-            Choose File
+            {isUpdating ? 'Saving...' : 'Choose File'}
           </label>
+          
+          {/* Show uploaded files */}
+          {getUploadedFileCount('rfp-document') > 0 && (
+            <div className={styles.fileList}>
+              {formData.uploadedFiles['rfp-document']?.map((file, index) => (
+                <div key={index} className={styles.fileItem}>
+                  <FileText size={16} />
+                  {file.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -133,10 +208,23 @@ export function Step1InformationConsolidation({ formData, setFormData }: StepPro
             onChange={(e) => handleFileUpload('reference-proposals', e.target.files)}
             className={styles.hiddenInput}
             id="reference-proposals"
+            disabled={isUpdating}
           />
           <label htmlFor="reference-proposals" className={styles.uploadButtonSecondary}>
-            Choose Files
+            {isUpdating ? 'Saving...' : 'Choose Files'}
           </label>
+          
+          {/* Show uploaded files */}
+          {getUploadedFileCount('reference-proposals') > 0 && (
+            <div className={styles.fileList}>
+              {formData.uploadedFiles['reference-proposals']?.map((file, index) => (
+                <div key={index} className={styles.fileItem}>
+                  <FileText size={16} />
+                  {file.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -157,11 +245,14 @@ export function Step1InformationConsolidation({ formData, setFormData }: StepPro
           placeholder="Describe your relevant experience, ongoing projects, previous work with similar donors, institutional strengths, partnerships, and any preliminary research or activities related to this call..."
           value={formData.textInputs['existing-work'] || ''}
           onChange={(e) => handleTextChange('existing-work', e.target.value)}
+          disabled={isUpdating}
         />
         
         <div className={styles.textAreaFooter}>
           <span className={styles.textAreaHint}>Please provide more detail (minimum 50 characters)</span>
-          <span className={styles.textAreaCount}>0 characters</span>
+          <span className={styles.textAreaCount}>
+            {(formData.textInputs['existing-work'] || '').length} characters
+          </span>
         </div>
 
         {/* Supporting Documents */}
@@ -180,10 +271,23 @@ export function Step1InformationConsolidation({ formData, setFormData }: StepPro
               onChange={(e) => handleFileUpload('supporting-docs', e.target.files)}
               className={styles.hiddenInput}
               id="supporting-docs"
+              disabled={isUpdating}
             />
             <label htmlFor="supporting-docs" className={styles.uploadButtonSecondary}>
-              Add Files
+              {isUpdating ? 'Saving...' : 'Add Files'}
             </label>
+            
+            {/* Show uploaded files */}
+            {getUploadedFileCount('supporting-docs') > 0 && (
+              <div className={styles.fileList}>
+                {formData.uploadedFiles['supporting-docs']?.map((file, index) => (
+                  <div key={index} className={styles.fileItem}>
+                    <FileText size={16} />
+                    {file.name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -205,11 +309,14 @@ export function Step1InformationConsolidation({ formData, setFormData }: StepPro
           placeholder="Describe your initial concept, proposed approach, target beneficiaries, expected outcomes, implementation strategy, or any specific innovations you plan to include..."
           value={formData.textInputs['initial-concept'] || ''}
           onChange={(e) => handleTextChange('initial-concept', e.target.value)}
+          disabled={isUpdating}
         />
         
         <div className={styles.textAreaFooter}>
           <span className={styles.textAreaHint}>Please provide more detail about your concept (minimum 100 characters)</span>
-          <span className={styles.textAreaCount}>0 characters</span>
+          <span className={styles.textAreaCount}>
+            {(formData.textInputs['initial-concept'] || '').length} characters
+          </span>
         </div>
 
         {/* Upload Alternative */}
@@ -228,10 +335,23 @@ export function Step1InformationConsolidation({ formData, setFormData }: StepPro
               onChange={(e) => handleFileUpload('concept-document', e.target.files)}
               className={styles.hiddenInput}
               id="concept-document"
+              disabled={isUpdating}
             />
             <label htmlFor="concept-document" className={styles.uploadButtonSecondary}>
-              Choose File
+              {isUpdating ? 'Saving...' : 'Choose File'}
             </label>
+            
+            {/* Show uploaded files */}
+            {getUploadedFileCount('concept-document') > 0 && (
+              <div className={styles.fileList}>
+                {formData.uploadedFiles['concept-document']?.map((file, index) => (
+                  <div key={index} className={styles.fileItem}>
+                    <FileText size={16} />
+                    {file.name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

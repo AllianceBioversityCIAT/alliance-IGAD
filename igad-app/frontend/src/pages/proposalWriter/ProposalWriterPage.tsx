@@ -7,6 +7,7 @@ import { Step2ContentGeneration } from './Step2ContentGeneration'
 import { Step3StructureValidation } from './Step3StructureValidation'
 import { Step4ReviewRefinement } from './Step4ReviewRefinement'
 import { Step5FinalExport } from './Step5FinalExport'
+import { useProposals } from '../../hooks/useProposal'
 import styles from './proposalWriter.module.css'
 
 export function ProposalWriterPage() {
@@ -14,10 +15,33 @@ export function ProposalWriterPage() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
+  const [proposalId, setProposalId] = useState<string>()
   const [formData, setFormData] = useState({
     uploadedFiles: {} as {[key: string]: File[]},
     textInputs: {} as {[key: string]: string}
   })
+
+  const { createProposal, isCreating } = useProposals()
+
+  // Create a proposal when the component mounts
+  useEffect(() => {
+    if (!proposalId && !isCreating) {
+      createProposal(
+        {
+          title: `Proposal Draft - ${new Date().toLocaleDateString()}`,
+          description: 'Draft proposal created from wizard'
+        },
+        {
+          onSuccess: (newProposal) => {
+            setProposalId(newProposal.id)
+          },
+          onError: (error) => {
+            console.error('Failed to create proposal:', error)
+          }
+        }
+      )
+    }
+  }, [proposalId, isCreating, createProposal])
 
   useEffect(() => {
     if (stepId) {
@@ -54,7 +78,11 @@ export function ProposalWriterPage() {
   }
 
   const renderCurrentStep = () => {
-    const stepProps = { formData, setFormData }
+    const stepProps = { 
+      formData, 
+      setFormData,
+      proposalId 
+    }
     
     switch (currentStep) {
       case 1: return <Step1InformationConsolidation {...stepProps} />
