@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import { LoginPage } from '@/pages/LoginPage'
 import { HomePage } from '@/pages/HomePage'
 import { DashboardPage } from '@/pages/DashboardPage'
-import { ProposalWriterPage } from '@/pages/ProposalWriterPage'
+import { ProposalWriterPage } from '@/pages/proposalWriter/ProposalWriterPage'
 import { NewsletterGeneratorPage } from '@/pages/NewsletterGeneratorPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { Layout } from '@/components/layout/Layout'
@@ -28,6 +28,7 @@ function App() {
             <Route index element={<HomePage />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="proposal-writer" element={<ProposalWriterPage />} />
+            <Route path="proposal-writer/:stepId" element={<ProposalWriterPage />} />
             <Route path="newsletter-generator" element={<NewsletterGeneratorPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
