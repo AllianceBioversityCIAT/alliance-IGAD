@@ -47,6 +47,10 @@
   min-height: calc(100vh - 129px);
   background: #FFFFFF;
   padding-bottom: 80px;
+  justify-content: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
 }
 
 /* Left Sidebar */
@@ -59,6 +63,13 @@
   padding: 25px 15px 25px 25px;
   box-sizing: border-box;
   overflow-y: auto;
+}
+
+/* On large screens, align sidebar with centered content */
+@media (min-width: 1440px) {
+  .sidebar {
+    left: calc((100vw - 1400px) / 2);
+  }
 }
 
 .sidebarContent {
