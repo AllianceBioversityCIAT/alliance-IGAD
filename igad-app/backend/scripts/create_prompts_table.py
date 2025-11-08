@@ -53,15 +53,11 @@ def create_prompts_table():
                     'AttributeType': 'S'
                 },
                 {
-                    'AttributeName': 'status',
-                    'AttributeType': 'S'
-                },
-                {
                     'AttributeName': 'updated_at',
                     'AttributeType': 'S'
                 }
             ],
-            'BillingMode': 'ON_DEMAND',
+            'BillingMode': 'PAY_PER_REQUEST',
             'GlobalSecondaryIndexes': [
                 {
                     'IndexName': 'GSI_Section_Status',
@@ -85,9 +81,6 @@ def create_prompts_table():
             },
             'SSESpecification': {
                 'Enabled': True
-            },
-            'PointInTimeRecoverySpecification': {
-                'PointInTimeRecoveryEnabled': True
             },
             'Tags': [
                 {
@@ -163,11 +156,7 @@ def create_audit_logs_table():
                     'AttributeType': 'S'
                 }
             ],
-            'BillingMode': 'ON_DEMAND',
-            'TimeToLiveSpecification': {
-                'AttributeName': 'ttl',
-                'Enabled': True
-            },
+            'BillingMode': 'PAY_PER_REQUEST',
             'Tags': [
                 {
                     'Key': 'Project',

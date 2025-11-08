@@ -1,0 +1,142 @@
+Prompt Manager (Admin) with CRUD + Section Linking
+ROLE: IT Architect & Agile Delivery Manager
+Principle: “La simplicidad es la máxima sofisticación.”
+
+----------------------------------------------------------------------
+GOAL
+----------------------------------------------------------------------
+Deliver an **Admin Prompt Manager** section as a separate page that enables:
+1) **CRUD of prompts** (Create, Read, Update, Delete) with versioning and publish/unpublish.
+2) **Linking each prompt to a specific section** of the **Proposal Writer** (and future sections), so the runtime always fetches the latest *published* prompt per section.
+
+Keep UX and colors aligned with existing design-system. Provide Bedrock **Preview/Test** without persistence.
+
+Output file:
+`planning/setup/sprint8_proposal_manager.md`
+
+----------------------------------------------------------------------
+OUTPUT
+----------------------------------------------------------------------
+Produce a single Markdown sprint plan that includes:
+
+1) Sprint Goal
+- Admins can manage prompts and link them to sections (Problem Statement, Objectives, Methodology, Budget, Theory of Change, etc.).
+- Page lives at `/admin/prompt-manager` and reuses the design system and color tokens.
+
+2) Key Objectives
+- **UI:** Dedicated admin page with left nav (“Prompt Manager”), table list, filters (section, status, tag), and editor drawer/modal.
+- **CRUD & Versioning:** Draft → Publish flow; keep history; restore from version.
+- **Section Linking:** Each prompt has a required `section` field (single-select) and optional `subsection` (future-proof).
+- **Preview/Test:** Run with sample inputs using Bedrock; no DB writes.
+- **Security:** Cognito Admin-only access; audit logs for C/U/D/Publish.
+- **Simplicity:** Minimal schema; minimal endpoints; reuse shared components.
+
+3) User Stories / Tasks
+A. Frontend (React)
+- Route `/admin/prompt-manager` (Admin-only guard).
+- **List View:** table with columns: Name, Section, Version, Status, Updated, Actions.
+- **Filters/Search:** section (select), status (draft/published), tags (chips), text search.
+- **Create/Edit Drawer:**
+  - Fields: `name` (text), `section` (select from enum), `tags[]`, `version` (auto), `status`, `system_prompt` (multiline), `user_prompt_template` (multiline), `few_shot[]` (optional JSON), `context.persona`, `context.tone`, `context.sources[]`, `constraints`, `guardrails`.
+  - Buttons: **Save Draft**, **Publish**, **Delete**, **Clone as New Version**.
+- **Preview Panel:** input variables (key/value), “Run Preview” → Bedrock response (stream or block), token usage estimate.
+- **Design Alignment:** reuse design-system colors, typography, spacing; dark/light modes consistent.
+- **DX:** toast notifications, confirm dialogs; form validation with clear errors.
+- **Tests:** component tests (table, form), integration flow (create→publish→list).
+
+B. Backend (API Gateway + Lambda + DynamoDB)
+- Endpoints (prefix `/admin/prompts`):
+  - `GET /list?section&status&tag&search`
+  - `GET /{prompt_id}?version=latest|{n}`
+  - `POST /create` (returns new `prompt_id`, `version=1`, status=draft)
+  - `PUT /{prompt_id}/update` (creates new version or edits draft)
+  - `POST /{prompt_id}/publish` (marks version published; set `is_latest_published=true`)
+  - `DELETE /{prompt_id}/{version}`
+  - `POST /preview` (executes prompt through Bedrock; no persistence)
+- Data Model (DynamoDB, On-Demand):
+  - **Table `prompts`**
+    - PK: `prompt#<id>`  | SK: `version#<n>`
+    - attrs: name, section, tags[], status(draft|published), system_prompt, user_prompt_template, few_shot[], context{persona,tone,sources[],constraints,guardrails}, created_by, updated_by, updated_at
+    - GSIs:
+      - `gsi_section_status` (pk: section, sk: status#updated_at)
+      - `gsi_tags` (pk: tag, sk: updated_at)
+    - **Latest published helper item** (optional): `pk=prompt#<id>`, `sk=published#latest` → points to version number
+  - **Table `audit_logs`** (optional)
+    - PK: `log#<timestamp>` | attrs: admin_id, action, prompt_id, version, section
+- RBAC:
+  - Verify Cognito Admin group via JWT claims.
+  - Fine-grained IAM on table actions; least privilege.
+- Bedrock Client:
+  - Model config, temperature, max tokens, stop sequences from env.
+  - Guardrails applied; errors sanitized.
+- Observability:
+  - Structured logs (json); metrics for preview calls, publish events; alarms for 5xx.
+
+C. Runtime Integration (Proposal Writer)
+- **Fetch policy:** “latest *published* by section”.
+- Endpoint for runtime: `GET /prompts/section/{section}?published=true` (non-admin).
+- Cache in Lambda (TTL 60–120s) to reduce reads.
+
+4) Deliverables & Definition of Done (DoD)
+- `/admin/prompt-manager` page with list, filters, CRUD editor, versioning, preview.
+- Backend endpoints functional with validation and RBAC.
+- DynamoDB schema deployed; unit tests pass (handlers & services).
+- Design matches app colors/components; a11y basic checks.
+- Minimal docs: Admin usage guide + API snippet.
+
+5) Dependencies
+- Prior infra, frontend design system, backend base, and Prompt Manager foundation from earlier sprints.
+- Bedrock model access configured.
+
+6) Tools & AWS Services
+- React + Tailwind (design tokens), React Query/Zustand
+- API Gateway (HTTP), Lambda (Python), DynamoDB, Cognito, S3
+- Amazon Bedrock, CloudWatch (logs/metrics)
+
+7) Acceptance Criteria
+- Admin can **Create**, **Edit**, **Delete**, **Publish**, **Clone** prompts.
+- Each prompt **must** be linked to a **section** (required).
+- Preview shows Bedrock output; no persistence of preview content.
+- Proposal Writer resolves “latest published by section” reliably.
+- UI adheres to design system **colors** and patterns.
+
+8) Expected Output Locations
+- FE: `/frontend/src/pages/admin/prompt-manager/*`
+- BE: `/backend/src/handlers/admin_prompts/*`
+- IaC: `/infra/cdk/*` (routes, tables, policies)
+- Docs: `/docs/admin/prompt-manager.md`
+- Sprint file: `planning/setup/sprint8_proposal_manager.md`
+
+----------------------------------------------------------------------
+LIMITS
+----------------------------------------------------------------------
+- Keep schema and flows minimal; avoid complex workflow engines.
+- No bulk import/export for MVP.
+- Preview does not store outputs; log minimally for cost.
+
+----------------------------------------------------------------------
+DATA
+----------------------------------------------------------------------
+Use existing design-system and specs from:
+- `specs/architecture/design-system/frontend_spec.md`
+- `specs/architecture/design-system/backend_ai_spec.md`
+- `specs/architecture/design-system/frontend_backend_prompt_manager.png`
+
+----------------------------------------------------------------------
+EVALUATION
+----------------------------------------------------------------------
+Success = an **Admin Prompt Manager** with CRUD + Section Linking + Versioning + Preview, visually consistent, securely scoped, and simple to maintain.
+
+----------------------------------------------------------------------
+MCP EXECUTION DIRECTIVE
+----------------------------------------------------------------------
+{
+  "mcp_server": "awslabscode-doc-gen-mcp-server",
+  "task": "generate_sprint_plan",
+  "input_type": "structured_prompt",
+  "output_format": "markdown",
+  "domain": "agile_delivery",
+  "goal": "Create the Sprint 8 plan for an Admin Prompt Manager with CRUD and Section Linking.",
+  "output_path": "planning/setup/sprint8_proposal_manager.md",
+  "filename": "sprint8_proposal_manager.md"
+}
