@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Edit, Trash2, Copy, CheckCircle, MoreVertical, Power, PowerOff, Eye } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '../../../types/prompt'
 import { PromptStatusBadge } from './PromptStatusBadge'
@@ -24,6 +24,20 @@ export function PromptListTable({
   onToggleActive
 }: PromptListTableProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (activeDropdown) {
+        setActiveDropdown(null)
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [activeDropdown])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -166,9 +180,12 @@ export function PromptListTable({
                   {/* Secondary Actions - Dropdown */}
                   <div className={styles.dropdownContainer}>
                     <button
-                      onClick={() => setActiveDropdown(
-                        activeDropdown === prompt.id ? null : prompt.id
-                      )}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveDropdown(
+                          activeDropdown === prompt.id ? null : prompt.id
+                        )
+                      }}
                       className={`${styles.actionButton} ${styles.moreButton}`}
                       title="More actions"
                     >
