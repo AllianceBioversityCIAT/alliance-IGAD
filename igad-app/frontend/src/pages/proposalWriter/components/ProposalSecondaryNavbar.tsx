@@ -12,7 +12,7 @@ export function ProposalSecondaryNavbar() {
     const section = 'proposal_writer' // Default section for proposal writer
     
     // Navigate to prompt manager with context
-    navigate(`/admin/prompts?from=${encodeURIComponent(currentPath)}&section=${section}`)
+    navigate(`/admin/prompt-manager?from=${encodeURIComponent(currentPath)}&section=${section}`)
   }
 
   return (
