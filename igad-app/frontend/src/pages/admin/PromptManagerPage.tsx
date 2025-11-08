@@ -4,7 +4,7 @@ import { usePrompts } from '../../hooks/usePrompts'
 import { PromptListTable } from './components/PromptListTable'
 import { PromptEditorDrawer } from './components/PromptEditorDrawer'
 import { PromptFilters } from './components/PromptFilters'
-import type { ProposalSection } from '../../types/prompt'
+import type { ProposalSection, Prompt } from '../../types/prompt'
 import styles from './PromptManagerPage.module.css'
 
 interface PromptManagerFilters {
@@ -80,6 +80,25 @@ export function PromptManagerPage() {
       console.log('Prompt published successfully')
     } catch (error) {
       console.error('Failed to publish prompt:', error)
+    }
+  }
+
+  const handleClonePrompt = async (prompt: Prompt) => {
+    try {
+      const clonedData = {
+        name: `CLONE - ${prompt.name}`,
+        section: prompt.section,
+        route: prompt.route ? `${prompt.route}-clone` : '',
+        tags: [...prompt.tags, 'cloned'],
+        system_prompt: prompt.system_prompt,
+        user_prompt_template: prompt.user_prompt_template,
+        few_shot: prompt.few_shot || [],
+        context: prompt.context || {}
+      }
+      await createPrompt(clonedData)
+      console.log('Prompt cloned successfully')
+    } catch (error) {
+      console.error('Failed to clone prompt:', error)
     }
   }
 
@@ -172,6 +191,7 @@ export function PromptManagerPage() {
           onEdit={handleEditPrompt}
           onPublish={handlePublishPrompt}
           onDelete={handleDeletePrompt}
+          onClone={handleClonePrompt}
         />
 
         {/* Pagination */}

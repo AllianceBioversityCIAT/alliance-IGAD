@@ -10,6 +10,7 @@ interface PromptListTableProps {
   onEdit: (promptId: string) => void
   onPublish: (id: string, version: number) => void
   onDelete: (id: string, version?: number) => void
+  onClone: (prompt: Prompt) => void
 }
 
 export function PromptListTable({ 
@@ -17,7 +18,8 @@ export function PromptListTable({
   isLoading, 
   onEdit, 
   onPublish, 
-  onDelete 
+  onDelete,
+  onClone
 }: PromptListTableProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
@@ -44,8 +46,7 @@ export function PromptListTable({
         }
         break
       case 'clone':
-        // TODO: Implement clone functionality
-        console.log('Clone prompt:', promptId)
+        onClone(prompt)
         break
       case 'delete':
         if (window.confirm('Are you sure you want to delete this prompt?')) {
