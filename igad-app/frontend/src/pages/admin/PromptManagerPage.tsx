@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Plus, Settings, Search, Filter } from 'lucide-react'
-import { useSearchParams } from 'react-router-dom'
+import { Plus, Settings, Search, Filter, ArrowLeft, Info } from 'lucide-react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { usePrompts } from '../../hooks/usePrompts'
 import { useToast } from '../../hooks/useToast'
 import { PromptListTable } from './components/PromptListTable'
@@ -23,6 +23,7 @@ interface PromptManagerFilters {
 
 export function PromptManagerPage() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [filters, setFilters] = useState<PromptManagerFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
@@ -46,7 +47,7 @@ export function PromptManagerPage() {
 
   const toast = useToast()
 
-  // Capture context from URL parameters
+  // Capture context from URL parameters and auto-filter
   useEffect(() => {
     const fromRoute = searchParams.get('from')
     const section = searchParams.get('section')
@@ -56,6 +57,15 @@ export function PromptManagerPage() {
         fromRoute: fromRoute || undefined,
         defaultSection: section as ProposalSection || undefined
       })
+      
+      // Auto-filter by section if provided
+      if (section) {
+        setFilters(prev => ({
+          ...prev,
+          section: section as ProposalSection
+        }))
+        setShowFilters(true) // Show filters to make it visible
+      }
     }
   }, [searchParams])
 
@@ -195,25 +205,40 @@ export function PromptManagerPage() {
 
   return (
     <div className={styles.container}>
+      {/* Context Banner */}
+      {contextData.fromRoute && (
+        <div className={styles.contextBanner}>
+          <div className={styles.contextContent}>
+            <Info className={styles.contextIcon} />
+            <div className={styles.contextText}>
+              <span className={styles.contextTitle}>Managing prompts from:</span>
+              <code className={styles.contextRoute}>{contextData.fromRoute}</code>
+              {contextData.defaultSection && (
+                <span className={styles.contextSection}>
+                  • Section: {contextData.defaultSection.replace('_', ' ')}
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={() => navigate(contextData.fromRoute!)}
+            className={styles.backButton}
+          >
+            <ArrowLeft size={16} />
+            Back to {contextData.fromRoute?.includes('proposal-writer') ? 'Proposal Writer' : 'Source'}
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <div className={styles.titleSection}>
             <Settings className={styles.titleIcon} />
             <h1 className={styles.title}>Prompt Manager</h1>
-            {contextData.fromRoute && (
-              <span className={styles.contextBadge}>
-                from {contextData.fromRoute}
-              </span>
-            )}
           </div>
           <p className={styles.subtitle}>
             Manage AI prompts for different sections of the proposal writer
-            {contextData.defaultSection && (
-              <span className={styles.contextInfo}>
-                {' '}• Creating for: {contextData.defaultSection.replace('_', ' ')}
-              </span>
-            )}
           </p>
         </div>
         
