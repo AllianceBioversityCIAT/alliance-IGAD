@@ -101,7 +101,9 @@ export function PromptListTable({
       <table className={styles.table}>
         <thead className={styles.tableHead}>
           <tr>
-            <th className={styles.tableHeader}>Prompt Details</th>
+            <th className={styles.tableHeader}>Name</th>
+            <th className={styles.tableHeader}>Section</th>
+            <th className={styles.tableHeader}>Route</th>
             <th className={styles.tableHeader}>Status</th>
             <th className={styles.tableHeader}>Updated</th>
             <th className={`${styles.tableHeader} ${styles.actionsHeader}`}>Actions</th>
@@ -112,20 +114,7 @@ export function PromptListTable({
             <tr key={`${prompt.id}-${prompt.version}`} className={styles.tableRow}>
               <td className={styles.tableCell}>
                 <div className={styles.nameCell}>
-                  <div className={styles.promptInfo}>
-                    <span className={styles.promptName}>{prompt.name}</span>
-                    <div className={styles.promptMeta}>
-                      <span className={styles.sectionLabel}>
-                        {SECTION_LABELS[prompt.section]}
-                      </span>
-                      {prompt.route && (
-                        <>
-                          <span className={styles.separator}>•</span>
-                          <code className={styles.routeCode}>{prompt.route}</code>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  <span className={styles.promptName}>{prompt.name}</span>
                   {prompt.tags.length > 0 && (
                     <div className={styles.tags}>
                       {prompt.tags.slice(0, 2).map((tag) => (
@@ -141,6 +130,18 @@ export function PromptListTable({
                     </div>
                   )}
                 </div>
+              </td>
+              <td className={styles.tableCell}>
+                <span className={styles.sectionLabel}>
+                  {SECTION_LABELS[prompt.section]}
+                </span>
+              </td>
+              <td className={styles.tableCell}>
+                {prompt.route ? (
+                  <code className={styles.routeCode}>{prompt.route}</code>
+                ) : (
+                  <span className={styles.noRoute}>—</span>
+                )}
               </td>
               <td className={styles.tableCell}>
                 <div className={styles.statusCell}>

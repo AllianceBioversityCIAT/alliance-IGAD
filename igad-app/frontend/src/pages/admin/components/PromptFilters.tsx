@@ -7,6 +7,8 @@ interface PromptFiltersProps {
     status?: 'draft' | 'published'
     tag?: string
     search?: string
+    route?: string
+    is_active?: boolean
   }
   onChange: (filters: any) => void
 }
@@ -30,6 +32,20 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
     onChange({
       ...filters,
       tag: tag.trim() || undefined
+    })
+  }
+
+  const handleRouteChange = (route: string) => {
+    onChange({
+      ...filters,
+      route: route.trim() || undefined
+    })
+  }
+
+  const handleActiveChange = (active: string) => {
+    onChange({
+      ...filters,
+      is_active: active === 'all' ? undefined : active === 'true'
     })
   }
 
@@ -61,6 +77,30 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
           <option value="all">All Status</option>
           <option value="draft">Draft</option>
           <option value="published">Published</option>
+        </select>
+      </div>
+
+      <div className={styles.filterGroup}>
+        <label className={styles.label}>Route</label>
+        <input
+          type="text"
+          placeholder="Filter by route..."
+          value={filters.route || ''}
+          onChange={(e) => handleRouteChange(e.target.value)}
+          className={styles.input}
+        />
+      </div>
+
+      <div className={styles.filterGroup}>
+        <label className={styles.label}>Active Status</label>
+        <select
+          value={filters.is_active === undefined ? 'all' : filters.is_active.toString()}
+          onChange={(e) => handleActiveChange(e.target.value)}
+          className={styles.select}
+        >
+          <option value="all">All</option>
+          <option value="true">Active Only</option>
+          <option value="false">Inactive Only</option>
         </select>
       </div>
 

@@ -34,6 +34,8 @@ async def list_prompts(
     status: Optional[PromptStatus] = Query(None),
     tag: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    route: Optional[str] = Query(None),
+    is_active: Optional[bool] = Query(None),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: dict = Depends(get_current_admin_user)
@@ -45,6 +47,8 @@ async def list_prompts(
             status=status,
             tag=tag,
             search=search,
+            route=route,
+            is_active=is_active,
             limit=limit,
             offset=offset
         )

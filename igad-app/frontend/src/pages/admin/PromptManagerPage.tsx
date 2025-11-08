@@ -17,6 +17,8 @@ interface PromptManagerFilters {
   status?: 'draft' | 'published'
   tag?: string
   search?: string
+  route?: string
+  is_active?: boolean
 }
 
 export function PromptManagerPage() {

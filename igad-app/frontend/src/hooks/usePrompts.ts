@@ -14,6 +14,8 @@ interface UsePromptsFilters {
   status?: 'draft' | 'published'
   tag?: string
   search?: string
+  route?: string
+  is_active?: boolean
 }
 
 export function usePrompts(filters?: UsePromptsFilters) {
