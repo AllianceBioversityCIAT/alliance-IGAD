@@ -206,7 +206,14 @@
 .actionsCell {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  justify-content: flex-end;
+  min-width: 120px;
+}
+
+.primaryActions {
+  display: flex;
+  gap: 4px;
 }
 
 .actionButton {
@@ -215,18 +222,52 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: transparent;
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e5e7eb;
+  background: white;
   border-radius: 6px;
-  color: #6B7280;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
+  color: #6b7280;
 }
 
 .actionButton:hover {
-  background: #F9FAFB;
-  border-color: #D1D5DB;
-  color: #374151;
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+/* Specific button styles */
+.editButton {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.editButton:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+.activateButton {
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.activateButton:hover {
+  background: #ecfdf5;
+  border-color: #059669;
+}
+
+.deactivateButton {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.deactivateButton:hover {
+  background: #fffbeb;
+  border-color: #d97706;
+}
+
+.moreButton:hover {
+  background: #f3f4f6;
 }
 
 /* Dropdown */
@@ -238,13 +279,13 @@
   position: absolute;
   top: 100%;
   right: 0;
-  z-index: 10;
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB;
+  background: white;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 50;
   min-width: 140px;
-  padding: 4px 0;
+  padding: 4px;
   margin-top: 4px;
 }
 
@@ -254,26 +295,34 @@
   gap: 8px;
   width: 100%;
   padding: 8px 12px;
-  background: none;
   border: none;
-  text-align: left;
-  font-family: 'Arial', sans-serif;
-  font-size: 14px;
+  background: none;
   color: #374151;
+  font-size: 14px;
+  text-align: left;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s;
 }
 
 .dropdownItem:hover {
-  background: #F9FAFB;
+  background: #f3f4f6;
+  color: #111827;
 }
 
 .dropdownItemDanger {
-  color: #DC2626;
+  color: #dc2626;
 }
 
 .dropdownItemDanger:hover {
-  background: #FEF2F2;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4px 0;
 }
 
 /* Responsive Design */
@@ -335,4 +384,40 @@
 .activeBadge.inactive {
   background: #fef2f2;
   color: #991b1b;
+}
+/* Improved name cell */
+.promptInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.promptMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.separator {
+  color: #d1d5db;
+}
+
+.routeCode {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 11px;
+}
+
+.sectionLabel {
+  background: #f3f4f6;
+  color: #374151;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 11px;
 }

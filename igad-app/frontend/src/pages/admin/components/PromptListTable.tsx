@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Edit, Trash2, Eye, Copy, CheckCircle, Clock, MoreVertical, Power, PowerOff } from 'lucide-react'
+import { Edit, Trash2, Copy, CheckCircle, MoreVertical, Power, PowerOff, Eye } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '../../../types/prompt'
 import { PromptStatusBadge } from './PromptStatusBadge'
 import styles from './PromptListTable.module.css'
@@ -87,10 +87,7 @@ export function PromptListTable({
       <table className={styles.table}>
         <thead className={styles.tableHead}>
           <tr>
-            <th className={styles.tableHeader}>Name</th>
-            <th className={styles.tableHeader}>Section</th>
-            <th className={styles.tableHeader}>Route</th>
-            <th className={styles.tableHeader}>Version</th>
+            <th className={styles.tableHeader}>Prompt Details</th>
             <th className={styles.tableHeader}>Status</th>
             <th className={styles.tableHeader}>Updated</th>
             <th className={styles.tableHeader}>Actions</th>
@@ -101,7 +98,20 @@ export function PromptListTable({
             <tr key={`${prompt.id}-${prompt.version}`} className={styles.tableRow}>
               <td className={styles.tableCell}>
                 <div className={styles.nameCell}>
-                  <span className={styles.promptName}>{prompt.name}</span>
+                  <div className={styles.promptInfo}>
+                    <span className={styles.promptName}>{prompt.name}</span>
+                    <div className={styles.promptMeta}>
+                      <span className={styles.sectionLabel}>
+                        {SECTION_LABELS[prompt.section]}
+                      </span>
+                      {prompt.route && (
+                        <>
+                          <span className={styles.separator}>•</span>
+                          <code className={styles.routeCode}>{prompt.route}</code>
+                        </>
+                      )}
+                    </div>
+                  </div>
                   {prompt.tags.length > 0 && (
                     <div className={styles.tags}>
                       {prompt.tags.slice(0, 2).map((tag) => (
@@ -119,21 +129,6 @@ export function PromptListTable({
                 </div>
               </td>
               <td className={styles.tableCell}>
-                <span className={styles.sectionLabel}>
-                  {SECTION_LABELS[prompt.section]}
-                </span>
-              </td>
-              <td className={styles.tableCell}>
-                {prompt.route ? (
-                  <code className={styles.routeCode}>{prompt.route}</code>
-                ) : (
-                  <span className={styles.noRoute}>—</span>
-                )}
-              </td>
-              <td className={styles.tableCell}>
-                <span className={styles.version}>v{prompt.version}</span>
-              </td>
-              <td className={styles.tableCell}>
                 <div className={styles.statusCell}>
                   <PromptStatusBadge status={prompt.status} />
                   <div className={`${styles.activeBadge} ${prompt.is_active ? styles.active : styles.inactive}`}>
@@ -149,35 +144,39 @@ export function PromptListTable({
               </td>
               <td className={styles.tableCell}>
                 <div className={styles.actionsCell}>
-                  <button
-                    onClick={() => onEdit(prompt.id)}
-                    className={styles.actionButton}
-                    title="Edit prompt"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  
+                  {/* Primary Actions - Always Visible */}
+                  <div className={styles.primaryActions}>
+                    <button
+                      onClick={() => onEdit(prompt.id)}
+                      className={`${styles.actionButton} ${styles.editButton}`}
+                      title="Edit prompt"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    
+                    <button
+                      onClick={() => handleActionClick(prompt.id, 'toggle-active', prompt)}
+                      className={`${styles.actionButton} ${prompt.is_active ? styles.deactivateButton : styles.activateButton}`}
+                      title={prompt.is_active ? 'Deactivate prompt' : 'Activate prompt'}
+                    >
+                      {prompt.is_active ? <PowerOff size={14} /> : <Power size={14} />}
+                    </button>
+                  </div>
+
+                  {/* Secondary Actions - Dropdown */}
                   <div className={styles.dropdownContainer}>
                     <button
                       onClick={() => setActiveDropdown(
                         activeDropdown === prompt.id ? null : prompt.id
                       )}
-                      className={styles.actionButton}
+                      className={`${styles.actionButton} ${styles.moreButton}`}
                       title="More actions"
                     >
-                      <MoreVertical size={16} />
+                      <MoreVertical size={14} />
                     </button>
                     
                     {activeDropdown === prompt.id && (
                       <div className={styles.dropdown}>
-                        <button
-                          onClick={() => handleActionClick(prompt.id, 'edit', prompt)}
-                          className={styles.dropdownItem}
-                        >
-                          <Edit size={14} />
-                          Edit
-                        </button>
-                        
                         {prompt.status === 'draft' && (
                           <button
                             onClick={() => handleActionClick(prompt.id, 'publish', prompt)}
@@ -189,20 +188,14 @@ export function PromptListTable({
                         )}
                         
                         <button
-                          onClick={() => handleActionClick(prompt.id, 'toggle-active', prompt)}
-                          className={styles.dropdownItem}
-                        >
-                          {prompt.is_active ? <PowerOff size={14} /> : <Power size={14} />}
-                          {prompt.is_active ? 'Deactivate' : 'Activate'}
-                        </button>
-                        
-                        <button
                           onClick={() => handleActionClick(prompt.id, 'clone', prompt)}
                           className={styles.dropdownItem}
                         >
                           <Copy size={14} />
                           Clone
                         </button>
+                        
+                        <div className={styles.dropdownDivider}></div>
                         
                         <button
                           onClick={() => handleActionClick(prompt.id, 'delete', prompt)}
