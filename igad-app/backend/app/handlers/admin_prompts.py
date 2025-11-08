@@ -58,12 +58,23 @@ async def list_prompts(
 @router.get("/{prompt_id}", response_model=Prompt)
 async def get_prompt(
     prompt_id: str,
-    version: Optional[int] = Query(None, description="Specific version or latest if not provided"),
+    version: Optional[str] = Query(None, description="Specific version number or 'latest'"),
     current_user: dict = Depends(get_current_admin_user)
 ):
     """Get a specific prompt version"""
     try:
-        prompt = await prompt_service.get_prompt(prompt_id, version)
+        # Convert version parameter
+        version_param = None
+        if version and version != "latest":
+            try:
+                version_param = int(version)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Version must be a number or 'latest'"
+                )
+        
+        prompt = await prompt_service.get_prompt(prompt_id, version_param)
         if not prompt:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
