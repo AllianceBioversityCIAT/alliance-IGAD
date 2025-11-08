@@ -164,7 +164,7 @@ export function PromptListTable({
                     <button
                       onClick={() => onEdit(prompt.id)}
                       className={`${styles.actionButton} ${styles.editButton}`}
-                      title="Edit prompt"
+                      title={`Edit "${prompt.name}"`}
                     >
                       <Edit size={14} />
                     </button>
@@ -172,7 +172,7 @@ export function PromptListTable({
                     <button
                       onClick={() => handleActionClick(prompt.id, 'toggle-active', prompt)}
                       className={`${styles.actionButton} ${prompt.is_active ? styles.deactivateButton : styles.activateButton}`}
-                      title={prompt.is_active ? 'Deactivate prompt' : 'Activate prompt'}
+                      title={prompt.is_active ? `Deactivate "${prompt.name}"` : `Activate "${prompt.name}"`}
                     >
                       {prompt.is_active ? <PowerOff size={14} /> : <Power size={14} />}
                     </button>
@@ -199,6 +199,7 @@ export function PromptListTable({
                           <button
                             onClick={() => handleActionClick(prompt.id, 'publish', prompt)}
                             className={styles.dropdownItem}
+                            title={`Publish "${prompt.name}" to make it available for use`}
                           >
                             <CheckCircle size={14} />
                             Publish
@@ -208,6 +209,7 @@ export function PromptListTable({
                         <button
                           onClick={() => handleActionClick(prompt.id, 'clone', prompt)}
                           className={styles.dropdownItem}
+                          title={`Create a copy of "${prompt.name}"`}
                         >
                           <Copy size={14} />
                           Clone
@@ -218,6 +220,7 @@ export function PromptListTable({
                         <button
                           onClick={() => handleActionClick(prompt.id, 'delete', prompt)}
                           className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`}
+                          title={`Permanently delete "${prompt.name}" - this cannot be undone`}
                         >
                           <Trash2 size={14} />
                           Delete
