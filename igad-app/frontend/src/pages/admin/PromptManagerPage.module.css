@@ -1,0 +1,257 @@
+/* Container */
+.container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #FFFFFF;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.headerLeft {
+  flex: 1;
+}
+
+.titleSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.titleIcon {
+  width: 24px;
+  height: 24px;
+  color: #6366F1;
+}
+
+.title {
+  font-family: 'Arial', sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+  color: #111827;
+  margin: 0;
+}
+
+.subtitle {
+  font-family: 'Arial', sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  color: #6B7280;
+  margin: 0;
+}
+
+.createButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #6366F1;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.createButton:hover {
+  background: #5B5BD6;
+  transform: translateY(-1px);
+}
+
+.createButton:active {
+  transform: translateY(0);
+}
+
+/* Filters Bar */
+.filtersBar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.searchContainer {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #9CA3AF;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  background: #FFFFFF;
+  transition: border-color 0.2s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.filterButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterButton:hover {
+  border-color: #9CA3AF;
+  background: #F9FAFB;
+}
+
+.filterButtonActive {
+  background: #EEF2FF;
+  border-color: #6366F1;
+  color: #6366F1;
+}
+
+/* Filters Panel */
+.filtersPanel {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+/* Results Info */
+.resultsInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px 0;
+}
+
+.resultsCount {
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  color: #6B7280;
+}
+
+.clearFilters {
+  background: none;
+  border: none;
+  color: #6366F1;
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.clearFilters:hover {
+  color: #5B5BD6;
+}
+
+/* Content */
+.content {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-top: 1px solid #E5E7EB;
+  background: #F9FAFB;
+}
+
+.paginationButton {
+  padding: 8px 16px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+  border-color: #6366F1;
+  color: #6366F1;
+}
+
+.paginationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paginationInfo {
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .filtersBar {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .searchContainer {
+    max-width: none;
+  }
+  
+  .pagination {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

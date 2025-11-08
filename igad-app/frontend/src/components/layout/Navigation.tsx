@@ -198,19 +198,25 @@ export function Navigation() {
                   </button>
                   
                   {/* Prompt Manager */}
-                  <button style={{
-                    padding: '12px 16px',
-                    background: 'transparent',
-                    border: 'none',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontFamily: 'Arial',
-                    color: '#374151',
-                    width: '100%'
-                  }}>
+                  <Link 
+                    to="/admin/prompt-manager"
+                    style={{
+                      padding: '12px 16px',
+                      background: 'transparent',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontFamily: 'Arial',
+                      color: '#374151',
+                      width: '100%',
+                      textDecoration: 'none',
+                      display: 'block'
+                    }}
+                    onClick={() => setShowSettingsDropdown(false)}
+                  >
                     Prompt Manager
-                  </button>
+                  </Link>
                   
                   {/* API Configuration */}
                   <button style={{

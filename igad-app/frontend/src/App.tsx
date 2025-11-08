@@ -6,6 +6,7 @@ import { HomePage } from '@/pages/HomePage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ProposalWriterPage } from '@/pages/proposalWriter/ProposalWriterPage'
 import { NewsletterGeneratorPage } from '@/pages/NewsletterGeneratorPage'
+import { PromptManagerPage } from '@/pages/admin/PromptManagerPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { Layout } from '@/components/layout/Layout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -39,6 +40,7 @@ function App() {
             <Route path="proposal-writer" element={<ProposalWriterPage />} />
             <Route path="proposal-writer/:stepId" element={<ProposalWriterPage />} />
             <Route path="newsletter-generator" element={<NewsletterGeneratorPage />} />
+            <Route path="admin/prompt-manager" element={<PromptManagerPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
