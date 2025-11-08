@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class PromptService:
     def __init__(self):
         self.dynamodb = boto3.resource('dynamodb')
-        self.table_name = 'igad-prompts'
+        self.table_name = 'igad-testing-main-table'  # Use existing table
         self.table = self.dynamodb.Table(self.table_name)
         
     def _generate_prompt_id(self) -> str:
