@@ -4,8 +4,22 @@ from enum import Enum
 from datetime import datetime
 
 class ProposalSection(str, Enum):
+    # New main sections
     PROPOSAL_WRITER = "proposal_writer"
     NEWSLETTER_GENERATOR = "newsletter_generator"
+    # Legacy sections for backward compatibility
+    PROBLEM_STATEMENT = "problem_statement"
+    OBJECTIVES = "objectives"
+    METHODOLOGY = "methodology"
+    BUDGET = "budget"
+    THEORY_OF_CHANGE = "theory_of_change"
+    LITERATURE_REVIEW = "literature_review"
+    TIMELINE = "timeline"
+    RISK_ASSESSMENT = "risk_assessment"
+    SUSTAINABILITY = "sustainability"
+    MONITORING_EVALUATION = "monitoring_evaluation"
+    EXECUTIVE_SUMMARY = "executive_summary"
+    APPENDICES = "appendices"
 
 class PromptStatus(str, Enum):
     DRAFT = "draft"

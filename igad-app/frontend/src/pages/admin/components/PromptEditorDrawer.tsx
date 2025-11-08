@@ -115,11 +115,23 @@ export function PromptEditorDrawer({ mode, promptId, onClose, onSave, isLoading 
                 className={styles.select}
                 required
               >
-                {Object.entries(SECTION_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
+                <optgroup label="Main Sections">
+                  <option value={ProposalSection.PROPOSAL_WRITER}>
+                    {SECTION_LABELS[ProposalSection.PROPOSAL_WRITER]}
                   </option>
-                ))}
+                  <option value={ProposalSection.NEWSLETTER_GENERATOR}>
+                    {SECTION_LABELS[ProposalSection.NEWSLETTER_GENERATOR]}
+                  </option>
+                </optgroup>
+                <optgroup label="Legacy Sections">
+                  {Object.entries(SECTION_LABELS)
+                    .filter(([key]) => !['proposal_writer', 'newsletter_generator'].includes(key))
+                    .map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                </optgroup>
               </select>
             </div>
 
