@@ -1,31 +1,11 @@
 export enum ProposalSection {
-  PROBLEM_STATEMENT = 'problem_statement',
-  OBJECTIVES = 'objectives',
-  METHODOLOGY = 'methodology',
-  BUDGET = 'budget',
-  THEORY_OF_CHANGE = 'theory_of_change',
-  LITERATURE_REVIEW = 'literature_review',
-  TIMELINE = 'timeline',
-  RISK_ASSESSMENT = 'risk_assessment',
-  SUSTAINABILITY = 'sustainability',
-  MONITORING_EVALUATION = 'monitoring_evaluation',
-  EXECUTIVE_SUMMARY = 'executive_summary',
-  APPENDICES = 'appendices'
+  PROPOSAL_WRITER = 'proposal_writer',
+  NEWSLETTER_GENERATOR = 'newsletter_generator'
 }
 
 export const SECTION_LABELS: Record<ProposalSection, string> = {
-  [ProposalSection.PROBLEM_STATEMENT]: 'Problem Statement',
-  [ProposalSection.OBJECTIVES]: 'Objectives',
-  [ProposalSection.METHODOLOGY]: 'Methodology',
-  [ProposalSection.BUDGET]: 'Budget',
-  [ProposalSection.THEORY_OF_CHANGE]: 'Theory of Change',
-  [ProposalSection.LITERATURE_REVIEW]: 'Literature Review',
-  [ProposalSection.TIMELINE]: 'Timeline',
-  [ProposalSection.RISK_ASSESSMENT]: 'Risk Assessment',
-  [ProposalSection.SUSTAINABILITY]: 'Sustainability',
-  [ProposalSection.MONITORING_EVALUATION]: 'Monitoring & Evaluation',
-  [ProposalSection.EXECUTIVE_SUMMARY]: 'Executive Summary',
-  [ProposalSection.APPENDICES]: 'Appendices'
+  [ProposalSection.PROPOSAL_WRITER]: 'Proposal Writer',
+  [ProposalSection.NEWSLETTER_GENERATOR]: 'Newsletter Generator'
 }
 
 export interface PromptContext {

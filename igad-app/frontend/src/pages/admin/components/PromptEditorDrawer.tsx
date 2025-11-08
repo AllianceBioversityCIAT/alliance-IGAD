@@ -16,7 +16,7 @@ export function PromptEditorDrawer({ mode, promptId, onClose, onSave }: PromptEd
   
   const [formData, setFormData] = useState({
     name: '',
-    section: ProposalSection.PROBLEM_STATEMENT,
+    section: ProposalSection.PROPOSAL_WRITER,
     route: '',
     tags: [] as string[],
     system_prompt: '',
