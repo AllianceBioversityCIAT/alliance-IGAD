@@ -8,7 +8,7 @@ interface PromptEditorDrawerProps {
   mode: 'create' | 'edit'
   promptId?: string | null
   onClose: () => void
-  onSave: (data: CreatePromptRequest | { id: string; data: UpdatePromptRequest }) => void
+  onSave: (data: any) => void
 }
 
 export function PromptEditorDrawer({ mode, promptId, onClose, onSave }: PromptEditorDrawerProps) {
@@ -60,13 +60,7 @@ export function PromptEditorDrawer({ mode, promptId, onClose, onSave }: PromptEd
       ) ? formData.context : undefined
     }
 
-    if (mode === 'create') {
-      onSave(submitData as CreatePromptRequest)
-    } else if (promptId) {
-      onSave({ id: promptId, data: submitData as UpdatePromptRequest })
-    }
-    
-    onClose()
+    onSave(submitData)
   }
 
   const handleAddTag = () => {

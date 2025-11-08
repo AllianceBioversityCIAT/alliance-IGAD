@@ -8,8 +8,8 @@ interface PromptListTableProps {
   prompts: Prompt[]
   isLoading: boolean
   onEdit: (promptId: string) => void
-  onPublish: (params: { id: string; version: number }) => void
-  onDelete: (params: { id: string; version?: number }) => void
+  onPublish: (id: string, version: number) => void
+  onDelete: (id: string, version?: number) => void
 }
 
 export function PromptListTable({ 
@@ -40,7 +40,7 @@ export function PromptListTable({
         break
       case 'publish':
         if (prompt.status === 'draft') {
-          onPublish({ id: promptId, version: prompt.version })
+          onPublish(promptId, prompt.version)
         }
         break
       case 'clone':
@@ -49,7 +49,7 @@ export function PromptListTable({
         break
       case 'delete':
         if (window.confirm('Are you sure you want to delete this prompt?')) {
-          onDelete({ id: promptId })
+          onDelete(promptId)
         }
         break
     }

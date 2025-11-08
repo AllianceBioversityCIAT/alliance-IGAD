@@ -58,6 +58,42 @@ export function PromptManagerPage() {
     setCurrentPage(0) // Reset to first page when filters change
   }
 
+  const handleSavePrompt = async (data: any) => {
+    try {
+      if (editorMode === 'create') {
+        await createPrompt(data)
+        console.log('Prompt created successfully')
+      } else if (selectedPromptId) {
+        await updatePrompt({ id: selectedPromptId, data })
+        console.log('Prompt updated successfully')
+      }
+      setIsEditorOpen(false)
+      setSelectedPromptId(null)
+    } catch (error) {
+      console.error('Failed to save prompt:', error)
+    }
+  }
+
+  const handlePublishPrompt = async (id: string, version: number) => {
+    try {
+      await publishPrompt({ id, version })
+      console.log('Prompt published successfully')
+    } catch (error) {
+      console.error('Failed to publish prompt:', error)
+    }
+  }
+
+  const handleDeletePrompt = async (id: string, version?: number) => {
+    if (window.confirm('Are you sure you want to delete this prompt?')) {
+      try {
+        await deletePrompt({ id, version })
+        console.log('Prompt deleted successfully')
+      } catch (error) {
+        console.error('Failed to delete prompt:', error)
+      }
+    }
+  }
+
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -134,8 +170,8 @@ export function PromptManagerPage() {
           prompts={prompts}
           isLoading={isLoading}
           onEdit={handleEditPrompt}
-          onPublish={publishPrompt}
-          onDelete={deletePrompt}
+          onPublish={handlePublishPrompt}
+          onDelete={handleDeletePrompt}
         />
 
         {/* Pagination */}
@@ -170,7 +206,7 @@ export function PromptManagerPage() {
           mode={editorMode}
           promptId={selectedPromptId}
           onClose={handleCloseEditor}
-          onSave={editorMode === 'create' ? createPrompt : updatePrompt}
+          onSave={handleSavePrompt}
         />
       )}
     </div>

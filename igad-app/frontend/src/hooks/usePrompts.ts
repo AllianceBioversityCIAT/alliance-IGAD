@@ -115,11 +115,11 @@ export function usePrompts(filters?: UsePromptsFilters) {
     previewData: previewMutation.data,
     
     // Actions
-    createPrompt: createMutation.mutate,
-    updatePrompt: updateMutation.mutate,
-    publishPrompt: publishMutation.mutate,
-    deletePrompt: deleteMutation.mutate,
-    previewPrompt: previewMutation.mutate,
+    createPrompt: createMutation.mutateAsync,
+    updatePrompt: updateMutation.mutateAsync,
+    publishPrompt: publishMutation.mutateAsync,
+    deletePrompt: deleteMutation.mutateAsync,
+    previewPrompt: previewMutation.mutateAsync,
     refetch,
     
     // Pagination
