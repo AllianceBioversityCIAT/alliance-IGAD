@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, status
-from fastapi.security import HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from typing import Optional, List
 from app.models.prompt_model import (
     Prompt, PromptCreate, PromptUpdate, PromptListResponse,
@@ -13,12 +13,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/prompts", tags=["admin-prompts"])
+security = HTTPBearer()
 
 # Initialize services
 prompt_service = PromptService()
 bedrock_service = BedrockService()
 
-def get_current_admin_user(credentials: HTTPAuthorizationCredentials) -> dict:
+def get_current_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     """Get current admin user - simplified for MVP"""
     # TODO: Implement proper admin verification
     return {
