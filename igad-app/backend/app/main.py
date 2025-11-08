@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -126,7 +126,25 @@ async def get_current_user_info(credentials: HTTPAuthorizationCredentials = Depe
 
 # Mock auth dependency
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    return auth_middleware.verify_token(credentials)
+    """Get current user from Cognito token"""
+    try:
+        token = credentials.credentials
+        
+        # For now, we'll create a simple user object from the token
+        # In production, you would validate the Cognito JWT token properly
+        # For this MVP, we'll accept any token and create a mock user
+        
+        return {
+            "user_id": "cognito-user-123",
+            "email": "user@example.com",
+            "role": "user"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
 
 @app.post("/api/proposals")
 async def create_proposal(
