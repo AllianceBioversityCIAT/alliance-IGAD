@@ -15,6 +15,10 @@ load_dotenv()
 
 # Import auth service
 from .simple_cognito import SimpleCognitoService
+from .middleware.auth_middleware import AuthMiddleware
+
+# Initialize services
+auth_middleware = AuthMiddleware()
 
 # Mock data storage (replace with DynamoDB in production)
 proposals_db = {}
