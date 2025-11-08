@@ -421,3 +421,7 @@
   font-weight: 500;
   font-size: 11px;
 }
+/* Actions header alignment */
+.actionsHeader {
+  text-align: right;
+}

@@ -90,7 +90,7 @@ export function PromptListTable({
             <th className={styles.tableHeader}>Prompt Details</th>
             <th className={styles.tableHeader}>Status</th>
             <th className={styles.tableHeader}>Updated</th>
-            <th className={styles.tableHeader}>Actions</th>
+            <th className={`${styles.tableHeader} ${styles.actionsHeader}`}>Actions</th>
           </tr>
         </thead>
         <tbody className={styles.tableBody}>
