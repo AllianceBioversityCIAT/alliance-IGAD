@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Create axios instance with base configuration
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  baseURL: 'http://localhost:8000',
   timeout: 30000, // 30 seconds for AI operations
   headers: {
     'Content-Type': 'application/json',
@@ -17,6 +17,15 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // Debug logging
+    console.log('API Request:', {
+      method: config.method,
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`
+    })
+    
     return config
   },
   (error) => {
