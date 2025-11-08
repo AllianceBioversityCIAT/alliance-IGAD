@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Settings, Search, Filter } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import { usePrompts } from '../../hooks/usePrompts'
 import { useToast } from '../../hooks/useToast'
 import { PromptListTable } from './components/PromptListTable'
@@ -19,11 +20,16 @@ interface PromptManagerFilters {
 }
 
 export function PromptManagerPage() {
+  const [searchParams] = useSearchParams()
   const [filters, setFilters] = useState<PromptManagerFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editorMode, setEditorMode] = useState<'create' | 'edit'>('create')
+  const [contextData, setContextData] = useState<{
+    fromRoute?: string
+    defaultSection?: ProposalSection
+  }>({})
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean
     title: string
@@ -37,6 +43,19 @@ export function PromptManagerPage() {
   })
 
   const toast = useToast()
+
+  // Capture context from URL parameters
+  useEffect(() => {
+    const fromRoute = searchParams.get('from')
+    const section = searchParams.get('section')
+    
+    if (fromRoute || section) {
+      setContextData({
+        fromRoute: fromRoute || undefined,
+        defaultSection: section as ProposalSection || undefined
+      })
+    }
+  }, [searchParams])
 
   const {
     prompts,
@@ -149,9 +168,19 @@ export function PromptManagerPage() {
           <div className={styles.titleSection}>
             <Settings className={styles.titleIcon} />
             <h1 className={styles.title}>Prompt Manager</h1>
+            {contextData.fromRoute && (
+              <span className={styles.contextBadge}>
+                from {contextData.fromRoute}
+              </span>
+            )}
           </div>
           <p className={styles.subtitle}>
             Manage AI prompts for different sections of the proposal writer
+            {contextData.defaultSection && (
+              <span className={styles.contextInfo}>
+                {' '}• Creating for: {contextData.defaultSection.replace('_', ' ')}
+              </span>
+            )}
           </p>
         </div>
         
@@ -256,6 +285,7 @@ export function PromptManagerPage() {
           onClose={handleCloseEditor}
           onSave={handleSavePrompt}
           isLoading={isCreating || isUpdating}
+          contextData={contextData}
         />
       )}
 

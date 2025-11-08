@@ -255,3 +255,18 @@
     gap: 12px;
   }
 }
+/* Context indicators */
+.contextBadge {
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-left: 12px;
+}
+
+.contextInfo {
+  color: #6b7280;
+  font-weight: 500;
+}

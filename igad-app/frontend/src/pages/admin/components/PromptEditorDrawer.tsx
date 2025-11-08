@@ -10,15 +10,26 @@ interface PromptEditorDrawerProps {
   onClose: () => void
   onSave: (data: any) => void
   isLoading?: boolean
+  contextData?: {
+    fromRoute?: string
+    defaultSection?: ProposalSection
+  }
 }
 
-export function PromptEditorDrawer({ mode, promptId, onClose, onSave, isLoading = false }: PromptEditorDrawerProps) {
+export function PromptEditorDrawer({ 
+  mode, 
+  promptId, 
+  onClose, 
+  onSave, 
+  isLoading = false, 
+  contextData 
+}: PromptEditorDrawerProps) {
   const { data: existingPrompt } = usePrompt(promptId || '', 'latest')
   
   const [formData, setFormData] = useState({
     name: '',
-    section: ProposalSection.PROPOSAL_WRITER,
-    route: '',
+    section: contextData?.defaultSection || ProposalSection.PROPOSAL_WRITER,
+    route: contextData?.fromRoute || '',
     tags: [] as string[],
     system_prompt: '',
     user_prompt_template: '',
