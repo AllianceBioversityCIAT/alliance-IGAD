@@ -258,6 +258,8 @@ class PromptService:
         status: Optional[PromptStatus] = None,
         tag: Optional[str] = None,
         search: Optional[str] = None,
+        route: Optional[str] = None,
+        is_active: Optional[bool] = None,
         limit: int = 20,
         offset: int = 0
     ) -> PromptListResponse:
@@ -281,6 +283,12 @@ class PromptService:
             
             if tag:
                 items = [item for item in items if tag in item.get('tags', [])]
+            
+            if route:
+                items = [item for item in items if route in (item.get('route') or '')]
+            
+            if is_active is not None:
+                items = [item for item in items if item.get('is_active', True) == is_active]
             
             if search:
                 search_lower = search.lower()
@@ -333,18 +341,17 @@ class PromptService:
     async def toggle_active(self, prompt_id: str) -> Optional[Prompt]:
         """Toggle prompt active status"""
         try:
-            # Get current prompt
-            response = self.table.get_item(
-                Key={
-                    'pk': f'PROMPT#{prompt_id}',
-                    'sk': 'LATEST'
-                }
+            # Get current prompt - use the correct key structure
+            response = self.table.query(
+                KeyConditionExpression=Key('PK').eq(f'prompt#{prompt_id}'),
+                ScanIndexForward=False,
+                Limit=1
             )
             
-            if 'Item' not in response:
+            if not response['Items']:
                 return None
             
-            item = response['Item']
+            item = response['Items'][0]
             current_active = item.get('is_active', True)
             new_active = not current_active
             
@@ -361,24 +368,11 @@ class PromptService:
             # Update active status
             now = datetime.utcnow()
             
+            # Update the item
             self.table.update_item(
                 Key={
-                    'pk': f'PROMPT#{prompt_id}',
-                    'sk': 'LATEST'
-                },
-                UpdateExpression='SET is_active = :active, updated_at = :updated_at',
-                ExpressionAttributeValues={
-                    ':active': new_active,
-                    ':updated_at': now.isoformat()
-                }
-            )
-            
-            # Also update the specific version
-            version = item.get('version', 1)
-            self.table.update_item(
-                Key={
-                    'pk': f'PROMPT#{prompt_id}',
-                    'sk': f'VERSION#{version}'
+                    'PK': item['PK'],
+                    'SK': item['SK']
                 },
                 UpdateExpression='SET is_active = :active, updated_at = :updated_at',
                 ExpressionAttributeValues={
@@ -399,12 +393,12 @@ class PromptService:
     async def _find_active_prompt_by_section_route(self, section: str, route: str, exclude_id: str = None) -> Optional[dict]:
         """Find active prompt with same section and route"""
         try:
-            # Query all prompts to check for conflicts
+            # Scan all prompts to check for conflicts
             response = self.table.scan(
-                FilterExpression='begins_with(pk, :pk_prefix) AND sk = :sk AND section = :section AND route = :route AND is_active = :active',
+                FilterExpression='begins_with(PK, :pk_prefix) AND begins_with(SK, :sk_prefix) AND section = :section AND route = :route AND is_active = :active',
                 ExpressionAttributeValues={
-                    ':pk_prefix': 'PROMPT#',
-                    ':sk': 'LATEST',
+                    ':pk_prefix': 'prompt#',
+                    ':sk_prefix': 'version#',
                     ':section': section,
                     ':route': route,
                     ':active': True
@@ -415,7 +409,7 @@ class PromptService:
             
             # Filter out the current prompt if excluding
             if exclude_id:
-                items = [item for item in items if item.get('pk') != f'PROMPT#{exclude_id}']
+                items = [item for item in items if not item.get('PK', '').endswith(exclude_id)]
             
             return items[0] if items else None
             
