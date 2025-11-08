@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Edit, Trash2, Eye, Copy, CheckCircle, Clock, MoreVertical } from 'lucide-react'
+import { Edit, Trash2, Eye, Copy, CheckCircle, Clock, MoreVertical, Power, PowerOff } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '../../../types/prompt'
 import { PromptStatusBadge } from './PromptStatusBadge'
 import styles from './PromptListTable.module.css'
@@ -11,6 +11,7 @@ interface PromptListTableProps {
   onPublish: (id: string, version: number) => void
   onDelete: (id: string, version?: number) => void
   onClone: (prompt: Prompt) => void
+  onToggleActive: (id: string) => void
 }
 
 export function PromptListTable({ 
@@ -19,7 +20,8 @@ export function PromptListTable({
   onEdit, 
   onPublish, 
   onDelete,
-  onClone
+  onClone,
+  onToggleActive
 }: PromptListTableProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
@@ -47,6 +49,9 @@ export function PromptListTable({
         break
       case 'clone':
         onClone(prompt)
+        break
+      case 'toggle-active':
+        onToggleActive(promptId)
         break
       case 'delete':
         onDelete(promptId)
@@ -129,7 +134,12 @@ export function PromptListTable({
                 <span className={styles.version}>v{prompt.version}</span>
               </td>
               <td className={styles.tableCell}>
-                <PromptStatusBadge status={prompt.status} />
+                <div className={styles.statusCell}>
+                  <PromptStatusBadge status={prompt.status} />
+                  <div className={`${styles.activeBadge} ${prompt.is_active ? styles.active : styles.inactive}`}>
+                    {prompt.is_active ? 'Active' : 'Inactive'}
+                  </div>
+                </div>
               </td>
               <td className={styles.tableCell}>
                 <div className={styles.dateCell}>
@@ -177,6 +187,14 @@ export function PromptListTable({
                             Publish
                           </button>
                         )}
+                        
+                        <button
+                          onClick={() => handleActionClick(prompt.id, 'toggle-active', prompt)}
+                          className={styles.dropdownItem}
+                        >
+                          {prompt.is_active ? <PowerOff size={14} /> : <Power size={14} />}
+                          {prompt.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
                         
                         <button
                           onClick={() => handleActionClick(prompt.id, 'clone', prompt)}

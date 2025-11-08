@@ -320,3 +320,59 @@ class PromptService:
         except Exception as e:
             logger.error(f"Error getting prompt by section {section}: {e}")
             raise
+    async def toggle_active(self, prompt_id: str) -> Optional[Prompt]:
+        """Toggle prompt active status"""
+        try:
+            # Get current prompt
+            response = self.table.get_item(
+                Key={
+                    'pk': f'PROMPT#{prompt_id}',
+                    'sk': 'LATEST'
+                }
+            )
+            
+            if 'Item' not in response:
+                return None
+            
+            item = response['Item']
+            current_active = item.get('is_active', True)
+            new_active = not current_active
+            
+            # Update active status
+            now = datetime.utcnow()
+            
+            self.table.update_item(
+                Key={
+                    'pk': f'PROMPT#{prompt_id}',
+                    'sk': 'LATEST'
+                },
+                UpdateExpression='SET is_active = :active, updated_at = :updated_at',
+                ExpressionAttributeValues={
+                    ':active': new_active,
+                    ':updated_at': now.isoformat()
+                }
+            )
+            
+            # Also update the specific version
+            version = item.get('version', 1)
+            self.table.update_item(
+                Key={
+                    'pk': f'PROMPT#{prompt_id}',
+                    'sk': f'VERSION#{version}'
+                },
+                UpdateExpression='SET is_active = :active, updated_at = :updated_at',
+                ExpressionAttributeValues={
+                    ':active': new_active,
+                    ':updated_at': now.isoformat()
+                }
+            )
+            
+            # Return updated prompt
+            item['is_active'] = new_active
+            item['updated_at'] = now.isoformat()
+            
+            return self._item_to_prompt(item)
+            
+        except Exception as e:
+            logger.error(f"Error toggling prompt active status: {e}")
+            raise

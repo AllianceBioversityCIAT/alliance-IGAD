@@ -58,11 +58,13 @@ class PromptUpdate(BaseModel):
     user_prompt_template: Optional[str] = Field(None, min_length=1)
     few_shot: Optional[List[FewShotExample]] = None
     context: Optional[PromptContext] = None
+    is_active: Optional[bool] = None
 
 class Prompt(PromptBase):
     id: str
     version: int
     status: PromptStatus
+    is_active: bool = Field(default=True, description="Whether the prompt is active and available for use")
     created_by: str
     updated_by: str
     created_at: datetime

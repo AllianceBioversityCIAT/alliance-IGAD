@@ -59,6 +59,11 @@ class PromptService {
     await apiClient.delete(`${this.baseUrl}/${id}${versionParam}`)
   }
 
+  async toggleActive(id: string): Promise<Prompt> {
+    const response = await apiClient.post(`${this.baseUrl}/${id}/toggle-active`)
+    return response.data
+  }
+
   async previewPrompt(data: PromptPreviewRequest): Promise<PromptPreviewResponse> {
     const response = await apiClient.post(`${this.baseUrl}/preview`, data)
     return response.data

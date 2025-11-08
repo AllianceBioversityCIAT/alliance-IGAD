@@ -57,6 +57,7 @@ export interface Prompt {
   tags: string[]
   version: number
   status: 'draft' | 'published'
+  is_active: boolean
   system_prompt: string
   user_prompt_template: string
   few_shot?: FewShotExample[]

@@ -83,6 +83,16 @@ export function usePrompts(filters?: UsePromptsFilters) {
     }
   )
 
+  // Toggle active mutation
+  const toggleActiveMutation = useMutation(
+    (id: string) => promptService.toggleActive(id),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['prompts'])
+      },
+    }
+  )
+
   // Preview prompt mutation
   const previewMutation = useMutation(
     (data: PromptPreviewRequest) => promptService.previewPrompt(data)
@@ -102,6 +112,7 @@ export function usePrompts(filters?: UsePromptsFilters) {
     isPublishing: publishMutation.isLoading,
     isDeleting: deleteMutation.isLoading,
     isPreviewing: previewMutation.isLoading,
+    isTogglingActive: toggleActiveMutation.isLoading,
     
     // Error states
     error,
@@ -119,6 +130,7 @@ export function usePrompts(filters?: UsePromptsFilters) {
     updatePrompt: updateMutation.mutateAsync,
     publishPrompt: publishMutation.mutateAsync,
     deletePrompt: deleteMutation.mutateAsync,
+    toggleActive: toggleActiveMutation.mutateAsync,
     previewPrompt: previewMutation.mutateAsync,
     refetch,
     

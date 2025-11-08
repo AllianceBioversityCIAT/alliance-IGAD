@@ -222,3 +222,28 @@ async def get_prompt_by_section(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get prompt"
         )
+@router.post("/{prompt_id}/toggle-active", response_model=Prompt)
+async def toggle_prompt_active(
+    prompt_id: str,
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Toggle prompt active status"""
+    try:
+        prompt = await prompt_service.toggle_active(prompt_id)
+        if not prompt:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Prompt not found"
+            )
+        return prompt
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error toggling prompt active status: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to toggle prompt active status"
+        )

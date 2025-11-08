@@ -67,10 +67,12 @@ export function PromptManagerPage() {
     isUpdating,
     isPublishing,
     isDeleting,
+    isTogglingActive,
     createPrompt,
     updatePrompt,
     publishPrompt,
     deletePrompt,
+    toggleActive,
     setCurrentPage,
     nextPage,
     prevPage
@@ -157,6 +159,19 @@ export function PromptManagerPage() {
       toast.success('Prompt cloned successfully', `"${clonedData.name}" has been created as a draft.`)
     } catch (error: any) {
       toast.error('Failed to clone prompt', error.message || 'Please try again.')
+    }
+  }
+
+  const handleToggleActive = async (id: string) => {
+    try {
+      const prompt = prompts.find(p => p.id === id)
+      await toggleActive(id)
+      toast.success(
+        `Prompt ${prompt?.is_active ? 'deactivated' : 'activated'} successfully`,
+        `"${prompt?.name}" is now ${prompt?.is_active ? 'inactive' : 'active'}.`
+      )
+    } catch (error: any) {
+      toast.error('Failed to toggle prompt status', error.message || 'Please try again.')
     }
   }
 
@@ -249,6 +264,7 @@ export function PromptManagerPage() {
           onPublish={handlePublishPrompt}
           onDelete={handleDeletePrompt}
           onClone={handleClonePrompt}
+          onToggleActive={handleToggleActive}
         />
 
         {/* Pagination */}
@@ -290,14 +306,15 @@ export function PromptManagerPage() {
       )}
 
       {/* Loading Overlay */}
-      {(isCreating || isUpdating || isPublishing || isDeleting) && (
+      {(isCreating || isUpdating || isPublishing || isDeleting || isTogglingActive) && (
         <LoadingSpinner 
           overlay 
           text={
             isCreating ? 'Creating prompt...' :
             isUpdating ? 'Updating prompt...' :
             isPublishing ? 'Publishing prompt...' :
-            isDeleting ? 'Deleting prompt...' : 'Processing...'
+            isDeleting ? 'Deleting prompt...' :
+            isTogglingActive ? 'Updating status...' : 'Processing...'
           }
         />
       )}
