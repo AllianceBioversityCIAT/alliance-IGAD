@@ -80,10 +80,20 @@ class PromptService:
         prompt_id = self._generate_prompt_id()
         now = datetime.utcnow()
         
+        # Check for active prompt conflict (new prompts are active by default)
+        is_active = True
+        existing_active = await self._find_active_prompt_by_section_route(
+            prompt_data.section, 
+            prompt_data.route or ''
+        )
+        if existing_active:
+            raise ValueError(f"Another prompt is already active for section '{prompt_data.section}' and route '{prompt_data.route or ''}'. Only one prompt can be active per section-route combination.")
+        
         prompt = Prompt(
             id=prompt_id,
             version=1,
             status=PromptStatus.DRAFT,
+            is_active=is_active,
             created_by=user_id,
             updated_by=user_id,
             created_at=now,
@@ -338,6 +348,16 @@ class PromptService:
             current_active = item.get('is_active', True)
             new_active = not current_active
             
+            # If activating, check for conflicts
+            if new_active:
+                section = item.get('section')
+                route = item.get('route', '')
+                
+                # Check for other active prompts with same section and route
+                existing_active = await self._find_active_prompt_by_section_route(section, route, prompt_id)
+                if existing_active:
+                    raise ValueError(f"Another prompt is already active for section '{section}' and route '{route}'. Only one prompt can be active per section-route combination.")
+            
             # Update active status
             now = datetime.utcnow()
             
@@ -376,3 +396,29 @@ class PromptService:
         except Exception as e:
             logger.error(f"Error toggling prompt active status: {e}")
             raise
+    async def _find_active_prompt_by_section_route(self, section: str, route: str, exclude_id: str = None) -> Optional[dict]:
+        """Find active prompt with same section and route"""
+        try:
+            # Query all prompts to check for conflicts
+            response = self.table.scan(
+                FilterExpression='begins_with(pk, :pk_prefix) AND sk = :sk AND section = :section AND route = :route AND is_active = :active',
+                ExpressionAttributeValues={
+                    ':pk_prefix': 'PROMPT#',
+                    ':sk': 'LATEST',
+                    ':section': section,
+                    ':route': route,
+                    ':active': True
+                }
+            )
+            
+            items = response.get('Items', [])
+            
+            # Filter out the current prompt if excluding
+            if exclude_id:
+                items = [item for item in items if item.get('pk') != f'PROMPT#{exclude_id}']
+            
+            return items[0] if items else None
+            
+        except Exception as e:
+            logger.error(f"Error finding active prompt by section/route: {e}")
+            return None

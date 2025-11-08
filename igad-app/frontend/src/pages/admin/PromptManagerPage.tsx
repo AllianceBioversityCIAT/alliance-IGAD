@@ -112,7 +112,15 @@ export function PromptManagerPage() {
       setIsEditorOpen(false)
       setSelectedPromptId(null)
     } catch (error: any) {
-      toast.error('Failed to save prompt', error.message || 'Please try again.')
+      const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
+      if (errorMessage.includes('already active')) {
+        toast.error(
+          'Cannot create/update prompt',
+          'Another prompt is already active for this section and route combination. Only one prompt can be active per section-route.'
+        )
+      } else {
+        toast.error('Failed to save prompt', errorMessage)
+      }
     }
   }
 
@@ -171,7 +179,15 @@ export function PromptManagerPage() {
         `"${prompt?.name}" is now ${prompt?.is_active ? 'inactive' : 'active'}.`
       )
     } catch (error: any) {
-      toast.error('Failed to toggle prompt status', error.message || 'Please try again.')
+      const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
+      if (errorMessage.includes('already active')) {
+        toast.error(
+          'Cannot activate prompt',
+          'Only one prompt can be active per section and route combination. Please deactivate the existing prompt first.'
+        )
+      } else {
+        toast.error('Failed to toggle prompt status', errorMessage)
+      }
     }
   }
 
