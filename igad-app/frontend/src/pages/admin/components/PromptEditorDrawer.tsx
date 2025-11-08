@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Eye } from 'lucide-react'
+import { X, Save, Eye, Loader2 } from 'lucide-react'
 import { usePrompt } from '../../../hooks/usePrompts'
 import { ProposalSection, SECTION_LABELS, type CreatePromptRequest, type UpdatePromptRequest } from '../../../types/prompt'
 import styles from './PromptEditorDrawer.module.css'
@@ -9,9 +9,10 @@ interface PromptEditorDrawerProps {
   promptId?: string | null
   onClose: () => void
   onSave: (data: any) => void
+  isLoading?: boolean
 }
 
-export function PromptEditorDrawer({ mode, promptId, onClose, onSave }: PromptEditorDrawerProps) {
+export function PromptEditorDrawer({ mode, promptId, onClose, onSave, isLoading = false }: PromptEditorDrawerProps) {
   const { data: existingPrompt } = usePrompt(promptId || '', 'latest')
   
   const [formData, setFormData] = useState({
@@ -197,9 +198,22 @@ export function PromptEditorDrawer({ mode, promptId, onClose, onSave }: PromptEd
             <button type="button" onClick={onClose} className={styles.cancelButton}>
               Cancel
             </button>
-            <button type="submit" className={styles.saveButton}>
-              <Save size={16} />
-              {mode === 'create' ? 'Create Prompt' : 'Update Prompt'}
+            <button 
+              type="submit" 
+              className={styles.saveButton}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={16} className={styles.spinning} />
+                  {mode === 'create' ? 'Creating...' : 'Updating...'}
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  {mode === 'create' ? 'Create Prompt' : 'Update Prompt'}
+                </>
+              )}
             </button>
           </div>
         </form>

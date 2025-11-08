@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { Plus, Settings, Search, Filter } from 'lucide-react'
 import { usePrompts } from '../../hooks/usePrompts'
+import { useToast } from '../../hooks/useToast'
 import { PromptListTable } from './components/PromptListTable'
 import { PromptEditorDrawer } from './components/PromptEditorDrawer'
 import { PromptFilters } from './components/PromptFilters'
+import { ToastContainer } from '../../components/ui/ToastContainer'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import type { ProposalSection, Prompt } from '../../types/prompt'
 import styles from './PromptManagerPage.module.css'
 
@@ -20,6 +24,19 @@ export function PromptManagerPage() {
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editorMode, setEditorMode] = useState<'create' | 'edit'>('create')
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    onConfirm: () => void
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  })
+
+  const toast = useToast()
 
   const {
     prompts,
@@ -27,6 +44,10 @@ export function PromptManagerPage() {
     hasMore,
     currentPage,
     isLoading,
+    isCreating,
+    isUpdating,
+    isPublishing,
+    isDeleting,
     createPrompt,
     updatePrompt,
     publishPrompt,
@@ -62,33 +83,51 @@ export function PromptManagerPage() {
     try {
       if (editorMode === 'create') {
         await createPrompt(data)
-        console.log('Prompt created successfully')
+        toast.success('Prompt created successfully', `"${data.name}" has been created and saved as draft.`)
       } else if (selectedPromptId) {
         await updatePrompt({ id: selectedPromptId, data })
-        console.log('Prompt updated successfully')
+        toast.success('Prompt updated successfully', `"${data.name}" has been updated.`)
       }
       setIsEditorOpen(false)
       setSelectedPromptId(null)
-    } catch (error) {
-      console.error('Failed to save prompt:', error)
+    } catch (error: any) {
+      toast.error('Failed to save prompt', error.message || 'Please try again.')
     }
   }
 
   const handlePublishPrompt = async (id: string, version: number) => {
     try {
       await publishPrompt({ id, version })
-      console.log('Prompt published successfully')
-    } catch (error) {
-      console.error('Failed to publish prompt:', error)
+      toast.success('Prompt published successfully', 'The prompt is now available for use.')
+    } catch (error: any) {
+      toast.error('Failed to publish prompt', error.message || 'Please try again.')
     }
+  }
+
+  const handleDeletePrompt = (id: string, version?: number) => {
+    const prompt = prompts.find(p => p.id === id)
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Prompt',
+      message: `Are you sure you want to delete "${prompt?.name}"? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await deletePrompt({ id, version })
+          toast.success('Prompt deleted successfully', 'The prompt has been permanently removed.')
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }))
+        } catch (error: any) {
+          toast.error('Failed to delete prompt', error.message || 'Please try again.')
+        }
+      }
+    })
   }
 
   const handleClonePrompt = async (prompt: Prompt) => {
     try {
       const clonedData = {
-        name: `CLONE - ${prompt.name}`,
+        name: `Copy of ${prompt.name}`,
         section: prompt.section,
-        route: prompt.route ? `${prompt.route}-clone` : '',
+        route: prompt.route ? `${prompt.route}-copy` : '',
         tags: [...prompt.tags, 'cloned'],
         system_prompt: prompt.system_prompt,
         user_prompt_template: prompt.user_prompt_template,
@@ -96,20 +135,9 @@ export function PromptManagerPage() {
         context: prompt.context || {}
       }
       await createPrompt(clonedData)
-      console.log('Prompt cloned successfully')
-    } catch (error) {
-      console.error('Failed to clone prompt:', error)
-    }
-  }
-
-  const handleDeletePrompt = async (id: string, version?: number) => {
-    if (window.confirm('Are you sure you want to delete this prompt?')) {
-      try {
-        await deletePrompt({ id, version })
-        console.log('Prompt deleted successfully')
-      } catch (error) {
-        console.error('Failed to delete prompt:', error)
-      }
+      toast.success('Prompt cloned successfully', `"${clonedData.name}" has been created as a draft.`)
+    } catch (error: any) {
+      toast.error('Failed to clone prompt', error.message || 'Please try again.')
     }
   }
 
@@ -227,8 +255,36 @@ export function PromptManagerPage() {
           promptId={selectedPromptId}
           onClose={handleCloseEditor}
           onSave={handleSavePrompt}
+          isLoading={isCreating || isUpdating}
         />
       )}
+
+      {/* Loading Overlay */}
+      {(isCreating || isUpdating || isPublishing || isDeleting) && (
+        <LoadingSpinner 
+          overlay 
+          text={
+            isCreating ? 'Creating prompt...' :
+            isUpdating ? 'Updating prompt...' :
+            isPublishing ? 'Publishing prompt...' :
+            isDeleting ? 'Deleting prompt...' : 'Processing...'
+          }
+        />
+      )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        variant="danger"
+        confirmText="Delete"
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
     </div>
   )
 }

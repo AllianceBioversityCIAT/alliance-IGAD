@@ -49,9 +49,7 @@ export function PromptListTable({
         onClone(prompt)
         break
       case 'delete':
-        if (window.confirm('Are you sure you want to delete this prompt?')) {
-          onDelete(promptId)
-        }
+        onDelete(promptId)
         break
     }
   }
