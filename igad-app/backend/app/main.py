@@ -16,6 +16,7 @@ load_dotenv()
 # Import auth service
 from .simple_cognito import SimpleCognitoService
 from .middleware.auth_middleware import AuthMiddleware
+from .handlers.admin_prompts import router as admin_prompts_router
 
 # Initialize services
 auth_middleware = AuthMiddleware()
@@ -43,11 +44,14 @@ cognito_service = SimpleCognitoService(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(admin_prompts_router)
 
 # Models
 class ProposalCreate(BaseModel):
@@ -469,3 +473,32 @@ async def reset_password(request: dict):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Reset password error: {str(e)}")
+
+# Runtime prompt endpoint (non-admin)
+@app.get("/prompts/section/{section}")
+async def get_runtime_prompt_by_section(section: str):
+    """Get the latest published prompt for a section (runtime endpoint)"""
+    try:
+        from .models.prompt_model import ProposalSection
+        from .services.prompt_service import PromptService
+        
+        # Validate section
+        try:
+            section_enum = ProposalSection(section)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid section: {section}")
+        
+        prompt_service = PromptService()
+        prompt = await prompt_service.get_prompt_by_section(section_enum)
+        
+        if not prompt:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"No published prompt found for section {section}"
+            )
+        
+        return prompt
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get prompt: {str(e)}")
