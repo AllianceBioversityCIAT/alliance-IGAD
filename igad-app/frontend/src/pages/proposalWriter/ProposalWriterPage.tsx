@@ -8,6 +8,7 @@ import { Step3StructureValidation } from './Step3StructureValidation'
 import { Step4ReviewRefinement } from './Step4ReviewRefinement'
 import { Step5FinalExport } from './Step5FinalExport'
 import { useProposals } from '../../hooks/useProposal'
+import { authService } from '../../services/authService'
 import styles from './proposalWriter.module.css'
 
 export function ProposalWriterPage() {
@@ -23,9 +24,11 @@ export function ProposalWriterPage() {
 
   const { createProposal, isCreating } = useProposals()
 
-  // Create a proposal when the component mounts
+  // Create a proposal when the component mounts (only if authenticated)
   useEffect(() => {
-    if (!proposalId && !isCreating) {
+    const isAuthenticated = authService.isAuthenticated()
+    
+    if (!proposalId && !isCreating && isAuthenticated) {
       createProposal(
         {
           title: `Proposal Draft - ${new Date().toLocaleDateString()}`,
