@@ -36,6 +36,7 @@ class PromptService:
             'tags': prompt.tags,
             'version': prompt.version,
             'status': prompt.status.value,
+            'is_active': prompt.is_active,
             'system_prompt': prompt.system_prompt,
             'user_prompt_template': prompt.user_prompt_template,
             'created_by': prompt.created_by,
@@ -65,6 +66,7 @@ class PromptService:
             tags=item.get('tags', []),
             version=item['version'],
             status=PromptStatus(item['status']),
+            is_active=item.get('is_active', True),  # Default to True for backward compatibility
             system_prompt=item['system_prompt'],
             user_prompt_template=item['user_prompt_template'],
             few_shot=item.get('few_shot'),
