@@ -17,15 +17,6 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    
-    // Debug logging
-    console.log('API Request:', {
-      method: config.method,
-      url: config.url,
-      baseURL: config.baseURL,
-      fullURL: `${config.baseURL}${config.url}`
-    })
-    
     return config
   },
   (error) => {

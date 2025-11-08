@@ -42,33 +42,31 @@ export interface AISuggestion {
 }
 
 class ProposalService {
-  private baseUrl = '/api/proposals'
-
   async createProposal(data: {
     title: string
     description?: string
     template_id?: string
   }): Promise<Proposal> {
-    const response = await apiClient.post(this.baseUrl, data)
+    const response = await apiClient.post('/api/proposals', data)
     return response.data.proposal
   }
 
   async getProposal(id: string): Promise<Proposal> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}`)
+    const response = await apiClient.get(`/api/proposals/${id}`)
     return response.data.proposal
   }
 
   async updateProposal(id: string, updates: Partial<Proposal>): Promise<Proposal> {
-    const response = await apiClient.put(`${this.baseUrl}/${id}`, updates)
+    const response = await apiClient.put(`/api/proposals/${id}`, updates)
     return response.data.proposal
   }
 
   async deleteProposal(id: string): Promise<void> {
-    await apiClient.delete(`${this.baseUrl}/${id}`)
+    await apiClient.delete(`/api/proposals/${id}`)
   }
 
   async listProposals(): Promise<Proposal[]> {
-    const response = await apiClient.get(this.baseUrl)
+    const response = await apiClient.get('/api/proposals')
     return response.data.proposals
   }
 
@@ -77,7 +75,7 @@ class ProposalService {
     sectionId: string,
     contextData?: Record<string, any>
   ): Promise<AIGenerationResult> {
-    const response = await apiClient.post(`${this.baseUrl}/${proposalId}/generate`, {
+    const response = await apiClient.post(`/api/proposals/${proposalId}/generate`, {
       section_id: sectionId,
       context_data: contextData
     })
@@ -89,7 +87,7 @@ class ProposalService {
     sectionId: string,
     improvementType: string = 'general'
   ): Promise<AIGenerationResult> {
-    const response = await apiClient.post(`${this.baseUrl}/${proposalId}/improve`, {
+    const response = await apiClient.post(`/api/proposals/${proposalId}/improve`, {
       section_id: sectionId,
       improvement_type: improvementType
     })
@@ -97,12 +95,12 @@ class ProposalService {
   }
 
   async generateExecutiveSummary(proposalId: string): Promise<AIGenerationResult> {
-    const response = await apiClient.post(`${this.baseUrl}/${proposalId}/summarize`)
+    const response = await apiClient.post(`/api/proposals/${proposalId}/summarize`)
     return response.data.result
   }
 
   async getSuggestions(proposalId: string): Promise<AISuggestion[]> {
-    const response = await apiClient.get(`${this.baseUrl}/${proposalId}/suggestions`)
+    const response = await apiClient.get(`/api/proposals/${proposalId}/suggestions`)
     return response.data.suggestions
   }
 
