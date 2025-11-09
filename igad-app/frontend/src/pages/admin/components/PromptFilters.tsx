@@ -16,21 +16,21 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
   const handleSectionChange = (section: string) => {
     onChange({
       ...filters,
-      section: section === 'all' ? undefined : section as ProposalSection
+      section: section === 'all' ? undefined : (section as ProposalSection),
     })
   }
 
   const handleActiveChange = (active: string) => {
     onChange({
       ...filters,
-      is_active: active === 'all' ? undefined : active === 'true'
+      is_active: active === 'all' ? undefined : active === 'true',
     })
   }
 
   const handleSearchChange = (search: string) => {
     onChange({
       ...filters,
-      search: search || undefined
+      search: search || undefined,
     })
   }
 
@@ -42,16 +42,16 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
           type="text"
           placeholder="Search in name, content, route, tags..."
           value={filters.search || ''}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          onChange={e => handleSearchChange(e.target.value)}
           className={styles.input}
         />
       </div>
-      
+
       <div className={styles.filterGroup}>
         <label className={styles.label}>Section</label>
         <select
           value={filters.section || 'all'}
-          onChange={(e) => handleSectionChange(e.target.value)}
+          onChange={e => handleSectionChange(e.target.value)}
           className={styles.select}
         >
           <option value="all">All Sections</option>
@@ -69,7 +69,7 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
           type="text"
           placeholder="Filter by route..."
           value={filters.route || ''}
-          onChange={(e) => handleRouteChange(e.target.value)}
+          onChange={e => handleRouteChange(e.target.value)}
           className={styles.input}
         />
       </div>
@@ -78,7 +78,7 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
         <label className={styles.label}>Active Status</label>
         <select
           value={filters.is_active === undefined ? 'all' : filters.is_active.toString()}
-          onChange={(e) => handleActiveChange(e.target.value)}
+          onChange={e => handleActiveChange(e.target.value)}
           className={styles.select}
         >
           <option value="all">All</option>
@@ -93,7 +93,7 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
           type="text"
           placeholder="Filter by tag..."
           value={filters.tag || ''}
-          onChange={(e) => handleTagChange(e.target.value)}
+          onChange={e => handleTagChange(e.target.value)}
           className={styles.input}
         />
       </div>

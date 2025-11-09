@@ -9,7 +9,7 @@ export function SystemSettings() {
     userPoolId: process.env.REACT_APP_COGNITO_USER_POOL_ID || 'Not configured',
     clientId: process.env.REACT_APP_COGNITO_CLIENT_ID || 'Not configured',
     region: process.env.REACT_APP_AWS_REGION || 'us-east-1',
-    apiEndpoint: process.env.REACT_APP_API_URL || 'http://localhost:8000'
+    apiEndpoint: process.env.REACT_APP_API_URL || 'http://localhost:8000',
   }
 
   const handleCopy = async (text: string, key: string) => {
@@ -17,8 +17,7 @@ export function SystemSettings() {
       await navigator.clipboard.writeText(text)
       setCopied(key)
       setTimeout(() => setCopied(null), 2000)
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   const isConfigured = (value: string) => {
@@ -32,9 +31,7 @@ export function SystemSettings() {
           <Key className={styles.titleIcon} />
           <div>
             <h3 className={styles.title}>System Configuration</h3>
-            <p className={styles.subtitle}>
-              View system settings and configuration details
-            </p>
+            <p className={styles.subtitle}>View system settings and configuration details</p>
           </div>
         </div>
       </div>
@@ -46,7 +43,7 @@ export function SystemSettings() {
             <Server size={16} />
             AWS Cognito Configuration
           </h4>
-          
+
           <div className={styles.configGrid}>
             <div className={styles.configItem}>
               <div className={styles.configHeader}>
@@ -67,11 +64,7 @@ export function SystemSettings() {
                     className={styles.copyButton}
                     title="Copy to clipboard"
                   >
-                    {copied === 'userPoolId' ? (
-                      <CheckCircle size={14} />
-                    ) : (
-                      <Copy size={14} />
-                    )}
+                    {copied === 'userPoolId' ? <CheckCircle size={14} /> : <Copy size={14} />}
                   </button>
                 )}
               </div>
@@ -96,11 +89,7 @@ export function SystemSettings() {
                     className={styles.copyButton}
                     title="Copy to clipboard"
                   >
-                    {copied === 'clientId' ? (
-                      <CheckCircle size={14} />
-                    ) : (
-                      <Copy size={14} />
-                    )}
+                    {copied === 'clientId' ? <CheckCircle size={14} /> : <Copy size={14} />}
                   </button>
                 )}
               </div>
@@ -120,11 +109,7 @@ export function SystemSettings() {
                   className={styles.copyButton}
                   title="Copy to clipboard"
                 >
-                  {copied === 'region' ? (
-                    <CheckCircle size={14} />
-                  ) : (
-                    <Copy size={14} />
-                  )}
+                  {copied === 'region' ? <CheckCircle size={14} /> : <Copy size={14} />}
                 </button>
               </div>
             </div>
@@ -137,7 +122,7 @@ export function SystemSettings() {
             <Globe size={16} />
             API Configuration
           </h4>
-          
+
           <div className={styles.configGrid}>
             <div className={styles.configItem}>
               <div className={styles.configHeader}>
@@ -153,11 +138,7 @@ export function SystemSettings() {
                   className={styles.copyButton}
                   title="Copy to clipboard"
                 >
-                  {copied === 'apiEndpoint' ? (
-                    <CheckCircle size={14} />
-                  ) : (
-                    <Copy size={14} />
-                  )}
+                  {copied === 'apiEndpoint' ? <CheckCircle size={14} /> : <Copy size={14} />}
                 </button>
               </div>
             </div>
@@ -167,7 +148,7 @@ export function SystemSettings() {
         {/* Configuration Status */}
         <div className={styles.section}>
           <h4 className={styles.sectionTitle}>Configuration Status</h4>
-          
+
           <div className={styles.statusGrid}>
             <div className={styles.statusItem}>
               <div className={styles.statusIndicator}>
@@ -182,8 +163,7 @@ export function SystemSettings() {
                 <p className={styles.statusDescription}>
                   {isConfigured(systemInfo.userPoolId) && isConfigured(systemInfo.clientId)
                     ? 'AWS Cognito is properly configured'
-                    : 'AWS Cognito configuration is incomplete'
-                  }
+                    : 'AWS Cognito configuration is incomplete'}
                 </p>
               </div>
             </div>
@@ -194,9 +174,7 @@ export function SystemSettings() {
               </div>
               <div className={styles.statusContent}>
                 <h5 className={styles.statusTitle}>API Connection</h5>
-                <p className={styles.statusDescription}>
-                  Backend API is accessible and responding
-                </p>
+                <p className={styles.statusDescription}>Backend API is accessible and responding</p>
               </div>
             </div>
           </div>

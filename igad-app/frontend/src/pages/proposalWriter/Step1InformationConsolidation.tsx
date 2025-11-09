@@ -16,7 +16,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
     if (proposal) {
       setFormData({
         uploadedFiles: {}, // Files would need to be reconstructed from file names
-        textInputs: proposal.text_inputs || {}
+        textInputs: proposal.text_inputs || {},
       })
     }
   }, [proposal, setFormData])
@@ -26,12 +26,12 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
       const newFiles = Array.from(files)
       const updatedFiles = {
         ...formData.uploadedFiles,
-        [section]: newFiles
+        [section]: newFiles,
       }
-      
+
       setFormData(prev => ({
         ...prev,
-        uploadedFiles: updatedFiles
+        uploadedFiles: updatedFiles,
       }))
 
       // Save to backend if we have a proposal ID
@@ -39,10 +39,9 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         try {
           await updateFormData({
             uploadedFiles: updatedFiles,
-            textInputs: formData.textInputs
+            textInputs: formData.textInputs,
           })
-        } catch (error) {
-        }
+        } catch (error) {}
       }
     }
   }
@@ -50,12 +49,12 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   const handleTextChange = async (section: string, value: string) => {
     const updatedInputs = {
       ...formData.textInputs,
-      [section]: value
+      [section]: value,
     }
-    
+
     setFormData(prev => ({
       ...prev,
-      textInputs: updatedInputs
+      textInputs: updatedInputs,
     }))
 
     // Save to backend if we have a proposal ID (debounced)
@@ -63,10 +62,9 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
       try {
         await updateFormData({
           uploadedFiles: formData.uploadedFiles,
-          textInputs: updatedInputs
+          textInputs: updatedInputs,
         })
-      } catch (error) {
-      }
+      } catch (error) {}
     }
   }
 
@@ -84,7 +82,8 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
       <div className={styles.stepHeader}>
         <h1 className={styles.stepMainTitle}>Step 1: Information Consolidation</h1>
         <p className={styles.stepMainDescription}>
-          Gather all necessary context: RFPs, reference proposals, existing work, and initial concepts
+          Gather all necessary context: RFPs, reference proposals, existing work, and initial
+          concepts
         </p>
       </div>
 
@@ -98,16 +97,14 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             </p>
           </div>
           <div className={styles.progressCardStats}>
-            <span className={styles.progressCount}>
-              {hasRequiredFiles() ? '1' : '0'}/3
-            </span>
+            <span className={styles.progressCount}>{hasRequiredFiles() ? '1' : '0'}/3</span>
             <span className={styles.progressLabel}>sections complete</span>
           </div>
         </div>
         <div className={styles.progressCardBar}>
-          <div 
-            className={styles.progressCardFill} 
-            style={{ width: hasRequiredFiles() ? '33%' : '1%' }} 
+          <div
+            className={styles.progressCardFill}
+            style={{ width: hasRequiredFiles() ? '33%' : '1%' }}
           />
         </div>
       </div>
@@ -134,7 +131,8 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           <div className={styles.uploadSectionInfo}>
             <h3 className={styles.uploadSectionTitle}>RFP / Call for Proposals*</h3>
             <p className={styles.uploadSectionDescription}>
-              Upload the official Request for Proposals document. This is essential for understanding donor requirements and evaluation criteria.
+              Upload the official Request for Proposals document. This is essential for
+              understanding donor requirements and evaluation criteria.
             </p>
           </div>
         </div>
@@ -160,7 +158,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           <input
             type="file"
             accept=".pdf,.doc,.docx"
-            onChange={(e) => handleFileUpload('rfp-document', e.target.files)}
+            onChange={e => handleFileUpload('rfp-document', e.target.files)}
             className={styles.hiddenInput}
             id="rfp-document"
             disabled={isUpdating}
@@ -168,7 +166,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           <label htmlFor="rfp-document" className={styles.uploadButton}>
             {isUpdating ? 'Saving...' : 'Choose File'}
           </label>
-          
+
           {/* Show uploaded files */}
           {getUploadedFileCount('rfp-document') > 0 && (
             <div className={styles.fileList}>
@@ -190,7 +188,8 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           <div className={styles.uploadSectionInfo}>
             <h3 className={styles.uploadSectionTitle}>Reference Proposals</h3>
             <p className={styles.uploadSectionDescription}>
-              Upload successful proposals to this donor or similar calls. These help understand donor preferences and winning strategies.
+              Upload successful proposals to this donor or similar calls. These help understand
+              donor preferences and winning strategies.
             </p>
           </div>
         </div>
@@ -203,7 +202,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             type="file"
             multiple
             accept=".pdf,.doc,.docx"
-            onChange={(e) => handleFileUpload('reference-proposals', e.target.files)}
+            onChange={e => handleFileUpload('reference-proposals', e.target.files)}
             className={styles.hiddenInput}
             id="reference-proposals"
             disabled={isUpdating}
@@ -211,7 +210,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           <label htmlFor="reference-proposals" className={styles.uploadButtonSecondary}>
             {isUpdating ? 'Saving...' : 'Choose Files'}
           </label>
-          
+
           {/* Show uploaded files */}
           {getUploadedFileCount('reference-proposals') > 0 && (
             <div className={styles.fileList}>
@@ -233,7 +232,8 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           <div className={styles.uploadSectionInfo}>
             <h3 className={styles.uploadSectionTitle}>Existing Work & Experience</h3>
             <p className={styles.uploadSectionDescription}>
-              Describe your organization's relevant experience, ongoing projects, and previous work that relates to this call.
+              Describe your organization's relevant experience, ongoing projects, and previous work
+              that relates to this call.
             </p>
           </div>
         </div>
@@ -242,12 +242,14 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           className={styles.textArea}
           placeholder="Describe your relevant experience, ongoing projects, previous work with similar donors, institutional strengths, partnerships, and any preliminary research or activities related to this call..."
           value={formData.textInputs['existing-work'] || ''}
-          onChange={(e) => handleTextChange('existing-work', e.target.value)}
+          onChange={e => handleTextChange('existing-work', e.target.value)}
           disabled={isUpdating}
         />
-        
+
         <div className={styles.textAreaFooter}>
-          <span className={styles.textAreaHint}>Please provide more detail (minimum 50 characters)</span>
+          <span className={styles.textAreaHint}>
+            Please provide more detail (minimum 50 characters)
+          </span>
           <span className={styles.textAreaCount}>
             {(formData.textInputs['existing-work'] || '').length} characters
           </span>
@@ -257,16 +259,17 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         <div className={styles.supportingDocs}>
           <h4 className={styles.supportingDocsTitle}>Supporting Documents (Optional)</h4>
           <p className={styles.supportingDocsDescription}>
-            Upload additional documents like organizational profiles, previous project reports, or technical papers.
+            Upload additional documents like organizational profiles, previous project reports, or
+            technical papers.
           </p>
-          
+
           <div className={styles.uploadAreaSmall}>
             <FileText className={styles.uploadAreaIcon} size={24} />
             <p className={styles.uploadAreaTitle}>Drop supporting files here</p>
             <input
               type="file"
               multiple
-              onChange={(e) => handleFileUpload('supporting-docs', e.target.files)}
+              onChange={e => handleFileUpload('supporting-docs', e.target.files)}
               className={styles.hiddenInput}
               id="supporting-docs"
               disabled={isUpdating}
@@ -274,7 +277,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             <label htmlFor="supporting-docs" className={styles.uploadButtonSecondary}>
               {isUpdating ? 'Saving...' : 'Add Files'}
             </label>
-            
+
             {/* Show uploaded files */}
             {getUploadedFileCount('supporting-docs') > 0 && (
               <div className={styles.fileList}>
@@ -297,7 +300,8 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           <div className={styles.uploadSectionInfo}>
             <h3 className={styles.uploadSectionTitle}>Initial Concept or Direction*</h3>
             <p className={styles.uploadSectionDescription}>
-              Outline your initial ideas, approach, or hypothesis for this proposal. You can have formal or upload a document outlining your concept.
+              Outline your initial ideas, approach, or hypothesis for this proposal. You can have
+              formal or upload a document outlining your concept.
             </p>
           </div>
         </div>
@@ -306,12 +310,14 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           className={styles.textArea}
           placeholder="Describe your initial concept, proposed approach, target beneficiaries, expected outcomes, implementation strategy, or any specific innovations you plan to include..."
           value={formData.textInputs['initial-concept'] || ''}
-          onChange={(e) => handleTextChange('initial-concept', e.target.value)}
+          onChange={e => handleTextChange('initial-concept', e.target.value)}
           disabled={isUpdating}
         />
-        
+
         <div className={styles.textAreaFooter}>
-          <span className={styles.textAreaHint}>Please provide more detail about your concept (minimum 100 characters)</span>
+          <span className={styles.textAreaHint}>
+            Please provide more detail about your concept (minimum 100 characters)
+          </span>
           <span className={styles.textAreaCount}>
             {(formData.textInputs['initial-concept'] || '').length} characters
           </span>
@@ -323,14 +329,14 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           <p className={styles.uploadAlternativeDescription}>
             Upload an existing Word document, PDF, or other file outlining your concept instead
           </p>
-          
+
           <div className={styles.uploadAreaSmall}>
             <FileText className={styles.uploadAreaIcon} size={24} />
             <p className={styles.uploadAreaTitle}>Drop concept document here</p>
             <input
               type="file"
               accept=".pdf,.doc,.docx"
-              onChange={(e) => handleFileUpload('concept-document', e.target.files)}
+              onChange={e => handleFileUpload('concept-document', e.target.files)}
               className={styles.hiddenInput}
               id="concept-document"
               disabled={isUpdating}
@@ -338,7 +344,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             <label htmlFor="concept-document" className={styles.uploadButtonSecondary}>
               {isUpdating ? 'Saving...' : 'Choose File'}
             </label>
-            
+
             {/* Show uploaded files */}
             {getUploadedFileCount('concept-document') > 0 && (
               <div className={styles.fileList}>

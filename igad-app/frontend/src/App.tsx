@@ -32,43 +32,58 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <Router>
-        <Routes>
-          <Route path="/login" element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          } />
-          <Route path="/forgot-password" element={
-            <PublicRoute>
-              <ForgotPasswordPage />
-            </PublicRoute>
-          } />
-          <Route path="/change-password" element={<ChangePasswordPage />} />
-          <Route path="/test-cognito" element={<CognitoTest />} />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<HomePage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="proposal-writer" element={<ProposalWriterPage />} />
-            <Route path="proposal-writer/:stepId" element={<ProposalWriterPage />} />
-            <Route path="newsletter-generator" element={<NewsletterGeneratorPage />} />
-            <Route path="admin/prompt-manager" element={
-              <AdminRoute>
-                <PromptManagerPage />
-              </AdminRoute>
-            } />
-            <Route path="admin/settings" element={
-              <AdminRoute>
-                <SettingsPage />
-              </AdminRoute>
-            } />
-          </Route>
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </Router>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <LoginPage />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <PublicRoute>
+                  <ForgotPasswordPage />
+                </PublicRoute>
+              }
+            />
+            <Route path="/change-password" element={<ChangePasswordPage />} />
+            <Route path="/test-cognito" element={<CognitoTest />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<HomePage />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="proposal-writer" element={<ProposalWriterPage />} />
+              <Route path="proposal-writer/:stepId" element={<ProposalWriterPage />} />
+              <Route path="newsletter-generator" element={<NewsletterGeneratorPage />} />
+              <Route
+                path="admin/prompt-manager"
+                element={
+                  <AdminRoute>
+                    <PromptManagerPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/settings"
+                element={
+                  <AdminRoute>
+                    <SettingsPage />
+                  </AdminRoute>
+                }
+              />
+            </Route>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Router>
       </ToastProvider>
     </QueryClientProvider>
   )

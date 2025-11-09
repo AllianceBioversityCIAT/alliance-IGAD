@@ -9,29 +9,29 @@ const metrics = [
     value: '24',
     change: '+12%',
     trend: 'up',
-    icon: FileText
+    icon: FileText,
   },
   {
     title: 'Newsletters Sent',
     value: '156',
     change: '+8%',
     trend: 'up',
-    icon: Mail
+    icon: Mail,
   },
   {
     title: 'Active Users',
     value: '89',
     change: '+15%',
     trend: 'up',
-    icon: Users
+    icon: Users,
   },
   {
     title: 'Engagement Rate',
     value: '67%',
     change: '+3%',
     trend: 'up',
-    icon: TrendingUp
-  }
+    icon: TrendingUp,
+  },
 ]
 
 const activities = [
@@ -42,7 +42,7 @@ const activities = [
     user: 'Sarah Johnson',
     timestamp: '2 hours ago',
     status: 'completed',
-    progress: 100
+    progress: 100,
   },
   {
     id: 2,
@@ -51,7 +51,7 @@ const activities = [
     user: 'Michael Chen',
     timestamp: '4 hours ago',
     status: 'in-progress',
-    progress: 75
+    progress: 75,
   },
   {
     id: 3,
@@ -60,7 +60,7 @@ const activities = [
     user: 'Amina Hassan',
     timestamp: '1 day ago',
     status: 'review',
-    progress: 90
+    progress: 90,
   },
   {
     id: 4,
@@ -69,8 +69,8 @@ const activities = [
     user: 'David Ochieng',
     timestamp: '2 days ago',
     status: 'completed',
-    progress: 100
-  }
+    progress: 100,
+  },
 ]
 
 export function DashboardPage() {
@@ -96,9 +96,9 @@ export function DashboardPage() {
 
       <div className="metrics-section">
         <div className="metrics-grid">
-          {metrics.map((metric) => {
+          {metrics.map(metric => {
             const Icon = metric.icon
-            
+
             return (
               <Card key={metric.title} variant="metric" className="metric-card">
                 <div className="metric-header">
@@ -106,9 +106,7 @@ export function DashboardPage() {
                     <Icon className="icon" />
                   </div>
                   <div className="metric-trend">
-                    <span className={`trend-indicator trend-${metric.trend}`}>
-                      {metric.change}
-                    </span>
+                    <span className={`trend-indicator trend-${metric.trend}`}>{metric.change}</span>
                   </div>
                 </div>
                 <div className="metric-content">
@@ -131,9 +129,9 @@ export function DashboardPage() {
                   View All
                 </Button>
               </div>
-              
+
               <div className="activity-list">
-                {activities.map((activity) => (
+                {activities.map(activity => (
                   <div key={activity.id} className="activity-item">
                     <div className="activity-icon">
                       {activity.type === 'proposal' ? (
@@ -142,16 +140,16 @@ export function DashboardPage() {
                         <Mail className="icon" />
                       )}
                     </div>
-                    
+
                     <div className="activity-content">
                       <h4 className="activity-title">{activity.title}</h4>
                       <p className="activity-meta">
                         by {activity.user} • {activity.timestamp}
                       </p>
-                      
+
                       <div className="activity-progress">
                         <div className="progress-bar">
-                          <div 
+                          <div
                             className="progress-fill"
                             style={{ width: `${activity.progress}%` }}
                           />
@@ -159,7 +157,7 @@ export function DashboardPage() {
                         <span className="progress-text">{activity.progress}%</span>
                       </div>
                     </div>
-                    
+
                     <div className="activity-status">
                       <span className={`status-badge status-${activity.status}`}>
                         {activity.status.replace('-', ' ')}
@@ -176,30 +174,24 @@ export function DashboardPage() {
               <div className="card-header">
                 <h2 className="card-title">Quick Insights</h2>
               </div>
-              
+
               <div className="insights-content">
                 <div className="insight-item">
                   <h4 className="insight-title">Most Active Tool</h4>
                   <p className="insight-value">Proposal Writer</p>
-                  <p className="insight-description">
-                    Used 3x more than other tools this month
-                  </p>
+                  <p className="insight-description">Used 3x more than other tools this month</p>
                 </div>
-                
+
                 <div className="insight-item">
                   <h4 className="insight-title">Peak Usage Time</h4>
                   <p className="insight-value">2:00 PM - 4:00 PM</p>
-                  <p className="insight-description">
-                    Highest activity during afternoon hours
-                  </p>
+                  <p className="insight-description">Highest activity during afternoon hours</p>
                 </div>
-                
+
                 <div className="insight-item">
                   <h4 className="insight-title">Completion Rate</h4>
                   <p className="insight-value">89%</p>
-                  <p className="insight-description">
-                    Above average completion rate this quarter
-                  </p>
+                  <p className="insight-description">Above average completion rate this quarter</p>
                 </div>
               </div>
             </Card>

@@ -16,28 +16,28 @@ export function SettingsPage() {
       id: 'users' as SettingsTab,
       label: 'User Management',
       icon: Users,
-      description: 'Manage users, roles, and permissions'
+      description: 'Manage users, roles, and permissions',
     },
     {
       id: 'security' as SettingsTab,
       label: 'Security',
       icon: Shield,
-      description: 'Security settings and authentication'
+      description: 'Security settings and authentication',
     },
     {
       id: 'system' as SettingsTab,
       label: 'System',
       icon: Key,
       description: 'System configuration and API keys',
-      disabled: true
+      disabled: true,
     },
     {
       id: 'database' as SettingsTab,
       label: 'Database',
       icon: Database,
       description: 'Database settings and maintenance',
-      disabled: true
-    }
+      disabled: true,
+    },
   ]
 
   const renderTabContent = () => {
@@ -75,7 +75,7 @@ export function SettingsPage() {
         {/* Sidebar */}
         <div className={styles.sidebar}>
           <nav className={styles.nav}>
-            {tabs.map((tab) => {
+            {tabs.map(tab => {
               const Icon = tab.icon
               return (
                 <button
@@ -96,9 +96,7 @@ export function SettingsPage() {
         </div>
 
         {/* Main Content */}
-        <div className={styles.main}>
-          {renderTabContent()}
-        </div>
+        <div className={styles.main}>{renderTabContent()}</div>
       </div>
     </div>
   )

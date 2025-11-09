@@ -20,9 +20,11 @@ export function ConfirmDialog({
   cancelText = 'Cancel',
   type = 'warning',
   onConfirm,
-  onCancel
+  onCancel,
 }: ConfirmDialogProps) {
-  if (!isOpen) {return null}
+  if (!isOpen) {
+    return null
+  }
 
   const getIcon = () => {
     switch (type) {
@@ -39,9 +41,7 @@ export function ConfirmDialog({
     <div className={styles.overlay}>
       <div className={styles.dialog}>
         <div className={styles.header}>
-          <div className={styles.iconContainer}>
-            {getIcon()}
-          </div>
+          <div className={styles.iconContainer}>{getIcon()}</div>
           <button onClick={onCancel} className={styles.closeButton}>
             <X size={20} />
           </button>
@@ -53,16 +53,10 @@ export function ConfirmDialog({
         </div>
 
         <div className={styles.actions}>
-          <button
-            onClick={onCancel}
-            className={styles.cancelButton}
-          >
+          <button onClick={onCancel} className={styles.cancelButton}>
             {cancelText}
           </button>
-          <button
-            onClick={onConfirm}
-            className={`${styles.confirmButton} ${styles[type]}`}
-          >
+          <button onClick={onConfirm} className={`${styles.confirmButton} ${styles[type]}`}>
             {confirmText}
           </button>
         </div>

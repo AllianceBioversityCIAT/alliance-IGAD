@@ -9,13 +9,8 @@ interface Step2Props extends StepProps {
 }
 
 export function Step2ContentGeneration({ formData, setFormData, proposalId }: Step2Props) {
-  const { 
-    proposal, 
-    generateContent, 
-    isGenerating, 
-    generateError 
-  } = useProposal(proposalId)
-  
+  const { proposal, generateContent, isGenerating, generateError } = useProposal(proposalId)
+
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [analysisResults, setAnalysisResults] = useState<any>(null)
 
@@ -33,13 +28,15 @@ export function Step2ContentGeneration({ formData, setFormData, proposalId }: St
       const timer = setTimeout(() => {
         startAnalysis()
       }, 1000)
-      
+
       return () => clearTimeout(timer)
     }
   }, [formData, analysisComplete, isGenerating])
 
   const startAnalysis = async () => {
-    if (!proposalId) {return}
+    if (!proposalId) {
+      return
+    }
 
     try {
       // Generate analysis content for concept review
@@ -48,13 +45,13 @@ export function Step2ContentGeneration({ formData, setFormData, proposalId }: St
         reference_proposals: formData.uploadedFiles['reference-proposals']?.map(f => f.name) || [],
         existing_work: formData.textInputs['existing-work'] || '',
         initial_concept: formData.textInputs['initial-concept'] || '',
-        supporting_docs: formData.uploadedFiles['supporting-docs']?.map(f => f.name) || []
+        supporting_docs: formData.uploadedFiles['supporting-docs']?.map(f => f.name) || [],
       }
 
       // This would trigger AI analysis
       await generateContent({
         sectionId: 'concept-analysis',
-        contextData
+        contextData,
       })
 
       // Simulate analysis results
@@ -63,23 +60,22 @@ export function Step2ContentGeneration({ formData, setFormData, proposalId }: St
         strengths: [
           'Strong alignment with donor priorities',
           'Clear problem statement and solution approach',
-          'Relevant regional expertise and partnerships'
+          'Relevant regional expertise and partnerships',
         ],
         recommendations: [
           'Expand on sustainability measures',
           'Include more specific budget breakdown',
-          'Add risk mitigation strategies'
+          'Add risk mitigation strategies',
         ],
         missing_elements: [
           'Detailed monitoring and evaluation framework',
           'Community engagement strategy',
-          'Environmental impact assessment'
-        ]
+          'Environmental impact assessment',
+        ],
       })
 
       setAnalysisComplete(true)
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   if (!hasRequiredData()) {
@@ -98,7 +94,8 @@ export function Step2ContentGeneration({ formData, setFormData, proposalId }: St
           </div>
           <h2 className={styles.analysisTitle}>Missing Required Information</h2>
           <p className={styles.analysisDescription}>
-            Please complete Step 1 by uploading your RFP document and providing your initial concept (minimum 100 characters) before proceeding with the AI analysis.
+            Please complete Step 1 by uploading your RFP document and providing your initial concept
+            (minimum 100 characters) before proceeding with the AI analysis.
           </p>
           <div className={styles.analysisStatus}>
             <span className={styles.analysisStatusText}>Complete Step 1 to continue</span>
@@ -124,7 +121,8 @@ export function Step2ContentGeneration({ formData, setFormData, proposalId }: St
           </div>
           <h2 className={styles.analysisTitle}>Analyzing Your Concept</h2>
           <p className={styles.analysisDescription}>
-            Our AI is reviewing your initial concept to provide comprehensive feedback on alignment, strengths, and areas for development.
+            Our AI is reviewing your initial concept to provide comprehensive feedback on alignment,
+            strengths, and areas for development.
           </p>
           <div className={styles.analysisStatus}>
             <div className={styles.loadingDot}></div>
@@ -162,8 +160,8 @@ export function Step2ContentGeneration({ formData, setFormData, proposalId }: St
             <h3 className={styles.fitScoreTitle}>RFP Alignment Score</h3>
             <div className={styles.fitScoreValue}>{analysisResults.fit_score}%</div>
             <div className={styles.fitScoreBar}>
-              <div 
-                className={styles.fitScoreFill} 
+              <div
+                className={styles.fitScoreFill}
                 style={{ width: `${analysisResults.fit_score}%` }}
               />
             </div>

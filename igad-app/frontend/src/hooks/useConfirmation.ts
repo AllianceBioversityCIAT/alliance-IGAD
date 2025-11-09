@@ -13,12 +13,12 @@ export function useConfirmation() {
   const [isOpen, setIsOpen] = useState(false)
   const [options, setOptions] = useState<ConfirmationOptions>({
     title: '',
-    type: 'info'
+    type: 'info',
   })
   const [resolvePromise, setResolvePromise] = useState<((value: boolean) => void) | null>(null)
 
   const confirm = (opts: ConfirmationOptions): Promise<boolean> => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setOptions(opts)
       setResolvePromise(() => resolve)
       setIsOpen(true)
@@ -49,7 +49,7 @@ export function useConfirmation() {
       type: 'success',
       title,
       message,
-      confirmText: 'OK'
+      confirmText: 'OK',
     })
   }
 
@@ -58,7 +58,7 @@ export function useConfirmation() {
       type: 'error',
       title,
       message,
-      confirmText: 'OK'
+      confirmText: 'OK',
     })
   }
 
@@ -69,7 +69,7 @@ export function useConfirmation() {
       message,
       confirmText: 'Continue',
       cancelText: 'Cancel',
-      showCancel
+      showCancel,
     })
   }
 
@@ -78,7 +78,7 @@ export function useConfirmation() {
       type: 'info',
       title,
       message,
-      confirmText: 'OK'
+      confirmText: 'OK',
     })
   }
 
@@ -92,6 +92,6 @@ export function useConfirmation() {
     showSuccess,
     showError,
     showWarning,
-    showInfo
+    showInfo,
   }
 }

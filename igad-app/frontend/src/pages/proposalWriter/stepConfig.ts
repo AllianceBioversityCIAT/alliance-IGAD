@@ -5,16 +5,18 @@ export const stepConfig = [
   { id: 2, title: 'Content Generation', icon: Edit },
   { id: 3, title: 'Structure & Validation', icon: CheckCircle },
   { id: 4, title: 'Review & Refinement', icon: Eye },
-  { id: 5, title: 'Final Export', icon: Download }
+  { id: 5, title: 'Final Export', icon: Download },
 ]
 
 export interface StepProps {
   formData: {
-    uploadedFiles: {[key: string]: File[]}
-    textInputs: {[key: string]: string}
+    uploadedFiles: { [key: string]: File[] }
+    textInputs: { [key: string]: string }
   }
-  setFormData: React.Dispatch<React.SetStateAction<{
-    uploadedFiles: {[key: string]: File[]}
-    textInputs: {[key: string]: string}
-  }>>
+  setFormData: React.Dispatch<
+    React.SetStateAction<{
+      uploadedFiles: { [key: string]: File[] }
+      textInputs: { [key: string]: string }
+    }>
+  >
 }

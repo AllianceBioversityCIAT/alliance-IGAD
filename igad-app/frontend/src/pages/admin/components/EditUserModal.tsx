@@ -15,7 +15,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
   const [groups, setGroups] = useState<Array<{ name: string; description: string }>>([])
   const [formData, setFormData] = useState({
     email: '',
-    email_verified: false
+    email_verified: false,
   })
   const [resetPassword, setResetPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -29,8 +29,10 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
   }, [isOpen, username])
 
   const fetchUserData = async () => {
-    if (!username) {return}
-    
+    if (!username) {
+      return
+    }
+
     setIsLoading(true)
     try {
       const result = await userService.getUser(username)
@@ -38,7 +40,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
         setUser(result.user)
         setFormData({
           email: result.user.email,
-          email_verified: result.user.email_verified
+          email_verified: result.user.email_verified,
         })
       } else {
         setError('Failed to load user data')
@@ -56,13 +58,14 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
       if (result.success) {
         setGroups(result.groups)
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!username) {return}
+    if (!username) {
+      return
+    }
 
     setIsLoading(true)
     setError(null)
@@ -71,8 +74,8 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
       const result = await userService.updateUser(username, {
         attributes: {
           email: formData.email,
-          email_verified: formData.email_verified.toString()
-        }
+          email_verified: formData.email_verified.toString(),
+        },
       })
 
       if (result.success) {
@@ -89,14 +92,16 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
   }
 
   const handleResetPassword = async () => {
-    if (!username || !resetPassword) {return}
+    if (!username || !resetPassword) {
+      return
+    }
 
     setIsLoading(true)
     setError(null)
 
     try {
       const result = await userService.resetUserPassword(username, {
-        temporary_password: resetPassword
+        temporary_password: resetPassword,
       })
 
       if (result.success) {
@@ -113,7 +118,9 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
   }
 
   const handleToggleGroup = async (groupName: string, isInGroup: boolean) => {
-    if (!username) {return}
+    if (!username) {
+      return
+    }
 
     try {
       const result = isInGroup
@@ -139,7 +146,9 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
     setResetPassword(password)
   }
 
-  if (!isOpen || !username) {return null}
+  if (!isOpen || !username) {
+    return null
+  }
 
   return (
     <div className={styles.overlay}>
@@ -152,11 +161,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
         </div>
 
         <div className={styles.content}>
-          {error && (
-            <div className={styles.error}>
-              {error}
-            </div>
-          )}
+          {error && <div className={styles.error}>{error}</div>}
 
           {isLoading && !user ? (
             <div className={styles.loading}>Loading user data...</div>
@@ -184,7 +189,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     className={styles.input}
                     required
                   />
@@ -195,7 +200,9 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
                     <input
                       type="checkbox"
                       checked={formData.email_verified}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email_verified: e.target.checked }))}
+                      onChange={e =>
+                        setFormData(prev => ({ ...prev, email_verified: e.target.checked }))
+                      }
                       className={styles.checkbox}
                     />
                     <Mail size={16} />
@@ -203,11 +210,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
                   </label>
                 </div>
 
-                <button
-                  type="submit"
-                  className={styles.updateButton}
-                  disabled={isLoading}
-                >
+                <button type="submit" className={styles.updateButton} disabled={isLoading}>
                   {isLoading ? 'Updating...' : 'Update User'}
                 </button>
               </form>
@@ -223,7 +226,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
                   <input
                     type="text"
                     value={resetPassword}
-                    onChange={(e) => setResetPassword(e.target.value)}
+                    onChange={e => setResetPassword(e.target.value)}
                     className={styles.input}
                     placeholder="Enter new temporary password"
                   />
@@ -253,7 +256,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
                 </h3>
 
                 <div className={styles.groupsList}>
-                  {groups.map((group) => {
+                  {groups.map(group => {
                     const isInGroup = user?.groups?.includes(group.name) || false
                     return (
                       <div key={group.name} className={styles.groupItem}>

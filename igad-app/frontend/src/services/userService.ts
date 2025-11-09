@@ -62,7 +62,7 @@ class UserService {
     if (paginationToken) {
       params.append('pagination_token', paginationToken)
     }
-    
+
     const response = await apiClient.get(`/admin/users?${params.toString()}`)
     return response.data
   }
@@ -77,7 +77,10 @@ class UserService {
     return response.data
   }
 
-  async updateUser(username: string, userData: UpdateUserRequest): Promise<{ success: boolean; message: string }> {
+  async updateUser(
+    username: string,
+    userData: UpdateUserRequest
+  ): Promise<{ success: boolean; message: string }> {
     const response = await apiClient.put(`/admin/users/${username}`, userData)
     return response.data
   }
@@ -97,7 +100,10 @@ class UserService {
     return response.data
   }
 
-  async resetUserPassword(username: string, passwordData: ResetPasswordRequest): Promise<{ success: boolean; message: string }> {
+  async resetUserPassword(
+    username: string,
+    passwordData: ResetPasswordRequest
+  ): Promise<{ success: boolean; message: string }> {
     const response = await apiClient.post(`/admin/users/${username}/reset-password`, passwordData)
     return response.data
   }
@@ -107,17 +113,25 @@ class UserService {
     return response.data
   }
 
-  async addUserToGroup(username: string, groupName: string): Promise<{ success: boolean; message: string }> {
+  async addUserToGroup(
+    username: string,
+    groupName: string
+  ): Promise<{ success: boolean; message: string }> {
     const response = await apiClient.post(`/admin/users/${username}/groups/${groupName}`)
     return response.data
   }
 
-  async removeUserFromGroup(username: string, groupName: string): Promise<{ success: boolean; message: string }> {
+  async removeUserFromGroup(
+    username: string,
+    groupName: string
+  ): Promise<{ success: boolean; message: string }> {
     const response = await apiClient.delete(`/admin/users/${username}/groups/${groupName}`)
     return response.data
   }
 
-  async createGroup(groupData: CreateGroupRequest): Promise<{ success: boolean; message: string; group?: any }> {
+  async createGroup(
+    groupData: CreateGroupRequest
+  ): Promise<{ success: boolean; message: string; group?: any }> {
     const response = await apiClient.post('/admin/groups', groupData)
     return response.data
   }

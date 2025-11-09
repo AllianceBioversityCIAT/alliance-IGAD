@@ -10,29 +10,24 @@ interface ProposalLayoutProps {
   navigationButtons: React.ReactNode
 }
 
-export function ProposalLayout({ 
-  currentStep, 
-  completedSteps, 
-  children, 
-  navigationButtons 
+export function ProposalLayout({
+  currentStep,
+  completedSteps,
+  children,
+  navigationButtons,
 }: ProposalLayoutProps) {
   return (
     <>
       <ProposalSecondaryNavbar />
       <div className={styles.proposalWriterContainer}>
-        <ProposalSidebar 
-          currentStep={currentStep} 
-          completedSteps={completedSteps} 
-        />
+        <ProposalSidebar currentStep={currentStep} completedSteps={completedSteps} />
         <div className={styles.contentArea}>
           {children}
           <div className={styles.navigationButtons}>
             <div className={styles.navButtonLeft}>
               {navigationButtons && React.Children.toArray(navigationButtons)[0]}
             </div>
-            <div className={styles.stepIndicator}>
-              Step {currentStep} of 5
-            </div>
+            <div className={styles.stepIndicator}>Step {currentStep} of 5</div>
             <div className={styles.navButtonRight}>
               {navigationButtons && React.Children.toArray(navigationButtons)[1]}
             </div>

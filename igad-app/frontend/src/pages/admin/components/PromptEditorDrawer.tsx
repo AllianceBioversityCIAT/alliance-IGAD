@@ -1,7 +1,24 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Eye, Loader2, Settings, FileText, HelpCircle, Layout, History, Clock, User } from 'lucide-react'
+import {
+  X,
+  Save,
+  Eye,
+  Loader2,
+  Settings,
+  FileText,
+  HelpCircle,
+  Layout,
+  History,
+  Clock,
+  User,
+} from 'lucide-react'
 import { usePrompt } from '../../../hooks/usePrompts'
-import { ProposalSection, SECTION_LABELS, type CreatePromptRequest, type UpdatePromptRequest } from '../../../types/prompt'
+import {
+  ProposalSection,
+  SECTION_LABELS,
+  type CreatePromptRequest,
+  type UpdatePromptRequest,
+} from '../../../types/prompt'
 import styles from './PromptEditorDrawer.module.css'
 
 // Simple History Component for Drawer
@@ -18,8 +35,8 @@ function HistoryContent({ promptId }: { promptId: string }) {
     try {
       const response = await fetch(`http://localhost:8000/admin/prompts/${promptId}/history`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
       })
       if (response.ok) {
         const data = await response.json()
@@ -36,17 +53,22 @@ function HistoryContent({ promptId }: { promptId: string }) {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
   const getChangeTypeLabel = (type: string) => {
     switch (type) {
-      case 'create': return 'Created'
-      case 'update': return 'Updated'
-      case 'activate': return 'Activated'
-      case 'deactivate': return 'Deactivated'
-      default: return type
+      case 'create':
+        return 'Created'
+      case 'update':
+        return 'Updated'
+      case 'activate':
+        return 'Activated'
+      case 'deactivate':
+        return 'Deactivated'
+      default:
+        return type
     }
   }
 
@@ -79,17 +101,11 @@ function HistoryContent({ promptId }: { promptId: string }) {
             <User size={12} />
             {change.author_name}
           </div>
-          {change.comment && (
-            <div className={styles.historyComment}>
-              {change.comment}
-            </div>
-          )}
+          {change.comment && <div className={styles.historyComment}>{change.comment}</div>}
         </div>
       ))}
       {history.changes.length > 5 && (
-        <div className={styles.historyMore}>
-          +{history.changes.length - 5} more changes
-        </div>
+        <div className={styles.historyMore}>+{history.changes.length - 5} more changes</div>
       )}
     </div>
   )
@@ -107,13 +123,13 @@ interface PromptEditorDrawerProps {
   }
 }
 
-export function PromptEditorDrawer({ 
-  mode, 
-  promptId, 
-  onClose, 
-  onSave, 
-  isLoading = false, 
-  contextData 
+export function PromptEditorDrawer({
+  mode,
+  promptId,
+  onClose,
+  onSave,
+  isLoading = false,
+  contextData,
 }: PromptEditorDrawerProps) {
   const { data: existingPrompt } = usePrompt(promptId || '', 'latest')
   const [showPreview, setShowPreview] = useState(false)
@@ -125,22 +141,28 @@ export function PromptEditorDrawer({
     proposal_writer: [
       {
         name: 'Problem Statement Generator',
-        system_prompt: 'You are an expert development proposal writer specializing in African regional projects. Focus on identifying clear, evidence-based problems that require intervention.',
-        user_prompt_template: 'Generate a compelling problem statement for a {{project_type}} project in {{region}}. The problem should address {{key_challenge}} and demonstrate the need for {{intervention_type}}. Include relevant statistics and context specific to {{region}}.'
+        system_prompt:
+          'You are an expert development proposal writer specializing in African regional projects. Focus on identifying clear, evidence-based problems that require intervention.',
+        user_prompt_template:
+          'Generate a compelling problem statement for a {{project_type}} project in {{region}}. The problem should address {{key_challenge}} and demonstrate the need for {{intervention_type}}. Include relevant statistics and context specific to {{region}}.',
       },
       {
         name: 'Objectives Creator',
-        system_prompt: 'You are a strategic planning expert for development projects. Create SMART objectives that are specific, measurable, achievable, relevant, and time-bound.',
-        user_prompt_template: 'Create {{number_of_objectives}} SMART objectives for a {{project_type}} project in {{region}} with a {{timeline}} timeline and {{budget_range}} budget. Focus on {{primary_outcome}} as the main goal.'
-      }
+        system_prompt:
+          'You are a strategic planning expert for development projects. Create SMART objectives that are specific, measurable, achievable, relevant, and time-bound.',
+        user_prompt_template:
+          'Create {{number_of_objectives}} SMART objectives for a {{project_type}} project in {{region}} with a {{timeline}} timeline and {{budget_range}} budget. Focus on {{primary_outcome}} as the main goal.',
+      },
     ],
     newsletter_generator: [
       {
         name: 'Newsletter Article Writer',
-        system_prompt: 'You are a professional newsletter writer for IGAD Innovation Hub. Write engaging, informative content that highlights achievements and innovations in regional development.',
-        user_prompt_template: 'Write a newsletter article about {{topic}} for {{target_audience}}. The article should be {{tone}} in tone, approximately {{word_count}} words, and highlight {{key_points}}.'
-      }
-    ]
+        system_prompt:
+          'You are a professional newsletter writer for IGAD Innovation Hub. Write engaging, informative content that highlights achievements and innovations in regional development.',
+        user_prompt_template:
+          'Write a newsletter article about {{topic}} for {{target_audience}}. The article should be {{tone}} in tone, approximately {{word_count}} words, and highlight {{key_points}}.',
+      },
+    ],
   }
 
   const applyTemplate = (template: any) => {
@@ -148,11 +170,11 @@ export function PromptEditorDrawer({
       ...prev,
       name: template.name,
       system_prompt: template.system_prompt,
-      user_prompt_template: template.user_prompt_template
+      user_prompt_template: template.user_prompt_template,
     }))
     setShowTemplates(false)
   }
-  
+
   const [formData, setFormData] = useState({
     name: '',
     section: contextData?.defaultSection || ProposalSection.PROPOSAL_WRITER,
@@ -165,8 +187,8 @@ export function PromptEditorDrawer({
       persona: '',
       tone: '',
       constraints: '',
-      guardrails: ''
-    }
+      guardrails: '',
+    },
   })
 
   const [tagInput, setTagInput] = useState('')
@@ -185,15 +207,15 @@ export function PromptEditorDrawer({
           persona: existingPrompt.context?.persona || '',
           tone: existingPrompt.context?.tone || '',
           constraints: existingPrompt.context?.constraints || '',
-          guardrails: existingPrompt.context?.guardrails || ''
-        }
+          guardrails: existingPrompt.context?.guardrails || '',
+        },
       })
     }
   }, [mode, existingPrompt])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validate business rule: only one active prompt per section-route combination
     if (formData.is_active && formData.section && formData.route) {
       // This validation should be handled by the backend, but we can show a warning
@@ -202,12 +224,14 @@ export function PromptEditorDrawer({
         return
       }
     }
-    
+
     const submitData = {
       ...formData,
-      context: Object.keys(formData.context).some(key => 
-        formData.context[key as keyof typeof formData.context]
-      ) ? formData.context : undefined
+      context: Object.keys(formData.context).some(
+        key => formData.context[key as keyof typeof formData.context]
+      )
+        ? formData.context
+        : undefined,
     }
 
     onSave(submitData)
@@ -217,7 +241,7 @@ export function PromptEditorDrawer({
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()]
+        tags: [...prev.tags, tagInput.trim()],
       }))
       setTagInput('')
     }
@@ -226,21 +250,21 @@ export function PromptEditorDrawer({
   const handleRemoveTag = (tagToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter(tag => tag !== tagToRemove),
     }))
   }
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.drawer} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <h2 className={styles.title}>
             {mode === 'create' ? 'Create New Prompt' : 'Edit Prompt'}
           </h2>
           <div className={styles.headerActions}>
             {mode === 'create' && (
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setShowTemplates(!showTemplates)}
                 className={styles.templateButton}
               >
@@ -249,8 +273,8 @@ export function PromptEditorDrawer({
               </button>
             )}
             {mode === 'edit' && promptId && (
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setShowHistory(!showHistory)}
                 className={styles.historyButton}
               >
@@ -263,7 +287,7 @@ export function PromptEditorDrawer({
                 <input
                   type="checkbox"
                   checked={formData.is_active}
-                  onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                  onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
                   className={styles.toggleInput}
                 />
                 <span className={styles.headerToggleSlider}></span>
@@ -283,13 +307,15 @@ export function PromptEditorDrawer({
             <h3 className={styles.templatesTitle}>Choose a Template</h3>
             <div className={styles.templatesList}>
               {templates[formData.section as keyof typeof templates]?.map((template, index) => (
-                <div key={index} className={styles.templateCard} onClick={() => applyTemplate(template)}>
+                <div
+                  key={index}
+                  className={styles.templateCard}
+                  onClick={() => applyTemplate(template)}
+                >
                   <h4>{template.name}</h4>
                   <p>{template.system_prompt.substring(0, 100)}...</p>
                 </div>
-              )) || (
-                <p className={styles.noTemplates}>No templates available for this section</p>
-              )}
+              )) || <p className={styles.noTemplates}>No templates available for this section</p>}
             </div>
           </div>
         )}
@@ -307,7 +333,7 @@ export function PromptEditorDrawer({
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
               className={styles.input}
               required
               placeholder="Enter prompt name..."
@@ -319,7 +345,9 @@ export function PromptEditorDrawer({
               <label className={styles.label}>Section</label>
               <select
                 value={formData.section}
-                onChange={(e) => setFormData(prev => ({ ...prev, section: e.target.value as ProposalSection }))}
+                onChange={e =>
+                  setFormData(prev => ({ ...prev, section: e.target.value as ProposalSection }))
+                }
                 className={styles.select}
                 required
               >
@@ -337,7 +365,7 @@ export function PromptEditorDrawer({
               <input
                 type="text"
                 value={formData.route}
-                onChange={(e) => setFormData(prev => ({ ...prev, route: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, route: e.target.value }))}
                 className={styles.input}
                 placeholder="/proposal-writer/step-1"
               />
@@ -351,8 +379,8 @@ export function PromptEditorDrawer({
                 <input
                   type="text"
                   value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
                   className={styles.input}
                   placeholder="Add tag..."
                 />
@@ -362,7 +390,7 @@ export function PromptEditorDrawer({
               </div>
               {formData.tags.length > 0 && (
                 <div className={styles.tags}>
-                  {formData.tags.map((tag) => (
+                  {formData.tags.map(tag => (
                     <span key={tag} className={styles.tag}>
                       {tag}
                       <button
@@ -388,13 +416,14 @@ export function PromptEditorDrawer({
               <div className={styles.helpTooltip}>
                 <HelpCircle size={14} className={styles.helpIcon} />
                 <div className={styles.tooltipContent}>
-                  Defines the AI's role, personality, and behavior. Example: "You are an expert proposal writer specializing in African development projects..."
+                  Defines the AI's role, personality, and behavior. Example: "You are an expert
+                  proposal writer specializing in African development projects..."
                 </div>
               </div>
             </div>
             <textarea
               value={formData.system_prompt}
-              onChange={(e) => setFormData(prev => ({ ...prev, system_prompt: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, system_prompt: e.target.value }))}
               className={styles.textarea}
               rows={6}
               required
@@ -411,13 +440,17 @@ export function PromptEditorDrawer({
               <div className={styles.helpTooltip}>
                 <HelpCircle size={14} className={styles.helpIcon} />
                 <div className={styles.tooltipContent}>
-                  Template with variables for dynamic content. Use {'{variable_name}'} for placeholders. Example: "Create a {'{section_type}'} for {'{project_type}'} in {'{region}'}..."
+                  Template with variables for dynamic content. Use {'{variable_name}'} for
+                  placeholders. Example: "Create a {'{section_type}'} for {'{project_type}'} in{' '}
+                  {'{region}'}..."
                 </div>
               </div>
             </div>
             <textarea
               value={formData.user_prompt_template}
-              onChange={(e) => setFormData(prev => ({ ...prev, user_prompt_template: e.target.value }))}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, user_prompt_template: e.target.value }))
+              }
               className={styles.textarea}
               rows={8}
               required
@@ -429,19 +462,15 @@ export function PromptEditorDrawer({
             <button type="button" onClick={onClose} className={styles.cancelButton}>
               Cancel
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => setShowPreview(!showPreview)}
               className={styles.previewButton}
             >
               <Eye size={16} />
               {showPreview ? 'Hide Preview' : 'Preview'}
             </button>
-            <button 
-              type="submit" 
-              className={styles.saveButton}
-              disabled={isLoading}
-            >
+            <button type="submit" className={styles.saveButton} disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 size={16} className={styles.spinning} />
@@ -463,11 +492,15 @@ export function PromptEditorDrawer({
             <div className={styles.previewContent}>
               <div className={styles.previewBlock}>
                 <h4>System Prompt:</h4>
-                <div className={styles.previewText}>{formData.system_prompt || 'No system prompt defined'}</div>
+                <div className={styles.previewText}>
+                  {formData.system_prompt || 'No system prompt defined'}
+                </div>
               </div>
               <div className={styles.previewBlock}>
                 <h4>User Template:</h4>
-                <div className={styles.previewText}>{formData.user_prompt_template || 'No user template defined'}</div>
+                <div className={styles.previewText}>
+                  {formData.user_prompt_template || 'No user template defined'}
+                </div>
               </div>
               <div className={styles.previewBlock}>
                 <h4>Example with Variables:</h4>
@@ -476,9 +509,7 @@ export function PromptEditorDrawer({
                     .replace(/\{\{project_type\}\}/g, 'Agricultural Development')
                     .replace(/\{\{region\}\}/g, 'East Africa')
                     .replace(/\{\{budget\}\}/g, '$500,000')
-                    .replace(/\{\{timeline\}\}/g, '24 months')
-                    || 'No template to preview'
-                  }
+                    .replace(/\{\{timeline\}\}/g, '24 months') || 'No template to preview'}
                 </div>
               </div>
             </div>

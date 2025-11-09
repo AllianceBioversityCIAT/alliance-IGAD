@@ -13,7 +13,7 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    precedence: ''
+    precedence: '',
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,7 +27,7 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
       const groupData = {
         name: formData.name,
         description: formData.description,
-        ...(formData.precedence && { precedence: parseInt(formData.precedence) })
+        ...(formData.precedence && { precedence: parseInt(formData.precedence) }),
       }
 
       const result = await userService.createGroup(groupData)
@@ -45,7 +45,9 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
     }
   }
 
-  if (!isOpen) {return null}
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className={styles.overlay}>
@@ -58,11 +60,7 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          {error && (
-            <div className={styles.error}>
-              {error}
-            </div>
-          )}
+          {error && <div className={styles.error}>{error}</div>}
 
           <div className={styles.field}>
             <label className={styles.label}>
@@ -72,7 +70,7 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
               className={styles.input}
               placeholder="Enter group name"
               required
@@ -86,7 +84,7 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
               className={styles.textarea}
               placeholder="Enter group description"
               rows={3}
@@ -101,7 +99,7 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
             <input
               type="number"
               value={formData.precedence}
-              onChange={(e) => setFormData(prev => ({ ...prev, precedence: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, precedence: e.target.value }))}
               className={styles.input}
               placeholder="Enter precedence number"
               min="0"
@@ -118,11 +116,7 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className={styles.createButton}
-              disabled={isLoading}
-            >
+            <button type="submit" className={styles.createButton} disabled={isLoading}>
               {isLoading ? 'Creating...' : 'Create Group'}
             </button>
           </div>

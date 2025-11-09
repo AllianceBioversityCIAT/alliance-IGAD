@@ -77,7 +77,7 @@ class ProposalService {
   ): Promise<AIGenerationResult> {
     const response = await apiClient.post(`/api/proposals/${proposalId}/generate`, {
       section_id: sectionId,
-      context_data: contextData
+      context_data: contextData,
     })
     return response.data.result
   }
@@ -89,7 +89,7 @@ class ProposalService {
   ): Promise<AIGenerationResult> {
     const response = await apiClient.post(`/api/proposals/${proposalId}/improve`, {
       section_id: sectionId,
-      improvement_type: improvementType
+      improvement_type: improvementType,
     })
     return response.data.result
   }
@@ -121,7 +121,7 @@ class ProposalService {
 
     return this.updateProposal(proposalId, {
       uploaded_files: uploadedFiles,
-      text_inputs: formData.textInputs
+      text_inputs: formData.textInputs,
     })
   }
 }

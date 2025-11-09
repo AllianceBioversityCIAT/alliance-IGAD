@@ -1,23 +1,23 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAdmin } from '../hooks/useAdmin';
-import { LoadingScreen } from './LoadingScreen';
+import React from 'react'
+import { Navigate } from 'react-router-dom'
+import { useAdmin } from '../hooks/useAdmin'
+import { LoadingScreen } from './LoadingScreen'
 
 interface AdminRouteProps {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
 export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
-  const { isAdmin, loading } = useAdmin();
-  
+  const { isAdmin, loading } = useAdmin()
+
   // Show loading screen while checking admin status
   if (loading) {
-    return <LoadingScreen />;
+    return <LoadingScreen />
   }
-  
+
   if (!isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard" replace />
   }
-  
-  return <>{children}</>;
-};
+
+  return <>{children}</>
+}

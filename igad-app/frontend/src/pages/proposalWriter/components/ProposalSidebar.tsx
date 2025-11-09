@@ -29,27 +29,39 @@ export function ProposalSidebar({ currentStep, completedSteps }: ProposalSidebar
             const StepIcon = step.icon
             const isCompleted = completedSteps.includes(step.id)
             const isActive = step.id === currentStep
-            
+
             return (
               <div key={step.id} className={styles.sidebarStep}>
                 <div className={styles.stepIndicator}>
-                  <div className={`${styles.stepCircle} ${
-                    isActive ? styles.stepCircleActive :
-                    isCompleted ? styles.stepCircleCompleted : styles.stepCirclePending
-                  }`}>
+                  <div
+                    className={`${styles.stepCircle} ${
+                      isActive
+                        ? styles.stepCircleActive
+                        : isCompleted
+                          ? styles.stepCircleCompleted
+                          : styles.stepCirclePending
+                    }`}
+                  >
                     {isCompleted ? <CheckCircle size={16} /> : step.id}
                   </div>
                   {index < stepConfig.length - 1 && (
-                    <div className={`${styles.stepLine} ${
-                      isCompleted ? styles.stepLineCompleted : styles.stepLinePending
-                    }`} />
+                    <div
+                      className={`${styles.stepLine} ${
+                        isCompleted ? styles.stepLineCompleted : styles.stepLinePending
+                      }`}
+                    />
                   )}
                 </div>
                 <div className={styles.stepContent}>
-                  <span className={`${styles.sidebarStepTitle} ${
-                    isActive ? styles.sidebarStepTitleActive :
-                    isCompleted ? styles.sidebarStepTitleCompleted : styles.sidebarStepTitlePending
-                  }`}>
+                  <span
+                    className={`${styles.sidebarStepTitle} ${
+                      isActive
+                        ? styles.sidebarStepTitleActive
+                        : isCompleted
+                          ? styles.sidebarStepTitleCompleted
+                          : styles.sidebarStepTitlePending
+                    }`}
+                  >
                     {step.title}
                   </span>
                 </div>

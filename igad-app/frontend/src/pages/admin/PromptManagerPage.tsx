@@ -52,7 +52,7 @@ export function PromptManagerPage() {
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {}
+    onConfirm: () => {},
   })
 
   const confirmation = useConfirmation()
@@ -62,18 +62,18 @@ export function PromptManagerPage() {
   useEffect(() => {
     const fromRoute = searchParams.get('from')
     const section = searchParams.get('section')
-    
+
     if (fromRoute || section) {
       setContextData({
         fromRoute: fromRoute || undefined,
-        defaultSection: section as ProposalSection || undefined
+        defaultSection: (section as ProposalSection) || undefined,
       })
-      
+
       // Auto-filter by section if provided
       if (section) {
         setFilters(prev => ({
           ...prev,
-          section: section as ProposalSection
+          section: section as ProposalSection,
         }))
         setShowFilters(true) // Show filters to make it visible
       }
@@ -98,7 +98,7 @@ export function PromptManagerPage() {
     toggleActive,
     setCurrentPage,
     nextPage,
-    prevPage
+    prevPage,
   } = usePrompts(filters)
 
   const handleCreateNew = () => {
@@ -127,7 +127,10 @@ export function PromptManagerPage() {
   const handleSavePrompt = async (data: any) => {
     try {
       await createPrompt(data)
-      showSuccess('Prompt created successfully', `"${data.name}" has been created and saved as draft.`)
+      showSuccess(
+        'Prompt created successfully',
+        `"${data.name}" has been created and saved as draft.`
+      )
       setIsCreateModalOpen(false)
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
@@ -140,24 +143,21 @@ export function PromptManagerPage() {
     try {
       if (editingPrompt?.id) {
         await updatePrompt({ id: editingPrompt.id, data })
-        
+
         // Show success confirmation modal instead of toast
         await confirmation.showSuccess(
           'Prompt Updated Successfully!',
           `"${data.name}" has been updated and is ready to use.`
         )
-        
+
         setIsEditModalOpen(false)
         setEditingPrompt(null)
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
-      
+
       // Show error confirmation modal instead of toast
-      await confirmation.showError(
-        'Failed to Update Prompt',
-        errorMessage
-      )
+      await confirmation.showError('Failed to Update Prompt', errorMessage)
       throw error // Re-throw to let modal handle loading state
     }
   }
@@ -185,7 +185,7 @@ export function PromptManagerPage() {
         } catch (error: any) {
           showError('Failed to delete prompt', error.message || 'Please try again.')
         }
-      }
+      },
     })
   }
 
@@ -199,7 +199,7 @@ export function PromptManagerPage() {
         system_prompt: prompt.system_prompt,
         user_prompt_template: prompt.user_prompt_template,
         few_shot: prompt.few_shot || [],
-        context: prompt.context || {}
+        context: prompt.context || {},
       }
       await createPrompt(clonedData)
       showSuccess('Prompt cloned successfully', `"${clonedData.name}" has been created as a draft.`)
@@ -246,12 +246,10 @@ export function PromptManagerPage() {
               )}
             </div>
           </div>
-          <button
-            onClick={() => navigate(contextData.fromRoute!)}
-            className={styles.backButton}
-          >
+          <button onClick={() => navigate(contextData.fromRoute!)} className={styles.backButton}>
             <ArrowLeft size={16} />
-            Back to {contextData.fromRoute?.includes('proposal-writer') ? 'Proposal Writer' : 'Source'}
+            Back to{' '}
+            {contextData.fromRoute?.includes('proposal-writer') ? 'Proposal Writer' : 'Source'}
           </button>
         </div>
       )}
@@ -267,27 +265,24 @@ export function PromptManagerPage() {
             Manage AI prompts for different sections of the proposal writer
           </p>
         </div>
-        
+
         <div className={styles.headerActions}>
           <div className={styles.viewToggle}>
-            <button 
+            <button
               onClick={() => setViewMode('table')}
               className={`${styles.viewButton} ${viewMode === 'table' ? styles.active : ''}`}
             >
               <List size={16} />
             </button>
-            <button 
+            <button
               onClick={() => setViewMode('cards')}
               className={`${styles.viewButton} ${viewMode === 'cards' ? styles.active : ''}`}
             >
               <Grid size={16} />
             </button>
           </div>
-          
-          <button 
-            onClick={handleCreateNew}
-            className={styles.createButton}
-          >
+
+          <button onClick={handleCreateNew} className={styles.createButton}>
             <Plus size={16} />
             Create Prompt
           </button>
@@ -302,11 +297,11 @@ export function PromptManagerPage() {
             type="text"
             placeholder="Search prompts..."
             value={filters.search || ''}
-            onChange={(e) => handleFiltersChange({ ...filters, search: e.target.value })}
+            onChange={e => handleFiltersChange({ ...filters, search: e.target.value })}
             className={styles.searchInput}
           />
         </div>
-        
+
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`${styles.filterButton} ${showFilters ? styles.filterButtonActive : ''}`}
@@ -319,10 +314,7 @@ export function PromptManagerPage() {
       {/* Expandable Filters */}
       {showFilters && (
         <div className={styles.filtersPanel}>
-          <PromptFilters
-            filters={filters}
-            onChange={handleFiltersChange}
-          />
+          <PromptFilters filters={filters} onChange={handleFiltersChange} />
         </div>
       )}
 
@@ -332,10 +324,7 @@ export function PromptManagerPage() {
           {total} prompt{total !== 1 ? 's' : ''} found
         </span>
         {Object.keys(filters).some(key => filters[key as keyof PromptManagerFilters]) && (
-          <button
-            onClick={() => handleFiltersChange({})}
-            className={styles.clearFilters}
-          >
+          <button onClick={() => handleFiltersChange({})} className={styles.clearFilters}>
             Clear filters
           </button>
         )}
@@ -352,8 +341,8 @@ export function PromptManagerPage() {
             onDelete={handleDeletePrompt}
             onClone={handleClonePrompt}
             onToggleActive={handleToggleActive}
-            onComments={(id) => setCommentsPromptId(id)}
-            onHistory={(id) => setHistoryPromptId(id)}
+            onComments={id => setCommentsPromptId(id)}
+            onHistory={id => setHistoryPromptId(id)}
           />
         ) : (
           <PromptCardsView
@@ -362,7 +351,7 @@ export function PromptManagerPage() {
             onDelete={handleDeletePrompt}
             onClone={handleClonePrompt}
             onToggleActive={handleToggleActive}
-            onPreview={(id) => {}}
+            onPreview={id => {}}
           />
         )}
 
@@ -376,16 +365,10 @@ export function PromptManagerPage() {
             >
               Previous
             </button>
-            
-            <span className={styles.paginationInfo}>
-              Page {currentPage + 1}
-            </span>
-            
-            <button
-              onClick={nextPage}
-              disabled={!hasMore}
-              className={styles.paginationButton}
-            >
+
+            <span className={styles.paginationInfo}>Page {currentPage + 1}</span>
+
+            <button onClick={nextPage} disabled={!hasMore} className={styles.paginationButton}>
               Next
             </button>
           </div>
@@ -431,14 +414,20 @@ export function PromptManagerPage() {
 
       {/* Loading Overlay */}
       {(isCreating || isUpdating || isPublishing || isDeleting || isTogglingActive) && (
-        <LoadingSpinner 
-          overlay 
+        <LoadingSpinner
+          overlay
           text={
-            isCreating ? 'Creating prompt...' :
-            isUpdating ? 'Updating prompt...' :
-            isPublishing ? 'Publishing prompt...' :
-            isDeleting ? 'Deleting prompt...' :
-            isTogglingActive ? 'Updating status...' : 'Processing...'
+            isCreating
+              ? 'Creating prompt...'
+              : isUpdating
+                ? 'Updating prompt...'
+                : isPublishing
+                  ? 'Publishing prompt...'
+                  : isDeleting
+                    ? 'Deleting prompt...'
+                    : isTogglingActive
+                      ? 'Updating status...'
+                      : 'Processing...'
           }
         />
       )}

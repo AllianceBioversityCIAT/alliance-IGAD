@@ -34,18 +34,13 @@ export function Toast({ id, type, title, message, duration = 5000, onClose }: To
   return (
     <div className={`${styles.toast} ${styles[type]}`}>
       <div className={styles.content}>
-        <div className={styles.icon}>
-          {getIcon()}
-        </div>
+        <div className={styles.icon}>{getIcon()}</div>
         <div className={styles.text}>
           <div className={styles.title}>{title}</div>
           {message && <div className={styles.message}>{message}</div>}
         </div>
       </div>
-      <button
-        onClick={() => onClose(id)}
-        className={styles.closeButton}
-      >
+      <button onClick={() => onClose(id)} className={styles.closeButton}>
         <X size={16} />
       </button>
     </div>

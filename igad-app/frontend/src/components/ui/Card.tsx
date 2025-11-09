@@ -10,11 +10,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = 'default', children, ...props }, ref) => {
     return (
       <div
-        className={clsx(
-          'card',
-          variant !== 'default' && `card-${variant}`,
-          className
-        )}
+        className={clsx('card', variant !== 'default' && `card-${variant}`, className)}
         ref={ref}
         {...props}
       >

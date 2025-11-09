@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
-import { proposalService, Proposal, AIGenerationResult, AISuggestion } from '../services/proposalService'
+import {
+  proposalService,
+  Proposal,
+  AIGenerationResult,
+  AISuggestion,
+} from '../services/proposalService'
 
 export function useProposal(proposalId?: string) {
   const queryClient = useQueryClient()
@@ -10,22 +15,17 @@ export function useProposal(proposalId?: string) {
     data: proposal,
     isLoading,
     error,
-    refetch
-  } = useQuery(
-    ['proposal', proposalId],
-    () => proposalService.getProposal(proposalId!),
-    {
-      enabled: !!proposalId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  )
+    refetch,
+  } = useQuery(['proposal', proposalId], () => proposalService.getProposal(proposalId!), {
+    enabled: !!proposalId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
 
   // Update proposal mutation
   const updateMutation = useMutation(
-    (updates: Partial<Proposal>) => 
-      proposalService.updateProposal(proposalId!, updates),
+    (updates: Partial<Proposal>) => proposalService.updateProposal(proposalId!, updates),
     {
-      onSuccess: (updatedProposal) => {
+      onSuccess: updatedProposal => {
         queryClient.setQueryData(['proposal', proposalId], updatedProposal)
         queryClient.invalidateQueries(['proposals'])
       },
@@ -69,8 +69,10 @@ export function useProposal(proposalId?: string) {
     uploadedFiles?: Record<string, File[]>
     textInputs?: Record<string, string>
   }) => {
-    if (!proposalId) {return}
-    
+    if (!proposalId) {
+      return
+    }
+
     try {
       const updatedProposal = await proposalService.updateFormData(proposalId, formData)
       queryClient.setQueryData(['proposal', proposalId], updatedProposal)
@@ -109,38 +111,28 @@ export function useProposals() {
     data: proposals = [],
     isLoading,
     error,
-    refetch
-  } = useQuery(
-    ['proposals'],
-    proposalService.listProposals,
-    {
-      staleTime: 2 * 60 * 1000, // 2 minutes
-    }
-  )
+    refetch,
+  } = useQuery(['proposals'], proposalService.listProposals, {
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  })
 
   // Create proposal mutation
-  const createMutation = useMutation(
-    proposalService.createProposal,
-    {
-      onSuccess: (newProposal) => {
-        queryClient.setQueryData(['proposals'], (old: Proposal[] = []) => [newProposal, ...old])
-        queryClient.setQueryData(['proposal', newProposal.id], newProposal)
-      },
-    }
-  )
+  const createMutation = useMutation(proposalService.createProposal, {
+    onSuccess: newProposal => {
+      queryClient.setQueryData(['proposals'], (old: Proposal[] = []) => [newProposal, ...old])
+      queryClient.setQueryData(['proposal', newProposal.id], newProposal)
+    },
+  })
 
   // Delete proposal mutation
-  const deleteMutation = useMutation(
-    proposalService.deleteProposal,
-    {
-      onSuccess: (_, proposalId) => {
-        queryClient.setQueryData(['proposals'], (old: Proposal[] = []) =>
-          old.filter(p => p.id !== proposalId)
-        )
-        queryClient.removeQueries(['proposal', proposalId])
-      },
-    }
-  )
+  const deleteMutation = useMutation(proposalService.deleteProposal, {
+    onSuccess: (_, proposalId) => {
+      queryClient.setQueryData(['proposals'], (old: Proposal[] = []) =>
+        old.filter(p => p.id !== proposalId)
+      )
+      queryClient.removeQueries(['proposal', proposalId])
+    },
+  })
 
   return {
     proposals,
@@ -161,7 +153,7 @@ export function useProposalSuggestions(proposalId?: string) {
     data: suggestions = [],
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery(
     ['proposal-suggestions', proposalId],
     () => proposalService.getSuggestions(proposalId!),

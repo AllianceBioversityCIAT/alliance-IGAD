@@ -10,17 +10,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="input-wrapper">
         <input
-          className={clsx(
-            'form-input',
-            error && 'form-input-error',
-            className
-          )}
+          className={clsx('form-input', error && 'form-input-error', className)}
           ref={ref}
           {...props}
         />
-        {error && (
-          <span className="form-error">{error}</span>
-        )}
+        {error && <span className="form-error">{error}</span>}
       </div>
     )
   }

@@ -24,9 +24,11 @@ export function ConfirmationModal({
   onConfirm,
   onCancel,
   onClose,
-  showCancel = false
+  showCancel = false,
 }: ConfirmationModalProps) {
-  if (!isOpen) {return null}
+  if (!isOpen) {
+    return null
+  }
 
   const getIcon = () => {
     switch (type) {
@@ -54,36 +56,26 @@ export function ConfirmationModal({
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <button onClick={onClose} className={styles.closeButton}>
           <X size={20} />
         </button>
-        
+
         <div className={styles.content}>
-          <div className={styles.iconContainer}>
-            {getIcon()}
-          </div>
-          
+          <div className={styles.iconContainer}>{getIcon()}</div>
+
           <h3 className={styles.title}>{title}</h3>
-          
-          {message && (
-            <p className={styles.message}>{message}</p>
-          )}
+
+          {message && <p className={styles.message}>{message}</p>}
         </div>
-        
+
         <div className={styles.actions}>
           {showCancel && (
-            <button 
-              onClick={handleCancel}
-              className={styles.cancelButton}
-            >
+            <button onClick={handleCancel} className={styles.cancelButton}>
               {cancelText}
             </button>
           )}
-          <button 
-            onClick={handleConfirm}
-            className={`${styles.confirmButton} ${styles[type]}`}
-          >
+          <button onClick={handleConfirm} className={`${styles.confirmButton} ${styles[type]}`}>
             {confirmText}
           </button>
         </div>

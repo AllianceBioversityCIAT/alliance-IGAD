@@ -11,7 +11,7 @@ export const apiClient = axios.create({
 
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
-  (config) => {
+  config => {
     // Add auth token if available
     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token')
     if (token) {
@@ -19,17 +19,17 @@ apiClient.interceptors.request.use(
     }
     return config
   },
-  (error) => {
+  error => {
     return Promise.reject(error)
   }
 )
 
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
-  (response) => {
+  response => {
     return response
   },
-  (error) => {
+  error => {
     if (error.response?.status === 401) {
       // Handle unauthorized - redirect to login
       localStorage.removeItem('access_token')

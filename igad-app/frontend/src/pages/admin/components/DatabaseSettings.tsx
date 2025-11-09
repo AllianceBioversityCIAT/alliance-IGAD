@@ -13,21 +13,21 @@ export function DatabaseSettings() {
         name: 'igad-prompts',
         status: 'Active',
         itemCount: '~25',
-        size: '2.1 KB'
+        size: '2.1 KB',
       },
       {
         name: 'igad-comments',
         status: 'Active',
         itemCount: '~8',
-        size: '1.3 KB'
+        size: '1.3 KB',
       },
       {
         name: 'igad-history',
         status: 'Active',
         itemCount: '~15',
-        size: '3.7 KB'
-      }
-    ]
+        size: '3.7 KB',
+      },
+    ],
   }
 
   const handleRefresh = async () => {
@@ -45,17 +45,11 @@ export function DatabaseSettings() {
           <Database className={styles.titleIcon} />
           <div>
             <h3 className={styles.title}>Database Management</h3>
-            <p className={styles.subtitle}>
-              Monitor database status and performance
-            </p>
+            <p className={styles.subtitle}>Monitor database status and performance</p>
           </div>
         </div>
-        
-        <button
-          onClick={handleRefresh}
-          className={styles.refreshButton}
-          disabled={isRefreshing}
-        >
+
+        <button onClick={handleRefresh} className={styles.refreshButton} disabled={isRefreshing}>
           <RefreshCw size={16} className={isRefreshing ? styles.spinning : ''} />
           {isRefreshing ? 'Refreshing...' : 'Refresh'}
         </button>
@@ -68,7 +62,7 @@ export function DatabaseSettings() {
             <BarChart3 size={16} />
             Database Overview
           </h4>
-          
+
           <div className={styles.overviewGrid}>
             <div className={styles.overviewItem}>
               <div className={styles.overviewLabel}>Database Type</div>
@@ -95,10 +89,10 @@ export function DatabaseSettings() {
             <Table size={16} />
             DynamoDB Tables
           </h4>
-          
+
           <div className={styles.tablesContainer}>
             <div className={styles.tablesList}>
-              {databaseInfo.tables.map((table) => (
+              {databaseInfo.tables.map(table => (
                 <div key={table.name} className={styles.tableCard}>
                   <div className={styles.tableHeader}>
                     <div className={styles.tableInfo}>
@@ -109,7 +103,7 @@ export function DatabaseSettings() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className={styles.tableStats}>
                     <div className={styles.statItem}>
                       <span className={styles.statLabel}>Items</span>
@@ -129,24 +123,26 @@ export function DatabaseSettings() {
         {/* Maintenance */}
         <div className={styles.section}>
           <h4 className={styles.sectionTitle}>Maintenance</h4>
-          
+
           <div className={styles.maintenanceInfo}>
             <div className={styles.infoItem}>
               <AlertCircle size={16} className={styles.infoIcon} />
               <div className={styles.infoContent}>
                 <h5 className={styles.infoTitle}>Backup Status</h5>
                 <p className={styles.infoDescription}>
-                  Point-in-time recovery is enabled for all tables. Continuous backups are maintained automatically.
+                  Point-in-time recovery is enabled for all tables. Continuous backups are
+                  maintained automatically.
                 </p>
               </div>
             </div>
-            
+
             <div className={styles.infoItem}>
               <AlertCircle size={16} className={styles.infoIcon} />
               <div className={styles.infoContent}>
                 <h5 className={styles.infoTitle}>Performance</h5>
                 <p className={styles.infoDescription}>
-                  All tables are using on-demand billing mode for optimal cost and performance scaling.
+                  All tables are using on-demand billing mode for optimal cost and performance
+                  scaling.
                 </p>
               </div>
             </div>

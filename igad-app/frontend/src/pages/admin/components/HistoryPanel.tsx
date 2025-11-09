@@ -42,8 +42,8 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
     try {
       const response = await fetch(`http://localhost:8000/admin/prompts/${promptId}/history`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
       })
       if (response.ok) {
         const data = await response.json()
@@ -70,27 +70,37 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
   const getChangeTypeLabel = (type: string) => {
     switch (type) {
-      case 'create': return 'Created'
-      case 'update': return 'Updated'
-      case 'activate': return 'Activated'
-      case 'deactivate': return 'Deactivated'
-      default: return type
+      case 'create':
+        return 'Created'
+      case 'update':
+        return 'Updated'
+      case 'activate':
+        return 'Activated'
+      case 'deactivate':
+        return 'Deactivated'
+      default:
+        return type
     }
   }
 
   const getChangeTypeColor = (type: string) => {
     switch (type) {
-      case 'create': return styles.typeCreate
-      case 'update': return styles.typeUpdate
-      case 'activate': return styles.typeActivate
-      case 'deactivate': return styles.typeDeactivate
-      default: return styles.typeDefault
+      case 'create':
+        return styles.typeCreate
+      case 'update':
+        return styles.typeUpdate
+      case 'activate':
+        return styles.typeActivate
+      case 'deactivate':
+        return styles.typeDeactivate
+      default:
+        return styles.typeDefault
     }
   }
 
@@ -101,13 +111,19 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
       user_prompt_template: 'User Prompt Template',
       route: 'Route',
       tags: 'Tags',
-      is_active: 'Status'
+      is_active: 'Status',
     }
 
     const formatValue = (value: any) => {
-      if (value === null || value === undefined) {return 'None'}
-      if (typeof value === 'boolean') {return value ? 'Active' : 'Inactive'}
-      if (Array.isArray(value)) {return value.join(', ')}
+      if (value === null || value === undefined) {
+        return 'None'
+      }
+      if (typeof value === 'boolean') {
+        return value ? 'Active' : 'Inactive'
+      }
+      if (Array.isArray(value)) {
+        return value.join(', ')
+      }
       if (typeof value === 'string' && value.length > 100) {
         return value.substring(0, 100) + '...'
       }
@@ -131,11 +147,13 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
     )
   }
 
-  if (!isOpen) {return null}
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.panel} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.title}>
             <History size={20} />
@@ -145,7 +163,7 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
             ×
           </button>
         </div>
-        
+
         <div className={styles.content}>
           {isLoading ? (
             <div className={styles.loading}>Loading history...</div>
@@ -157,11 +175,13 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
             </div>
           ) : (
             <div className={styles.changesList}>
-              {history.changes.map((change) => (
+              {history.changes.map(change => (
                 <div key={change.id} className={styles.changeItem}>
                   <div className={styles.changeHeader}>
                     <div className={styles.changeInfo}>
-                      <span className={`${styles.changeType} ${getChangeTypeColor(change.change_type)}`}>
+                      <span
+                        className={`${styles.changeType} ${getChangeTypeColor(change.change_type)}`}
+                      >
                         {getChangeTypeLabel(change.change_type)}
                       </span>
                       <div className={styles.changeAuthor}>
@@ -173,7 +193,7 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
                         {formatDate(change.created_at)}
                       </div>
                     </div>
-                    
+
                     {Object.keys(change.changes).length > 0 && (
                       <button
                         onClick={() => toggleExpanded(change.id)}
@@ -184,18 +204,19 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
                         ) : (
                           <ChevronRight size={16} />
                         )}
-                        {Object.keys(change.changes).length} field{Object.keys(change.changes).length !== 1 ? 's' : ''} changed
+                        {Object.keys(change.changes).length} field
+                        {Object.keys(change.changes).length !== 1 ? 's' : ''} changed
                       </button>
                     )}
                   </div>
-                  
+
                   {change.comment && (
                     <div className={styles.changeComment}>
                       <MessageSquare size={14} />
                       {change.comment}
                     </div>
                   )}
-                  
+
                   {expandedChanges.has(change.id) && (
                     <div className={styles.changeDetails}>
                       {Object.entries(change.changes).map(([field, fieldChange]) =>

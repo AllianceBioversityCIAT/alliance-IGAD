@@ -35,20 +35,21 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
     try {
       const response = await fetch(`http://localhost:8000/admin/prompts/${promptId}/comments`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
       })
       if (response.ok) {
         const data = await response.json()
         setComments(data)
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newComment.trim()) {return}
+    if (!newComment.trim()) {
+      return
+    }
 
     setIsLoading(true)
     try {
@@ -56,12 +57,12 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify({
           content: newComment,
-          ...(replyTo && { parent_id: replyTo })
-        })
+          ...(replyTo && { parent_id: replyTo }),
+        }),
       })
 
       if (response.ok) {
@@ -80,7 +81,7 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -93,28 +94,23 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
           {formatDate(comment.created_at)}
         </span>
       </div>
-      
-      <div className={styles.commentContent}>
-        {comment.content}
-      </div>
-      
+
+      <div className={styles.commentContent}>{comment.content}</div>
+
       {!isReply && (
-        <button
-          onClick={() => setReplyTo(comment.id)}
-          className={styles.replyButton}
-        >
+        <button onClick={() => setReplyTo(comment.id)} className={styles.replyButton}>
           <Reply size={14} />
           Reply
         </button>
       )}
-      
+
       {comment.replies.map(reply => renderComment(reply, true))}
-      
+
       {replyTo === comment.id && (
         <form onSubmit={handleSubmitComment} className={styles.replyForm}>
           <textarea
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            onChange={e => setNewComment(e.target.value)}
             placeholder="Write a reply..."
             className={styles.replyInput}
             rows={2}
@@ -144,11 +140,13 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
     </div>
   )
 
-  if (!isOpen) {return null}
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.panel} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.title}>
             <MessageCircle size={20} />
@@ -158,7 +156,7 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
             ×
           </button>
         </div>
-        
+
         <div className={styles.content}>
           <div className={styles.commentsList}>
             {comments.length === 0 ? (
@@ -171,12 +169,12 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
               comments.map(comment => renderComment(comment))
             )}
           </div>
-          
+
           {!replyTo && (
             <form onSubmit={handleSubmitComment} className={styles.newCommentForm}>
               <textarea
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
+                onChange={e => setNewComment(e.target.value)}
                 placeholder="Add a comment..."
                 className={styles.commentInput}
                 rows={3}

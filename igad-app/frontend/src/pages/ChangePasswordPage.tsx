@@ -22,45 +22,49 @@ export function ChangePasswordPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   const state = location.state as LocationState
-  
+
   // Redirect if no session data
   if (!state?.username || !state?.session) {
     navigate('/login')
     return null
   }
-  
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<ChangePasswordForm>()
-  
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm<ChangePasswordForm>()
+
   const newPassword = watch('newPassword')
-  
+
   const onSubmit = async (data: ChangePasswordForm) => {
     if (data.newPassword !== data.confirmPassword) {
       setError('Passwords do not match')
       return
     }
-    
+
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const response = await authService.completePasswordChange(
         state.username,
         state.session,
         data.newPassword
       )
-      
+
       // Password changed successfully - store token and redirect
       authService.setToken(response.access_token, data.rememberMe)
       authService.setUserEmail(state.username, data.rememberMe)
-      
+
       navigate('/', {
         state: {
-          message: 'Password changed successfully. Welcome to IGAD Innovation Hub!'
-        }
+          message: 'Password changed successfully. Welcome to IGAD Innovation Hub!',
+        },
       })
-      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error changing password')
     } finally {
@@ -74,13 +78,9 @@ export function ChangePasswordPage() {
         <div className={styles.formContainer}>
           {/* IGAD Logo */}
           <div>
-            <img 
-              src="/logologin.png" 
-              alt="IGAD Innovation Hub" 
-              className={styles.logo}
-            />
+            <img src="/logologin.png" alt="IGAD Innovation Hub" className={styles.logo} />
           </div>
-          
+
           <div className={styles.formContent}>
             <div className={styles.formHeader}>
               <h1 className={styles.title}>Change Password</h1>
@@ -90,11 +90,7 @@ export function ChangePasswordPage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-              {error && (
-                <div className={styles.errorMessage}>
-                  {error}
-                </div>
-              )}
+              {error && <div className={styles.errorMessage}>{error}</div>}
 
               <div className={styles.fieldGroup}>
                 <label htmlFor="newPassword" className={styles.label}>
@@ -106,12 +102,13 @@ export function ChangePasswordPage() {
                       required: 'Password is required',
                       minLength: {
                         value: 8,
-                        message: 'Password must be at least 8 characters'
+                        message: 'Password must be at least 8 characters',
                       },
                       pattern: {
                         value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                        message: 'Password must contain at least one uppercase, one lowercase and one number'
-                      }
+                        message:
+                          'Password must contain at least one uppercase, one lowercase and one number',
+                      },
                     })}
                     type={showPassword ? 'text' : 'password'}
                     id="newPassword"
@@ -139,8 +136,7 @@ export function ChangePasswordPage() {
                   <input
                     {...register('confirmPassword', {
                       required: 'Please confirm your password',
-                      validate: (value) => 
-                        value === newPassword || 'Passwords do not match'
+                      validate: value => value === newPassword || 'Passwords do not match',
                     })}
                     type={showConfirmPassword ? 'text' : 'password'}
                     id="confirmPassword"
@@ -160,11 +156,7 @@ export function ChangePasswordPage() {
                 )}
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={styles.submitButton}
-              >
+              <button type="submit" disabled={isLoading} className={styles.submitButton}>
                 {isLoading ? <Spinner size="small" /> : 'Change Password'}
                 {!isLoading && <span>→</span>}
               </button>
@@ -176,7 +168,12 @@ export function ChangePasswordPage() {
                 type="button"
                 onClick={() => navigate('/login')}
                 className={styles.supportLink}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
               >
                 Volver al login
               </button>
@@ -184,7 +181,7 @@ export function ChangePasswordPage() {
           </div>
         </div>
       </div>
-      
+
       <div className={styles.rightColumn}>
         <div className={styles.backgroundImage}>
           <div className={styles.overlay}></div>

@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react'
-import { 
-  Users, 
-  UserPlus, 
-  Search, 
-  Filter, 
-  Edit, 
-  Trash2, 
-  Shield, 
+import {
+  Users,
+  UserPlus,
+  Search,
+  Filter,
+  Edit,
+  Trash2,
+  Shield,
   ShieldCheck,
   Mail,
   Calendar,
   AlertCircle,
   CheckCircle,
   X,
-  Settings
+  Settings,
 } from 'lucide-react'
 import { userService, CognitoUser } from '../../../services/userService'
 import { CreateUserModal } from './CreateUserModal'
@@ -47,7 +47,7 @@ export function UserManagement() {
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {}
+    onConfirm: () => {},
   })
 
   const { showSuccess, showError } = useToast()
@@ -57,7 +57,7 @@ export function UserManagement() {
     const timer = setTimeout(() => {
       fetchUsers()
     }, 100)
-    
+
     return () => clearTimeout(timer)
   }, [])
 
@@ -108,16 +108,16 @@ export function UserManagement() {
           showError('Delete failed', 'An unexpected error occurred')
         }
         setConfirmDialog(prev => ({ ...prev, isOpen: false }))
-      }
+      },
     })
   }
 
   const handleToggleUser = async (username: string, enabled: boolean, email: string) => {
     try {
-      const result = enabled 
+      const result = enabled
         ? await userService.disableUser(username)
         : await userService.enableUser(username)
-      
+
       if (result.success) {
         showSuccess(
           enabled ? 'User disabled' : 'User enabled',
@@ -138,7 +138,7 @@ export function UserManagement() {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -146,7 +146,7 @@ export function UserManagement() {
     if (!enabled) {
       return <span className={`${styles.statusBadge} ${styles.disabled}`}>Disabled</span>
     }
-    
+
     switch (status) {
       case 'CONFIRMED':
         return <span className={`${styles.statusBadge} ${styles.confirmed}`}>Active</span>
@@ -162,17 +162,23 @@ export function UserManagement() {
   const filteredUsers = users.filter(user => {
     if (filters.search) {
       const searchLower = filters.search.toLowerCase()
-      if (!user.email.toLowerCase().includes(searchLower) && 
-          !user.username.toLowerCase().includes(searchLower)) {
+      if (
+        !user.email.toLowerCase().includes(searchLower) &&
+        !user.username.toLowerCase().includes(searchLower)
+      ) {
         return false
       }
     }
-    
+
     if (filters.status && filters.status !== 'all') {
-      if (filters.status === 'enabled' && !user.enabled) {return false}
-      if (filters.status === 'disabled' && user.enabled) {return false}
+      if (filters.status === 'enabled' && !user.enabled) {
+        return false
+      }
+      if (filters.status === 'disabled' && user.enabled) {
+        return false
+      }
     }
-    
+
     return true
   })
 
@@ -191,11 +197,8 @@ export function UserManagement() {
             </div>
           </div>
         </div>
-        
-        <button 
-          onClick={handleCreateUser}
-          className={styles.createButton}
-        >
+
+        <button onClick={handleCreateUser} className={styles.createButton}>
           <UserPlus size={16} />
           Create User
         </button>
@@ -220,16 +223,16 @@ export function UserManagement() {
             type="text"
             placeholder="Search users by email or username..."
             value={filters.search || ''}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+            onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
             className={styles.searchInput}
           />
         </div>
-        
+
         <div className={styles.filterGroup}>
           <Filter className={styles.filterIcon} />
           <select
             value={filters.status || 'all'}
-            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value as any }))}
+            onChange={e => setFilters(prev => ({ ...prev, status: e.target.value as any }))}
             className={styles.filterSelect}
           >
             <option value="all">All Users</option>
@@ -266,7 +269,7 @@ export function UserManagement() {
                 </td>
               </tr>
             ) : (
-              filteredUsers.map((user) => (
+              filteredUsers.map(user => (
                 <tr key={user.username} className={styles.tableRow}>
                   <td className={styles.tableCell}>
                     <div className={styles.userInfo}>
@@ -275,9 +278,7 @@ export function UserManagement() {
                           <Mail size={14} />
                           {user.email}
                         </div>
-                        <div className={styles.username}>
-                          {user.username}
-                        </div>
+                        <div className={styles.username}>{user.username}</div>
                       </div>
                       <div className={styles.verificationStatus}>
                         {user.email_verified ? (
@@ -288,11 +289,11 @@ export function UserManagement() {
                       </div>
                     </div>
                   </td>
-                  
+
                   <td className={styles.tableCell}>
                     {getStatusBadge(user.user_status, user.enabled)}
                   </td>
-                  
+
                   <td className={styles.tableCell}>
                     <div className={styles.groupsCell}>
                       {user.groups && user.groups.length > 0 ? (
@@ -307,21 +308,21 @@ export function UserManagement() {
                       )}
                     </div>
                   </td>
-                  
+
                   <td className={styles.tableCell}>
                     <div className={styles.dateCell}>
                       <Calendar size={14} />
                       {formatDate(user.created_date)}
                     </div>
                   </td>
-                  
+
                   <td className={styles.tableCell}>
                     <div className={styles.dateCell}>
                       <Calendar size={14} />
                       {formatDate(user.last_modified_date)}
                     </div>
                   </td>
-                  
+
                   <td className={styles.tableCell}>
                     <div className={styles.actionsCell}>
                       <button
@@ -331,7 +332,7 @@ export function UserManagement() {
                       >
                         <Edit size={14} />
                       </button>
-                      
+
                       <button
                         onClick={() => handleManageGroups(user.username)}
                         className={styles.actionButton}
@@ -339,7 +340,7 @@ export function UserManagement() {
                       >
                         <Settings size={14} />
                       </button>
-                      
+
                       <button
                         onClick={() => handleToggleUser(user.username, user.enabled, user.email)}
                         className={`${styles.actionButton} ${!user.enabled ? styles.enableButton : styles.disableButton}`}
@@ -347,7 +348,7 @@ export function UserManagement() {
                       >
                         {user.enabled ? <ShieldCheck size={14} /> : <Shield size={14} />}
                       </button>
-                      
+
                       <button
                         onClick={() => handleDeleteUser(user.username, user.email)}
                         className={`${styles.actionButton} ${styles.deleteButton}`}

@@ -18,8 +18,8 @@ export function ProposalWriterPage() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
   const [proposalId, setProposalId] = useState<string>()
   const [formData, setFormData] = useState({
-    uploadedFiles: {} as {[key: string]: File[]},
-    textInputs: {} as {[key: string]: string}
+    uploadedFiles: {} as { [key: string]: File[] },
+    textInputs: {} as { [key: string]: string },
   })
 
   const { createProposal, isCreating } = useProposals()
@@ -27,19 +27,18 @@ export function ProposalWriterPage() {
   // Create a proposal when the component mounts (only if authenticated)
   useEffect(() => {
     const isAuthenticated = authService.isAuthenticated()
-    
+
     if (!proposalId && !isCreating && isAuthenticated) {
       createProposal(
         {
           title: `Proposal Draft - ${new Date().toLocaleDateString()}`,
-          description: 'Draft proposal created from wizard'
+          description: 'Draft proposal created from wizard',
         },
         {
-          onSuccess: (newProposal) => {
+          onSuccess: newProposal => {
             setProposalId(newProposal.id)
           },
-          onError: (error) => {
-          }
+          onError: error => {},
         }
       )
     }
@@ -80,24 +79,30 @@ export function ProposalWriterPage() {
   }
 
   const renderCurrentStep = () => {
-    const stepProps = { 
-      formData, 
+    const stepProps = {
+      formData,
       setFormData,
-      proposalId 
+      proposalId,
     }
-    
+
     switch (currentStep) {
-      case 1: return <Step1InformationConsolidation {...stepProps} />
-      case 2: return <Step2ContentGeneration {...stepProps} />
-      case 3: return <Step3StructureValidation {...stepProps} />
-      case 4: return <Step4ReviewRefinement {...stepProps} />
-      case 5: return <Step5FinalExport {...stepProps} />
-      default: return <Step1InformationConsolidation {...stepProps} />
+      case 1:
+        return <Step1InformationConsolidation {...stepProps} />
+      case 2:
+        return <Step2ContentGeneration {...stepProps} />
+      case 3:
+        return <Step3StructureValidation {...stepProps} />
+      case 4:
+        return <Step4ReviewRefinement {...stepProps} />
+      case 5:
+        return <Step5FinalExport {...stepProps} />
+      default:
+        return <Step1InformationConsolidation {...stepProps} />
     }
   }
 
   const navigationButtons = [
-    <button 
+    <button
       key="previous"
       className={`${styles.button} ${styles.buttonSecondary}`}
       disabled={currentStep === 1}
@@ -106,7 +111,7 @@ export function ProposalWriterPage() {
       <ChevronLeft size={16} />
       Previous
     </button>,
-    <button 
+    <button
       key="next"
       className={`${styles.button} ${styles.buttonPrimary}`}
       onClick={handleNextStep}
@@ -114,7 +119,7 @@ export function ProposalWriterPage() {
     >
       {currentStep === 5 ? 'Complete' : 'Next'}
       <ChevronRight size={16} />
-    </button>
+    </button>,
   ]
 
   return (

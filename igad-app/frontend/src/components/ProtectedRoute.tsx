@@ -1,16 +1,16 @@
-import { Navigate } from 'react-router-dom';
-import { authService } from '../services/authService';
+import { Navigate } from 'react-router-dom'
+import { authService } from '../services/authService'
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const isAuthenticated = authService.isAuthenticated();
+  const isAuthenticated = authService.isAuthenticated()
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace />
   }
 
-  return <>{children}</>;
+  return <>{children}</>
 }

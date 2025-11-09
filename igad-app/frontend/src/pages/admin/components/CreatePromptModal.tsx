@@ -18,29 +18,32 @@ interface CreatePromptModalProps {
 
 const STEP_TITLES = {
   1: 'Basic Information',
-  2: 'AI Configuration', 
-  3: 'Review & Create'
+  2: 'AI Configuration',
+  3: 'Review & Create',
 }
 
 const SECTION_DESCRIPTIONS = {
-  [ProposalSection.EXECUTIVE_SUMMARY]: 'Create compelling executive summaries that capture key project highlights',
-  [ProposalSection.PROJECT_DESCRIPTION]: 'Generate detailed project descriptions with clear objectives and scope',
-  [ProposalSection.METHODOLOGY]: 'Develop comprehensive methodologies and implementation approaches',
+  [ProposalSection.EXECUTIVE_SUMMARY]:
+    'Create compelling executive summaries that capture key project highlights',
+  [ProposalSection.PROJECT_DESCRIPTION]:
+    'Generate detailed project descriptions with clear objectives and scope',
+  [ProposalSection.METHODOLOGY]:
+    'Develop comprehensive methodologies and implementation approaches',
   [ProposalSection.BUDGET]: 'Structure budget breakdowns and financial planning sections',
   [ProposalSection.TIMELINE]: 'Create project timelines with milestones and deliverables',
   [ProposalSection.TEAM]: 'Generate team descriptions and role assignments',
   [ProposalSection.IMPACT]: 'Articulate project impact and expected outcomes',
-  [ProposalSection.SUSTAINABILITY]: 'Develop sustainability plans and long-term strategies'
+  [ProposalSection.SUSTAINABILITY]: 'Develop sustainability plans and long-term strategies',
 }
 
-export function CreatePromptModal({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  isLoading = false, 
+export function CreatePromptModal({
+  isOpen,
+  onClose,
+  onSave,
+  isLoading = false,
   mode = 'create',
   initialData = null,
-  contextData = {}
+  contextData = {},
 }: CreatePromptModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
@@ -49,7 +52,7 @@ export function CreatePromptModal({
     route: '',
     system_prompt: '',
     user_prompt_template: '',
-    tags: [] as string[]
+    tags: [] as string[],
   })
 
   // Load initial data when editing or from context
@@ -61,7 +64,7 @@ export function CreatePromptModal({
         route: initialData.route || '',
         system_prompt: initialData.system_prompt || '',
         user_prompt_template: initialData.user_prompt_template || '',
-        tags: initialData.tags || []
+        tags: initialData.tags || [],
       })
     } else if (mode === 'create') {
       // Reset form for create mode, but use context data if available
@@ -71,12 +74,14 @@ export function CreatePromptModal({
         route: contextData.fromRoute || '',
         system_prompt: '',
         user_prompt_template: '',
-        tags: []
+        tags: [],
       })
     }
   }, [mode, initialData, contextData, isOpen])
 
-  if (!isOpen) {return null}
+  if (!isOpen) {
+    return null
+  }
 
   const handleNext = () => {
     if (currentStep < 3) {
@@ -100,7 +105,7 @@ export function CreatePromptModal({
         route: '',
         system_prompt: '',
         user_prompt_template: '',
-        tags: []
+        tags: [],
       })
       setCurrentStep(1)
     } catch (error) {
@@ -131,8 +136,12 @@ export function CreatePromptModal({
               <Wand2 size={24} />
             </div>
             <div>
-              <h2 className={styles.title}>{mode === 'create' ? 'Create New AI Prompt' : 'Edit AI Prompt'}</h2>
-              <p className={styles.subtitle}>Step {currentStep} of 3: {STEP_TITLES[currentStep as keyof typeof STEP_TITLES]}</p>
+              <h2 className={styles.title}>
+                {mode === 'create' ? 'Create New AI Prompt' : 'Edit AI Prompt'}
+              </h2>
+              <p className={styles.subtitle}>
+                Step {currentStep} of 3: {STEP_TITLES[currentStep as keyof typeof STEP_TITLES]}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className={styles.closeButton}>
@@ -143,14 +152,11 @@ export function CreatePromptModal({
         {/* Progress Bar */}
         <div className={styles.progressBar}>
           <div className={styles.progressTrack}>
-            <div 
-              className={styles.progressFill} 
-              style={{ width: `${(currentStep / 3) * 100}%` }}
-            />
+            <div className={styles.progressFill} style={{ width: `${(currentStep / 3) * 100}%` }} />
           </div>
           <div className={styles.progressSteps}>
-            {[1, 2, 3].map((step) => (
-              <div 
+            {[1, 2, 3].map(step => (
+              <div
                 key={step}
                 className={`${styles.progressStep} ${
                   step <= currentStep ? styles.progressStepActive : ''
@@ -177,7 +183,7 @@ export function CreatePromptModal({
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className={styles.input}
                   placeholder="e.g., Executive Summary Generator"
                 />
@@ -187,11 +193,15 @@ export function CreatePromptModal({
                 <label className={styles.label}>Section Type *</label>
                 <select
                   value={formData.section}
-                  onChange={(e) => setFormData(prev => ({ ...prev, section: e.target.value as ProposalSection }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, section: e.target.value as ProposalSection }))
+                  }
                   className={styles.select}
                 >
                   {Object.entries(SECTION_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
                   ))}
                 </select>
                 {SECTION_DESCRIPTIONS[formData.section] && (
@@ -206,7 +216,7 @@ export function CreatePromptModal({
                 <input
                   type="text"
                   value={formData.route}
-                  onChange={(e) => setFormData(prev => ({ ...prev, route: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, route: e.target.value }))}
                   className={styles.input}
                   placeholder="e.g., /proposals/executive-summary"
                 />
@@ -229,7 +239,7 @@ export function CreatePromptModal({
                 <label className={styles.label}>AI Role & Behavior *</label>
                 <textarea
                   value={formData.system_prompt}
-                  onChange={(e) => setFormData(prev => ({ ...prev, system_prompt: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, system_prompt: e.target.value }))}
                   className={styles.textarea}
                   rows={4}
                   placeholder="You are an expert proposal writer specializing in development projects. You create clear, compelling, and professional content..."
@@ -243,13 +253,16 @@ export function CreatePromptModal({
                 <label className={styles.label}>Content Template *</label>
                 <textarea
                   value={formData.user_prompt_template}
-                  onChange={(e) => setFormData(prev => ({ ...prev, user_prompt_template: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, user_prompt_template: e.target.value }))
+                  }
                   className={styles.textarea}
                   rows={6}
                   placeholder="Create a comprehensive executive summary for a {{project_type}} project in {{region}} with a budget of {{budget}}..."
                 />
                 <p className={styles.helpText}>
-                  Use <code>{'{{variable_name}}'}</code> for dynamic content that users will provide.
+                  Use <code>{'{{variable_name}}'}</code> for dynamic content that users will
+                  provide.
                 </p>
               </div>
             </div>
@@ -283,11 +296,15 @@ export function CreatePromptModal({
                 <h4>AI Configuration</h4>
                 <div className={styles.reviewItem}>
                   <span className={styles.reviewLabel}>Role:</span>
-                  <span className={styles.reviewPreview}>{formData.system_prompt.substring(0, 100)}...</span>
+                  <span className={styles.reviewPreview}>
+                    {formData.system_prompt.substring(0, 100)}...
+                  </span>
                 </div>
                 <div className={styles.reviewItem}>
                   <span className={styles.reviewLabel}>Template:</span>
-                  <span className={styles.reviewPreview}>{formData.user_prompt_template.substring(0, 100)}...</span>
+                  <span className={styles.reviewPreview}>
+                    {formData.user_prompt_template.substring(0, 100)}...
+                  </span>
                 </div>
               </div>
             </div>
@@ -298,19 +315,16 @@ export function CreatePromptModal({
         <div className={styles.footer}>
           <div className={styles.footerActions}>
             {currentStep > 1 && (
-              <button 
-                onClick={handlePrevious}
-                className={styles.secondaryButton}
-              >
+              <button onClick={handlePrevious} className={styles.secondaryButton}>
                 <ArrowLeft size={16} />
                 Previous
               </button>
             )}
-            
+
             <div className={styles.spacer} />
-            
+
             {currentStep < 3 ? (
-              <button 
+              <button
                 onClick={handleNext}
                 className={styles.primaryButton}
                 disabled={!isStepValid()}
@@ -319,12 +333,18 @@ export function CreatePromptModal({
                 <ArrowRight size={16} />
               </button>
             ) : (
-              <button 
+              <button
                 onClick={handleSubmit}
                 className={styles.primaryButton}
                 disabled={isLoading || !isStepValid()}
               >
-                {isLoading ? (mode === 'create' ? 'Creating...' : 'Updating...') : (mode === 'create' ? 'Create Prompt' : 'Update Prompt')}
+                {isLoading
+                  ? mode === 'create'
+                    ? 'Creating...'
+                    : 'Updating...'
+                  : mode === 'create'
+                    ? 'Create Prompt'
+                    : 'Update Prompt'}
                 <Wand2 size={16} />
               </button>
             )}

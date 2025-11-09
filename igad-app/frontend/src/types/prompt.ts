@@ -14,7 +14,7 @@ export enum ProposalSection {
   SUSTAINABILITY = 'sustainability',
   MONITORING_EVALUATION = 'monitoring_evaluation',
   EXECUTIVE_SUMMARY = 'executive_summary',
-  APPENDICES = 'appendices'
+  APPENDICES = 'appendices',
 }
 
 export const SECTION_LABELS: Record<ProposalSection, string> = {
@@ -33,7 +33,7 @@ export const SECTION_LABELS: Record<ProposalSection, string> = {
   [ProposalSection.SUSTAINABILITY]: 'Sustainability',
   [ProposalSection.MONITORING_EVALUATION]: 'Monitoring & Evaluation',
   [ProposalSection.EXECUTIVE_SUMMARY]: 'Executive Summary',
-  [ProposalSection.APPENDICES]: 'Appendices'
+  [ProposalSection.APPENDICES]: 'Appendices',
 }
 
 export interface PromptContext {

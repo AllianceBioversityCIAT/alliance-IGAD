@@ -10,7 +10,12 @@ interface ManageUserGroupsModalProps {
   onUserUpdated: () => void
 }
 
-export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated }: ManageUserGroupsModalProps) {
+export function ManageUserGroupsModal({
+  isOpen,
+  username,
+  onClose,
+  onUserUpdated,
+}: ManageUserGroupsModalProps) {
   const [user, setUser] = useState<CognitoUser | null>(null)
   const [groups, setGroups] = useState<Array<{ name: string; description: string }>>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -23,19 +28,21 @@ export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated
   }, [isOpen, username])
 
   const fetchData = async () => {
-    if (!username) {return}
-    
+    if (!username) {
+      return
+    }
+
     setIsLoading(true)
     try {
       const [userResult, groupsResult] = await Promise.all([
         userService.getUser(username),
-        userService.listGroups()
+        userService.listGroups(),
       ])
-      
+
       if (userResult.success) {
         setUser(userResult.user)
       }
-      
+
       if (groupsResult.success) {
         setGroups(groupsResult.groups)
       }
@@ -47,7 +54,9 @@ export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated
   }
 
   const handleToggleGroup = async (groupName: string, isInGroup: boolean) => {
-    if (!username) {return}
+    if (!username) {
+      return
+    }
 
     try {
       const result = isInGroup
@@ -65,7 +74,9 @@ export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated
     }
   }
 
-  if (!isOpen || !username) {return null}
+  if (!isOpen || !username) {
+    return null
+  }
 
   return (
     <div className={styles.overlay}>
@@ -81,11 +92,7 @@ export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated
         </div>
 
         <div className={styles.content}>
-          {error && (
-            <div className={styles.error}>
-              {error}
-            </div>
-          )}
+          {error && <div className={styles.error}>{error}</div>}
 
           {isLoading ? (
             <div className={styles.loading}>Loading groups...</div>
@@ -97,7 +104,7 @@ export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated
                   <p>No groups available</p>
                 </div>
               ) : (
-                groups.map((group) => {
+                groups.map(group => {
                   const isInGroup = user?.groups?.includes(group.name) || false
                   return (
                     <div key={group.name} className={styles.groupItem}>

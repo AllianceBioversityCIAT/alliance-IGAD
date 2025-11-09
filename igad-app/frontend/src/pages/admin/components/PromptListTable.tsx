@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Edit, Trash2, Copy, CheckCircle, MoreVertical, Power, PowerOff, Eye, MessageCircle, History } from 'lucide-react'
+import {
+  Edit,
+  Trash2,
+  Copy,
+  CheckCircle,
+  MoreVertical,
+  Power,
+  PowerOff,
+  Eye,
+  MessageCircle,
+  History,
+} from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '../../../types/prompt'
 import styles from './PromptListTable.module.css'
 
@@ -15,16 +26,16 @@ interface PromptListTableProps {
   onHistory?: (id: string) => void
 }
 
-export function PromptListTable({ 
-  prompts, 
-  isLoading, 
-  onEdit, 
-  onPublish, 
+export function PromptListTable({
+  prompts,
+  isLoading,
+  onEdit,
+  onPublish,
   onDelete,
   onClone,
   onToggleActive,
   onComments,
-  onHistory
+  onHistory,
 }: PromptListTableProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
@@ -48,13 +59,13 @@ export function PromptListTable({
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
   const handleActionClick = (promptId: string, action: string, prompt: Prompt) => {
     setActiveDropdown(null)
-    
+
     switch (action) {
       case 'edit':
         onEdit(promptId)
@@ -131,24 +142,20 @@ export function PromptListTable({
                   <span className={styles.promptName}>{prompt.name}</span>
                   {prompt.tags.length > 0 && (
                     <div className={styles.tags}>
-                      {prompt.tags.slice(0, 2).map((tag) => (
+                      {prompt.tags.slice(0, 2).map(tag => (
                         <span key={tag} className={styles.tag}>
                           {tag}
                         </span>
                       ))}
                       {prompt.tags.length > 2 && (
-                        <span className={styles.tagMore}>
-                          +{prompt.tags.length - 2}
-                        </span>
+                        <span className={styles.tagMore}>+{prompt.tags.length - 2}</span>
                       )}
                     </div>
                   )}
                 </div>
               </td>
               <td className={styles.tableCell}>
-                <span className={styles.sectionLabel}>
-                  {SECTION_LABELS[prompt.section]}
-                </span>
+                <span className={styles.sectionLabel}>{SECTION_LABELS[prompt.section]}</span>
               </td>
               <td className={styles.tableCell}>
                 {prompt.route ? (
@@ -158,7 +165,9 @@ export function PromptListTable({
                 )}
               </td>
               <td className={styles.tableCell}>
-                <div className={`${styles.activeBadge} ${prompt.is_active ? styles.active : styles.inactive}`}>
+                <div
+                  className={`${styles.activeBadge} ${prompt.is_active ? styles.active : styles.inactive}`}
+                >
                   {prompt.is_active ? 'Active' : 'Inactive'}
                 </div>
               </td>
@@ -179,11 +188,15 @@ export function PromptListTable({
                     >
                       <Edit size={14} />
                     </button>
-                    
+
                     <button
                       onClick={() => handleActionClick(prompt.id, 'toggle-active', prompt)}
                       className={`${styles.actionButton} ${prompt.is_active ? styles.deactivateButton : styles.activateButton}`}
-                      title={prompt.is_active ? `Deactivate "${prompt.name}"` : `Activate "${prompt.name}"`}
+                      title={
+                        prompt.is_active
+                          ? `Deactivate "${prompt.name}"`
+                          : `Activate "${prompt.name}"`
+                      }
                     >
                       {prompt.is_active ? <PowerOff size={14} /> : <Power size={14} />}
                     </button>
@@ -192,20 +205,20 @@ export function PromptListTable({
                   {/* Secondary Actions - Dropdown */}
                   <div className={styles.dropdownContainer}>
                     <button
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation()
-                        setActiveDropdown(
-                          activeDropdown === prompt.id ? null : prompt.id
-                        )
+                        setActiveDropdown(activeDropdown === prompt.id ? null : prompt.id)
                       }}
                       className={`${styles.actionButton} ${styles.moreButton}`}
                       title="More actions"
                     >
                       <MoreVertical size={14} />
                     </button>
-                    
+
                     {activeDropdown === prompt.id && (
-                      <div className={`${styles.dropdown} ${index >= prompts.length - 2 ? styles.dropup : ''}`}>
+                      <div
+                        className={`${styles.dropdown} ${index >= prompts.length - 2 ? styles.dropup : ''}`}
+                      >
                         {prompt.status === 'draft' && (
                           <button
                             onClick={() => handleActionClick(prompt.id, 'publish', prompt)}
@@ -216,7 +229,7 @@ export function PromptListTable({
                             Publish
                           </button>
                         )}
-                        
+
                         <button
                           onClick={() => handleActionClick(prompt.id, 'clone', prompt)}
                           className={styles.dropdownItem}
@@ -225,7 +238,7 @@ export function PromptListTable({
                           <Copy size={14} />
                           Clone
                         </button>
-                        
+
                         {onHistory && (
                           <button
                             onClick={() => handleActionClick(prompt.id, 'history', prompt)}
@@ -236,9 +249,9 @@ export function PromptListTable({
                             History
                           </button>
                         )}
-                        
+
                         <div className={styles.dropdownDivider}></div>
-                        
+
                         <button
                           onClick={() => handleActionClick(prompt.id, 'delete', prompt)}
                           className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`}

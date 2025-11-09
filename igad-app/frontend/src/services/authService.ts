@@ -1,30 +1,30 @@
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8000'
 
 export interface LoginCredentials {
-  username: string;
-  password: string;
+  username: string
+  password: string
 }
 
 export interface LoginResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  requires_password_change?: boolean;
-  session?: string;
-  username?: string;
-  message?: string;
+  access_token: string
+  token_type: string
+  expires_in: number
+  requires_password_change?: boolean
+  session?: string
+  username?: string
+  message?: string
 }
 
 export interface AuthError {
-  detail: string;
+  detail: string
 }
 
 export interface UserInfo {
-  user_id: string;
-  email: string;
-  username: string;
-  role: string;
-  is_admin: boolean;
+  user_id: string
+  email: string
+  username: string
+  role: string
+  is_admin: boolean
 }
 
 class AuthService {
@@ -35,102 +35,108 @@ class AuthService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(credentials),
-    });
+    })
 
     if (!response.ok) {
-      const error: AuthError = await response.json();
-      throw new Error(error.detail || 'Login failed');
+      const error: AuthError = await response.json()
+      throw new Error(error.detail || 'Login failed')
     }
 
-    return response.json();
+    return response.json()
   }
 
   setToken(token: string, rememberMe: boolean = false): void {
     if (rememberMe) {
-      localStorage.setItem('access_token', token);
-      localStorage.setItem('remember_me', 'true');
+      localStorage.setItem('access_token', token)
+      localStorage.setItem('remember_me', 'true')
     } else {
-      sessionStorage.setItem('access_token', token);
-      localStorage.removeItem('remember_me');
+      sessionStorage.setItem('access_token', token)
+      localStorage.removeItem('remember_me')
     }
   }
 
   getToken(): string | null {
-    return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    return localStorage.getItem('access_token') || sessionStorage.getItem('access_token')
   }
 
   removeToken(): void {
-    localStorage.removeItem('access_token');
-    sessionStorage.removeItem('access_token');
-    
+    localStorage.removeItem('access_token')
+    sessionStorage.removeItem('access_token')
+
     // Only remove email if remember me was not checked
-    const rememberMe = localStorage.getItem('remember_me');
+    const rememberMe = localStorage.getItem('remember_me')
     if (!rememberMe) {
-      localStorage.removeItem('user_email');
+      localStorage.removeItem('user_email')
     }
-    sessionStorage.removeItem('user_email');
+    sessionStorage.removeItem('user_email')
     // Don't remove remember_me flag so email persists
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return !!this.getToken()
   }
 
   setUserEmail(email: string, rememberMe: boolean = false): void {
     if (rememberMe) {
-      localStorage.setItem('user_email', email);
+      localStorage.setItem('user_email', email)
     } else {
-      sessionStorage.setItem('user_email', email);
+      sessionStorage.setItem('user_email', email)
     }
   }
 
   getUserEmail(): string | null {
-    return localStorage.getItem('user_email') || sessionStorage.getItem('user_email');
+    return localStorage.getItem('user_email') || sessionStorage.getItem('user_email')
   }
 
   async getCurrentUser(): Promise<UserInfo | null> {
-    const token = this.getToken();
-    if (!token) {return null;}
+    const token = this.getToken()
+    if (!token) {
+      return null
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
-      });
+      })
 
       if (!response.ok) {
         if (response.status === 401) {
-          this.logout();
+          this.logout()
         }
-        return null;
+        return null
       }
 
-      return response.json();
+      return response.json()
     } catch (error) {
-      return null;
+      return null
     }
   }
 
-  async completePasswordChange(username: string, session: string, newPassword: string): Promise<LoginResponse> {
+  async completePasswordChange(
+    username: string,
+    session: string,
+    newPassword: string
+  ): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE_URL}/api/auth/complete-password-change`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        username, 
-        session, 
-        new_password: newPassword 
+      body: JSON.stringify({
+        username,
+        session,
+        new_password: newPassword,
       }),
-    });
+    })
 
     if (!response.ok) {
-      const error: AuthError = await response.json();
-      throw new Error(error.detail || 'Password change failed');
+      const error: AuthError = await response.json()
+      throw new Error(error.detail || 'Password change failed')
     }
 
-    return response.json();
+    return response.json()
   }
 
   async forgotPassword(username: string): Promise<{ success: boolean; message: string }> {
@@ -140,39 +146,43 @@ class AuthService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ username }),
-    });
+    })
 
-    const data = await response.json();
-    
+    const data = await response.json()
+
     if (!response.ok) {
-      throw new Error(data.detail || 'Failed to send reset code');
+      throw new Error(data.detail || 'Failed to send reset code')
     }
 
-    return data;
+    return data
   }
 
-  async resetPassword(username: string, code: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  async resetPassword(
+    username: string,
+    code: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> {
     const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ username, code, new_password: newPassword }),
-    });
+    })
 
-    const data = await response.json();
-    
+    const data = await response.json()
+
     if (!response.ok) {
-      throw new Error(data.detail || 'Failed to reset password');
+      throw new Error(data.detail || 'Failed to reset password')
     }
 
-    return data;
+    return data
   }
 
   logout(): void {
-    this.removeToken();
-    window.location.href = '/login';
+    this.removeToken()
+    window.location.href = '/login'
   }
 }
 
-export const authService = new AuthService();
+export const authService = new AuthService()

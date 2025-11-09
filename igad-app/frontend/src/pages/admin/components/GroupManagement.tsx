@@ -55,11 +55,13 @@ export function GroupManagement() {
   }
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) {return 'N/A'}
+    if (!dateString) {
+      return 'N/A'
+    }
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -70,16 +72,11 @@ export function GroupManagement() {
           <Shield className={styles.titleIcon} />
           <div>
             <h3 className={styles.title}>Security Groups</h3>
-            <p className={styles.subtitle}>
-              Manage user groups and permissions
-            </p>
+            <p className={styles.subtitle}>Manage user groups and permissions</p>
           </div>
         </div>
-        
-        <button 
-          onClick={() => setShowCreateGroup(true)}
-          className={styles.createButton}
-        >
+
+        <button onClick={() => setShowCreateGroup(true)} className={styles.createButton}>
           <Plus size={16} />
           Create Group
         </button>
@@ -106,7 +103,7 @@ export function GroupManagement() {
           </div>
         ) : (
           <div className={styles.groupsList}>
-            {groups.map((group) => (
+            {groups.map(group => (
               <div key={group.name} className={styles.groupCard}>
                 <div className={styles.groupHeader}>
                   <div className={styles.groupInfo}>
@@ -131,7 +128,7 @@ export function GroupManagement() {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className={styles.groupMeta}>
                   <div className={styles.metaItem}>
                     <Calendar size={14} />

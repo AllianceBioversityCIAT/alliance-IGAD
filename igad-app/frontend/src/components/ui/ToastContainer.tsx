@@ -35,7 +35,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
     const newToast: ToastProps = {
       ...toast,
       id,
-      onClose: removeToast
+      onClose: removeToast,
     }
     setToasts(prev => [...prev, newToast])
   }

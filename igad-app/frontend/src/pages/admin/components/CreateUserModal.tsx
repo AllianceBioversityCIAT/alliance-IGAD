@@ -13,7 +13,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
   const [formData, setFormData] = useState({
     email: '',
     temporary_password: '',
-    send_email: true
+    send_email: true,
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,7 +28,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
         username: formData.email, // Use email as username
         email: formData.email,
         temporary_password: formData.temporary_password,
-        send_email: formData.send_email
+        send_email: formData.send_email,
       }
       const result = await userService.createUser(userData)
       if (result.success) {
@@ -37,7 +37,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
         setFormData({
           email: '',
           temporary_password: '',
-          send_email: true
+          send_email: true,
         })
       } else {
         setError('Failed to create user')
@@ -55,26 +55,31 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
     const lowercase = 'abcdefghijklmnopqrstuvwxyz'
     const numbers = '0123456789'
     const symbols = '!@#$%^&*'
-    
+
     let password = ''
     // Ensure at least one of each required type
     password += uppercase.charAt(Math.floor(Math.random() * uppercase.length))
     password += lowercase.charAt(Math.floor(Math.random() * lowercase.length))
     password += numbers.charAt(Math.floor(Math.random() * numbers.length))
-    
+
     // Fill the rest randomly
     const allChars = uppercase + lowercase + numbers + symbols
     for (let i = 3; i < 12; i++) {
       password += allChars.charAt(Math.floor(Math.random() * allChars.length))
     }
-    
+
     // Shuffle the password
-    password = password.split('').sort(() => Math.random() - 0.5).join('')
-    
+    password = password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('')
+
     setFormData(prev => ({ ...prev, temporary_password: password }))
   }
 
-  if (!isOpen) {return null}
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className={styles.overlay}>
@@ -87,11 +92,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          {error && (
-            <div className={styles.error}>
-              {error}
-            </div>
-          )}
+          {error && <div className={styles.error}>{error}</div>}
 
           <div className={styles.field}>
             <label className={styles.label}>
@@ -101,7 +102,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
               className={styles.input}
               placeholder="Enter email address"
               required
@@ -118,20 +119,20 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
               <input
                 type="text"
                 value={formData.temporary_password}
-                onChange={(e) => setFormData(prev => ({ ...prev, temporary_password: e.target.value }))}
+                onChange={e =>
+                  setFormData(prev => ({ ...prev, temporary_password: e.target.value }))
+                }
                 className={styles.input}
                 placeholder="Enter temporary password"
                 required
               />
-              <button
-                type="button"
-                onClick={generatePassword}
-                className={styles.generateButton}
-              >
+              <button type="button" onClick={generatePassword} className={styles.generateButton}>
                 Generate
               </button>
             </div>
-            <p className={styles.hint}>Must contain: uppercase, lowercase, numbers (8+ characters)</p>
+            <p className={styles.hint}>
+              Must contain: uppercase, lowercase, numbers (8+ characters)
+            </p>
           </div>
 
           <div className={styles.checkboxField}>
@@ -139,7 +140,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
               <input
                 type="checkbox"
                 checked={formData.send_email}
-                onChange={(e) => setFormData(prev => ({ ...prev, send_email: e.target.checked }))}
+                onChange={e => setFormData(prev => ({ ...prev, send_email: e.target.checked }))}
                 className={styles.checkbox}
               />
               <Send size={16} />
@@ -156,11 +157,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className={styles.createButton}
-              disabled={isLoading}
-            >
+            <button type="submit" className={styles.createButton} disabled={isLoading}>
               {isLoading ? 'Creating...' : 'Create User'}
             </button>
           </div>
