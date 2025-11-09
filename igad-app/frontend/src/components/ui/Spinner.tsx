@@ -23,8 +23,7 @@ export const LoadingScreen: React.FC = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="text-center">
-        <Spinner size="lg" className="text-green-600 mb-4" />
-        <p className="text-gray-600 text-lg">Verificando permisos...</p>
+        <Spinner size="lg" className="text-green-600" />
       </div>
     </div>
   );

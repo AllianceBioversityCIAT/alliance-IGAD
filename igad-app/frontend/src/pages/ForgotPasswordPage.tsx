@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authService } from '../services/authService'
+import { Spinner } from '../components/ui/Spinner'
 import styles from './LoginPage.module.css'
 
 interface ForgotPasswordForm {
@@ -25,7 +26,13 @@ export function ForgotPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
   const { register: registerEmail, handleSubmit: handleEmailSubmit, formState: { errors: emailErrors } } = useForm<ForgotPasswordForm>()
-  const { register: registerReset, handleSubmit: handleResetSubmit, formState: { errors: resetErrors }, watch } = useForm<ResetPasswordForm>()
+  const { register: registerReset, handleSubmit: handleResetSubmit, formState: { errors: resetErrors }, watch } = useForm<ResetPasswordForm>({
+    defaultValues: {
+      code: '',
+      newPassword: '',
+      confirmPassword: ''
+    }
+  })
 
   const onEmailSubmit = async (data: ForgotPasswordForm) => {
     setIsLoading(true)
@@ -147,7 +154,7 @@ export function ForgotPasswordPage() {
                   disabled={isLoading}
                   className={styles.submitButton}
                 >
-                  {isLoading ? 'Sending...' : 'Send Reset Code'}
+                  {isLoading ? <Spinner size="small" /> : 'Send Reset Code'}
                   {!isLoading && <span>→</span>}
                 </button>
 
@@ -243,7 +250,7 @@ export function ForgotPasswordPage() {
                   disabled={isLoading}
                   className={styles.submitButton}
                 >
-                  {isLoading ? 'Resetting...' : 'Reset Password'}
+                  {isLoading ? <Spinner size="small" /> : 'Reset Password'}
                   {!isLoading && <span>→</span>}
                 </button>
 

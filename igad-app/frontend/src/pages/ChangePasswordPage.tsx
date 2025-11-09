@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authService } from '../services/authService'
+import { Spinner } from '../components/ui/Spinner'
 import styles from './LoginPage.module.css'
 
 interface ChangePasswordForm {
@@ -92,7 +93,7 @@ export function ChangePasswordPage() {
           
           <div className={styles.formContent}>
             <div className={styles.formHeader}>
-              <h1 className={styles.title}>Cambiar Contraseña</h1>
+              <h1 className={styles.title}>Change Password</h1>
               <p className={styles.subtitle}>
                 Debes cambiar tu contraseña temporal por una nueva
               </p>
@@ -174,7 +175,8 @@ export function ChangePasswordPage() {
                 disabled={isLoading}
                 className={styles.submitButton}
               >
-                {isLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
+                {isLoading ? <Spinner size="small" /> : 'Change Password'}
+                {!isLoading && <span>→</span>}
               </button>
             </form>
 

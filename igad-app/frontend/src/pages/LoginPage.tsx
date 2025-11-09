@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authService } from '../services/authService'
+import { Spinner } from '../components/ui/Spinner'
 import styles from './LoginPage.module.css'
 
 interface LoginForm {
@@ -193,7 +194,7 @@ export function LoginPage() {
                 disabled={isLoading}
                 className={styles.submitButton}
               >
-                {isLoading ? 'Signing In...' : 'Log In'}
+                {isLoading ? <Spinner size="small" /> : 'Log In'}
                 {!isLoading && <span>→</span>}
               </button>
 
