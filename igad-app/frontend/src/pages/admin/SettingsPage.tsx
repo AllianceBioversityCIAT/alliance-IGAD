@@ -28,13 +28,15 @@ export function SettingsPage() {
       id: 'system' as SettingsTab,
       label: 'System',
       icon: Key,
-      description: 'System configuration and API keys'
+      description: 'System configuration and API keys',
+      disabled: true
     },
     {
       id: 'database' as SettingsTab,
       label: 'Database',
       icon: Database,
-      description: 'Database settings and maintenance'
+      description: 'Database settings and maintenance',
+      disabled: true
     }
   ]
 
@@ -78,8 +80,9 @@ export function SettingsPage() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`${styles.navItem} ${activeTab === tab.id ? styles.active : ''}`}
+                  onClick={() => !tab.disabled && setActiveTab(tab.id)}
+                  disabled={tab.disabled}
+                  className={`${styles.navItem} ${activeTab === tab.id ? styles.active : ''} ${tab.disabled ? styles.disabled : ''}`}
                 >
                   <Icon size={20} />
                   <div className={styles.navItemContent}>

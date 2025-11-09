@@ -79,6 +79,15 @@
   font-weight: 600;
 }
 
+.navItem.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.navItem.disabled:hover {
+  background: none;
+}
+
 .navItemContent {
   flex: 1;
 }

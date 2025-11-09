@@ -237,12 +237,13 @@ export function Navigation() {
                     background: 'transparent',
                     border: 'none',
                     textAlign: 'left',
-                    cursor: 'pointer',
+                    cursor: 'not-allowed',
                     fontSize: '14px',
                     fontFamily: 'Arial',
                     color: '#374151',
-                    width: '100%'
-                  }}>
+                    width: '100%',
+                    opacity: 0.5
+                  }} disabled>
                     API Configuration
                   </button>
                   
@@ -252,13 +253,14 @@ export function Navigation() {
                     background: 'transparent',
                     border: 'none',
                     textAlign: 'left',
-                    cursor: 'pointer',
+                    cursor: 'not-allowed',
                     fontSize: '14px',
                     fontFamily: 'Arial',
                     color: '#374151',
                     width: '100%',
-                    borderBottom: '1px solid #F3F4F6'
-                  }}>
+                    borderBottom: '1px solid #F3F4F6',
+                    opacity: 0.5
+                  }} disabled>
                     Language
                   </button>
                   
@@ -268,12 +270,13 @@ export function Navigation() {
                     background: 'transparent',
                     border: 'none',
                     textAlign: 'left',
-                    cursor: 'pointer',
+                    cursor: 'not-allowed',
                     fontSize: '14px',
                     fontFamily: 'Arial',
                     color: '#374151',
-                    width: '100%'
-                  }}>
+                    width: '100%',
+                    opacity: 0.5
+                  }} disabled>
                     Help & Support
                   </button>
                 </div>
