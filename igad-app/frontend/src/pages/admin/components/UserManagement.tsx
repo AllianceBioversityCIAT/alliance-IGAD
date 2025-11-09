@@ -21,6 +21,7 @@ import { EditUserModal } from './EditUserModal'
 import { ManageUserGroupsModal } from './ManageUserGroupsModal'
 import { useToast } from '../../../components/ui/ToastContainer'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
+import { Spinner } from '../../../components/ui/Spinner'
 import styles from './UserManagement.module.css'
 
 interface UserFilters {
@@ -255,7 +256,7 @@ export function UserManagement() {
             {isLoading ? (
               <tr>
                 <td colSpan={6} className={styles.loadingCell}>
-                  Loading users...
+                  <Spinner size="small" />
                 </td>
               </tr>
             ) : filteredUsers.length === 0 ? (

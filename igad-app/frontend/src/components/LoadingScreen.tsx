@@ -9,7 +9,7 @@ export const LoadingScreen: React.FC = () => {
       height: '100vh',
       backgroundColor: '#ffffff'
     }}>
-      <Spinner size="large" />
+      <Spinner size="large" className="text-green-600" />
     </div>
   )
 }

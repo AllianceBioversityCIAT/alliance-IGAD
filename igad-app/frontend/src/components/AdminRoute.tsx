@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdmin } from '../hooks/useAdmin';
-import { LoadingScreen } from './ui/Spinner';
+import { LoadingScreen } from './LoadingScreen';
 
 interface AdminRouteProps {
   children: React.ReactNode;
