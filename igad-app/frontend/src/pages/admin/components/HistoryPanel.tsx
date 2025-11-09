@@ -105,9 +105,9 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
     }
 
     const formatValue = (value: any) => {
-      if (value === null || value === undefined) return 'None'
-      if (typeof value === 'boolean') return value ? 'Active' : 'Inactive'
-      if (Array.isArray(value)) return value.join(', ')
+      if (value === null || value === undefined) {return 'None'}
+      if (typeof value === 'boolean') {return value ? 'Active' : 'Inactive'}
+      if (Array.isArray(value)) {return value.join(', ')}
       if (typeof value === 'string' && value.length > 100) {
         return value.substring(0, 100) + '...'
       }
@@ -131,7 +131,7 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
     )
   }
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   return (
     <div className={styles.overlay} onClick={onClose}>

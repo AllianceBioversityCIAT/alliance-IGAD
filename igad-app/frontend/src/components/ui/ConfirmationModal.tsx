@@ -26,7 +26,7 @@ export function ConfirmationModal({
   onClose,
   showCancel = false
 }: ConfirmationModalProps) {
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   const getIcon = () => {
     switch (type) {

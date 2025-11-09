@@ -76,7 +76,7 @@ export function CreatePromptModal({
     }
   }, [mode, initialData, contextData, isOpen])
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   const handleNext = () => {
     if (currentStep < 3) {

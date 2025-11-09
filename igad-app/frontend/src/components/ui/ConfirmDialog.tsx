@@ -22,7 +22,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel
 }: ConfirmDialogProps) {
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   const getIcon = () => {
     switch (type) {

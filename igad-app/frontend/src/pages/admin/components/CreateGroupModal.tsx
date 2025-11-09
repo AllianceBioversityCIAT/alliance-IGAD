@@ -45,7 +45,7 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
     }
   }
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   return (
     <div className={styles.overlay}>

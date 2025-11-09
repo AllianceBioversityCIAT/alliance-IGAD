@@ -29,7 +29,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
   }, [isOpen, username])
 
   const fetchUserData = async () => {
-    if (!username) return
+    if (!username) {return}
     
     setIsLoading(true)
     try {
@@ -62,7 +62,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
 
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!username) return
+    if (!username) {return}
 
     setIsLoading(true)
     setError(null)
@@ -89,7 +89,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
   }
 
   const handleResetPassword = async () => {
-    if (!username || !resetPassword) return
+    if (!username || !resetPassword) {return}
 
     setIsLoading(true)
     setError(null)
@@ -113,7 +113,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
   }
 
   const handleToggleGroup = async (groupName: string, isInGroup: boolean) => {
-    if (!username) return
+    if (!username) {return}
 
     try {
       const result = isInGroup
@@ -139,7 +139,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
     setResetPassword(password)
   }
 
-  if (!isOpen || !username) return null
+  if (!isOpen || !username) {return null}
 
   return (
     <div className={styles.overlay}>

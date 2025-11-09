@@ -69,7 +69,7 @@ export function useProposal(proposalId?: string) {
     uploadedFiles?: Record<string, File[]>
     textInputs?: Record<string, string>
   }) => {
-    if (!proposalId) return
+    if (!proposalId) {return}
     
     try {
       const updatedProposal = await proposalService.updateFormData(proposalId, formData)

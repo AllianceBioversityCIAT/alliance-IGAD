@@ -74,7 +74,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
     setFormData(prev => ({ ...prev, temporary_password: password }))
   }
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   return (
     <div className={styles.overlay}>

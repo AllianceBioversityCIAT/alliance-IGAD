@@ -24,14 +24,14 @@ class PromptService {
   }): Promise<PromptListResponse> {
     const searchParams = new URLSearchParams()
     
-    if (params?.section) searchParams.append('section', params.section)
-    if (params?.status) searchParams.append('status', params.status)
-    if (params?.tag) searchParams.append('tag', params.tag)
-    if (params?.search) searchParams.append('search', params.search)
-    if (params?.route) searchParams.append('route', params.route)
-    if (params?.is_active !== undefined) searchParams.append('is_active', params.is_active.toString())
-    if (params?.limit) searchParams.append('limit', params.limit.toString())
-    if (params?.offset) searchParams.append('offset', params.offset.toString())
+    if (params?.section) {searchParams.append('section', params.section)}
+    if (params?.status) {searchParams.append('status', params.status)}
+    if (params?.tag) {searchParams.append('tag', params.tag)}
+    if (params?.search) {searchParams.append('search', params.search)}
+    if (params?.route) {searchParams.append('route', params.route)}
+    if (params?.is_active !== undefined) {searchParams.append('is_active', params.is_active.toString())}
+    if (params?.limit) {searchParams.append('limit', params.limit.toString())}
+    if (params?.offset) {searchParams.append('offset', params.offset.toString())}
 
     const response = await apiClient.get(`${this.baseUrl}/list?${searchParams}`)
     return response.data

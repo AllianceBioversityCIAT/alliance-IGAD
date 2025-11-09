@@ -23,7 +23,7 @@ export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated
   }, [isOpen, username])
 
   const fetchData = async () => {
-    if (!username) return
+    if (!username) {return}
     
     setIsLoading(true)
     try {
@@ -47,7 +47,7 @@ export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated
   }
 
   const handleToggleGroup = async (groupName: string, isInGroup: boolean) => {
-    if (!username) return
+    if (!username) {return}
 
     try {
       const result = isInGroup
@@ -65,7 +65,7 @@ export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated
     }
   }
 
-  if (!isOpen || !username) return null
+  if (!isOpen || !username) {return null}
 
   return (
     <div className={styles.overlay}>

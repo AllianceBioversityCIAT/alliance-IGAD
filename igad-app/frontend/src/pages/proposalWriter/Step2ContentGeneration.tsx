@@ -39,7 +39,7 @@ export function Step2ContentGeneration({ formData, setFormData, proposalId }: St
   }, [formData, analysisComplete, isGenerating])
 
   const startAnalysis = async () => {
-    if (!proposalId) return
+    if (!proposalId) {return}
 
     try {
       // Generate analysis content for concept review

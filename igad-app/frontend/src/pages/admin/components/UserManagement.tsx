@@ -169,8 +169,8 @@ export function UserManagement() {
     }
     
     if (filters.status && filters.status !== 'all') {
-      if (filters.status === 'enabled' && !user.enabled) return false
-      if (filters.status === 'disabled' && user.enabled) return false
+      if (filters.status === 'enabled' && !user.enabled) {return false}
+      if (filters.status === 'disabled' && user.enabled) {return false}
     }
     
     return true

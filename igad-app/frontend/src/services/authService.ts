@@ -90,7 +90,7 @@ class AuthService {
 
   async getCurrentUser(): Promise<UserInfo | null> {
     const token = this.getToken();
-    if (!token) return null;
+    if (!token) {return null;}
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {

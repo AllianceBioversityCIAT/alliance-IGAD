@@ -48,7 +48,7 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newComment.trim()) return
+    if (!newComment.trim()) {return}
 
     setIsLoading(true)
     try {
@@ -144,7 +144,7 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
     </div>
   )
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   return (
     <div className={styles.overlay} onClick={onClose}>
