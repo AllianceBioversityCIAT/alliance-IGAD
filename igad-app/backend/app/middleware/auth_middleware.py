@@ -2,7 +2,8 @@ import logging
 import os
 from typing import Any, Dict
 
-import jwt
+from jose import jwt
+from jose.exceptions import JWTError, ExpiredSignatureError
 from fastapi import HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -66,7 +67,7 @@ class AuthMiddleware:
             # Try to decode as Cognito token first (without verification for development)
             try:
                 # Decode without verification for development
-                payload = jwt.decode(token, options={"verify_signature": False})
+                payload = jwt.decode(token, key="", options={"verify_signature": False})
 
                 # Extract user info from Cognito token
                 username = payload.get("username", "")
@@ -155,11 +156,11 @@ class AuthMiddleware:
                     "is_admin": is_admin,
                 }
 
-        except jwt.ExpiredSignatureError:
+        except ExpiredSignatureError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
             )
-        except jwt.InvalidTokenError:
+        except JWTError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )

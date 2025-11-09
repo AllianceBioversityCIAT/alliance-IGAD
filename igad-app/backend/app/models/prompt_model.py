@@ -136,4 +136,4 @@ class PromptHistory(BaseModel):
 
 
 # Update Comment model to handle self-reference
-Comment.model_rebuild()
+# Comment.model_rebuild()  # Not needed in Pydantic v1

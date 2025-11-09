@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
+from app.utils.aws_session import get_aws_session
 
 
 class CognitoUserManagementService:
@@ -9,12 +10,12 @@ class CognitoUserManagementService:
         self.user_pool_id = user_pool_id
         self.client_id = client_id
 
-        # Initialize boto3 session with explicit profile
-        session = boto3.Session(profile_name="IBD-DEV")
-        self.cognito_client = session.client("cognito-idp", region_name=region)
+        # Initialize boto3 session with environment-appropriate credentials
+        session = get_aws_session(region)
+        self.cognito_client = session.client("cognito-idp")
 
         print(
-            f"Initialized Cognito client with profile IBD-DEV, region: {region}"
+            f"Initialized Cognito client, region: {region}"
         )  # Debug
 
     def list_users(

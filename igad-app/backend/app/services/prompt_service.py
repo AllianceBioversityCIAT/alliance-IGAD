@@ -17,14 +17,15 @@ from app.models.prompt_model import (
     PromptUpdate,
     ProposalSection,
 )
+from app.utils.aws_session import get_aws_session
 
 logger = logging.getLogger(__name__)
 
 
 class PromptService:
     def __init__(self):
-        # Use specific AWS profile and region
-        session = boto3.Session(profile_name="IBD-DEV", region_name="us-east-1")
+        # Use environment-appropriate AWS session
+        session = get_aws_session("us-east-1")
         self.dynamodb = session.resource("dynamodb")
         self.table_name = "igad-testing-main-table"  # Use existing table
         self.table = self.dynamodb.Table(self.table_name)
