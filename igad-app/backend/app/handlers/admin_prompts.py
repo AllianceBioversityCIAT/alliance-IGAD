@@ -103,6 +103,13 @@ async def create_prompt(
     """Create a new prompt"""
     try:
         return await prompt_service.create_prompt(prompt_data, current_user["user_id"])
+    except ValueError as e:
+        # Business logic errors (like duplicates)
+        logger.error(f"Validation error creating prompt: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except Exception as e:
         logger.error(f"Error creating prompt: {e}")
         raise HTTPException(
@@ -120,10 +127,18 @@ async def update_prompt(
     try:
         return await prompt_service.update_prompt(prompt_id, prompt_data, current_user["user_id"])
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        # Handle both not found and business logic errors
+        if "not found" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=str(e)
+            )
+        else:
+            # Business logic errors (like duplicates)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e)
+            )
     except Exception as e:
         logger.error(f"Error updating prompt {prompt_id}: {e}")
         raise HTTPException(

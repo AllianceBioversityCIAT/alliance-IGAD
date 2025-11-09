@@ -27,8 +27,26 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
     })
   }
 
+  const handleSearchChange = (search: string) => {
+    onChange({
+      ...filters,
+      search: search || undefined
+    })
+  }
+
   return (
     <div className={styles.container}>
+      <div className={styles.filterGroup}>
+        <label className={styles.label}>Search</label>
+        <input
+          type="text"
+          placeholder="Search in name, content, route, tags..."
+          value={filters.search || ''}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className={styles.input}
+        />
+      </div>
+      
       <div className={styles.filterGroup}>
         <label className={styles.label}>Section</label>
         <select

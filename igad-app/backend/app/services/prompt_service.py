@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 
 class PromptService:
     def __init__(self):
-        self.dynamodb = boto3.resource('dynamodb')
+        # Use specific AWS profile and region
+        session = boto3.Session(profile_name='IBD-DEV', region_name='us-east-1')
+        self.dynamodb = session.resource('dynamodb')
         self.table_name = 'igad-testing-main-table'  # Use existing table
         self.table = self.dynamodb.Table(self.table_name)
         
@@ -82,12 +84,12 @@ class PromptService:
         
         # Check for active prompt conflict (new prompts are active by default)
         is_active = True
-        existing_active = await self._find_active_prompt_by_section_route(
+        existing_active = self._find_active_prompt_by_section_route(
             prompt_data.section, 
             prompt_data.route or ''
         )
         if existing_active:
-            raise ValueError(f"Another prompt is already active for section '{prompt_data.section}' and route '{prompt_data.route or ''}'. Only one prompt can be active per section-route combination.")
+            raise ValueError("Duplicate active prompt for this section and route")
         
         prompt = Prompt(
             id=prompt_id,
@@ -155,6 +157,16 @@ class PromptService:
             'updated_by': user_id,
             'updated_at': datetime.utcnow()
         })
+        
+        # Check for active prompt conflict if this update would make it active
+        if prompt_dict.get('is_active', False):
+            section = prompt_dict.get('section')
+            route = prompt_dict.get('route', '')
+            
+            existing_active = self._find_active_prompt_by_section_route(section, route, exclude_id=prompt_id)
+            # If there's another active prompt with same section+route, reject the update
+            if existing_active:
+                raise ValueError("Duplicate active prompt for this section and route")
         
         updated_prompt = Prompt(**prompt_dict)
         item = self._prompt_to_item(updated_prompt)
@@ -239,7 +251,10 @@ class PromptService:
                 items = [
                     item for item in items 
                     if search_lower in item.get('name', '').lower() or
-                       search_lower in item.get('system_prompt', '').lower()
+                       search_lower in item.get('system_prompt', '').lower() or
+                       search_lower in item.get('user_prompt_template', '').lower() or
+                       search_lower in item.get('route', '').lower() or
+                       any(search_lower in tag.lower() for tag in item.get('tags', []))
                 ]
             
             # Sort by updated_at descending
@@ -334,28 +349,34 @@ class PromptService:
         except Exception as e:
             logger.error(f"Error toggling prompt active status: {e}")
             raise
-    async def _find_active_prompt_by_section_route(self, section: str, route: str, exclude_id: str = None) -> Optional[dict]:
+    def _find_active_prompt_by_section_route(self, section: str, route: str, exclude_id: str = None) -> Optional[Prompt]:
         """Find active prompt with same section and route"""
         try:
-            # Scan all prompts to check for conflicts
-            response = self.table.scan(
-                FilterExpression='begins_with(PK, :pk_prefix) AND begins_with(SK, :sk_prefix) AND section = :section AND route = :route AND is_active = :active',
-                ExpressionAttributeValues={
-                    ':pk_prefix': 'prompt#',
-                    ':sk_prefix': 'version#',
-                    ':section': section,
-                    ':route': route,
-                    ':active': True
-                }
-            )
-            
+            # Get all prompts and filter in Python (more reliable than DynamoDB FilterExpression)
+            response = self.table.scan()
             items = response.get('Items', [])
             
-            # Filter out the current prompt if excluding
-            if exclude_id:
-                items = [item for item in items if not item.get('PK', '').endswith(exclude_id)]
+            # Filter for prompts (not other items)
+            prompt_items = [
+                item for item in items 
+                if item.get('PK', '').startswith('prompt#') and 
+                   item.get('SK', '').startswith('version#')
+            ]
             
-            return items[0] if items else None
+            # Find active prompt with matching section and route
+            for item in prompt_items:
+                if (item.get('section') == section and 
+                    item.get('route') == route and 
+                    item.get('is_active', False) == True):
+                    
+                    # Exclude the current prompt if specified
+                    prompt_id = item.get('PK', '').replace('prompt#', '')
+                    if exclude_id and prompt_id == exclude_id:
+                        continue
+                        
+                    return self._item_to_prompt(item)
+            
+            return None
             
         except Exception as e:
             logger.error(f"Error finding active prompt by section/route: {e}")

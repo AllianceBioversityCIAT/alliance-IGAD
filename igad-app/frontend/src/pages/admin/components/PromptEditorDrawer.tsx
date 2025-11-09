@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Eye, Loader2, Settings, FileText, HelpCircle } from 'lucide-react'
+import { X, Save, Eye, Loader2, Settings, FileText, HelpCircle, Layout } from 'lucide-react'
 import { usePrompt } from '../../../hooks/usePrompts'
 import { ProposalSection, SECTION_LABELS, type CreatePromptRequest, type UpdatePromptRequest } from '../../../types/prompt'
 import styles from './PromptEditorDrawer.module.css'
@@ -25,6 +25,41 @@ export function PromptEditorDrawer({
   contextData 
 }: PromptEditorDrawerProps) {
   const { data: existingPrompt } = usePrompt(promptId || '', 'latest')
+  const [showPreview, setShowPreview] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
+
+  // Predefined templates
+  const templates = {
+    proposal_writer: [
+      {
+        name: 'Problem Statement Generator',
+        system_prompt: 'You are an expert development proposal writer specializing in African regional projects. Focus on identifying clear, evidence-based problems that require intervention.',
+        user_prompt_template: 'Generate a compelling problem statement for a {{project_type}} project in {{region}}. The problem should address {{key_challenge}} and demonstrate the need for {{intervention_type}}. Include relevant statistics and context specific to {{region}}.'
+      },
+      {
+        name: 'Objectives Creator',
+        system_prompt: 'You are a strategic planning expert for development projects. Create SMART objectives that are specific, measurable, achievable, relevant, and time-bound.',
+        user_prompt_template: 'Create {{number_of_objectives}} SMART objectives for a {{project_type}} project in {{region}} with a {{timeline}} timeline and {{budget_range}} budget. Focus on {{primary_outcome}} as the main goal.'
+      }
+    ],
+    newsletter_generator: [
+      {
+        name: 'Newsletter Article Writer',
+        system_prompt: 'You are a professional newsletter writer for IGAD Innovation Hub. Write engaging, informative content that highlights achievements and innovations in regional development.',
+        user_prompt_template: 'Write a newsletter article about {{topic}} for {{target_audience}}. The article should be {{tone}} in tone, approximately {{word_count}} words, and highlight {{key_points}}.'
+      }
+    ]
+  }
+
+  const applyTemplate = (template: any) => {
+    setFormData(prev => ({
+      ...prev,
+      name: template.name,
+      system_prompt: template.system_prompt,
+      user_prompt_template: template.user_prompt_template
+    }))
+    setShowTemplates(false)
+  }
   
   const [formData, setFormData] = useState({
     name: '',
@@ -65,6 +100,15 @@ export function PromptEditorDrawer({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Validate business rule: only one active prompt per section-route combination
+    if (formData.is_active && formData.section && formData.route) {
+      // This validation should be handled by the backend, but we can show a warning
+      const warningMessage = `Warning: Only one active prompt is allowed per section-route combination. If another prompt exists for "${formData.section}" + "${formData.route}", it will be deactivated.`
+      if (!confirm(warningMessage)) {
+        return
+      }
+    }
+    
     const submitData = {
       ...formData,
       context: Object.keys(formData.context).some(key => 
@@ -100,6 +144,16 @@ export function PromptEditorDrawer({
             {mode === 'create' ? 'Create New Prompt' : 'Edit Prompt'}
           </h2>
           <div className={styles.headerActions}>
+            {mode === 'create' && (
+              <button 
+                type="button" 
+                onClick={() => setShowTemplates(!showTemplates)}
+                className={styles.templateButton}
+              >
+                <Layout size={16} />
+                Templates
+              </button>
+            )}
             <div className={styles.headerToggle}>
               <label className={styles.headerToggleLabel}>
                 <input
@@ -119,6 +173,22 @@ export function PromptEditorDrawer({
             </button>
           </div>
         </div>
+
+        {showTemplates && (
+          <div className={styles.templatesSection}>
+            <h3 className={styles.templatesTitle}>Choose a Template</h3>
+            <div className={styles.templatesList}>
+              {templates[formData.section as keyof typeof templates]?.map((template, index) => (
+                <div key={index} className={styles.templateCard} onClick={() => applyTemplate(template)}>
+                  <h4>{template.name}</h4>
+                  <p>{template.system_prompt.substring(0, 100)}...</p>
+                </div>
+              )) || (
+                <p className={styles.noTemplates}>No templates available for this section</p>
+              )}
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
@@ -142,23 +212,12 @@ export function PromptEditorDrawer({
                 className={styles.select}
                 required
               >
-                <optgroup label="Main Sections">
-                  <option value={ProposalSection.PROPOSAL_WRITER}>
-                    {SECTION_LABELS[ProposalSection.PROPOSAL_WRITER]}
-                  </option>
-                  <option value={ProposalSection.NEWSLETTER_GENERATOR}>
-                    {SECTION_LABELS[ProposalSection.NEWSLETTER_GENERATOR]}
-                  </option>
-                </optgroup>
-                <optgroup label="Legacy Sections">
-                  {Object.entries(SECTION_LABELS)
-                    .filter(([key]) => !['proposal_writer', 'newsletter_generator'].includes(key))
-                    .map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                </optgroup>
+                <option value={ProposalSection.PROPOSAL_WRITER}>
+                  {SECTION_LABELS[ProposalSection.PROPOSAL_WRITER]}
+                </option>
+                <option value={ProposalSection.NEWSLETTER_GENERATOR}>
+                  {SECTION_LABELS[ProposalSection.NEWSLETTER_GENERATOR]}
+                </option>
               </select>
             </div>
 
@@ -260,6 +319,14 @@ export function PromptEditorDrawer({
               Cancel
             </button>
             <button 
+              type="button" 
+              onClick={() => setShowPreview(!showPreview)}
+              className={styles.previewButton}
+            >
+              <Eye size={16} />
+              {showPreview ? 'Hide Preview' : 'Preview'}
+            </button>
+            <button 
               type="submit" 
               className={styles.saveButton}
               disabled={isLoading}
@@ -278,6 +345,34 @@ export function PromptEditorDrawer({
             </button>
           </div>
         </form>
+
+        {showPreview && (
+          <div className={styles.previewSection}>
+            <h3 className={styles.previewTitle}>Preview</h3>
+            <div className={styles.previewContent}>
+              <div className={styles.previewBlock}>
+                <h4>System Prompt:</h4>
+                <div className={styles.previewText}>{formData.system_prompt || 'No system prompt defined'}</div>
+              </div>
+              <div className={styles.previewBlock}>
+                <h4>User Template:</h4>
+                <div className={styles.previewText}>{formData.user_prompt_template || 'No user template defined'}</div>
+              </div>
+              <div className={styles.previewBlock}>
+                <h4>Example with Variables:</h4>
+                <div className={styles.previewExample}>
+                  {formData.user_prompt_template
+                    .replace(/\{\{project_type\}\}/g, 'Agricultural Development')
+                    .replace(/\{\{region\}\}/g, 'East Africa')
+                    .replace(/\{\{budget\}\}/g, '$500,000')
+                    .replace(/\{\{timeline\}\}/g, '24 months')
+                    || 'No template to preview'
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

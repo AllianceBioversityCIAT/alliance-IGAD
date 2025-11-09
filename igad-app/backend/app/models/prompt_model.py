@@ -54,6 +54,7 @@ class PromptUpdate(BaseModel):
     user_prompt_template: Optional[str] = Field(None, min_length=1)
     few_shot: Optional[List[FewShotExample]] = None
     context: Optional[PromptContext] = None
+    change_comment: Optional[str] = Field(None, max_length=500)
 
 class Prompt(PromptBase):
     id: str

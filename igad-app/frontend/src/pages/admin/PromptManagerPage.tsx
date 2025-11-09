@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Plus, Settings, Search, Filter, ArrowLeft, Info } from 'lucide-react'
+import { Plus, Settings, Search, Filter, ArrowLeft, Info, Grid, List } from 'lucide-react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { usePrompts } from '../../hooks/usePrompts'
 import { useToast } from '../../hooks/useToast'
 import { PromptListTable } from './components/PromptListTable'
+import { PromptCardsView } from './components/PromptCardsView'
 import { PromptEditorDrawer } from './components/PromptEditorDrawer'
 import { PromptFilters } from './components/PromptFilters'
 import { ToastContainer } from '../../components/ui/ToastContainer'
@@ -26,6 +27,7 @@ export function PromptManagerPage() {
   const navigate = useNavigate()
   const [filters, setFilters] = useState<PromptManagerFilters>({})
   const [showFilters, setShowFilters] = useState(false)
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editorMode, setEditorMode] = useState<'create' | 'edit'>('create')
@@ -125,14 +127,7 @@ export function PromptManagerPage() {
       setSelectedPromptId(null)
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
-      if (errorMessage.includes('already active')) {
-        toast.error(
-          'Cannot create/update prompt',
-          'Another prompt is already active for this section and route combination. Only one prompt can be active per section-route.'
-        )
-      } else {
-        toast.error('Failed to save prompt', errorMessage)
-      }
+      toast.error(errorMessage)
     }
   }
 
@@ -242,13 +237,30 @@ export function PromptManagerPage() {
           </p>
         </div>
         
-        <button 
-          onClick={handleCreateNew}
-          className={styles.createButton}
-        >
-          <Plus size={16} />
-          Create Prompt
-        </button>
+        <div className={styles.headerActions}>
+          <div className={styles.viewToggle}>
+            <button 
+              onClick={() => setViewMode('table')}
+              className={`${styles.viewButton} ${viewMode === 'table' ? styles.active : ''}`}
+            >
+              <List size={16} />
+            </button>
+            <button 
+              onClick={() => setViewMode('cards')}
+              className={`${styles.viewButton} ${viewMode === 'cards' ? styles.active : ''}`}
+            >
+              <Grid size={16} />
+            </button>
+          </div>
+          
+          <button 
+            onClick={handleCreateNew}
+            className={styles.createButton}
+          >
+            <Plus size={16} />
+            Create Prompt
+          </button>
+        </div>
       </div>
 
       {/* Filters Bar */}
@@ -300,15 +312,26 @@ export function PromptManagerPage() {
 
       {/* Main Content */}
       <div className={styles.content}>
-        <PromptListTable
-          prompts={prompts}
-          isLoading={isLoading}
-          onEdit={handleEditPrompt}
-          onPublish={handlePublishPrompt}
-          onDelete={handleDeletePrompt}
-          onClone={handleClonePrompt}
-          onToggleActive={handleToggleActive}
-        />
+        {viewMode === 'table' ? (
+          <PromptListTable
+            prompts={prompts}
+            isLoading={isLoading}
+            onEdit={handleEditPrompt}
+            onPublish={handlePublishPrompt}
+            onDelete={handleDeletePrompt}
+            onClone={handleClonePrompt}
+            onToggleActive={handleToggleActive}
+          />
+        ) : (
+          <PromptCardsView
+            prompts={prompts}
+            onEdit={handleEditPrompt}
+            onDelete={handleDeletePrompt}
+            onClone={handleClonePrompt}
+            onToggleActive={handleToggleActive}
+            onPreview={(id) => console.log('Preview:', id)}
+          />
+        )}
 
         {/* Pagination */}
         {(hasMore || currentPage > 0) && (
