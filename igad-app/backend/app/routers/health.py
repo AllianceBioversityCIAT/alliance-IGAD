@@ -6,9 +6,11 @@ from fastapi import APIRouter
 
 router = APIRouter(tags=["health"])
 
+
 @router.get("/")
 async def root():
     return {"message": "IGAD Innovation Hub API is running"}
+
 
 @router.get("/health")
 async def health():

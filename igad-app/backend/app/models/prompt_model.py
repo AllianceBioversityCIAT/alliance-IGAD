@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class ProposalSection(str, Enum):
     # Main sections
@@ -21,9 +23,11 @@ class ProposalSection(str, Enum):
     EXECUTIVE_SUMMARY = "executive_summary"
     APPENDICES = "appendices"
 
+
 class FewShotExample(BaseModel):
     input: str
     output: str
+
 
 class PromptContext(BaseModel):
     persona: Optional[str] = None
@@ -31,6 +35,7 @@ class PromptContext(BaseModel):
     sources: Optional[List[str]] = None
     constraints: Optional[str] = None
     guardrails: Optional[str] = None
+
 
 class PromptBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
@@ -42,8 +47,10 @@ class PromptBase(BaseModel):
     few_shot: Optional[List[FewShotExample]] = None
     context: Optional[PromptContext] = None
 
+
 class PromptCreate(PromptBase):
     pass
+
 
 class PromptUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
@@ -56,20 +63,27 @@ class PromptUpdate(BaseModel):
     context: Optional[PromptContext] = None
     change_comment: Optional[str] = Field(None, max_length=500)
 
+
 class Prompt(PromptBase):
     id: str
     version: int
-    is_active: bool = Field(default=True, description="Whether the prompt is active and available for use")
+    is_active: bool = Field(
+        default=True, description="Whether the prompt is active and available for use"
+    )
     created_by: str
     updated_by: str
     created_at: datetime
     updated_at: datetime
-    comments_count: Optional[int] = Field(default=0, description="Number of comments on this prompt")
+    comments_count: Optional[int] = Field(
+        default=0, description="Number of comments on this prompt"
+    )
+
 
 class PromptListResponse(BaseModel):
     prompts: List[Prompt]
     total: int
     has_more: bool
+
 
 class PromptPreviewRequest(BaseModel):
     system_prompt: str
@@ -77,14 +91,18 @@ class PromptPreviewRequest(BaseModel):
     variables: Optional[Dict[str, str]] = None
     context: Optional[PromptContext] = None
 
+
 class PromptPreviewResponse(BaseModel):
     output: str
     tokens_used: int
     processing_time: float
+
+
 # Comment Models
 class CommentCreate(BaseModel):
     content: str = Field(..., min_length=1, max_length=1000)
     parent_id: Optional[str] = None  # For replies
+
 
 class Comment(BaseModel):
     id: str
@@ -95,7 +113,8 @@ class Comment(BaseModel):
     author_name: str
     created_at: datetime
     updated_at: Optional[datetime] = None
-    replies: List['Comment'] = Field(default_factory=list)
+    replies: List["Comment"] = Field(default_factory=list)
+
 
 # Change History Models
 class PromptChange(BaseModel):
@@ -109,10 +128,12 @@ class PromptChange(BaseModel):
     author_name: str
     created_at: datetime
 
+
 class PromptHistory(BaseModel):
     prompt_id: str
     changes: List[PromptChange]
     total: int
+
 
 # Update Comment model to handle self-reference
 Comment.model_rebuild()

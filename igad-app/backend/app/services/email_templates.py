@@ -12,9 +12,9 @@ WELCOME_EMAIL_TEMPLATE = {
     "type": "HTML",
     "colors": {
         "primary": "#2c5530",
-        "accent": "#7cb342", 
+        "accent": "#7cb342",
         "warning": "#ff9800",
-        "background": "#f8f9fa"
+        "background": "#f8f9fa",
     },
     "features": [
         "Responsive design (max-width: 600px)",
@@ -22,8 +22,8 @@ WELCOME_EMAIL_TEMPLATE = {
         "Professional layout with sections",
         "Call-to-action button",
         "Security notice",
-        "Footer with organization info"
-    ]
+        "Footer with organization info",
+    ],
 }
 
 # Email Verification Template (HTML)
@@ -34,40 +34,40 @@ EMAIL_VERIFICATION_TEMPLATE = {
         "primary": "#2c5530",
         "accent": "#7cb342",
         "info": "#2196f3",
-        "background": "#f8f9fa"
+        "background": "#f8f9fa",
     },
     "features": [
         "Large verification code display",
         "Blue info section for instructions",
         "Consistent IGAD branding",
-        "Professional typography"
-    ]
+        "Professional typography",
+    ],
 }
 
 # Password Recovery Template (HTML)
 PASSWORD_RECOVERY_TEMPLATE = {
     "subject": "IGAD Innovation Hub - Restablecimiento de Contraseña",
-    "type": "HTML", 
+    "type": "HTML",
     "colors": {
         "primary": "#2c5530",
         "accent": "#7cb342",
         "warning": "#ff9800",
-        "background": "#f8f9fa"
+        "background": "#f8f9fa",
     },
     "features": [
         "Security-focused messaging",
         "Prominent reset code display",
         "Warning section for security",
         "Direct link to reset page",
-        "Support contact information"
-    ]
+        "Support contact information",
+    ],
 }
 
 # SES Configuration
 SES_CONFIG = {
     "from_address": "IGAD Innovation Hub <j.cadavid@cgiar.org>",
     "reply_to": "j.cadavid@cgiar.org",
-    "source_arn": "arn:aws:ses:us-east-1:569113802249:identity/j.cadavid@cgiar.org"
+    "source_arn": "arn:aws:ses:us-east-1:569113802249:identity/j.cadavid@cgiar.org",
 }
 
 # Common HTML Styles
@@ -81,8 +81,9 @@ COMMON_STYLES = {
     "info_box": "background-color: #f1f8e9; padding: 20px; border-radius: 6px; margin: 20px 0;",
     "warning_box": "background-color: #fff3e0; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ff9800;",
     "button": "background-color: #2c5530; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;",
-    "footer": "border-top: 1px solid #e0e0e0; padding-top: 20px; margin-top: 30px;"
+    "footer": "border-top: 1px solid #e0e0e0; padding-top: 20px; margin-top: 30px;",
 }
+
 
 def get_template_info():
     """Return information about configured email templates"""
@@ -95,19 +96,20 @@ def get_template_info():
         "notes": [
             "All templates use HTML with inline CSS",
             "Templates are configured in AWS Cognito User Pool",
-            "Uses SES for better email deliverability", 
+            "Uses SES for better email deliverability",
             "Spanish language for better user experience",
             "Branded with IGAD Innovation Hub identity",
             "Responsive design for mobile compatibility",
-            "Professional color scheme: #2c5530 (green), #7cb342 (light green), #ff9800 (orange)"
-        ]
+            "Professional color scheme: #2c5530 (green), #7cb342 (light green), #ff9800 (orange)",
+        ],
     }
+
 
 def get_cognito_configuration_commands():
     """Return AWS CLI commands to configure all email templates"""
     return {
         "welcome_email": "aws cognito-idp update-user-pool --user-pool-id us-east-1_EULeelICj --admin-create-user-config file://welcome-template.json",
-        "verification_email": "aws cognito-idp update-user-pool --user-pool-id us-east-1_EULeelICj --verification-message-template file://verification-template.json", 
+        "verification_email": "aws cognito-idp update-user-pool --user-pool-id us-east-1_EULeelICj --verification-message-template file://verification-template.json",
         "password_recovery": "aws cognito-idp update-user-pool --user-pool-id us-east-1_EULeelICj --email-verification-message file://recovery-template.html",
-        "ses_config": "aws cognito-idp update-user-pool --user-pool-id us-east-1_EULeelICj --email-configuration file://ses-config.json"
+        "ses_config": "aws cognito-idp update-user-pool --user-pool-id us-east-1_EULeelICj --email-configuration file://ses-config.json",
     }

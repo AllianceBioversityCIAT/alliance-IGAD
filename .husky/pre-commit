@@ -1,4 +1,8 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Frontend linting
 cd igad-app/frontend && npx lint-staged
+
+# Backend linting
+cd ../backend && make check

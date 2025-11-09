@@ -3,31 +3,33 @@
 Script to create the first prompt in DynamoDB for testing
 """
 
-import boto3
 import uuid
 from datetime import datetime
 
+import boto3
+
+
 def create_first_prompt():
     """Create the first prompt for Problem Statement section"""
-    
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table('igad-testing-main-table')  # Use existing table
-    
+
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table("igad-testing-main-table")  # Use existing table
+
     # Generate prompt data
     prompt_id = str(uuid.uuid4())
-    timestamp = datetime.utcnow().isoformat() + 'Z'
-    
+    timestamp = datetime.utcnow().isoformat() + "Z"
+
     prompt_item = {
-        'PK': f'prompt#{prompt_id}',
-        'SK': 'version#1',
-        'id': prompt_id,
-        'name': 'Problem Statement Generator',
-        'section': 'problem_statement',
-        'route': '/proposal-writer/step-1',
-        'tags': ['analysis', 'research', 'problem-identification'],
-        'version': 1,
-        'status': 'published',
-        'system_prompt': '''You are an expert research analyst and proposal writer specializing in development projects for the IGAD (Intergovernmental Authority on Development) region in East Africa. Your role is to help create compelling and well-structured problem statements for development proposals.
+        "PK": f"prompt#{prompt_id}",
+        "SK": "version#1",
+        "id": prompt_id,
+        "name": "Problem Statement Generator",
+        "section": "problem_statement",
+        "route": "/proposal-writer/step-1",
+        "tags": ["analysis", "research", "problem-identification"],
+        "version": 1,
+        "status": "published",
+        "system_prompt": """You are an expert research analyst and proposal writer specializing in development projects for the IGAD (Intergovernmental Authority on Development) region in East Africa. Your role is to help create compelling and well-structured problem statements for development proposals.
 
 Your expertise includes:
 - Understanding regional challenges in East Africa (drought, food security, conflict, climate change)
@@ -40,8 +42,8 @@ Guidelines:
 - Base recommendations on evidence and data when possible
 - Consider regional context and cultural sensitivity
 - Focus on root causes rather than just symptoms
-- Ensure problems are specific, measurable, and actionable''',
-        'user_prompt_template': '''Please help me create a comprehensive problem statement for a development proposal with the following details:
+- Ensure problems are specific, measurable, and actionable""",
+        "user_prompt_template": """Please help me create a comprehensive problem statement for a development proposal with the following details:
 
 **Project Context:**
 - Topic/Focus Area: {{topic}}
@@ -62,11 +64,11 @@ Please generate a problem statement that includes:
 6. **Geographic Scope**: Specific areas or communities affected
 7. **Stakeholder Impact**: How different groups are affected differently
 
-Format the response as a well-structured problem statement suitable for inclusion in a development proposal document. Use professional language appropriate for donor audiences and ensure the statement is compelling and evidence-based.''',
-        'few_shot': [
+Format the response as a well-structured problem statement suitable for inclusion in a development proposal document. Use professional language appropriate for donor audiences and ensure the statement is compelling and evidence-based.""",
+        "few_shot": [
             {
-                'input': 'Topic: Food Security, Region: Northern Kenya, Beneficiaries: Pastoralist communities, Duration: 3 years',
-                'output': '''**Problem Statement: Food Insecurity Among Pastoralist Communities in Northern Kenya**
+                "input": "Topic: Food Security, Region: Northern Kenya, Beneficiaries: Pastoralist communities, Duration: 3 years",
+                "output": """**Problem Statement: Food Insecurity Among Pastoralist Communities in Northern Kenya**
 
 Northern Kenya faces a persistent food security crisis that affects over 1.2 million pastoralist community members across Turkana, Marsabit, and Wajir counties. Current data indicates that 68% of households in these regions experience severe food insecurity, with acute malnutrition rates among children under five reaching 15.3% - well above the WHO emergency threshold of 15%.
 
@@ -77,33 +79,35 @@ The food security crisis stems from multiple interconnected factors: (1) Recurre
 Women and children bear the disproportionate burden of this crisis. Women spend 6-8 hours daily collecting water, limiting their participation in income-generating activities. Children, particularly girls, have school attendance rates of only 32% due to hunger and the need to assist with water collection. Livestock mortality rates of 60% during drought periods have decimated the primary livelihood source for 85% of households.
 
 **Urgency and Relevance:**
-Without immediate intervention, the situation will deteriorate further as climate projections indicate increased frequency and severity of droughts. The current La Niña weather pattern threatens to extend the ongoing drought into 2024, potentially pushing an additional 300,000 people into emergency food insecurity levels.'''
+Without immediate intervention, the situation will deteriorate further as climate projections indicate increased frequency and severity of droughts. The current La Niña weather pattern threatens to extend the ongoing drought into 2024, potentially pushing an additional 300,000 people into emergency food insecurity levels.""",
             }
         ],
-        'context': {
-            'persona': 'Expert development proposal writer and regional analyst',
-            'tone': 'Professional, evidence-based, compelling',
-            'constraints': 'Maximum 800 words, include specific data points, focus on IGAD region context',
-            'guardrails': 'Avoid speculation without evidence, ensure cultural sensitivity, maintain donor-appropriate language'
+        "context": {
+            "persona": "Expert development proposal writer and regional analyst",
+            "tone": "Professional, evidence-based, compelling",
+            "constraints": "Maximum 800 words, include specific data points, focus on IGAD region context",
+            "guardrails": "Avoid speculation without evidence, ensure cultural sensitivity, maintain donor-appropriate language",
         },
-        'created_by': 'admin@igad.org',
-        'updated_by': 'admin@igad.org',
-        'created_at': timestamp,
-        'updated_at': timestamp
+        "created_by": "admin@igad.org",
+        "updated_by": "admin@igad.org",
+        "created_at": timestamp,
+        "updated_at": timestamp,
     }
-    
+
     try:
         # Insert the prompt
         table.put_item(Item=prompt_item)
-        
+
         # Create latest published pointer
-        table.put_item(Item={
-            'PK': f'prompt#{prompt_id}',
-            'SK': 'published#latest',
-            'latest_version': 1,
-            'updated_at': timestamp
-        })
-        
+        table.put_item(
+            Item={
+                "PK": f"prompt#{prompt_id}",
+                "SK": "published#latest",
+                "latest_version": 1,
+                "updated_at": timestamp,
+            }
+        )
+
         print("✅ First prompt created successfully!")
         print(f"📝 Prompt ID: {prompt_id}")
         print(f"📍 Section: Problem Statement")
@@ -113,12 +117,13 @@ Without immediate intervention, the situation will deteriorate further as climat
         print()
         print("🎉 You can now test the Prompt Manager at:")
         print("   http://localhost:3001/admin/prompt-manager")
-        
+
         return prompt_id
-        
+
     except Exception as e:
         print(f"❌ Error creating prompt: {e}")
         return None
+
 
 if __name__ == "__main__":
     print("🚀 Creating first prompt for Prompt Manager...")

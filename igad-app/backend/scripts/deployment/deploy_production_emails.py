@@ -14,26 +14,28 @@ from botocore.exceptions import ClientError
 
 # PRODUCTION CONFIGURATION - UPDATE THESE VALUES
 PRODUCTION_CONFIG = {
-    'user_pool_id': 'us-east-1_XXXXXX',  # UPDATE: Production User Pool ID
-    'profile': 'production-profile',      # UPDATE: Production AWS Profile
-    'region': 'us-east-1',
-    'domain': 'https://igad-innovation-hub.com',  # UPDATE: Production domain
-    'ses_email': 'noreply@igad-innovation-hub.com'  # UPDATE: Production email
+    "user_pool_id": "us-east-1_XXXXXX",  # UPDATE: Production User Pool ID
+    "profile": "production-profile",  # UPDATE: Production AWS Profile
+    "region": "us-east-1",
+    "domain": "https://igad-innovation-hub.com",  # UPDATE: Production domain
+    "ses_email": "noreply@igad-innovation-hub.com",  # UPDATE: Production email
 }
 
 # IGAD Branding Colors
 COLORS = {
-    'primary': '#2c5530',
-    'accent': '#7cb342',
-    'background': '#f8f9fa',
-    'text': '#333333',
-    'light_green': '#f1f8e9'
+    "primary": "#2c5530",
+    "accent": "#7cb342",
+    "background": "#f8f9fa",
+    "text": "#333333",
+    "light_green": "#f1f8e9",
 }
+
 
 def get_cognito_client():
     """Initialize Cognito client for production"""
-    session = boto3.Session(profile_name=PRODUCTION_CONFIG['profile'])
-    return session.client('cognito-idp', region_name=PRODUCTION_CONFIG['region'])
+    session = boto3.Session(profile_name=PRODUCTION_CONFIG["profile"])
+    return session.client("cognito-idp", region_name=PRODUCTION_CONFIG["region"])
+
 
 def create_base_template(content):
     """Create base HTML template with IGAD branding"""
@@ -47,33 +49,32 @@ def create_base_template(content):
 </div>
 </div>"""
 
+
 def deploy_production_templates():
     """Deploy all email templates to production"""
-    
+
     print("🚀 Deploying IGAD Innovation Hub Email Templates to PRODUCTION")
     print(f"User Pool ID: {PRODUCTION_CONFIG['user_pool_id']}")
     print(f"Domain: {PRODUCTION_CONFIG['domain']}")
     print(f"Profile: {PRODUCTION_CONFIG['profile']}")
     print("-" * 60)
-    
+
     # Validation
-    if 'XXXXXX' in PRODUCTION_CONFIG['user_pool_id']:
+    if "XXXXXX" in PRODUCTION_CONFIG["user_pool_id"]:
         print("❌ ERROR: Please update PRODUCTION_CONFIG with real User Pool ID")
         return False
-    
+
     try:
         cognito_client = get_cognito_client()
-        
+
         # 1. Configure email settings
         print("📧 Configuring email settings...")
         cognito_client.update_user_pool(
-            UserPoolId=PRODUCTION_CONFIG['user_pool_id'],
-            EmailConfiguration={
-                'EmailSendingAccount': 'COGNITO_DEFAULT'
-            }
+            UserPoolId=PRODUCTION_CONFIG["user_pool_id"],
+            EmailConfiguration={"EmailSendingAccount": "COGNITO_DEFAULT"},
         )
         print("✅ Email configuration set")
-        
+
         # 2. Welcome Email Template
         print("📝 Configuring welcome email template...")
         welcome_content = f"""<p style="color: {COLORS['text']};">Welcome to IGAD Innovation Hub! Your account has been created successfully.</p>
@@ -86,20 +87,20 @@ def deploy_production_templates():
 <p style="text-align: center; margin-top: 30px;">
 <a href="{PRODUCTION_CONFIG['domain']}/login" style="background-color: {COLORS['primary']}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Log In</a>
 </p>"""
-        
+
         cognito_client.update_user_pool(
-            UserPoolId=PRODUCTION_CONFIG['user_pool_id'],
+            UserPoolId=PRODUCTION_CONFIG["user_pool_id"],
             AdminCreateUserConfig={
-                'AllowAdminCreateUserOnly': False,
-                'UnusedAccountValidityDays': 7,
-                'InviteMessageTemplate': {
-                    'EmailMessage': create_base_template(welcome_content),
-                    'EmailSubject': 'Welcome to IGAD Innovation Hub - Account Created'
-                }
-            }
+                "AllowAdminCreateUserOnly": False,
+                "UnusedAccountValidityDays": 7,
+                "InviteMessageTemplate": {
+                    "EmailMessage": create_base_template(welcome_content),
+                    "EmailSubject": "Welcome to IGAD Innovation Hub - Account Created",
+                },
+            },
         )
         print("✅ Welcome email template configured")
-        
+
         # 3. Email Verification Template
         print("🔐 Configuring email verification template...")
         verification_content = f"""<p style="color: {COLORS['text']};">To complete your email verification, use the following code:</p>
@@ -108,27 +109,29 @@ def deploy_production_templates():
 </div>
 <p style="color: {COLORS['text']};">This code expires in 24 hours for security.</p>
 <p style="color: #666; font-size: 14px;">If you did not request this verification, you can ignore this message.</p>"""
-        
+
         cognito_client.update_user_pool(
-            UserPoolId=PRODUCTION_CONFIG['user_pool_id'],
+            UserPoolId=PRODUCTION_CONFIG["user_pool_id"],
             VerificationMessageTemplate={
-                'EmailMessage': create_base_template(verification_content),
-                'EmailSubject': 'IGAD Innovation Hub - Verify Your Email'
-            }
+                "EmailMessage": create_base_template(verification_content),
+                "EmailSubject": "IGAD Innovation Hub - Verify Your Email",
+            },
         )
         print("✅ Email verification template configured")
-        
+
         print("-" * 60)
         print("✅ PRODUCTION EMAIL TEMPLATES DEPLOYED SUCCESSFULLY!")
-        print("📧 Professional HTML emails with IGAD branding are now active in production")
+        print(
+            "📧 Professional HTML emails with IGAD branding are now active in production"
+        )
         print("🧪 NEXT STEPS:")
         print("   1. Test user creation flow")
         print("   2. Test email verification flow")
         print("   3. Verify all emails arrive with HTML formatting")
         print("   4. Check spam folders if emails don't arrive")
-        
+
         return True
-        
+
     except ClientError as e:
         print(f"❌ AWS Error: {e}")
         return False
@@ -136,17 +139,19 @@ def deploy_production_templates():
         print(f"❌ Deployment failed: {e}")
         return False
 
+
 def main():
     """Main deployment function"""
     success = deploy_production_templates()
-    
+
     if success:
         print("\n🎉 Production deployment completed successfully!")
     else:
         print("\n💥 Production deployment failed!")
         print("Please check the error messages above and try again.")
-    
+
     return success
+
 
 if __name__ == "__main__":
     main()

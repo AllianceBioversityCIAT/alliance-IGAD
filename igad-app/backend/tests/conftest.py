@@ -1,7 +1,10 @@
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime
+from unittest.mock import Mock, patch
+
+import pytest
+
 from app.models.prompt_model import Prompt, PromptCreate, ProposalSection
+
 
 @pytest.fixture
 def mock_dynamodb_table():
@@ -13,6 +16,7 @@ def mock_dynamodb_table():
     table.scan = Mock()
     table.delete_item = Mock()
     return table
+
 
 @pytest.fixture
 def sample_prompt_create():
@@ -28,9 +32,10 @@ def sample_prompt_create():
             "persona": "Test persona",
             "tone": "professional",
             "constraints": "Keep it brief",
-            "guardrails": "No speculation"
-        }
+            "guardrails": "No speculation",
+        },
     )
+
 
 @pytest.fixture
 def sample_prompt():
@@ -49,40 +54,42 @@ def sample_prompt():
             "persona": "Test persona",
             "tone": "professional",
             "constraints": "Keep it brief",
-            "guardrails": "No speculation"
+            "guardrails": "No speculation",
         },
         created_by="test-user",
         updated_by="test-user",
         created_at=datetime(2025, 1, 1, 12, 0, 0),
-        updated_at=datetime(2025, 1, 1, 12, 0, 0)
+        updated_at=datetime(2025, 1, 1, 12, 0, 0),
     )
+
 
 @pytest.fixture
 def sample_dynamodb_item():
     """Sample DynamoDB item for testing"""
     return {
-        'PK': 'prompt#test-prompt-123',
-        'SK': 'version#1',
-        'id': 'test-prompt-123',
-        'name': 'Test Prompt',
-        'section': 'problem_statement',
-        'route': '/test/route',
-        'tags': ['test', 'sample'],
-        'version': 1,
-        'status': 'draft',
-        'system_prompt': 'You are a test assistant.',
-        'user_prompt_template': 'Help me with {{topic}}',
-        'context': {
-            'persona': 'Test persona',
-            'tone': 'professional',
-            'constraints': 'Keep it brief',
-            'guardrails': 'No speculation'
+        "PK": "prompt#test-prompt-123",
+        "SK": "version#1",
+        "id": "test-prompt-123",
+        "name": "Test Prompt",
+        "section": "problem_statement",
+        "route": "/test/route",
+        "tags": ["test", "sample"],
+        "version": 1,
+        "status": "draft",
+        "system_prompt": "You are a test assistant.",
+        "user_prompt_template": "Help me with {{topic}}",
+        "context": {
+            "persona": "Test persona",
+            "tone": "professional",
+            "constraints": "Keep it brief",
+            "guardrails": "No speculation",
         },
-        'created_by': 'test-user',
-        'updated_by': 'test-user',
-        'created_at': '2025-01-01T12:00:00Z',
-        'updated_at': '2025-01-01T12:00:00Z'
+        "created_by": "test-user",
+        "updated_by": "test-user",
+        "created_at": "2025-01-01T12:00:00Z",
+        "updated_at": "2025-01-01T12:00:00Z",
     }
+
 
 @pytest.fixture
 def mock_bedrock_client():

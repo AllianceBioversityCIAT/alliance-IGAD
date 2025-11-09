@@ -4,14 +4,15 @@ Refactored with clean architecture
 """
 
 import os
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 
+from .handlers.admin_prompts import router as admin_prompts_router
 from .middleware.auth_middleware import AuthMiddleware
 from .middleware.error_middleware import ErrorMiddleware
-from .routers import auth, health, proposals, admin, prompts
-from .handlers.admin_prompts import router as admin_prompts_router
+from .routers import admin, auth, health, prompts, proposals
 
 # Load environment variables
 load_dotenv()
@@ -22,7 +23,7 @@ app = FastAPI(
     description="API for IGAD Innovation Hub platform",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # Add CORS middleware
@@ -50,4 +51,5 @@ auth_middleware = AuthMiddleware()
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

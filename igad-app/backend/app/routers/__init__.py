@@ -1,2 +1,2 @@
 # Router modules
-from . import auth, health, proposals, admin, prompts
+from . import admin, auth, health, prompts, proposals
