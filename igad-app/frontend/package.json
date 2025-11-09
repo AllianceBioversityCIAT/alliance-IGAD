@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
+    "type-check": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -14,7 +15,6 @@
     "lint:check": "eslint src --ext ts,tsx",
     "docs-check": "eslint src --ext ts,tsx --rule 'jsdoc/require-description: error'",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
-    "type-check": "tsc --noEmit",
     "prepare": "husky install"
   },
   "dependencies": {

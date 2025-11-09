@@ -180,7 +180,7 @@ export function LoginPage() {
 
               {/* Login Button */}
               <button type="submit" disabled={isLoading} className={styles.submitButton}>
-                {isLoading ? <Spinner size="small" /> : 'Log In'}
+                {isLoading ? <Spinner size="sm" /> : 'Log In'}
                 {!isLoading && <span>→</span>}
               </button>
 

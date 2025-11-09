@@ -220,7 +220,7 @@ export function Step2ContentGeneration({ formData, setFormData: _setFormData, pr
       {generateError && (
         <div className={styles.errorMessage}>
           <AlertCircle size={16} />
-          <span>Analysis failed: {generateError.message}</span>
+          <span>Analysis failed: {(generateError as any)?.message || 'Unknown error'}</span>
         </div>
       )}
     </div>

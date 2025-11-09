@@ -23,6 +23,8 @@ const STEP_TITLES = {
 }
 
 const SECTION_DESCRIPTIONS = {
+  [ProposalSection.PROPOSAL_WRITER]: 'AI-powered proposal writing assistant for comprehensive project proposals',
+  [ProposalSection.NEWSLETTER_GENERATOR]: 'Generate engaging newsletters and communication materials',
   [ProposalSection.EXECUTIVE_SUMMARY]:
     'Create compelling executive summaries that capture key project highlights',
   [ProposalSection.PROJECT_DESCRIPTION]:
@@ -34,6 +36,13 @@ const SECTION_DESCRIPTIONS = {
   [ProposalSection.TEAM]: 'Generate team descriptions and role assignments',
   [ProposalSection.IMPACT]: 'Articulate project impact and expected outcomes',
   [ProposalSection.SUSTAINABILITY]: 'Develop sustainability plans and long-term strategies',
+  [ProposalSection.PROBLEM_STATEMENT]: 'Define and articulate the core problem being addressed',
+  [ProposalSection.OBJECTIVES]: 'Establish clear, measurable project objectives',
+  [ProposalSection.THEORY_OF_CHANGE]: 'Develop logical frameworks and theory of change models',
+  [ProposalSection.LITERATURE_REVIEW]: 'Conduct comprehensive literature reviews and research analysis',
+  [ProposalSection.RISK_ASSESSMENT]: 'Identify and analyze potential project risks and mitigation strategies',
+  [ProposalSection.MONITORING_EVALUATION]: 'Design monitoring and evaluation frameworks',
+  [ProposalSection.APPENDICES]: 'Generate supporting documentation and appendices',
 }
 
 export function CreatePromptModal({

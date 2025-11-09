@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Shield, Users, Calendar, AlertCircle, Plus, Trash2, X } from 'lucide-react'
+import { Shield, Calendar, AlertCircle, Plus, Trash2, X } from 'lucide-react'
 import { userService } from '../../../services/userService'
 import { CreateGroupModal } from './CreateGroupModal'
 import styles from './GroupManagement.module.css'

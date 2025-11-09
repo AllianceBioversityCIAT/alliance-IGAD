@@ -69,7 +69,7 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
           type="text"
           placeholder="Filter by route..."
           value={filters.route || ''}
-          onChange={e => handleRouteChange(e.target.value)}
+          onChange={e => onChange({ ...filters, route: e.target.value })}
           className={styles.input}
         />
       </div>
@@ -93,7 +93,7 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
           type="text"
           placeholder="Filter by tag..."
           value={filters.tag || ''}
-          onChange={e => handleTagChange(e.target.value)}
+          onChange={e => onChange({ ...filters, tags: e.target.value })}
           className={styles.input}
         />
       </div>

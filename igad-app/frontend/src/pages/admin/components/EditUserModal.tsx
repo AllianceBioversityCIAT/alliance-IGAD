@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, User, Mail, Key, Shield, Users } from 'lucide-react'
+import { X, User, Mail, Key, Shield } from 'lucide-react'
 import { userService, CognitoUser } from '../../../services/userService'
 import styles from './EditUserModal.module.css'
 

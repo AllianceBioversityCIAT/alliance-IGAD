@@ -71,7 +71,7 @@ export function PromptListTable({
         onEdit(promptId)
         break
       case 'publish':
-        if (prompt.status === 'draft') {
+        if (prompt.is_active) {
           onPublish(promptId, prompt.version)
         }
         break
@@ -219,7 +219,7 @@ export function PromptListTable({
                       <div
                         className={`${styles.dropdown} ${index >= prompts.length - 2 ? styles.dropup : ''}`}
                       >
-                        {prompt.status === 'draft' && (
+                        {prompt.is_active && (
                           <button
                             onClick={() => handleActionClick(prompt.id, 'publish', prompt)}
                             className={styles.dropdownItem}
@@ -270,11 +270,11 @@ export function PromptListTable({
                   <div className={styles.commentsButtonContainer}>
                     <button
                       onClick={() => handleActionClick(prompt.id, 'comments', prompt)}
-                      className={`${styles.commentsButton} ${prompt.comments_count > 0 ? styles.hasComments : ''}`}
+                      className={`${styles.commentsButton} ${(prompt.comments_count || 0) > 0 ? styles.hasComments : ''}`}
                       title={`${prompt.comments_count || 0} comment${prompt.comments_count !== 1 ? 's' : ''} - View comments for "${prompt.name}"`}
                     >
                       <MessageCircle size={16} />
-                      {prompt.comments_count > 0 && (
+                      {(prompt.comments_count || 0) > 0 && (
                         <span className={styles.commentsBadge}>{prompt.comments_count}</span>
                       )}
                     </button>

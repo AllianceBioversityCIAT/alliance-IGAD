@@ -11,7 +11,7 @@ export const LoadingScreen: React.FC = () => {
         backgroundColor: '#ffffff',
       }}
     >
-      <Spinner size="large" className="text-green-600" />
+      <Spinner size="lg" className="text-green-600" />
     </div>
   )
 }

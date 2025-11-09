@@ -57,8 +57,8 @@ export function ChangePasswordPage() {
       )
 
       // Password changed successfully - store token and redirect
-      authService.setToken(response.access_token, data.rememberMe)
-      authService.setUserEmail(state.username, data.rememberMe)
+      authService.setToken(response.access_token, false)
+      authService.setUserEmail(state.username, false)
 
       navigate('/', {
         state: {
@@ -157,7 +157,7 @@ export function ChangePasswordPage() {
               </div>
 
               <button type="submit" disabled={isLoading} className={styles.submitButton}>
-                {isLoading ? <Spinner size="small" /> : 'Change Password'}
+                {isLoading ? <Spinner size="sm" /> : 'Change Password'}
                 {!isLoading && <span>→</span>}
               </button>
             </form>

@@ -151,7 +151,7 @@ export function ForgotPasswordPage() {
                 </div>
 
                 <button type="submit" disabled={isLoading} className={styles.submitButton}>
-                  {isLoading ? <Spinner size="small" /> : 'Send Reset Code'}
+                  {isLoading ? <Spinner size="sm" /> : 'Send Reset Code'}
                   {!isLoading && <span>→</span>}
                 </button>
 
@@ -243,7 +243,7 @@ export function ForgotPasswordPage() {
                 </div>
 
                 <button type="submit" disabled={isLoading} className={styles.submitButton}>
-                  {isLoading ? <Spinner size="small" /> : 'Reset Password'}
+                  {isLoading ? <Spinner size="sm" /> : 'Reset Password'}
                   {!isLoading && <span>→</span>}
                 </button>
 

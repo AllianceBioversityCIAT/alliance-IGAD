@@ -259,7 +259,7 @@ export function UserManagement() {
             {isLoading ? (
               <tr>
                 <td colSpan={6} className={styles.loadingCell}>
-                  <Spinner size="small" />
+                  <Spinner size="sm" />
                 </td>
               </tr>
             ) : filteredUsers.length === 0 ? (
