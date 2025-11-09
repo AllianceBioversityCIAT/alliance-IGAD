@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Edit, Trash2, Copy, CheckCircle, MoreVertical, Power, PowerOff, Eye } from 'lucide-react'
+import { Edit, Trash2, Copy, CheckCircle, MoreVertical, Power, PowerOff, Eye, MessageCircle } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '../../../types/prompt'
 import styles from './PromptListTable.module.css'
 
@@ -11,6 +11,7 @@ interface PromptListTableProps {
   onDelete: (id: string, version?: number) => void
   onClone: (prompt: Prompt) => void
   onToggleActive: (id: string) => void
+  onComments?: (id: string) => void
 }
 
 export function PromptListTable({ 
@@ -20,7 +21,8 @@ export function PromptListTable({
   onPublish, 
   onDelete,
   onClone,
-  onToggleActive
+  onToggleActive,
+  onComments
 }: PromptListTableProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
@@ -65,6 +67,11 @@ export function PromptListTable({
         break
       case 'toggle-active':
         onToggleActive(promptId)
+        break
+      case 'comments':
+        if (onComments) {
+          onComments(promptId)
+        }
         break
       case 'delete':
         onDelete(promptId)
@@ -210,6 +217,17 @@ export function PromptListTable({
                           <Copy size={14} />
                           Clone
                         </button>
+                        
+                        {onComments && (
+                          <button
+                            onClick={() => handleActionClick(prompt.id, 'comments', prompt)}
+                            className={styles.dropdownItem}
+                            title={`View comments for "${prompt.name}"`}
+                          >
+                            <MessageCircle size={14} />
+                            Comments
+                          </button>
+                        )}
                         
                         <div className={styles.dropdownDivider}></div>
                         

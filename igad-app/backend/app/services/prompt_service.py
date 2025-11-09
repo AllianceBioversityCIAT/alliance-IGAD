@@ -152,6 +152,16 @@ class PromptService:
         # Create updated prompt
         update_data = prompt_data.dict(exclude_none=True)
         prompt_dict = current_prompt.dict()
+        
+        # Track changes for history
+        changes = {}
+        for key, new_value in update_data.items():
+            if key == 'change_comment':
+                continue  # Don't track the comment itself as a change
+            old_value = prompt_dict.get(key)
+            if old_value != new_value:
+                changes[key] = {'old': old_value, 'new': new_value}
+        
         prompt_dict.update(update_data)
         prompt_dict.update({
             'updated_by': user_id,
@@ -173,6 +183,19 @@ class PromptService:
         
         try:
             self.table.put_item(Item=item)
+            
+            # Record change in history if there were actual changes
+            if changes:
+                await self.record_change(
+                    prompt_id=prompt_id,
+                    version=current_prompt.version,
+                    change_type='update',
+                    changes=changes,
+                    user_id=user_id,
+                    user_name=user_id,  # TODO: Get actual user name
+                    comment=update_data.get('change_comment')
+                )
+            
             logger.info(f"Updated prompt {prompt_id}")
             return updated_prompt
         except Exception as e:
@@ -381,3 +404,145 @@ class PromptService:
         except Exception as e:
             logger.error(f"Error finding active prompt by section/route: {e}")
             return None
+    # Comments Methods
+    async def add_comment(self, prompt_id: str, comment_data: 'CommentCreate', user_id: str, user_name: str) -> 'Comment':
+        """Add a comment to a prompt"""
+        from app.models.prompt_model import Comment
+        
+        comment_id = str(uuid.uuid4())
+        now = datetime.utcnow()
+        
+        comment = Comment(
+            id=comment_id,
+            prompt_id=prompt_id,
+            parent_id=comment_data.parent_id,
+            content=comment_data.content,
+            author=user_id,
+            author_name=user_name,
+            created_at=now
+        )
+        
+        # Store comment in DynamoDB
+        item = {
+            'PK': f'prompt#{prompt_id}',
+            'SK': f'comment#{comment_id}',
+            'id': comment_id,
+            'prompt_id': prompt_id,
+            'parent_id': comment_data.parent_id,
+            'content': comment_data.content,
+            'author': user_id,
+            'author_name': user_name,
+            'created_at': now.isoformat(),
+            'type': 'comment'
+        }
+        
+        try:
+            self.table.put_item(Item=item)
+            logger.info(f"Added comment {comment_id} to prompt {prompt_id}")
+            return comment
+        except Exception as e:
+            logger.error(f"Error adding comment: {e}")
+            raise
+
+    async def get_comments(self, prompt_id: str) -> List['Comment']:
+        """Get all comments for a prompt"""
+        from app.models.prompt_model import Comment
+        
+        try:
+            response = self.table.query(
+                KeyConditionExpression=Key('PK').eq(f'prompt#{prompt_id}') & Key('SK').begins_with('comment#')
+            )
+            
+            comments = []
+            for item in response.get('Items', []):
+                comment = Comment(
+                    id=item['id'],
+                    prompt_id=item['prompt_id'],
+                    parent_id=item.get('parent_id'),
+                    content=item['content'],
+                    author=item['author'],
+                    author_name=item['author_name'],
+                    created_at=datetime.fromisoformat(item['created_at']),
+                    updated_at=datetime.fromisoformat(item['updated_at']) if item.get('updated_at') else None
+                )
+                comments.append(comment)
+            
+            # Organize replies
+            comment_dict = {c.id: c for c in comments}
+            root_comments = []
+            
+            for comment in comments:
+                if comment.parent_id and comment.parent_id in comment_dict:
+                    comment_dict[comment.parent_id].replies.append(comment)
+                else:
+                    root_comments.append(comment)
+            
+            return sorted(root_comments, key=lambda x: x.created_at, reverse=True)
+            
+        except Exception as e:
+            logger.error(f"Error getting comments for prompt {prompt_id}: {e}")
+            return []
+
+    # Change History Methods
+    async def record_change(self, prompt_id: str, version: int, change_type: str, 
+                          changes: Dict[str, Any], user_id: str, user_name: str, 
+                          comment: Optional[str] = None):
+        """Record a change in prompt history"""
+        change_id = str(uuid.uuid4())
+        now = datetime.utcnow()
+        
+        item = {
+            'PK': f'prompt#{prompt_id}',
+            'SK': f'change#{now.isoformat()}#{change_id}',
+            'id': change_id,
+            'prompt_id': prompt_id,
+            'version': version,
+            'change_type': change_type,
+            'changes': changes,
+            'comment': comment,
+            'author': user_id,
+            'author_name': user_name,
+            'created_at': now.isoformat(),
+            'type': 'change'
+        }
+        
+        try:
+            self.table.put_item(Item=item)
+            logger.info(f"Recorded change {change_id} for prompt {prompt_id}")
+        except Exception as e:
+            logger.error(f"Error recording change: {e}")
+
+    async def get_prompt_history(self, prompt_id: str) -> 'PromptHistory':
+        """Get change history for a prompt"""
+        from app.models.prompt_model import PromptHistory, PromptChange
+        
+        try:
+            response = self.table.query(
+                KeyConditionExpression=Key('PK').eq(f'prompt#{prompt_id}') & Key('SK').begins_with('change#'),
+                ScanIndexForward=False  # Most recent first
+            )
+            
+            changes = []
+            for item in response.get('Items', []):
+                change = PromptChange(
+                    id=item['id'],
+                    prompt_id=item['prompt_id'],
+                    version=item['version'],
+                    change_type=item['change_type'],
+                    changes=item['changes'],
+                    comment=item.get('comment'),
+                    author=item['author'],
+                    author_name=item['author_name'],
+                    created_at=datetime.fromisoformat(item['created_at'])
+                )
+                changes.append(change)
+            
+            return PromptHistory(
+                prompt_id=prompt_id,
+                changes=changes,
+                total=len(changes)
+            )
+            
+        except Exception as e:
+            logger.error(f"Error getting history for prompt {prompt_id}: {e}")
+            return PromptHistory(prompt_id=prompt_id, changes=[], total=0)

@@ -4,7 +4,7 @@ from typing import Optional, List
 from app.models.prompt_model import (
     Prompt, PromptCreate, PromptUpdate, PromptListResponse,
     PromptPreviewRequest, PromptPreviewResponse,
-    ProposalSection
+    ProposalSection, Comment, CommentCreate, PromptHistory
 )
 from app.services.prompt_service import PromptService
 from app.services.bedrock_service import BedrockService
@@ -238,4 +238,56 @@ async def toggle_prompt_active(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to toggle prompt active status"
+        )
+# Comments endpoints
+@router.post("/{prompt_id}/comments", response_model=Comment)
+async def add_comment(
+    prompt_id: str,
+    comment_data: CommentCreate,
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Add a comment to a prompt"""
+    try:
+        return await prompt_service.add_comment(
+            prompt_id,
+            comment_data, 
+            current_user["user_id"], 
+            current_user.get("name", current_user["user_id"])
+        )
+    except Exception as e:
+        logger.error(f"Error adding comment to prompt {prompt_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to add comment"
+        )
+
+@router.get("/{prompt_id}/comments", response_model=List[Comment])
+async def get_comments(
+    prompt_id: str,
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Get all comments for a prompt"""
+    try:
+        return await prompt_service.get_comments(prompt_id)
+    except Exception as e:
+        logger.error(f"Error getting comments for prompt {prompt_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get comments"
+        )
+
+# History endpoints
+@router.get("/{prompt_id}/history", response_model=PromptHistory)
+async def get_prompt_history(
+    prompt_id: str,
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Get change history for a prompt"""
+    try:
+        return await prompt_service.get_prompt_history(prompt_id)
+    except Exception as e:
+        logger.error(f"Error getting history for prompt {prompt_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get prompt history"
         )

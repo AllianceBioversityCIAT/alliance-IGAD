@@ -80,3 +80,38 @@ class PromptPreviewResponse(BaseModel):
     output: str
     tokens_used: int
     processing_time: float
+# Comment Models
+class CommentCreate(BaseModel):
+    content: str = Field(..., min_length=1, max_length=1000)
+    parent_id: Optional[str] = None  # For replies
+
+class Comment(BaseModel):
+    id: str
+    prompt_id: str
+    parent_id: Optional[str] = None
+    content: str
+    author: str
+    author_name: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    replies: List['Comment'] = Field(default_factory=list)
+
+# Change History Models
+class PromptChange(BaseModel):
+    id: str
+    prompt_id: str
+    version: int
+    change_type: str  # 'create', 'update', 'activate', 'deactivate'
+    changes: Dict[str, Any]  # Field changes
+    comment: Optional[str] = None
+    author: str
+    author_name: str
+    created_at: datetime
+
+class PromptHistory(BaseModel):
+    prompt_id: str
+    changes: List[PromptChange]
+    total: int
+
+# Update Comment model to handle self-reference
+Comment.model_rebuild()

@@ -7,6 +7,7 @@ import { PromptListTable } from './components/PromptListTable'
 import { PromptCardsView } from './components/PromptCardsView'
 import { PromptEditorDrawer } from './components/PromptEditorDrawer'
 import { PromptFilters } from './components/PromptFilters'
+import { CommentsPanel } from './components/CommentsPanel'
 import { ToastContainer } from '../../components/ui/ToastContainer'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
@@ -29,6 +30,7 @@ export function PromptManagerPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
+  const [commentsPromptId, setCommentsPromptId] = useState<string | null>(null)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editorMode, setEditorMode] = useState<'create' | 'edit'>('create')
   const [contextData, setContextData] = useState<{
@@ -321,6 +323,7 @@ export function PromptManagerPage() {
             onDelete={handleDeletePrompt}
             onClone={handleClonePrompt}
             onToggleActive={handleToggleActive}
+            onComments={(id) => setCommentsPromptId(id)}
           />
         ) : (
           <PromptCardsView
@@ -394,6 +397,13 @@ export function PromptManagerPage() {
         confirmText="Delete"
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* Comments Panel */}
+      <CommentsPanel
+        promptId={commentsPromptId || ''}
+        isOpen={!!commentsPromptId}
+        onClose={() => setCommentsPromptId(null)}
       />
 
       {/* Toast Notifications */}
