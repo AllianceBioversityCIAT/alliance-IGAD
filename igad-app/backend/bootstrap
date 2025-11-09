@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+
+# Lambda Web Adapter bootstrap script
+export PORT=8080
+export AWS_LWA_INVOKE_MODE=response_stream
+
+# Start FastAPI application
+exec python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT

@@ -1,0 +1,9 @@
+version = 0.1
+    [default]
+    [default.deploy]
+    [default.deploy.parameters]
+    stack_name = "igad-innovation-hub"
+    resolve_s3 = true
+    confirm_changeset = false
+    capabilities = "CAPABILITY_IAM"
+    region = "us-east-1"
