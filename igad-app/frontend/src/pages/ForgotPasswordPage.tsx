@@ -66,7 +66,7 @@ export function ForgotPasswordPage() {
       // Redirect to login with success message
       navigate('/login', {
         state: {
-          message: 'Contraseña restablecida exitosamente. Inicia sesión con tu nueva contraseña.',
+          message: 'Password reset successfully. Log in with your new password.',
           email: email
         }
       })

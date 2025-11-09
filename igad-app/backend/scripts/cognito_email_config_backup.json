@@ -1,0 +1,36 @@
+{
+  "user_pool_id": "us-east-1_EULeelICj",
+  "profile": "IBD-DEV",
+  "templates": {
+    "welcome_email": {
+      "subject": "Bienvenido al IGAD Innovation Hub - Cuenta Creada",
+      "configured": true
+    },
+    "email_verification": {
+      "subject": "IGAD Innovation Hub - Verifica tu Email",
+      "configured": true
+    },
+    "password_reset": {
+      "subject": "IGAD Innovation Hub - Restablecimiento de Contrase\u00f1a",
+      "configured": "prepared"
+    },
+    "mfa_setup": {
+      "subject": "IGAD Innovation Hub - Configuraci\u00f3n MFA",
+      "configured": "prepared"
+    }
+  },
+  "email_configuration": "COGNITO_DEFAULT",
+  "colors": {
+    "primary": "#2c5530",
+    "accent": "#7cb342",
+    "background": "#f8f9fa",
+    "text": "#333333",
+    "light_green": "#f1f8e9"
+  },
+  "deployment_notes": [
+    "Run this script after creating User Pool in production",
+    "Verify SES email identity if using custom email",
+    "Test all email templates after configuration",
+    "Update localhost URLs to production URLs"
+  ]
+}

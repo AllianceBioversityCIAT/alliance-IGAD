@@ -37,7 +37,7 @@ export function ChangePasswordPage() {
   
   const onSubmit = async (data: ChangePasswordForm) => {
     if (data.newPassword !== data.confirmPassword) {
-      setError('Las contraseñas no coinciden')
+      setError('Passwords do not match')
       return
     }
     
@@ -60,19 +60,19 @@ export function ChangePasswordPage() {
       const result = await response.json()
       
       if (!response.ok) {
-        throw new Error(result.detail || 'Error al cambiar la contraseña')
+        throw new Error(result.detail || 'Error changing password')
       }
       
       // Password changed successfully - redirect to login
       navigate('/login', {
         state: {
-          message: 'Contraseña cambiada exitosamente. Por favor, inicia sesión con tu nueva contraseña.',
+          message: 'Password changed successfully. Please log in with your new password.',
           email: state.username
         }
       })
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cambiar la contraseña')
+      setError(err instanceof Error ? err.message : 'Error changing password')
     } finally {
       setIsLoading(false)
     }
@@ -95,7 +95,7 @@ export function ChangePasswordPage() {
             <div className={styles.formHeader}>
               <h1 className={styles.title}>Change Password</h1>
               <p className={styles.subtitle}>
-                Debes cambiar tu contraseña temporal por una nueva
+                You must change your temporary password to a new one
               </p>
             </div>
 
@@ -108,25 +108,25 @@ export function ChangePasswordPage() {
 
               <div className={styles.fieldGroup}>
                 <label htmlFor="newPassword" className={styles.label}>
-                  Nueva Contraseña
+                  New Password
                 </label>
                 <div className={styles.passwordField}>
                   <input
                     {...register('newPassword', {
-                      required: 'La contraseña es requerida',
+                      required: 'Password is required',
                       minLength: {
                         value: 8,
-                        message: 'La contraseña debe tener al menos 8 caracteres'
+                        message: 'Password must be at least 8 characters'
                       },
                       pattern: {
                         value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                        message: 'La contraseña debe contener al menos una mayúscula, una minúscula y un número'
+                        message: 'Password must contain at least one uppercase, one lowercase and one number'
                       }
                     })}
                     type={showPassword ? 'text' : 'password'}
                     id="newPassword"
                     className={`${styles.input} ${styles.passwordInput} ${errors.newPassword ? styles.inputError : ''}`}
-                    placeholder="Ingresa tu nueva contraseña"
+                    placeholder="Enter your new password"
                   />
                   <button
                     type="button"
@@ -143,19 +143,19 @@ export function ChangePasswordPage() {
 
               <div className={styles.fieldGroup}>
                 <label htmlFor="confirmPassword" className={styles.label}>
-                  Confirmar Contraseña
+                  Confirm Password
                 </label>
                 <div className={styles.passwordField}>
                   <input
                     {...register('confirmPassword', {
-                      required: 'Confirma tu contraseña',
+                      required: 'Please confirm your password',
                       validate: (value) => 
-                        value === newPassword || 'Las contraseñas no coinciden'
+                        value === newPassword || 'Passwords do not match'
                     })}
                     type={showConfirmPassword ? 'text' : 'password'}
                     id="confirmPassword"
                     className={`${styles.input} ${styles.passwordInput} ${errors.confirmPassword ? styles.inputError : ''}`}
-                    placeholder="Confirma tu nueva contraseña"
+                    placeholder="Confirm your new password"
                   />
                   <button
                     type="button"
@@ -181,7 +181,7 @@ export function ChangePasswordPage() {
             </form>
 
             <p className={styles.supportText}>
-              ¿Problemas para cambiar tu contraseña?{' '}
+              Having trouble changing your password?{' '}
               <button
                 type="button"
                 onClick={() => navigate('/login')}
