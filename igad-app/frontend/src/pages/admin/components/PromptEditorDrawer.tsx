@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Eye, Loader2 } from 'lucide-react'
+import { X, Save, Eye, Loader2, Settings, FileText, HelpCircle } from 'lucide-react'
 import { usePrompt } from '../../../hooks/usePrompts'
 import { ProposalSection, SECTION_LABELS, type CreatePromptRequest, type UpdatePromptRequest } from '../../../types/prompt'
 import styles from './PromptEditorDrawer.module.css'
@@ -93,20 +93,36 @@ export function PromptEditorDrawer({
   }
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.drawer}>
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h2 className={styles.title}>
             {mode === 'create' ? 'Create New Prompt' : 'Edit Prompt'}
           </h2>
-          <button onClick={onClose} className={styles.closeButton}>
-            <X size={20} />
-          </button>
+          <div className={styles.headerActions}>
+            <div className={styles.headerToggle}>
+              <label className={styles.headerToggleLabel}>
+                <input
+                  type="checkbox"
+                  checked={formData.is_active}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                  className={styles.toggleInput}
+                />
+                <span className={styles.headerToggleSlider}></span>
+                <span className={styles.headerToggleText}>
+                  {formData.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </label>
+            </div>
+            <button onClick={onClose} className={styles.closeButton}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
-            <label className={styles.label}>Name *</label>
+            <label className={styles.label}>Name</label>
             <input
               type="text"
               value={formData.name}
@@ -119,7 +135,7 @@ export function PromptEditorDrawer({
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label className={styles.label}>Section *</label>
+              <label className={styles.label}>Section</label>
               <select
                 value={formData.section}
                 onChange={(e) => setFormData(prev => ({ ...prev, section: e.target.value as ProposalSection }))}
@@ -194,7 +210,18 @@ export function PromptEditorDrawer({
           </div>
 
           <div className={styles.formGroup}>
-            <label className={styles.label}>System Prompt *</label>
+            <div className={styles.labelWithIcon}>
+              <label className={styles.label}>
+                <Settings size={16} className={styles.labelIcon} />
+                System Prompt
+              </label>
+              <div className={styles.helpTooltip}>
+                <HelpCircle size={14} className={styles.helpIcon} />
+                <div className={styles.tooltipContent}>
+                  Defines the AI's role, personality, and behavior. Example: "You are an expert proposal writer specializing in African development projects..."
+                </div>
+              </div>
+            </div>
             <textarea
               value={formData.system_prompt}
               onChange={(e) => setFormData(prev => ({ ...prev, system_prompt: e.target.value }))}
@@ -206,7 +233,18 @@ export function PromptEditorDrawer({
           </div>
 
           <div className={styles.formGroup}>
-            <label className={styles.label}>User Prompt Template *</label>
+            <div className={styles.labelWithIcon}>
+              <label className={styles.label}>
+                <FileText size={16} className={styles.labelIcon} />
+                User Prompt Template
+              </label>
+              <div className={styles.helpTooltip}>
+                <HelpCircle size={14} className={styles.helpIcon} />
+                <div className={styles.tooltipContent}>
+                  Template with variables for dynamic content. Use {'{variable_name}'} for placeholders. Example: "Create a {'{section_type}'} for {'{project_type}'} in {'{region}'}..."
+                </div>
+              </div>
+            </div>
             <textarea
               value={formData.user_prompt_template}
               onChange={(e) => setFormData(prev => ({ ...prev, user_prompt_template: e.target.value }))}

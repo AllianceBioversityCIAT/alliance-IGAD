@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Edit, Trash2, Copy, CheckCircle, MoreVertical, Power, PowerOff, Eye } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '../../../types/prompt'
-import { PromptStatusBadge } from './PromptStatusBadge'
 import styles from './PromptListTable.module.css'
 
 interface PromptListTableProps {
@@ -144,11 +143,8 @@ export function PromptListTable({
                 )}
               </td>
               <td className={styles.tableCell}>
-                <div className={styles.statusCell}>
-                  <PromptStatusBadge status={prompt.status} />
-                  <div className={`${styles.activeBadge} ${prompt.is_active ? styles.active : styles.inactive}`}>
-                    {prompt.is_active ? 'Active' : 'Inactive'}
-                  </div>
+                <div className={`${styles.activeBadge} ${prompt.is_active ? styles.active : styles.inactive}`}>
+                  {prompt.is_active ? 'Active' : 'Inactive'}
                 </div>
               </td>
               <td className={styles.tableCell}>

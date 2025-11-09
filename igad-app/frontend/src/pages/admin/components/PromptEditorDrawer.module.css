@@ -321,3 +321,175 @@
     padding: 20px;
   }
 }
+/* Header Actions */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.headerToggle {
+  display: flex;
+  align-items: center;
+}
+
+.headerToggleLabel {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.headerToggleSlider {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.headerToggleSlider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toggleInput:checked + .headerToggleSlider {
+  background: #10b981;
+}
+
+.toggleInput:checked + .headerToggleSlider::before {
+  transform: translateX(16px);
+}
+
+.headerToggleText {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  min-width: 50px;
+}
+
+.toggleContainer {
+  display: flex;
+  align-items: center;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 12px;
+}
+
+.toggleInput {
+  display: none;
+}
+
+.toggleSlider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #e2e8f0;
+  border-radius: 12px;
+  transition: background 0.3s ease;
+}
+
+.toggleSlider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggleInput:checked + .toggleSlider {
+  background: #10b981;
+}
+
+.toggleInput:checked + .toggleSlider::before {
+  transform: translateX(20px);
+}
+
+.toggleText {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+/* Label with Icon and Tooltip */
+.labelWithIcon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.labelIcon {
+  color: #6b7280;
+}
+
+.helpTooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.helpIcon {
+  color: #9ca3af;
+  cursor: help;
+  transition: color 0.2s ease;
+}
+
+.helpIcon:hover {
+  color: #6b7280;
+}
+
+.tooltipContent {
+  position: absolute;
+  top: -8px;
+  right: 0;
+  transform: translateY(-100%);
+  background: #1f2937;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  width: 280px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.tooltipContent::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 12px;
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+}
+
+.helpTooltip:hover .tooltipContent {
+  opacity: 1;
+  visibility: visible;
+}
