@@ -23,7 +23,8 @@
     "react",
     "react-hooks",
     "react-refresh",
-    "@typescript-eslint"
+    "@typescript-eslint",
+    "jsdoc"
   ],
   "rules": {
     "react/react-in-jsx-scope": "off",
@@ -39,7 +40,14 @@
     "no-var": "error",
     "no-console": "warn",
     "eqeqeq": "error",
-    "curly": "error"
+    "curly": "error",
+    "jsdoc/require-description": "warn",
+    "jsdoc/require-param-description": "warn",
+    "jsdoc/require-returns-description": "warn",
+    "jsdoc/require-example": "off",
+    "jsdoc/check-param-names": "error",
+    "jsdoc/check-tag-names": "error",
+    "jsdoc/check-types": "error"
   },
   "settings": {
     "react": {

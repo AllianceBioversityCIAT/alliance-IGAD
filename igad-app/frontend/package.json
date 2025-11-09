@@ -12,6 +12,7 @@
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint src --ext ts,tsx --fix",
     "lint:check": "eslint src --ext ts,tsx",
+    "docs-check": "eslint src --ext ts,tsx --rule 'jsdoc/require-description: error'",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
     "type-check": "tsc --noEmit",
     "prepare": "husky install"
@@ -39,6 +40,7 @@
     "autoprefixer": "^10.4.16",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsdoc": "^61.1.12",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
