@@ -26,7 +26,6 @@ function HistoryContent({ promptId }: { promptId: string }) {
         setHistory(data)
       }
     } catch (error) {
-      console.error('Error fetching history:', error)
     } finally {
       setIsLoading(false)
     }

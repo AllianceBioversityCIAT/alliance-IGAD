@@ -44,7 +44,6 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
         setError('Failed to load user data')
       }
     } catch (error) {
-      console.error('Error fetching user:', error)
       setError('Failed to load user data')
     } finally {
       setIsLoading(false)
@@ -58,7 +57,6 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
         setGroups(result.groups)
       }
     } catch (error) {
-      console.error('Error fetching groups:', error)
     }
   }
 
@@ -84,7 +82,6 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
         setError(result.message || 'Failed to update user')
       }
     } catch (error: any) {
-      console.error('Error updating user:', error)
       setError(error.response?.data?.detail || 'Failed to update user')
     } finally {
       setIsLoading(false)
@@ -109,7 +106,6 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
         setError(result.message || 'Failed to reset password')
       }
     } catch (error: any) {
-      console.error('Error resetting password:', error)
       setError(error.response?.data?.detail || 'Failed to reset password')
     } finally {
       setIsLoading(false)
@@ -130,7 +126,6 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
         setError(result.message || 'Failed to update group membership')
       }
     } catch (error: any) {
-      console.error('Error updating group:', error)
       setError(error.response?.data?.detail || 'Failed to update group membership')
     }
   }

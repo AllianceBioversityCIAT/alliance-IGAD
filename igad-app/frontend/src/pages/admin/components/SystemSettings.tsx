@@ -18,7 +18,6 @@ export function SystemSettings() {
       setCopied(key)
       setTimeout(() => setCopied(null), 2000)
     } catch (error) {
-      console.error('Failed to copy:', error)
     }
   }
 

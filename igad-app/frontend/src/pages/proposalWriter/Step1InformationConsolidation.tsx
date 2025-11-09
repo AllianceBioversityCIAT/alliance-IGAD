@@ -42,7 +42,6 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             textInputs: formData.textInputs
           })
         } catch (error) {
-          console.error('Failed to save file upload:', error)
         }
       }
     }
@@ -67,7 +66,6 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           textInputs: updatedInputs
         })
       } catch (error) {
-        console.error('Failed to save text input:', error)
       }
     }
   }

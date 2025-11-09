@@ -434,6 +434,14 @@ async def cognito_login(credentials: dict):
         print(f"Login result: {result}")
         
         if not result['success']:
+            # Check if it's a password change required error
+            if result.get('challenge') == 'NEW_PASSWORD_REQUIRED':
+                return {
+                    "requires_password_change": True,
+                    "session": result.get('session'),
+                    "username": username,
+                    "message": "Password change required"
+                }
             raise HTTPException(status_code=401, detail=result.get('message', 'Authentication failed'))
         
         return {
@@ -448,6 +456,38 @@ async def cognito_login(credentials: dict):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Login error: {str(e)}")
+
+@app.post("/auth/change-password")
+async def change_password(request: dict):
+    """Complete password change for users in FORCE_CHANGE_PASSWORD state"""
+    try:
+        username = request.get("username")
+        session = request.get("session")
+        new_password = request.get("new_password")
+        
+        if not all([username, session, new_password]):
+            raise HTTPException(status_code=400, detail="Username, session, and new password required")
+        
+        result = cognito_service.respond_to_auth_challenge(
+            username=username,
+            session=session,
+            new_password=new_password
+        )
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Password change failed'))
+        
+        return {
+            "access_token": result['access_token'],
+            "token_type": "bearer",
+            "expires_in": result['expires_in'],
+            "message": "Password changed successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Change password exception: {e}")
+        raise HTTPException(status_code=500, detail=f"Password change error: {str(e)}")
 
 @app.post("/auth/create-user")
 async def create_user(user_data: dict):

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdmin } from '../hooks/useAdmin';
+import { LoadingScreen } from './ui/Spinner';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -9,9 +10,9 @@ interface AdminRouteProps {
 export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const { isAdmin, loading } = useAdmin();
   
-  // Show loading while checking admin status
+  // Show loading screen while checking admin status
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingScreen />;
   }
   
   if (!isAdmin) {

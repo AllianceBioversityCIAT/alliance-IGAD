@@ -40,7 +40,6 @@ export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated
         setGroups(groupsResult.groups)
       }
     } catch (error) {
-      console.error('Error fetching data:', error)
       setError('Failed to load data')
     } finally {
       setIsLoading(false)
@@ -62,7 +61,6 @@ export function ManageUserGroupsModal({ isOpen, username, onClose, onUserUpdated
         setError(result.message || 'Failed to update group membership')
       }
     } catch (error: any) {
-      console.error('Error updating group:', error)
       setError(error.response?.data?.detail || 'Failed to update group membership')
     }
   }

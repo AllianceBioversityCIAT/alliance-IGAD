@@ -71,7 +71,6 @@ export function UserManagement() {
         setError('Failed to load users')
       }
     } catch (error) {
-      console.error('Error fetching users:', error)
       setError('Failed to load users')
     } finally {
       setIsLoading(false)
@@ -105,7 +104,6 @@ export function UserManagement() {
             showError('Delete failed', result.message || 'Failed to delete user')
           }
         } catch (error) {
-          console.error('Error deleting user:', error)
           showError('Delete failed', 'An unexpected error occurred')
         }
         setConfirmDialog(prev => ({ ...prev, isOpen: false }))
@@ -129,7 +127,6 @@ export function UserManagement() {
         showError('Update failed', result.message || 'Failed to update user status')
       }
     } catch (error) {
-      console.error('Error toggling user:', error)
       showError('Update failed', 'An unexpected error occurred')
     }
   }

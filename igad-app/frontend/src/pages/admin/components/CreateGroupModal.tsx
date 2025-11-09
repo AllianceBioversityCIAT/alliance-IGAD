@@ -39,7 +39,6 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
         setError('Failed to create group')
       }
     } catch (error: any) {
-      console.error('Error creating group:', error)
       setError(error.response?.data?.detail || 'Failed to create group')
     } finally {
       setIsLoading(false)

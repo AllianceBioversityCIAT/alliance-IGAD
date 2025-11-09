@@ -50,7 +50,6 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
         setHistory(data)
       }
     } catch (error) {
-      console.error('Error fetching history:', error)
     } finally {
       setIsLoading(false)
     }

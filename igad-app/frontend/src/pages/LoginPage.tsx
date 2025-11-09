@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authService } from '../services/authService'
 import styles from './LoginPage.module.css'
@@ -12,12 +12,23 @@ interface LoginForm {
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   
-  // Get remembered email if exists
-  const rememberedEmail = authService.getUserEmail() || ''
+  // Check for success message from password change
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message)
+      // Clear the state to prevent showing message on refresh
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
+  
+  // Get remembered email if exists, or from password change redirect
+  const rememberedEmail = location.state?.email || authService.getUserEmail() || ''
   const wasRemembered = localStorage.getItem('remember_me') === 'true'
   
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
@@ -33,11 +44,21 @@ export function LoginPage() {
     setError(null)
     
     try {
-      console.log('Form data:', data); // Debug log
       const response = await authService.login({
         username: data.email,
         password: data.password
       })
+      
+      // Check if password change is required
+      if (response.requires_password_change) {
+        navigate('/change-password', {
+          state: {
+            username: response.username || data.email,
+            session: response.session
+          }
+        })
+        return
+      }
       
       // Store the token and user email
       authService.setToken(response.access_token, data.rememberMe)
@@ -46,7 +67,6 @@ export function LoginPage() {
       // Navigate to dashboard
       navigate('/')
     } catch (error) {
-      console.error('Login error:', error)
       setError(error instanceof Error ? error.message : 'Login failed')
     } finally {
       setIsLoading(false)
@@ -81,6 +101,21 @@ export function LoginPage() {
 
             {/* Login Form */}
             <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
+              {/* Success Message */}
+              {successMessage && (
+                <div style={{
+                  backgroundColor: '#d4edda',
+                  border: '1px solid #c3e6cb',
+                  color: '#155724',
+                  padding: '12px',
+                  borderRadius: '6px',
+                  marginBottom: '16px',
+                  fontSize: '14px'
+                }}>
+                  {successMessage}
+                </div>
+              )}
+              
               {/* Error Message */}
               {error && (
                 <div className={styles.errorMessage}>

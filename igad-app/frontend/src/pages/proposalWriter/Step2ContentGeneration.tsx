@@ -79,7 +79,6 @@ export function Step2ContentGeneration({ formData, setFormData, proposalId }: St
 
       setAnalysisComplete(true)
     } catch (error) {
-      console.error('Analysis failed:', error)
     }
   }
 

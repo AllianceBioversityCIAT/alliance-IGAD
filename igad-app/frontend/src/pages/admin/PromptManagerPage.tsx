@@ -334,7 +334,7 @@ export function PromptManagerPage() {
             onDelete={handleDeletePrompt}
             onClone={handleClonePrompt}
             onToggleActive={handleToggleActive}
-            onPreview={(id) => console.log('Preview:', id)}
+            onPreview={(id) => {}}
           />
         )}
 

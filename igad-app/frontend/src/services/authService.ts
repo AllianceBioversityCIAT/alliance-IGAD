@@ -9,6 +9,10 @@ export interface LoginResponse {
   access_token: string;
   token_type: string;
   expires_in: number;
+  requires_password_change?: boolean;
+  session?: string;
+  username?: string;
+  message?: string;
 }
 
 export interface AuthError {
@@ -104,7 +108,6 @@ class AuthService {
 
       return response.json();
     } catch (error) {
-      console.error('Failed to get current user:', error);
       return null;
     }
   }

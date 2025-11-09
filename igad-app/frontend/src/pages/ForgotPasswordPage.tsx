@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authService } from '../services/authService'
 import styles from './LoginPage.module.css'
@@ -15,11 +15,14 @@ interface ResetPasswordForm {
 }
 
 export function ForgotPasswordPage() {
+  const navigate = useNavigate()
   const [step, setStep] = useState<'email' | 'reset'>('email')
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
   const { register: registerEmail, handleSubmit: handleEmailSubmit, formState: { errors: emailErrors } } = useForm<ForgotPasswordForm>()
   const { register: registerReset, handleSubmit: handleResetSubmit, formState: { errors: resetErrors }, watch } = useForm<ResetPasswordForm>()
@@ -53,7 +56,13 @@ export function ForgotPasswordPage() {
     
     try {
       await authService.resetPassword(email, data.code, data.newPassword)
-      setSuccess('Password reset successfully! You can now login with your new password.')
+      // Redirect to login with success message
+      navigate('/login', {
+        state: {
+          message: 'Contraseña restablecida exitosamente. Inicia sesión con tu nueva contraseña.',
+          email: email
+        }
+      })
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to reset password')
     } finally {
@@ -155,7 +164,7 @@ export function ForgotPasswordPage() {
                       gap: '4px'
                     }}
                   >
-                    ← Back to Login
+                    &larr; Back to Login
                   </Link>
                 </div>
               </form>
@@ -181,18 +190,27 @@ export function ForgotPasswordPage() {
                   <label className={styles.label}>
                     New Password
                   </label>
-                  <input
-                    type="password"
-                    placeholder="Enter your new password"
-                    {...registerReset('newPassword', {
-                      required: 'New password is required',
-                      minLength: {
-                        value: 8,
-                        message: 'Password must be at least 8 characters'
-                      }
-                    })}
-                    className={styles.input}
-                  />
+                  <div className={styles.passwordField}>
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      placeholder="Enter your new password"
+                      {...registerReset('newPassword', {
+                        required: 'New password is required',
+                        minLength: {
+                          value: 8,
+                          message: 'Password must be at least 8 characters'
+                        }
+                      })}
+                      className={`${styles.input} ${styles.passwordInput}`}
+                    />
+                    <button
+                      type="button"
+                      className={styles.passwordToggle}
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                    >
+                      {showNewPassword ? '👁️' : '👁️‍🗨️'}
+                    </button>
+                  </div>
                   {resetErrors.newPassword && <span className={styles.errorText}>{resetErrors.newPassword.message}</span>}
                 </div>
 
@@ -200,14 +218,23 @@ export function ForgotPasswordPage() {
                   <label className={styles.label}>
                     Confirm Password
                   </label>
-                  <input
-                    type="password"
-                    placeholder="Confirm your new password"
-                    {...registerReset('confirmPassword', {
-                      required: 'Please confirm your password'
-                    })}
-                    className={styles.input}
-                  />
+                  <div className={styles.passwordField}>
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Confirm your new password"
+                      {...registerReset('confirmPassword', {
+                        required: 'Please confirm your password'
+                      })}
+                      className={`${styles.input} ${styles.passwordInput}`}
+                    />
+                    <button
+                      type="button"
+                      className={styles.passwordToggle}
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                    </button>
+                  </div>
                   {resetErrors.confirmPassword && <span className={styles.errorText}>{resetErrors.confirmPassword.message}</span>}
                 </div>
 
@@ -233,7 +260,7 @@ export function ForgotPasswordPage() {
                       gap: '4px'
                     }}
                   >
-                    ← Back to Login
+                    &larr; Back to Login
                   </Link>
                 </div>
               </form>

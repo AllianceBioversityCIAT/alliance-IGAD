@@ -43,7 +43,6 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
         setComments(data)
       }
     } catch (error) {
-      console.error('Error fetching comments:', error)
     }
   }
 
@@ -71,7 +70,6 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
         fetchComments()
       }
     } catch (error) {
-      console.error('Error adding comment:', error)
     } finally {
       setIsLoading(false)
     }

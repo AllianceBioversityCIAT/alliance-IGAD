@@ -39,7 +39,6 @@ export function ProposalWriterPage() {
             setProposalId(newProposal.id)
           },
           onError: (error) => {
-            console.error('Failed to create proposal:', error)
           }
         }
       )

@@ -76,7 +76,6 @@ export function useProposal(proposalId?: string) {
       queryClient.setQueryData(['proposal', proposalId], updatedProposal)
       return updatedProposal
     } catch (error) {
-      console.error('Failed to update form data:', error)
       throw error
     }
   }

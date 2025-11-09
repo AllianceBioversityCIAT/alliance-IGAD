@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import { ToastProvider } from '@/components/ui/ToastContainer'
 import { LoginPage } from '@/pages/LoginPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
+import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
 import { HomePage } from '@/pages/HomePage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ProposalWriterPage } from '@/pages/proposalWriter/ProposalWriterPage'
@@ -13,6 +14,7 @@ import { NotFoundPage } from '@/pages/NotFoundPage'
 import { Layout } from '@/components/layout/Layout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AdminRoute } from '@/components/AdminRoute'
+import { PublicRoute } from '@/components/PublicRoute'
 import CognitoTest from '@/components/CognitoTest'
 import '@/styles/globals.css'
 
@@ -31,8 +33,17 @@ function App() {
       <ToastProvider>
         <Router>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/login" element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          } />
+          <Route path="/forgot-password" element={
+            <PublicRoute>
+              <ForgotPasswordPage />
+            </PublicRoute>
+          } />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route path="/test-cognito" element={<CognitoTest />} />
           <Route path="/" element={
             <ProtectedRoute>

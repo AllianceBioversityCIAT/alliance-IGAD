@@ -33,7 +33,6 @@ export function GroupManagement() {
         setError('Failed to load groups')
       }
     } catch (error) {
-      console.error('Error fetching groups:', error)
       setError('Failed to load groups')
     } finally {
       setIsLoading(false)
@@ -50,7 +49,6 @@ export function GroupManagement() {
           setError(result.message || 'Failed to delete group')
         }
       } catch (error) {
-        console.error('Error deleting group:', error)
         setError('Failed to delete group')
       }
     }
