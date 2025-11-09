@@ -1,9 +1,8 @@
 """
-IGAD Innovation Hub - Main FastAPI Application
+IGAD Innovation Hub - Main FastAPI Application.
+
 Refactored with clean architecture
 """
-
-import os
 
 from dotenv import load_dotenv
 from fastapi import FastAPI

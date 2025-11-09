@@ -1,7 +1,6 @@
-import json
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import jwt
 from fastapi import HTTPException, status
@@ -45,7 +44,7 @@ class AuthMiddleware:
                     group["GroupName"] for group in groups_response.get("Groups", [])
                 ]
                 is_admin = "admin" in user_groups
-        except:
+        except Exception:
             # Fallback for development
             is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
 
@@ -89,7 +88,7 @@ class AuthMiddleware:
                             if attr["Name"] == "email":
                                 email = attr["Value"]
                                 break
-                    except:
+                    except Exception:
                         pass
 
                 # Check if user is admin by verifying Cognito groups

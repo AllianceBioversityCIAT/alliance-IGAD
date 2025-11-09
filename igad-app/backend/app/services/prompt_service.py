@@ -7,8 +7,12 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 
 from app.models.prompt_model import (
+    Comment,
+    CommentCreate,
     Prompt,
+    PromptChange,
     PromptCreate,
+    PromptHistory,
     PromptListResponse,
     PromptUpdate,
     ProposalSection,
@@ -415,7 +419,7 @@ class PromptService:
                 if (
                     item.get("section") == section
                     and item.get("route") == route
-                    and item.get("is_active", False) == True
+                    and item.get("is_active", False) is True
                 ):
 
                     # Exclude the current prompt if specified
@@ -439,9 +443,7 @@ class PromptService:
         user_id: str,
         user_name: str,
     ) -> "Comment":
-        """Add a comment to a prompt"""
-        from app.models.prompt_model import Comment
-
+        """Add a comment to a prompt."""
         comment_id = str(uuid.uuid4())
         now = datetime.utcnow()
 
@@ -562,9 +564,7 @@ class PromptService:
             logger.error(f"Error recording change: {e}")
 
     async def get_prompt_history(self, prompt_id: str) -> "PromptHistory":
-        """Get change history for a prompt"""
-        from app.models.prompt_model import PromptChange, PromptHistory
-
+        """Get change history for a prompt."""
         try:
             response = self.table.query(
                 KeyConditionExpression=Key("PK").eq(f"prompt#{prompt_id}")

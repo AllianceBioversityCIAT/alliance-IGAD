@@ -73,9 +73,9 @@ class BedrockClient:
     ) -> Dict[str, Any]:
         """Generate content for a specific proposal section"""
 
-        system_prompt = """You are an expert proposal writer specializing in agricultural development, 
-        climate resilience, and regional cooperation projects in the IGAD region (Horn of Africa). 
-        Generate professional, well-structured content that is specific, actionable, and appropriate 
+        system_prompt = """You are an expert proposal writer specializing in agricultural development,
+        climate resilience, and regional cooperation projects in the IGAD region (Horn of Africa).
+        Generate professional, well-structured content that is specific, actionable, and appropriate
         for funding proposals to international donors."""
 
         # Build context-aware prompt
@@ -117,8 +117,8 @@ class BedrockClient:
     ) -> Dict[str, Any]:
         """Improve existing proposal content"""
 
-        system_prompt = """You are an expert editor specializing in proposal writing for 
-        international development projects. Improve the provided content while maintaining 
+        system_prompt = """You are an expert editor specializing in proposal writing for
+        international development projects. Improve the provided content while maintaining
         its core message and structure."""
 
         improvement_prompts = {
@@ -149,8 +149,8 @@ class BedrockClient:
     ) -> Dict[str, Any]:
         """Generate executive summary from proposal sections"""
 
-        system_prompt = """You are an expert proposal writer. Create a compelling executive 
-        summary that captures the key points from all proposal sections in a concise, 
+        system_prompt = """You are an expert proposal writer. Create a compelling executive
+        summary that captures the key points from all proposal sections in a concise,
         persuasive manner suitable for busy decision-makers."""
 
         sections_text = "\n\n".join(

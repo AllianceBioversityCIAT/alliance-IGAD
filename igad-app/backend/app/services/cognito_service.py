@@ -1,6 +1,4 @@
-import os
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -12,8 +10,6 @@ class CognitoUserManagementService:
         self.client_id = client_id
 
         # Initialize boto3 session with explicit profile
-        import boto3
-
         session = boto3.Session(profile_name="IBD-DEV")
         self.cognito_client = session.client("cognito-idp", region_name=region)
 

@@ -12,7 +12,6 @@ from pydantic import BaseModel
 
 from ..middleware.auth_middleware import AuthMiddleware
 from ..services.bedrock_service import BedrockService
-from ..services.prompt_service import PromptService
 
 router = APIRouter(prefix="/api/proposals", tags=["proposals"])
 security = HTTPBearer()

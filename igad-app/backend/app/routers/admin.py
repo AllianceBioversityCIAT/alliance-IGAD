@@ -1,21 +1,19 @@
-"""
-Admin Router - User Management
-"""
+"""Admin Router - User Management."""
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Dict, Optional
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
-# Load environment variables
-load_dotenv()
-
 from ..middleware.auth_middleware import AuthMiddleware
 from ..services.cognito_service import CognitoUserManagementService
 from ..services.simple_cognito import SimpleCognitoService
+
+# Load environment variables
+load_dotenv()
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 security = HTTPBearer()
@@ -80,7 +78,7 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
 
         # First check if user exists
         try:
-            existing_user = cognito_client.admin_get_user(
+            cognito_client.admin_get_user(
                 UserPoolId=os.getenv("COGNITO_USER_POOL_ID"), Username=user_data.email
             )
             return {
@@ -92,7 +90,7 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
             pass  # User doesn't exist, continue
 
         # Create user with suppressed email
-        response = cognito_client.admin_create_user(
+        cognito_client.admin_create_user(
             UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
             Username=user_data.email,
             UserAttributes=[
@@ -114,23 +112,23 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
                     <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to IGAD Innovation Hub</h1>
                     <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Your account has been created successfully</p>
                 </div>
-                
+
                 <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e2e8f0;">
                     <h2 style="color: #1e40af; margin-top: 0;">Your Login Credentials</h2>
-                    
+
                     <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin: 20px 0;">
                         <p style="margin: 0;"><strong>Username:</strong> {user_data.email}</p>
                         <p style="margin: 10px 0 0 0;"><strong>Temporary Password:</strong> <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;">{user_data.temporary_password}</code></p>
                     </div>
-                    
+
                     <p style="margin: 20px 0;">Please log in and change your password on first access.</p>
-                    
+
                     <div style="text-align: center; margin: 30px 0;">
                         <a href="http://localhost:3000/login" style="background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Access Platform</a>
                     </div>
-                    
+
                     <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-                    
+
                     <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0;">
                         IGAD Innovation Hub - Driving Innovation in East Africa<br>
                         If you have questions, contact us at <a href="mailto:j.cadavid@cgiar.org" style="color: #3b82f6;">j.cadavid@cgiar.org</a>

@@ -1,5 +1,3 @@
-import os
-
 import boto3
 from botocore.exceptions import ClientError
 
@@ -70,9 +68,9 @@ class SimpleCognitoService:
             }
 
     def forgot_password(self, username: str):
-        """Initiate forgot password flow"""
+        """Initiate forgot password flow."""
         try:
-            response = self.cognito_client.forgot_password(
+            self.cognito_client.forgot_password(
                 ClientId=self.client_id, Username=username
             )
 
@@ -93,9 +91,9 @@ class SimpleCognitoService:
     def confirm_forgot_password(
         self, username: str, confirmation_code: str, new_password: str
     ):
-        """Confirm forgot password with code"""
+        """Confirm forgot password with code."""
         try:
-            response = self.cognito_client.confirm_forgot_password(
+            self.cognito_client.confirm_forgot_password(
                 ClientId=self.client_id,
                 Username=username,
                 ConfirmationCode=confirmation_code,

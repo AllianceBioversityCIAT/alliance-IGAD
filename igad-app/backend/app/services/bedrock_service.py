@@ -2,7 +2,7 @@ import json
 import logging
 import re
 import time
-from typing import Any, Dict, Optional
+from typing import Dict
 
 import boto3
 

@@ -155,7 +155,7 @@ async def forgot_password(request: ForgotPasswordRequest):
         # Since we can't get the actual code from Cognito, we'll send our own email
         # instructing the user to check for the Cognito email and use our reset form
 
-        reset_html = f"""
+        reset_html = """
         <!DOCTYPE html>
         <html>
         <head><meta charset="utf-8"><title>Password Reset - IGAD Innovation Hub</title></head>
@@ -164,12 +164,12 @@ async def forgot_password(request: ForgotPasswordRequest):
                 <h1 style="color: white; margin: 0; font-size: 28px;">Password Reset Request</h1>
                 <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">IGAD Innovation Hub</p>
             </div>
-            
+
             <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e2e8f0;">
                 <h2 style="color: #1e40af; margin-top: 0;">Reset Your Password</h2>
-                
+
                 <p style="margin: 20px 0;">You have requested to reset your password for your IGAD Innovation Hub account.</p>
-                
+
                 <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin: 20px 0;">
                     <p style="margin: 0; font-weight: bold;">Next Steps:</p>
                     <ol style="margin: 10px 0; padding-left: 20px;">
@@ -179,15 +179,15 @@ async def forgot_password(request: ForgotPasswordRequest):
                         <li>Set your new password</li>
                     </ol>
                 </div>
-                
+
                 <div style="text-align: center; margin: 30px 0;">
                     <a href="http://localhost:3000/forgot-password" style="background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Continue Password Reset</a>
                 </div>
-                
+
                 <p style="margin: 20px 0; font-size: 14px; color: #64748b;">The verification code will expire in 15 minutes. If you didn't request this password reset, please ignore this email.</p>
-                
+
                 <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-                
+
                 <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0;">
                     IGAD Innovation Hub - Driving Innovation in East Africa<br>
                     If you have questions, contact us at <a href="mailto:j.cadavid@cgiar.org" style="color: #3b82f6;">j.cadavid@cgiar.org</a>
@@ -250,7 +250,7 @@ async def reset_password(request: ResetPasswordRequest):
         cognito_client = session.client("cognito-idp", region_name="us-east-1")
 
         # Confirm forgot password with code
-        response = cognito_client.confirm_forgot_password(
+        cognito_client.confirm_forgot_password(
             ClientId=os.getenv("COGNITO_CLIENT_ID"),
             Username=request.username,
             ConfirmationCode=request.code,
@@ -370,8 +370,8 @@ async def change_password(
     request: ChangePasswordRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
-    """Change user password"""
-    user = auth_middleware.verify_token(credentials)
+    """Change user password."""
+    auth_middleware.verify_token(credentials)
 
     # Mock implementation - in production, use Cognito
     return {"message": "Password changed successfully"}
