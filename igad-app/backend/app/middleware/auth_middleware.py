@@ -19,7 +19,31 @@ class AuthMiddleware:
     def create_mock_token(self, user_data: Dict[str, Any]) -> str:
         """Create a mock JWT token for local development"""
         email = user_data.get("email", "user@example.com")
-        is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
+        
+        # Check Cognito groups for admin status
+        is_admin = False
+        try:
+            import boto3
+            session = boto3.Session(profile_name='IBD-DEV')
+            cognito_client = session.client('cognito-idp', region_name='us-east-1')
+            
+            # Try to find user by email
+            users_response = cognito_client.list_users(
+                UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
+                Filter=f'email = "{email}"'
+            )
+            
+            if users_response.get('Users'):
+                username = users_response['Users'][0]['Username']
+                groups_response = cognito_client.admin_list_groups_for_user(
+                    UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
+                    Username=username
+                )
+                user_groups = [group['GroupName'] for group in groups_response.get('Groups', [])]
+                is_admin = 'admin' in user_groups
+        except:
+            # Fallback for development
+            is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
         
         payload = {
             "user_id": user_data.get("user_id", "mock-user-123"),
@@ -61,8 +85,26 @@ class AuthMiddleware:
                     except:
                         pass
                 
-                # For development, make test@example.com an admin
-                is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
+                # Check if user is admin by verifying Cognito groups
+                is_admin = False
+                try:
+                    import boto3
+                    session = boto3.Session(profile_name='IBD-DEV')
+                    cognito_client = session.client('cognito-idp', region_name='us-east-1')
+                    
+                    groups_response = cognito_client.admin_list_groups_for_user(
+                        UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
+                        Username=username
+                    )
+                    
+                    user_groups = [group['GroupName'] for group in groups_response.get('Groups', [])]
+                    is_admin = 'admin' in user_groups
+                    print(f"User {email} groups: {user_groups}, is_admin: {is_admin}")
+                    
+                except Exception as group_error:
+                    print(f"Error checking user groups: {group_error}")
+                    # Fallback for development
+                    is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
                 
                 return {
                     "user_id": payload.get("sub", username),
@@ -76,9 +118,13 @@ class AuthMiddleware:
                 # Fallback to mock token format
                 payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
                 
-                # For development, make test@example.com an admin
+                # Check admin status from JWT or fallback to hardcoded list
                 email = payload.get("email", "")
-                is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
+                is_admin = payload.get("is_admin", False)
+                
+                # If not in JWT, fallback to hardcoded list for development
+                if not is_admin:
+                    is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
                 
                 return {
                     "user_id": payload.get("user_id"),

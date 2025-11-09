@@ -12,6 +12,7 @@ import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { Layout } from '@/components/layout/Layout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { AdminRoute } from '@/components/AdminRoute'
 import CognitoTest from '@/components/CognitoTest'
 import '@/styles/globals.css'
 
@@ -43,8 +44,16 @@ function App() {
             <Route path="proposal-writer" element={<ProposalWriterPage />} />
             <Route path="proposal-writer/:stepId" element={<ProposalWriterPage />} />
             <Route path="newsletter-generator" element={<NewsletterGeneratorPage />} />
-            <Route path="admin/prompt-manager" element={<PromptManagerPage />} />
-            <Route path="admin/settings" element={<SettingsPage />} />
+            <Route path="admin/prompt-manager" element={
+              <AdminRoute>
+                <PromptManagerPage />
+              </AdminRoute>
+            } />
+            <Route path="admin/settings" element={
+              <AdminRoute>
+                <SettingsPage />
+              </AdminRoute>
+            } />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

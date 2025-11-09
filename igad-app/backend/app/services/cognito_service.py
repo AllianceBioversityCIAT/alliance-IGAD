@@ -104,7 +104,14 @@ class CognitoUserManagementService:
     
     def create_user(self, username: str, email: str, temporary_password: str, 
                    send_email: bool = True) -> Dict[str, Any]:
-        """Create a new user"""
+        """
+        Create a new user with friendly email templates.
+        
+        Email templates configured:
+        - Welcome email: Friendly Spanish message with IGAD branding
+        - From: "IGAD Innovation Hub <j.cadavid@cgiar.org>"
+        - Uses SES for better deliverability
+        """
         try:
             print(f"Creating user with email: {email}")  # Debug
             print(f"Using UserPoolId: {self.user_pool_id}")  # Debug
@@ -118,7 +125,7 @@ class CognitoUserManagementService:
                     {'Name': 'email_verified', 'Value': 'true'}
                 ],
                 'TemporaryPassword': temporary_password,
-                'MessageAction': 'SUPPRESS'  # Always suppress to avoid UserNotFoundException
+                'MessageAction': 'SUPPRESS'  # Always suppress for new users
             }
             
             print(f"Creating user with email as username: {email}")  # Debug
@@ -146,20 +153,38 @@ class CognitoUserManagementService:
             
             print(f"User created successfully: {response}")  # Debug
             
-            # If user wants email, try to send welcome message
+            # Always set temporary password to force change on first login
+            try:
+                print("Setting temporary password to force change...")
+                # Use the actual username (UUID) returned by Cognito, not the email
+                actual_username = response['User']['Username']
+                self.cognito_client.admin_set_user_password(
+                    UserPoolId=self.user_pool_id,
+                    Username=actual_username,  # Use UUID, not email
+                    Password=temporary_password,
+                    Permanent=False  # This ensures FORCE_CHANGE_PASSWORD status
+                )
+                print("Temporary password set successfully")
+            except ClientError as pwd_error:
+                print(f"Failed to set temporary password: {pwd_error}")
+            
+            # Email is sent automatically by Cognito when MessageAction='RESEND'
+            
+            # Send welcome email if requested
             if send_email:
                 try:
-                    print("Attempting to send welcome email...")
-                    # Use admin_reset_user_password to trigger email with temporary password
-                    self.cognito_client.admin_reset_user_password(
+                    print("Sending welcome email...")
+                    actual_username = response['User']['Username']
+                    # Use admin_create_user with RESEND to send email to existing user
+                    self.cognito_client.admin_create_user(
                         UserPoolId=self.user_pool_id,
-                        Username=email
+                        Username=email,  # Use email for RESEND
+                        MessageAction='RESEND'
                     )
                     print("Welcome email sent successfully")
                 except ClientError as email_error:
                     print(f"Failed to send welcome email: {email_error}")
                     # Don't fail the whole operation if email fails
-                    pass
             
             return {
                 'success': True,

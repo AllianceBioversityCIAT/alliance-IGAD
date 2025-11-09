@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { BarChart3, Bell, User } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { authService } from '../../services/authService'
+import { useAdmin } from '../../hooks/useAdmin'
 
 export function Navigation() {
   const location = useLocation()
@@ -12,6 +13,7 @@ export function Navigation() {
   
   const userEmail = authService.getUserEmail()
   const isAuthenticated = authService.isAuthenticated()
+  const { isAdmin } = useAdmin()
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -181,48 +183,53 @@ export function Navigation() {
                   display: 'flex',
                   flexDirection: 'column'
                 }}>
-                  {/* Settings */}
-                  <Link 
-                    to="/admin/settings"
-                    style={{
-                      padding: '12px 16px',
-                      background: 'transparent',
-                      border: 'none',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontFamily: 'Arial',
-                      color: '#374151',
-                      width: '100%',
-                      borderBottom: '1px solid #F3F4F6',
-                      textDecoration: 'none',
-                      display: 'block'
-                    }}
-                    onClick={() => setShowSettingsDropdown(false)}
-                  >
-                    Settings
-                  </Link>
-                  
-                  {/* Prompt Manager */}
-                  <Link 
-                    to="/admin/prompt-manager"
-                    style={{
-                      padding: '12px 16px',
-                      background: 'transparent',
-                      border: 'none',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontFamily: 'Arial',
-                      color: '#374151',
-                      width: '100%',
-                      textDecoration: 'none',
-                      display: 'block'
-                    }}
-                    onClick={() => setShowSettingsDropdown(false)}
-                  >
-                    Prompt Manager
-                  </Link>
+                  {/* Admin-only links */}
+                  {isAdmin && (
+                    <>
+                      {/* Settings */}
+                      <Link 
+                        to="/admin/settings"
+                        style={{
+                          padding: '12px 16px',
+                          background: 'transparent',
+                          border: 'none',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontFamily: 'Arial',
+                          color: '#374151',
+                          width: '100%',
+                          borderBottom: '1px solid #F3F4F6',
+                          textDecoration: 'none',
+                          display: 'block'
+                        }}
+                        onClick={() => setShowSettingsDropdown(false)}
+                      >
+                        Settings
+                      </Link>
+                      
+                      {/* Prompt Manager */}
+                      <Link 
+                        to="/admin/prompt-manager"
+                        style={{
+                          padding: '12px 16px',
+                          background: 'transparent',
+                          border: 'none',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontFamily: 'Arial',
+                          color: '#374151',
+                          width: '100%',
+                          textDecoration: 'none',
+                          display: 'block'
+                        }}
+                        onClick={() => setShowSettingsDropdown(false)}
+                      >
+                        Prompt Manager
+                      </Link>
+                    </>
+                  )}
                   
                   {/* API Configuration */}
                   <button style={{

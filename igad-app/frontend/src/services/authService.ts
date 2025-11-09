@@ -15,6 +15,14 @@ export interface AuthError {
   detail: string;
 }
 
+export interface UserInfo {
+  user_id: string;
+  email: string;
+  username: string;
+  role: string;
+  is_admin: boolean;
+}
+
 class AuthService {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -74,6 +82,31 @@ class AuthService {
 
   getUserEmail(): string | null {
     return localStorage.getItem('user_email') || sessionStorage.getItem('user_email');
+  }
+
+  async getCurrentUser(): Promise<UserInfo | null> {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          this.logout();
+        }
+        return null;
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Failed to get current user:', error);
+      return null;
+    }
   }
 
   async forgotPassword(username: string): Promise<{ success: boolean; message: string }> {
