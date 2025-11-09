@@ -5,7 +5,9 @@ import { usePrompts } from '../../hooks/usePrompts'
 import { useToast } from '../../components/ui/ToastContainer'
 import { PromptListTable } from './components/PromptListTable'
 import { PromptCardsView } from './components/PromptCardsView'
-import { PromptEditorDrawer } from './components/PromptEditorDrawer'
+import { CreatePromptModal } from './components/CreatePromptModal'
+import { ConfirmationModal } from '../../components/ui/ConfirmationModal'
+import { useConfirmation } from '../../hooks/useConfirmation'
 import { PromptFilters } from './components/PromptFilters'
 import { CommentsPanel } from './components/CommentsPanel'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -32,7 +34,10 @@ export function PromptManagerPage() {
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
   const [commentsPromptId, setCommentsPromptId] = useState<string | null>(null)
   const [historyPromptId, setHistoryPromptId] = useState<string | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [editingPrompt, setEditingPrompt] = useState<any>(null)
   const [editorMode, setEditorMode] = useState<'create' | 'edit'>('create')
   const [contextData, setContextData] = useState<{
     fromRoute?: string
@@ -50,6 +55,7 @@ export function PromptManagerPage() {
     onConfirm: () => {}
   })
 
+  const confirmation = useConfirmation()
   const { showSuccess, showError } = useToast()
 
   // Capture context from URL parameters and auto-filter
@@ -96,15 +102,16 @@ export function PromptManagerPage() {
   } = usePrompts(filters)
 
   const handleCreateNew = () => {
-    setSelectedPromptId(null)
-    setEditorMode('create')
-    setIsEditorOpen(true)
+    setIsCreateModalOpen(true)
   }
 
   const handleEditPrompt = (promptId: string) => {
-    setSelectedPromptId(promptId)
-    setEditorMode('edit')
-    setIsEditorOpen(true)
+    // Find the prompt data
+    const prompt = prompts.find(p => p.id === promptId)
+    if (prompt) {
+      setEditingPrompt(prompt)
+      setIsEditModalOpen(true)
+    }
   }
 
   const handleCloseEditor = () => {
@@ -119,18 +126,39 @@ export function PromptManagerPage() {
 
   const handleSavePrompt = async (data: any) => {
     try {
-      if (editorMode === 'create') {
-        await createPrompt(data)
-        showSuccess('Prompt created successfully', `"${data.name}" has been created and saved as draft.`)
-      } else if (selectedPromptId) {
-        await updatePrompt({ id: selectedPromptId, data })
-        showSuccess('Prompt updated successfully', `"${data.name}" has been updated.`)
-      }
-      setIsEditorOpen(false)
-      setSelectedPromptId(null)
+      await createPrompt(data)
+      showSuccess('Prompt created successfully', `"${data.name}" has been created and saved as draft.`)
+      setIsCreateModalOpen(false)
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
-      showError(errorMessage)
+      showError('Failed to create prompt', errorMessage)
+      throw error // Re-throw to let modal handle loading state
+    }
+  }
+
+  const handleSavePromptEdit = async (data: any) => {
+    try {
+      if (editingPrompt?.id) {
+        await updatePrompt({ id: editingPrompt.id, data })
+        
+        // Show success confirmation modal instead of toast
+        await confirmation.showSuccess(
+          'Prompt Updated Successfully!',
+          `"${data.name}" has been updated and is ready to use.`
+        )
+        
+        setIsEditModalOpen(false)
+        setEditingPrompt(null)
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
+      
+      // Show error confirmation modal instead of toast
+      await confirmation.showError(
+        'Failed to Update Prompt',
+        errorMessage
+      )
+      throw error // Re-throw to let modal handle loading state
     }
   }
 
@@ -364,17 +392,42 @@ export function PromptManagerPage() {
         )}
       </div>
 
-      {/* Editor Drawer */}
-      {isEditorOpen && (
-        <PromptEditorDrawer
-          mode={editorMode}
-          promptId={selectedPromptId}
-          onClose={handleCloseEditor}
-          onSave={handleSavePrompt}
-          isLoading={isCreating || isUpdating}
-          contextData={contextData}
-        />
-      )}
+      {/* Create Prompt Modal */}
+      <CreatePromptModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleSavePrompt}
+        isLoading={isCreating}
+        mode="create"
+        contextData={contextData}
+      />
+
+      {/* Edit Prompt Modal */}
+      <CreatePromptModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingPrompt(null)
+        }}
+        onSave={handleSavePromptEdit}
+        isLoading={isUpdating}
+        mode="edit"
+        initialData={editingPrompt}
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmation.isOpen}
+        type={confirmation.options.type}
+        title={confirmation.options.title}
+        message={confirmation.options.message}
+        confirmText={confirmation.options.confirmText}
+        cancelText={confirmation.options.cancelText}
+        showCancel={confirmation.options.showCancel}
+        onConfirm={confirmation.handleConfirm}
+        onCancel={confirmation.handleCancel}
+        onClose={confirmation.handleClose}
+      />
 
       {/* Loading Overlay */}
       {(isCreating || isUpdating || isPublishing || isDeleting || isTogglingActive) && (

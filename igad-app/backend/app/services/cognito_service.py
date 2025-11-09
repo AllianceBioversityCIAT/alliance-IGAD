@@ -124,9 +124,12 @@ class CognitoUserManagementService:
                     {'Name': 'email', 'Value': email},
                     {'Name': 'email_verified', 'Value': 'true'}
                 ],
-                'TemporaryPassword': temporary_password,
-                'MessageAction': 'SUPPRESS'  # Always suppress for new users
+                'TemporaryPassword': temporary_password
             }
+            
+            # Only suppress email if send_email is False
+            if not send_email:
+                params['MessageAction'] = 'SUPPRESS'
             
             print(f"Creating user with email as username: {email}")  # Debug
             

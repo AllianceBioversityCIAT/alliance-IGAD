@@ -104,7 +104,7 @@ class AuthMiddleware:
                 except Exception as group_error:
                     print(f"Error checking user groups: {group_error}")
                     # Fallback for development
-                    is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
+                    is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int", "j.cadavid@cgiar.org"]
                 
                 return {
                     "user_id": payload.get("sub", username),
@@ -124,12 +124,13 @@ class AuthMiddleware:
                 
                 # If not in JWT, fallback to hardcoded list for development
                 if not is_admin:
-                    is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
+                    is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int", "j.cadavid@cgiar.org"]
                 
                 return {
                     "user_id": payload.get("user_id"),
                     "email": email,
-                    "role": payload.get("role", "user"),
+                    "username": payload.get("username", email),
+                    "role": "admin" if is_admin else "user",
                     "is_admin": is_admin
                 }
             

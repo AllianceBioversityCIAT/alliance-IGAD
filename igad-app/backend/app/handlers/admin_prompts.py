@@ -234,11 +234,14 @@ async def toggle_prompt_active(
             detail=str(e)
         )
     except Exception as e:
-        logger.error(f"Error toggling prompt active status: {e}")
+        logger.error(f"Error toggling prompt active {prompt_id}: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to toggle prompt active status"
+            detail=f"Failed to toggle prompt active status: {str(e)}"
         )
+
 # Comments endpoints
 @router.post("/{prompt_id}/comments", response_model=Comment)
 async def add_comment(

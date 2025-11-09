@@ -45,29 +45,19 @@ export function ChangePasswordPage() {
     setError(null)
     
     try {
-      const response = await fetch('http://localhost:8000/auth/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: state.username,
-          session: state.session,
-          new_password: data.newPassword
-        }),
-      })
+      const response = await authService.completePasswordChange(
+        state.username,
+        state.session,
+        data.newPassword
+      )
       
-      const result = await response.json()
+      // Password changed successfully - store token and redirect
+      authService.setToken(response.access_token, data.rememberMe)
+      authService.setUserEmail(state.username, data.rememberMe)
       
-      if (!response.ok) {
-        throw new Error(result.detail || 'Error changing password')
-      }
-      
-      // Password changed successfully - redirect to login
-      navigate('/login', {
+      navigate('/', {
         state: {
-          message: 'Password changed successfully. Please log in with your new password.',
-          email: state.username
+          message: 'Password changed successfully. Welcome to IGAD Innovation Hub!'
         }
       })
       

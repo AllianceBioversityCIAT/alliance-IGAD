@@ -29,7 +29,7 @@ export interface UserInfo {
 
 class AuthService {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -93,7 +93,7 @@ class AuthService {
     if (!token) return null;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -112,8 +112,29 @@ class AuthService {
     }
   }
 
+  async completePasswordChange(username: string, session: string, newPassword: string): Promise<LoginResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/auth/complete-password-change`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        username, 
+        session, 
+        new_password: newPassword 
+      }),
+    });
+
+    if (!response.ok) {
+      const error: AuthError = await response.json();
+      throw new Error(error.detail || 'Password change failed');
+    }
+
+    return response.json();
+  }
+
   async forgotPassword(username: string): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -131,7 +152,7 @@ class AuthService {
   }
 
   async resetPassword(username: string, code: string, newPassword: string): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
