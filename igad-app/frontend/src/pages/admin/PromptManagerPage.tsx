@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react'
 import { Plus, Settings, Search, Filter, ArrowLeft, Info, Grid, List } from 'lucide-react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { usePrompts } from '../../hooks/usePrompts'
-import { useToast } from '../../hooks/useToast'
+import { useToast } from '../../components/ui/ToastContainer'
 import { PromptListTable } from './components/PromptListTable'
 import { PromptCardsView } from './components/PromptCardsView'
 import { PromptEditorDrawer } from './components/PromptEditorDrawer'
 import { PromptFilters } from './components/PromptFilters'
 import { CommentsPanel } from './components/CommentsPanel'
 import { HistoryPanel } from './components/HistoryPanel'
-import { ToastContainer } from '../../components/ui/ToastContainer'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import type { ProposalSection, Prompt } from '../../types/prompt'
@@ -51,7 +50,7 @@ export function PromptManagerPage() {
     onConfirm: () => {}
   })
 
-  const toast = useToast()
+  const { showSuccess, showError } = useToast()
 
   // Capture context from URL parameters and auto-filter
   useEffect(() => {
@@ -122,25 +121,25 @@ export function PromptManagerPage() {
     try {
       if (editorMode === 'create') {
         await createPrompt(data)
-        toast.success('Prompt created successfully', `"${data.name}" has been created and saved as draft.`)
+        showSuccess('Prompt created successfully', `"${data.name}" has been created and saved as draft.`)
       } else if (selectedPromptId) {
         await updatePrompt({ id: selectedPromptId, data })
-        toast.success('Prompt updated successfully', `"${data.name}" has been updated.`)
+        showSuccess('Prompt updated successfully', `"${data.name}" has been updated.`)
       }
       setIsEditorOpen(false)
       setSelectedPromptId(null)
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
-      toast.error(errorMessage)
+      showError(errorMessage)
     }
   }
 
   const handlePublishPrompt = async (id: string, version: number) => {
     try {
       await publishPrompt({ id, version })
-      toast.success('Prompt published successfully', 'The prompt is now available for use.')
+      showSuccess('Prompt published successfully', 'The prompt is now available for use.')
     } catch (error: any) {
-      toast.error('Failed to publish prompt', error.message || 'Please try again.')
+      showError('Failed to publish prompt', error.message || 'Please try again.')
     }
   }
 
@@ -153,10 +152,10 @@ export function PromptManagerPage() {
       onConfirm: async () => {
         try {
           await deletePrompt({ id, version })
-          toast.success('Prompt deleted successfully', 'The prompt has been permanently removed.')
+          showSuccess('Prompt deleted successfully', 'The prompt has been permanently removed.')
           setConfirmDialog(prev => ({ ...prev, isOpen: false }))
         } catch (error: any) {
-          toast.error('Failed to delete prompt', error.message || 'Please try again.')
+          showError('Failed to delete prompt', error.message || 'Please try again.')
         }
       }
     })
@@ -175,9 +174,9 @@ export function PromptManagerPage() {
         context: prompt.context || {}
       }
       await createPrompt(clonedData)
-      toast.success('Prompt cloned successfully', `"${clonedData.name}" has been created as a draft.`)
+      showSuccess('Prompt cloned successfully', `"${clonedData.name}" has been created as a draft.`)
     } catch (error: any) {
-      toast.error('Failed to clone prompt', error.message || 'Please try again.')
+      showError('Failed to clone prompt', error.message || 'Please try again.')
     }
   }
 
@@ -185,19 +184,19 @@ export function PromptManagerPage() {
     try {
       const prompt = prompts.find(p => p.id === id)
       await toggleActive(id)
-      toast.success(
+      showSuccess(
         `Prompt ${prompt?.is_active ? 'deactivated' : 'activated'} successfully`,
         `"${prompt?.name}" is now ${prompt?.is_active ? 'inactive' : 'active'}.`
       )
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
       if (errorMessage.includes('already active')) {
-        toast.error(
+        showError(
           'Cannot activate prompt',
           'Only one prompt can be active per section and route combination. Please deactivate the existing prompt first.'
         )
       } else {
-        toast.error('Failed to toggle prompt status', errorMessage)
+        showError('Failed to toggle prompt status', errorMessage)
       }
     }
   }
@@ -415,9 +414,6 @@ export function PromptManagerPage() {
         isOpen={!!historyPromptId}
         onClose={() => setHistoryPromptId(null)}
       />
-
-      {/* Toast Notifications */}
-      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
     </div>
   )
 }

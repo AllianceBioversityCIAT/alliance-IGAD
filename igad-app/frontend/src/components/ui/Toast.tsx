@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { CheckCircle, AlertCircle, X, Info } from 'lucide-react'
 import styles from './Toast.module.css'
 
-export type ToastType = 'success' | 'error' | 'info' | 'warning'
-
 export interface ToastProps {
   id: string
-  type: ToastType
+  type: 'success' | 'error' | 'info'
   title: string
   message?: string
   duration?: number
@@ -27,8 +25,6 @@ export function Toast({ id, type, title, message, duration = 5000, onClose }: To
       case 'success':
         return <CheckCircle size={20} />
       case 'error':
-        return <AlertCircle size={20} />
-      case 'warning':
         return <AlertCircle size={20} />
       case 'info':
         return <Info size={20} />

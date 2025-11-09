@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
+import { ToastProvider } from '@/components/ui/ToastContainer'
 import { LoginPage } from '@/pages/LoginPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { HomePage } from '@/pages/HomePage'
@@ -7,6 +8,7 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { ProposalWriterPage } from '@/pages/proposalWriter/ProposalWriterPage'
 import { NewsletterGeneratorPage } from '@/pages/NewsletterGeneratorPage'
 import { PromptManagerPage } from '@/pages/admin/PromptManagerPage'
+import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { Layout } from '@/components/layout/Layout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -25,7 +27,8 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
+      <ToastProvider>
+        <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -41,10 +44,12 @@ function App() {
             <Route path="proposal-writer/:stepId" element={<ProposalWriterPage />} />
             <Route path="newsletter-generator" element={<NewsletterGeneratorPage />} />
             <Route path="admin/prompt-manager" element={<PromptManagerPage />} />
+            <Route path="admin/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Router>
+      </ToastProvider>
     </QueryClientProvider>
   )
 }

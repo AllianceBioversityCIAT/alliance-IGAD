@@ -8,78 +8,92 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000;
   animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .dialog {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+  width: 100%;
   max-width: 400px;
-  width: 90%;
-  animation: slideUp 0.2s ease-out;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 24px 0;
+  padding: 24px 24px 0 24px;
 }
 
-.icon {
-  padding: 12px;
-  border-radius: 50%;
+.iconContainer {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.icon.danger {
-  background: #fef2f2;
+.dangerIcon {
   color: #dc2626;
 }
 
-.icon.warning {
-  background: #fffbeb;
-  color: #d97706;
+.warningIcon {
+  color: #f59e0b;
 }
 
-.icon.info {
-  background: #eff6ff;
-  color: #2563eb;
+.infoIcon {
+  color: #3b82f6;
 }
 
 .closeButton {
   background: none;
   border: none;
-  color: #9ca3af;
+  color: #6b7280;
   cursor: pointer;
-  padding: 8px;
+  padding: 4px;
   border-radius: 6px;
   transition: all 0.2s;
 }
 
 .closeButton:hover {
-  color: #6b7280;
   background: #f3f4f6;
+  color: #374151;
 }
 
 .content {
-  padding: 16px 24px 24px;
+  padding: 16px 24px 24px 24px;
 }
 
 .title {
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 600;
   color: #111827;
   margin: 0 0 8px 0;
 }
 
 .message {
-  font-size: 14px;
   color: #6b7280;
+  font-size: 0.875rem;
   line-height: 1.5;
   margin: 0;
 }
@@ -87,17 +101,17 @@
 .actions {
   display: flex;
   gap: 12px;
-  padding: 0 24px 24px;
-  justify-content: flex-end;
+  padding: 0 24px 24px 24px;
 }
 
 .cancelButton {
-  padding: 8px 16px;
-  border: 1px solid #d1d5db;
+  flex: 1;
   background: white;
+  border: 1px solid #d1d5db;
   color: #374151;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -109,14 +123,15 @@
 }
 
 .confirmButton {
-  padding: 8px 16px;
+  flex: 1;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  color: white;
 }
 
 .confirmButton.danger {
@@ -128,33 +143,17 @@
 }
 
 .confirmButton.warning {
-  background: #d97706;
+  background: #f59e0b;
 }
 
 .confirmButton.warning:hover {
-  background: #b45309;
+  background: #d97706;
 }
 
 .confirmButton.info {
-  background: #2563eb;
+  background: #3b82f6;
 }
 
 .confirmButton.info:hover {
-  background: #1d4ed8;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  background: #2563eb;
 }

@@ -182,20 +182,26 @@ export function Navigation() {
                   flexDirection: 'column'
                 }}>
                   {/* Settings */}
-                  <button style={{
-                    padding: '12px 16px',
-                    background: 'transparent',
-                    border: 'none',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontFamily: 'Arial',
-                    color: '#374151',
-                    width: '100%',
-                    borderBottom: '1px solid #F3F4F6'
-                  }}>
+                  <Link 
+                    to="/admin/settings"
+                    style={{
+                      padding: '12px 16px',
+                      background: 'transparent',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontFamily: 'Arial',
+                      color: '#374151',
+                      width: '100%',
+                      borderBottom: '1px solid #F3F4F6',
+                      textDecoration: 'none',
+                      display: 'block'
+                    }}
+                    onClick={() => setShowSettingsDropdown(false)}
+                  >
                     Settings
-                  </button>
+                  </Link>
                   
                   {/* Prompt Manager */}
                   <Link 

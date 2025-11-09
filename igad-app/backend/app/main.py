@@ -15,6 +15,7 @@ load_dotenv()
 
 # Import auth service
 from .simple_cognito import SimpleCognitoService
+from .services.cognito_service import CognitoUserManagementService
 from .middleware.auth_middleware import AuthMiddleware
 from .handlers.admin_prompts import router as admin_prompts_router
 
@@ -36,6 +37,13 @@ app = FastAPI(
 
 # Initialize Cognito service
 cognito_service = SimpleCognitoService(
+    user_pool_id=os.getenv("COGNITO_USER_POOL_ID"),
+    client_id=os.getenv("COGNITO_CLIENT_ID"),
+    region=os.getenv("AWS_REGION", "us-east-1")
+)
+
+# Initialize Cognito user management service
+cognito_user_service = CognitoUserManagementService(
     user_pool_id=os.getenv("COGNITO_USER_POOL_ID"),
     client_id=os.getenv("COGNITO_CLIENT_ID"),
     region=os.getenv("AWS_REGION", "us-east-1")
@@ -99,11 +107,15 @@ async def login(credentials: dict):
     
     # Mock validation
     if email and password:
+        # Determine if user is admin based on email
+        is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
+        
         user_data = {
             "user_id": "mock-user-123",
             "email": email,
-            "role": "user",
-            "name": "IGAD User"
+            "role": "admin" if is_admin else "user",
+            "name": "IGAD User",
+            "is_admin": is_admin
         }
         
         token = auth_middleware.create_mock_token(user_data)
@@ -502,3 +514,332 @@ async def get_runtime_prompt_by_section(section: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get prompt: {str(e)}")
+
+# User Management Endpoints
+@app.get("/admin/users")
+def list_users(
+    limit: int = 60,
+    pagination_token: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """List all users in Cognito user pool"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = cognito_user_service.list_users(limit, pagination_token)
+        
+        if not result['success']:
+            print(f"Cognito error: {result}")  # Debug logging
+            raise HTTPException(status_code=400, detail=result.get('message', 'Failed to list users'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error in list_users: {e}")  # Debug logging
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to list users: {str(e)}")
+
+@app.get("/admin/users/{username}")
+def get_user(
+    username: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get detailed user information"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = cognito_user_service.get_user(username)
+        
+        if not result['success']:
+            raise HTTPException(status_code=404, detail=result.get('message', 'User not found'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get user: {str(e)}")
+
+@app.post("/admin/users")
+def create_user_admin(
+    user_data: dict,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a new user (admin only)"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        username = user_data.get("username")
+        email = user_data.get("email")
+        temporary_password = user_data.get("temporary_password")
+        send_email = user_data.get("send_email", True)
+        
+        if not all([username, email, temporary_password]):
+            raise HTTPException(status_code=400, detail="Username, email, and temporary password required")
+        
+        result = cognito_user_service.create_user(username, email, temporary_password, send_email)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'User creation failed'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
+
+@app.put("/admin/users/{username}")
+def update_user(
+    username: str,
+    user_data: dict,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update user attributes"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        attributes = user_data.get("attributes", {})
+        
+        result = cognito_user_service.update_user(username, attributes)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'User update failed'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update user: {str(e)}")
+
+@app.delete("/admin/users/{username}")
+def delete_user(
+    username: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Delete a user"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = cognito_user_service.delete_user(username)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'User deletion failed'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
+
+@app.post("/admin/users/{username}/enable")
+def enable_user(
+    username: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Enable a user account"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = cognito_user_service.enable_user(username)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Failed to enable user'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to enable user: {str(e)}")
+
+@app.post("/admin/users/{username}/disable")
+def disable_user(
+    username: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Disable a user account"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = cognito_user_service.disable_user(username)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Failed to disable user'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to disable user: {str(e)}")
+
+@app.post("/admin/users/{username}/reset-password")
+def reset_user_password(
+    username: str,
+    password_data: dict,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Reset user password (admin action)"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        temporary_password = password_data.get("temporary_password")
+        if not temporary_password:
+            raise HTTPException(status_code=400, detail="Temporary password required")
+        
+        result = cognito_user_service.reset_user_password(username, temporary_password)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Password reset failed'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reset password: {str(e)}")
+
+@app.get("/admin/groups")
+def list_groups(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """List all groups in the user pool"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = cognito_user_service.list_groups()
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Failed to list groups'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list groups: {str(e)}")
+
+@app.post("/admin/users/{username}/groups/{group_name}")
+def add_user_to_group(
+    username: str,
+    group_name: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Add user to a group"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = cognito_user_service.add_user_to_group(username, group_name)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Failed to add user to group'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add user to group: {str(e)}")
+
+@app.delete("/admin/users/{username}/groups/{group_name}")
+def remove_user_from_group(
+    username: str,
+    group_name: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Remove user from a group"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = cognito_user_service.remove_user_from_group(username, group_name)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Failed to remove user from group'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove user from group: {str(e)}")
+
+@app.post("/admin/groups")
+def create_group(
+    group_data: dict,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a new group"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        group_name = group_data.get("name")
+        description = group_data.get("description", "")
+        precedence = group_data.get("precedence")
+        
+        if not group_name:
+            raise HTTPException(status_code=400, detail="Group name is required")
+        
+        result = cognito_user_service.create_group(group_name, description, precedence)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Group creation failed'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create group: {str(e)}")
+
+@app.delete("/admin/groups/{group_name}")
+def delete_group(
+    group_name: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Delete a group"""
+    try:
+        # Verify admin access
+        user_info = auth_middleware.verify_token(credentials)
+        if not user_info.get('is_admin'):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = cognito_user_service.delete_group(group_name)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('message', 'Group deletion failed'))
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete group: {str(e)}")

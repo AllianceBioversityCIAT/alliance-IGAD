@@ -1,5 +1,6 @@
 import jwt
 import json
+import os
 from fastapi import HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Dict, Any, Optional
@@ -17,10 +18,14 @@ class AuthMiddleware:
     
     def create_mock_token(self, user_data: Dict[str, Any]) -> str:
         """Create a mock JWT token for local development"""
+        email = user_data.get("email", "user@example.com")
+        is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
+        
         payload = {
             "user_id": user_data.get("user_id", "mock-user-123"),
-            "email": user_data.get("email", "user@example.com"),
+            "email": email,
             "role": user_data.get("role", "user"),
+            "is_admin": is_admin,
             "exp": 9999999999  # Far future expiration for development
         }
         
@@ -31,14 +36,56 @@ class AuthMiddleware:
         try:
             token = credentials.credentials
             
-            # Decode and verify token
-            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-            
-            return {
-                "user_id": payload.get("user_id"),
-                "email": payload.get("email"),
-                "role": payload.get("role", "user")
-            }
+            # Try to decode as Cognito token first (without verification for development)
+            try:
+                # Decode without verification for development
+                payload = jwt.decode(token, options={"verify_signature": False})
+                
+                # Extract user info from Cognito token
+                username = payload.get("username", "")
+                email = payload.get("email", "")
+                
+                # If no email in token, try to get it from Cognito
+                if not email and username:
+                    try:
+                        import boto3
+                        cognito_client = boto3.client('cognito-idp', region_name='us-east-1')
+                        user_response = cognito_client.admin_get_user(
+                            UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
+                            Username=username
+                        )
+                        for attr in user_response.get('UserAttributes', []):
+                            if attr['Name'] == 'email':
+                                email = attr['Value']
+                                break
+                    except:
+                        pass
+                
+                # For development, make test@example.com an admin
+                is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
+                
+                return {
+                    "user_id": payload.get("sub", username),
+                    "email": email,
+                    "username": username,
+                    "role": "admin" if is_admin else "user",
+                    "is_admin": is_admin
+                }
+                
+            except Exception:
+                # Fallback to mock token format
+                payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+                
+                # For development, make test@example.com an admin
+                email = payload.get("email", "")
+                is_admin = email in ["test@example.com", "admin@igad.int", "user@igad.int"]
+                
+                return {
+                    "user_id": payload.get("user_id"),
+                    "email": email,
+                    "role": payload.get("role", "user"),
+                    "is_admin": is_admin
+                }
             
         except jwt.ExpiredSignatureError:
             raise HTTPException(
