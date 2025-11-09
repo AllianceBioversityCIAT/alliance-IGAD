@@ -23,8 +23,8 @@ def get_current_admin_user(credentials: HTTPAuthorizationCredentials = Depends(s
     """Get current admin user - simplified for MVP"""
     # TODO: Implement proper admin verification
     return {
-        "user_id": "admin-user-123",
-        "email": "admin@igad.org",
+        "user_id": "test-user-123",
+        "email": "test@example.com",
         "role": "admin"
     }
 
@@ -102,7 +102,7 @@ async def create_prompt(
 ):
     """Create a new prompt"""
     try:
-        return await prompt_service.create_prompt(prompt_data, current_user["user_id"])
+        return await prompt_service.create_prompt(prompt_data, current_user["email"])
     except ValueError as e:
         # Business logic errors (like duplicates)
         logger.error(f"Validation error creating prompt: {e}")
@@ -125,7 +125,7 @@ async def update_prompt(
 ):
     """Update a prompt (creates new version if published, edits draft if draft)"""
     try:
-        return await prompt_service.update_prompt(prompt_id, prompt_data, current_user["user_id"])
+        return await prompt_service.update_prompt(prompt_id, prompt_data, current_user["email"])
     except ValueError as e:
         # Handle both not found and business logic errors
         if "not found" in str(e).lower():
@@ -251,8 +251,8 @@ async def add_comment(
         return await prompt_service.add_comment(
             prompt_id,
             comment_data, 
-            current_user["user_id"], 
-            current_user.get("name", current_user["user_id"])
+            current_user["email"], 
+            current_user["email"]  # Use email as both user_id and user_name
         )
     except Exception as e:
         logger.error(f"Error adding comment to prompt {prompt_id}: {e}")

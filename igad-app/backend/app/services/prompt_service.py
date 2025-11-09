@@ -74,7 +74,8 @@ class PromptService:
             created_by=item['created_by'],
             updated_by=item['updated_by'],
             created_at=datetime.fromisoformat(item['created_at'].replace('Z', '')),
-            updated_at=datetime.fromisoformat(item['updated_at'].replace('Z', ''))
+            updated_at=datetime.fromisoformat(item['updated_at'].replace('Z', '')),
+            comments_count=item.get('comments_count', 0)
         )
     
     async def create_prompt(self, prompt_data: PromptCreate, user_id: str) -> Prompt:
@@ -106,6 +107,18 @@ class PromptService:
         
         try:
             self.table.put_item(Item=item)
+            
+            # Record initial creation in history
+            await self.record_change(
+                prompt_id=prompt_id,
+                version=1,
+                change_type='create',
+                changes={},  # No changes for initial creation
+                user_id=user_id,
+                user_name=user_id,  # user_id is now email
+                comment="Initial prompt creation"
+            )
+            
             logger.info(f"Created prompt {prompt_id} v{prompt.version}")
             return prompt
         except Exception as e:
@@ -192,7 +205,7 @@ class PromptService:
                     change_type='update',
                     changes=changes,
                     user_id=user_id,
-                    user_name=user_id,  # TODO: Get actual user name
+                    user_name=user_id,  # Now user_id is email, so use it as display name too
                     comment=update_data.get('change_comment')
                 )
             
@@ -438,6 +451,10 @@ class PromptService:
         
         try:
             self.table.put_item(Item=item)
+            
+            # Update comments count
+            await self.update_comments_count(prompt_id)
+            
             logger.info(f"Added comment {comment_id} to prompt {prompt_id}")
             return comment
         except Exception as e:
@@ -546,3 +563,24 @@ class PromptService:
         except Exception as e:
             logger.error(f"Error getting history for prompt {prompt_id}: {e}")
             return PromptHistory(prompt_id=prompt_id, changes=[], total=0)
+    async def update_comments_count(self, prompt_id: str):
+        """Update the comments count for a prompt"""
+        try:
+            # Count comments for this prompt
+            response = self.table.query(
+                KeyConditionExpression=Key('PK').eq(f'prompt#{prompt_id}') & Key('SK').begins_with('comment#')
+            )
+            
+            comments_count = len(response.get('Items', []))
+            
+            # Update the prompt with the new count
+            prompt = await self.get_prompt(prompt_id)
+            if prompt:
+                item = self._prompt_to_item(prompt)
+                item['comments_count'] = comments_count
+                
+                self.table.put_item(Item=item)
+                logger.info(f"Updated comments count for prompt {prompt_id}: {comments_count}")
+                
+        except Exception as e:
+            logger.error(f"Error updating comments count for prompt {prompt_id}: {e}")

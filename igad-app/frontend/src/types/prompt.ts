@@ -65,6 +65,7 @@ export interface Prompt {
   updated_by: string
   created_at: string
   updated_at: string
+  comments_count?: number // Number of comments on this prompt
 }
 
 export interface PromptListResponse {

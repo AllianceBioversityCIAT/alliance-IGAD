@@ -8,6 +8,7 @@ import { PromptCardsView } from './components/PromptCardsView'
 import { PromptEditorDrawer } from './components/PromptEditorDrawer'
 import { PromptFilters } from './components/PromptFilters'
 import { CommentsPanel } from './components/CommentsPanel'
+import { HistoryPanel } from './components/HistoryPanel'
 import { ToastContainer } from '../../components/ui/ToastContainer'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
@@ -31,6 +32,7 @@ export function PromptManagerPage() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
   const [commentsPromptId, setCommentsPromptId] = useState<string | null>(null)
+  const [historyPromptId, setHistoryPromptId] = useState<string | null>(null)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editorMode, setEditorMode] = useState<'create' | 'edit'>('create')
   const [contextData, setContextData] = useState<{
@@ -324,6 +326,7 @@ export function PromptManagerPage() {
             onClone={handleClonePrompt}
             onToggleActive={handleToggleActive}
             onComments={(id) => setCommentsPromptId(id)}
+            onHistory={(id) => setHistoryPromptId(id)}
           />
         ) : (
           <PromptCardsView
@@ -404,6 +407,13 @@ export function PromptManagerPage() {
         promptId={commentsPromptId || ''}
         isOpen={!!commentsPromptId}
         onClose={() => setCommentsPromptId(null)}
+      />
+
+      {/* History Panel */}
+      <HistoryPanel
+        promptId={historyPromptId || ''}
+        isOpen={!!historyPromptId}
+        onClose={() => setHistoryPromptId(null)}
       />
 
       {/* Toast Notifications */}

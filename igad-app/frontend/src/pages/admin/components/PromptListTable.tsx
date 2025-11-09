@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Edit, Trash2, Copy, CheckCircle, MoreVertical, Power, PowerOff, Eye, MessageCircle } from 'lucide-react'
+import { Edit, Trash2, Copy, CheckCircle, MoreVertical, Power, PowerOff, Eye, MessageCircle, History } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '../../../types/prompt'
 import styles from './PromptListTable.module.css'
 
@@ -12,6 +12,7 @@ interface PromptListTableProps {
   onClone: (prompt: Prompt) => void
   onToggleActive: (id: string) => void
   onComments?: (id: string) => void
+  onHistory?: (id: string) => void
 }
 
 export function PromptListTable({ 
@@ -22,7 +23,8 @@ export function PromptListTable({
   onDelete,
   onClone,
   onToggleActive,
-  onComments
+  onComments,
+  onHistory
 }: PromptListTableProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
@@ -73,6 +75,11 @@ export function PromptListTable({
           onComments(promptId)
         }
         break
+      case 'history':
+        if (onHistory) {
+          onHistory(promptId)
+        }
+        break
       case 'delete':
         onDelete(promptId)
         break
@@ -113,6 +120,7 @@ export function PromptListTable({
             <th className={styles.tableHeader}>Status</th>
             <th className={styles.tableHeader}>Updated</th>
             <th className={`${styles.tableHeader} ${styles.actionsHeader}`}>Actions</th>
+            <th className={styles.tableHeader}>Comments</th>
           </tr>
         </thead>
         <tbody className={styles.tableBody}>
@@ -197,7 +205,7 @@ export function PromptListTable({
                     </button>
                     
                     {activeDropdown === prompt.id && (
-                      <div className={styles.dropdown}>
+                      <div className={`${styles.dropdown} ${index >= prompts.length - 2 ? styles.dropup : ''}`}>
                         {prompt.status === 'draft' && (
                           <button
                             onClick={() => handleActionClick(prompt.id, 'publish', prompt)}
@@ -218,14 +226,14 @@ export function PromptListTable({
                           Clone
                         </button>
                         
-                        {onComments && (
+                        {onHistory && (
                           <button
-                            onClick={() => handleActionClick(prompt.id, 'comments', prompt)}
+                            onClick={() => handleActionClick(prompt.id, 'history', prompt)}
                             className={styles.dropdownItem}
-                            title={`View comments for "${prompt.name}"`}
+                            title={`View change history for "${prompt.name}"`}
                           >
-                            <MessageCircle size={14} />
-                            Comments
+                            <History size={14} />
+                            History
                           </button>
                         )}
                         
@@ -243,6 +251,22 @@ export function PromptListTable({
                     )}
                   </div>
                 </div>
+              </td>
+              <td className={styles.tableCell}>
+                {onComments && (
+                  <div className={styles.commentsButtonContainer}>
+                    <button
+                      onClick={() => handleActionClick(prompt.id, 'comments', prompt)}
+                      className={`${styles.commentsButton} ${prompt.comments_count > 0 ? styles.hasComments : ''}`}
+                      title={`${prompt.comments_count || 0} comment${prompt.comments_count !== 1 ? 's' : ''} - View comments for "${prompt.name}"`}
+                    >
+                      <MessageCircle size={16} />
+                      {prompt.comments_count > 0 && (
+                        <span className={styles.commentsBadge}>{prompt.comments_count}</span>
+                      )}
+                    </button>
+                  </div>
+                )}
               </td>
             </tr>
           ))}

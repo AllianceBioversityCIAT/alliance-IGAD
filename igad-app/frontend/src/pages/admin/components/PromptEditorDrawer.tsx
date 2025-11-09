@@ -1,8 +1,100 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Eye, Loader2, Settings, FileText, HelpCircle, Layout } from 'lucide-react'
+import { X, Save, Eye, Loader2, Settings, FileText, HelpCircle, Layout, History, Clock, User } from 'lucide-react'
 import { usePrompt } from '../../../hooks/usePrompts'
 import { ProposalSection, SECTION_LABELS, type CreatePromptRequest, type UpdatePromptRequest } from '../../../types/prompt'
 import styles from './PromptEditorDrawer.module.css'
+
+// Simple History Component for Drawer
+function HistoryContent({ promptId }: { promptId: string }) {
+  const [history, setHistory] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    fetchHistory()
+  }, [promptId])
+
+  const fetchHistory = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`http://localhost:8000/admin/prompts/${promptId}/history`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setHistory(data)
+      }
+    } catch (error) {
+      console.error('Error fetching history:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const getChangeTypeLabel = (type: string) => {
+    switch (type) {
+      case 'create': return 'Created'
+      case 'update': return 'Updated'
+      case 'activate': return 'Activated'
+      case 'deactivate': return 'Deactivated'
+      default: return type
+    }
+  }
+
+  if (isLoading) {
+    return <div className={styles.historyLoading}>Loading history...</div>
+  }
+
+  if (!history || history.changes.length === 0) {
+    return (
+      <div className={styles.historyEmpty}>
+        <p>No changes recorded yet</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className={styles.historyList}>
+      {history.changes.slice(0, 5).map((change: any) => (
+        <div key={change.id} className={styles.historyItem}>
+          <div className={styles.historyItemHeader}>
+            <span className={styles.historyChangeType}>
+              {getChangeTypeLabel(change.change_type)}
+            </span>
+            <span className={styles.historyDate}>
+              <Clock size={12} />
+              {formatDate(change.created_at)}
+            </span>
+          </div>
+          <div className={styles.historyAuthor}>
+            <User size={12} />
+            {change.author_name}
+          </div>
+          {change.comment && (
+            <div className={styles.historyComment}>
+              {change.comment}
+            </div>
+          )}
+        </div>
+      ))}
+      {history.changes.length > 5 && (
+        <div className={styles.historyMore}>
+          +{history.changes.length - 5} more changes
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface PromptEditorDrawerProps {
   mode: 'create' | 'edit'
@@ -27,6 +119,7 @@ export function PromptEditorDrawer({
   const { data: existingPrompt } = usePrompt(promptId || '', 'latest')
   const [showPreview, setShowPreview] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
 
   // Predefined templates
   const templates = {
@@ -68,6 +161,7 @@ export function PromptEditorDrawer({
     tags: [] as string[],
     system_prompt: '',
     user_prompt_template: '',
+    is_active: true,
     context: {
       persona: '',
       tone: '',
@@ -87,6 +181,7 @@ export function PromptEditorDrawer({
         tags: existingPrompt.tags,
         system_prompt: existingPrompt.system_prompt,
         user_prompt_template: existingPrompt.user_prompt_template,
+        is_active: existingPrompt.is_active,
         context: {
           persona: existingPrompt.context?.persona || '',
           tone: existingPrompt.context?.tone || '',
@@ -154,6 +249,16 @@ export function PromptEditorDrawer({
                 Templates
               </button>
             )}
+            {mode === 'edit' && promptId && (
+              <button 
+                type="button" 
+                onClick={() => setShowHistory(!showHistory)}
+                className={styles.historyButton}
+              >
+                <History size={16} />
+                History
+              </button>
+            )}
             <div className={styles.headerToggle}>
               <label className={styles.headerToggleLabel}>
                 <input
@@ -187,6 +292,13 @@ export function PromptEditorDrawer({
                 <p className={styles.noTemplates}>No templates available for this section</p>
               )}
             </div>
+          </div>
+        )}
+
+        {showHistory && mode === 'edit' && promptId && (
+          <div className={styles.historySection}>
+            <h3 className={styles.historyTitle}>Change History</h3>
+            <HistoryContent promptId={promptId} />
           </div>
         )}
 

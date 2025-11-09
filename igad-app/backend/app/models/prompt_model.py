@@ -64,6 +64,7 @@ class Prompt(PromptBase):
     updated_by: str
     created_at: datetime
     updated_at: datetime
+    comments_count: Optional[int] = Field(default=0, description="Number of comments on this prompt")
 
 class PromptListResponse(BaseModel):
     prompts: List[Prompt]
