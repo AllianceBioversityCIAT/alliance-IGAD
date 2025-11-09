@@ -191,17 +191,18 @@ export function Navigation() {
                         to="/admin/settings"
                         style={{
                           padding: '12px 16px',
-                          background: 'transparent',
+                          background: location.pathname === '/admin/settings' ? '#EFF6FF' : 'transparent',
                           border: 'none',
                           textAlign: 'left',
                           cursor: 'pointer',
                           fontSize: '14px',
                           fontFamily: 'Arial',
-                          color: '#374151',
+                          color: location.pathname === '/admin/settings' ? '#1D4ED8' : '#374151',
                           width: '100%',
                           borderBottom: '1px solid #F3F4F6',
                           textDecoration: 'none',
-                          display: 'block'
+                          display: 'block',
+                          fontWeight: location.pathname === '/admin/settings' ? '600' : 'normal'
                         }}
                         onClick={() => setShowSettingsDropdown(false)}
                       >
@@ -213,16 +214,17 @@ export function Navigation() {
                         to="/admin/prompt-manager"
                         style={{
                           padding: '12px 16px',
-                          background: 'transparent',
+                          background: location.pathname === '/admin/prompt-manager' ? '#EFF6FF' : 'transparent',
                           border: 'none',
                           textAlign: 'left',
                           cursor: 'pointer',
                           fontSize: '14px',
                           fontFamily: 'Arial',
-                          color: '#374151',
+                          color: location.pathname === '/admin/prompt-manager' ? '#1D4ED8' : '#374151',
                           width: '100%',
                           textDecoration: 'none',
-                          display: 'block'
+                          display: 'block',
+                          fontWeight: location.pathname === '/admin/prompt-manager' ? '600' : 'normal'
                         }}
                         onClick={() => setShowSettingsDropdown(false)}
                       >
@@ -368,37 +370,6 @@ export function Navigation() {
                           Authenticated
                         </div>
                       </div>
-                      
-                      {/* Profile */}
-                      <button style={{
-                        padding: '12px 16px',
-                        background: 'transparent',
-                        border: 'none',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontFamily: 'Arial',
-                        color: '#374151',
-                        width: '100%'
-                      }}>
-                        Profile
-                      </button>
-                      
-                      {/* Account Settings */}
-                      <button style={{
-                        padding: '12px 16px',
-                        background: 'transparent',
-                        border: 'none',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontFamily: 'Arial',
-                        color: '#374151',
-                        width: '100%',
-                        borderBottom: '1px solid #F3F4F6'
-                      }}>
-                        Account Settings
-                      </button>
                       
                       {/* Logout */}
                       <button 
