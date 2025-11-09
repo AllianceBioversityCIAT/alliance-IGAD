@@ -34,7 +34,6 @@ export function ForgotPasswordPage() {
     register: registerReset,
     handleSubmit: handleResetSubmit,
     formState: { errors: resetErrors },
-    watch,
   } = useForm<ResetPasswordForm>({
     defaultValues: {
       code: '',
@@ -49,7 +48,7 @@ export function ForgotPasswordPage() {
     setSuccess(null)
 
     try {
-      const response = await authService.forgotPassword(data.email)
+      await authService.forgotPassword(data.email)
       setEmail(data.email)
       setSuccess('Reset code sent to your email')
       setStep('reset')

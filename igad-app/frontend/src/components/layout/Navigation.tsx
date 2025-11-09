@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom'
-import { BarChart3, Bell, User } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { authService } from '../../services/authService'
 import { useAdmin } from '../../hooks/useAdmin'

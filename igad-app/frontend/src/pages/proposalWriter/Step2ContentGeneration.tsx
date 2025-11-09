@@ -8,8 +8,8 @@ interface Step2Props extends StepProps {
   proposalId?: string
 }
 
-export function Step2ContentGeneration({ formData, setFormData, proposalId }: Step2Props) {
-  const { proposal, generateContent, isGenerating, generateError } = useProposal(proposalId)
+export function Step2ContentGeneration({ formData, setFormData: _setFormData, proposalId }: Step2Props) {
+  const { generateContent, isGenerating, generateError } = useProposal(proposalId)
 
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [analysisResults, setAnalysisResults] = useState<any>(null)

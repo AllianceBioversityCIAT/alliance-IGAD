@@ -2,7 +2,10 @@ import { CheckCircle } from 'lucide-react'
 import { StepProps } from './stepConfig'
 import styles from './proposalWriter.module.css'
 
-export function Step3StructureValidation({ formData, setFormData }: StepProps) {
+export function Step3StructureValidation({
+  formData: _formData,
+  setFormData: _setFormData,
+}: StepProps) {
   return (
     <div className={styles.wizardContainer}>
       <div className={styles.stepHeader}>

@@ -79,9 +79,9 @@ export function HomePage() {
                 color: '#364153',
               }}
             >
-              Supporting the Intergovernmental Authority on Development's mission through advanced
-              AI tools that enhance agricultural productivity, policy development, and regional
-              cooperation across East Africa.
+              Supporting the Intergovernmental Authority on Development&apos;s mission through
+              advanced AI tools that enhance agricultural productivity, policy development, and
+              regional cooperation across East Africa.
             </p>
           </div>
         </div>

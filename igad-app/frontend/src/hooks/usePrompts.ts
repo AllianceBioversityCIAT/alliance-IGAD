@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { promptService } from '../services/promptService'
 import type {
-  Prompt,
   CreatePromptRequest,
   UpdatePromptRequest,
   PromptPreviewRequest,

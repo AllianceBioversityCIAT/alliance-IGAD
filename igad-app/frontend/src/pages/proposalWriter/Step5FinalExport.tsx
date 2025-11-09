@@ -2,7 +2,7 @@ import { Download } from 'lucide-react'
 import { StepProps } from './stepConfig'
 import styles from './proposalWriter.module.css'
 
-export function Step5FinalExport({ formData, setFormData }: StepProps) {
+export function Step5FinalExport({ formData: _formData, setFormData: _setFormData }: StepProps) {
   return (
     <div className={styles.wizardContainer}>
       <div className={styles.stepHeader}>

@@ -17,7 +17,9 @@ export function SystemSettings() {
       await navigator.clipboard.writeText(text)
       setCopied(key)
       setTimeout(() => setCopied(null), 2000)
-    } catch (error) {}
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error)
+    }
   }
 
   const isConfigured = (value: string) => {

@@ -41,7 +41,9 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             uploadedFiles: updatedFiles,
             textInputs: formData.textInputs,
           })
-        } catch (error) {}
+        } catch (error) {
+          console.error('Failed to save form data:', error)
+        }
       }
     }
   }
@@ -64,7 +66,9 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           uploadedFiles: formData.uploadedFiles,
           textInputs: updatedInputs,
         })
-      } catch (error) {}
+      } catch (error) {
+        console.error('Failed to update form data:', error)
+      }
     }
   }
 
@@ -230,7 +234,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         <div className={styles.uploadSectionHeader}>
           <FileText className={styles.uploadSectionIcon} size={20} />
           <div className={styles.uploadSectionInfo}>
-            <h3 className={styles.uploadSectionTitle}>Existing Work & Experience</h3>
+            <h3 className={styles.uploadSectionTitle}>Existing Work &amp; Experience</h3>
             <p className={styles.uploadSectionDescription}>
               Describe your organization's relevant experience, ongoing projects, and previous work
               that relates to this call.

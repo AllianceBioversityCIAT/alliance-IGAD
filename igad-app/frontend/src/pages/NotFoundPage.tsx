@@ -9,7 +9,7 @@ export function NotFoundPage() {
         <h1 className={styles.errorCode}>404</h1>
         <h2 className={styles.title}>Page Not Found</h2>
         <p className={styles.description}>
-          The page you're looking for doesn't exist or has been moved.
+          The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
         <Link to="/" className={styles.button}>
           <ArrowLeft size={16} />

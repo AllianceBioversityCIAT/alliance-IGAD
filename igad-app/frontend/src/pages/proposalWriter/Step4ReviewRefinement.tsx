@@ -2,7 +2,10 @@ import { Eye } from 'lucide-react'
 import { StepProps } from './stepConfig'
 import styles from './proposalWriter.module.css'
 
-export function Step4ReviewRefinement({ formData, setFormData }: StepProps) {
+export function Step4ReviewRefinement({
+  formData: _formData,
+  setFormData: _setFormData,
+}: StepProps) {
   return (
     <div className={styles.wizardContainer}>
       <div className={styles.stepHeader}>

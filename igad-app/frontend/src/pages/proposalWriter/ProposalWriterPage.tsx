@@ -38,7 +38,9 @@ export function ProposalWriterPage() {
           onSuccess: newProposal => {
             setProposalId(newProposal.id)
           },
-          onError: error => {},
+          onError: (_error: unknown) => {
+            // Handle error silently for now
+          },
         }
       )
     }

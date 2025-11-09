@@ -1,11 +1,5 @@
-import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
-import {
-  proposalService,
-  Proposal,
-  AIGenerationResult,
-  AISuggestion,
-} from '../services/proposalService'
+import { proposalService, Proposal } from '../services/proposalService'
 
 export function useProposal(proposalId?: string) {
   const queryClient = useQueryClient()
@@ -73,13 +67,9 @@ export function useProposal(proposalId?: string) {
       return
     }
 
-    try {
-      const updatedProposal = await proposalService.updateFormData(proposalId, formData)
-      queryClient.setQueryData(['proposal', proposalId], updatedProposal)
-      return updatedProposal
-    } catch (error) {
-      throw error
-    }
+    const updatedProposal = await proposalService.updateFormData(proposalId, formData)
+    queryClient.setQueryData(['proposal', proposalId], updatedProposal)
+    return updatedProposal
   }
 
   return {
