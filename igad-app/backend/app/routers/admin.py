@@ -14,7 +14,7 @@ load_dotenv()
 
 from ..middleware.auth_middleware import AuthMiddleware
 from ..services.cognito_service import CognitoUserManagementService
-from ..simple_cognito import SimpleCognitoService
+from ..services.simple_cognito import SimpleCognitoService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 security = HTTPBearer()
