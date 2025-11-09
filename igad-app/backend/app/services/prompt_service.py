@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from boto3.dynamodb.conditions import Key, Attr
 from app.models.prompt_model import (
-    Prompt, PromptCreate, PromptUpdate, PromptStatus, 
+    Prompt, PromptCreate, PromptUpdate, 
     ProposalSection, PromptListResponse
 )
 import logging
@@ -35,7 +35,6 @@ class PromptService:
             'section': prompt.section.value,
             'tags': prompt.tags,
             'version': prompt.version,
-            'status': prompt.status.value,
             'is_active': prompt.is_active,
             'system_prompt': prompt.system_prompt,
             'user_prompt_template': prompt.user_prompt_template,
@@ -65,7 +64,6 @@ class PromptService:
             route=item.get('route'),
             tags=item.get('tags', []),
             version=item['version'],
-            status=PromptStatus(item['status']),
             is_active=item.get('is_active', True),  # Default to True for backward compatibility
             system_prompt=item['system_prompt'],
             user_prompt_template=item['user_prompt_template'],
@@ -78,7 +76,7 @@ class PromptService:
         )
     
     async def create_prompt(self, prompt_data: PromptCreate, user_id: str) -> Prompt:
-        """Create a new prompt (version 1, draft status)"""
+        """Create a new prompt (version 1, active by default)"""
         prompt_id = self._generate_prompt_id()
         now = datetime.utcnow()
         
@@ -94,7 +92,6 @@ class PromptService:
         prompt = Prompt(
             id=prompt_id,
             version=1,
-            status=PromptStatus.DRAFT,
             is_active=is_active,
             created_by=user_id,
             updated_by=user_id,
@@ -145,32 +142,16 @@ class PromptService:
     
     async def update_prompt(self, prompt_id: str, prompt_data: PromptUpdate, user_id: str) -> Prompt:
         """Update prompt (creates new version if published, edits draft if draft)"""
-        # Get current latest version
+        # Get current prompt
         current_prompt = await self.get_prompt(prompt_id)
         if not current_prompt:
             raise ValueError(f"Prompt {prompt_id} not found")
-        
-        # If current is published, create new version
-        if current_prompt.status == PromptStatus.PUBLISHED:
-            new_version = current_prompt.version + 1
-        else:
-            # Edit current draft
-            new_version = current_prompt.version
-            # Delete current draft
-            self.table.delete_item(
-                Key={
-                    'PK': f'prompt#{prompt_id}',
-                    'SK': f'version#{current_prompt.version}'
-                }
-            )
         
         # Create updated prompt
         update_data = prompt_data.dict(exclude_none=True)
         prompt_dict = current_prompt.dict()
         prompt_dict.update(update_data)
         prompt_dict.update({
-            'version': new_version,
-            'status': PromptStatus.DRAFT,
             'updated_by': user_id,
             'updated_at': datetime.utcnow()
         })
@@ -180,45 +161,10 @@ class PromptService:
         
         try:
             self.table.put_item(Item=item)
-            logger.info(f"Updated prompt {prompt_id} to v{new_version}")
+            logger.info(f"Updated prompt {prompt_id}")
             return updated_prompt
         except Exception as e:
             logger.error(f"Error updating prompt: {e}")
-            raise
-    
-    async def publish_prompt(self, prompt_id: str, version: int, user_id: str) -> Prompt:
-        """Publish a specific version of a prompt"""
-        prompt = await self.get_prompt(prompt_id, version)
-        if not prompt:
-            raise ValueError(f"Prompt {prompt_id} v{version} not found")
-        
-        if prompt.status == PromptStatus.PUBLISHED:
-            return prompt  # Already published
-        
-        # Update status to published
-        prompt.status = PromptStatus.PUBLISHED
-        prompt.updated_by = user_id
-        prompt.updated_at = datetime.utcnow()
-        
-        item = self._prompt_to_item(prompt)
-        
-        try:
-            self.table.put_item(Item=item)
-            
-            # Create/update latest published pointer
-            self.table.put_item(
-                Item={
-                    'PK': f'prompt#{prompt_id}',
-                    'SK': 'published#latest',
-                    'latest_version': version,
-                    'updated_at': self._get_current_timestamp()
-                }
-            )
-            
-            logger.info(f"Published prompt {prompt_id} v{version}")
-            return prompt
-        except Exception as e:
-            logger.error(f"Error publishing prompt: {e}")
             raise
     
     async def delete_prompt(self, prompt_id: str, version: Optional[int] = None) -> bool:
@@ -257,7 +203,6 @@ class PromptService:
     async def list_prompts(
         self,
         section: Optional[ProposalSection] = None,
-        status: Optional[PromptStatus] = None,
         tag: Optional[str] = None,
         search: Optional[str] = None,
         route: Optional[str] = None,
@@ -279,9 +224,6 @@ class PromptService:
             # Apply filters
             if section:
                 items = [item for item in items if item.get('section') == section.value]
-            
-            if status:
-                items = [item for item in items if item.get('status') == status.value]
             
             if tag:
                 items = [item for item in items if tag in item.get('tags', [])]

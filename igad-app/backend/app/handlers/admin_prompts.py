@@ -3,8 +3,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from typing import Optional, List
 from app.models.prompt_model import (
     Prompt, PromptCreate, PromptUpdate, PromptListResponse,
-    PromptPreviewRequest, PromptPreviewResponse, PublishPromptRequest,
-    ProposalSection, PromptStatus
+    PromptPreviewRequest, PromptPreviewResponse,
+    ProposalSection
 )
 from app.services.prompt_service import PromptService
 from app.services.bedrock_service import BedrockService
@@ -31,7 +31,6 @@ def get_current_admin_user(credentials: HTTPAuthorizationCredentials = Depends(s
 @router.get("/list", response_model=PromptListResponse)
 async def list_prompts(
     section: Optional[ProposalSection] = Query(None),
-    status: Optional[PromptStatus] = Query(None),
     tag: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
     route: Optional[str] = Query(None),
@@ -44,7 +43,6 @@ async def list_prompts(
     try:
         return await prompt_service.list_prompts(
             section=section,
-            status=status,
             tag=tag,
             search=search,
             route=route,
@@ -131,31 +129,6 @@ async def update_prompt(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update prompt"
-        )
-
-@router.post("/{prompt_id}/publish", response_model=Prompt)
-async def publish_prompt(
-    prompt_id: str,
-    publish_data: PublishPromptRequest,
-    current_user: dict = Depends(get_current_admin_user)
-):
-    """Publish a specific version of a prompt"""
-    try:
-        return await prompt_service.publish_prompt(
-            prompt_id, 
-            publish_data.version, 
-            current_user["user_id"]
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except Exception as e:
-        logger.error(f"Error publishing prompt {prompt_id}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to publish prompt"
         )
 
 @router.delete("/{prompt_id}")

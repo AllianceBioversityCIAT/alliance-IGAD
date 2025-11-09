@@ -4,7 +4,7 @@ from enum import Enum
 from datetime import datetime
 
 class ProposalSection(str, Enum):
-    # New main sections
+    # Main sections
     PROPOSAL_WRITER = "proposal_writer"
     NEWSLETTER_GENERATOR = "newsletter_generator"
     # Legacy sections for backward compatibility
@@ -20,10 +20,6 @@ class ProposalSection(str, Enum):
     MONITORING_EVALUATION = "monitoring_evaluation"
     EXECUTIVE_SUMMARY = "executive_summary"
     APPENDICES = "appendices"
-
-class PromptStatus(str, Enum):
-    DRAFT = "draft"
-    PUBLISHED = "published"
 
 class FewShotExample(BaseModel):
     input: str
@@ -58,12 +54,10 @@ class PromptUpdate(BaseModel):
     user_prompt_template: Optional[str] = Field(None, min_length=1)
     few_shot: Optional[List[FewShotExample]] = None
     context: Optional[PromptContext] = None
-    is_active: Optional[bool] = None
 
 class Prompt(PromptBase):
     id: str
     version: int
-    status: PromptStatus
     is_active: bool = Field(default=True, description="Whether the prompt is active and available for use")
     created_by: str
     updated_by: str
@@ -85,6 +79,3 @@ class PromptPreviewResponse(BaseModel):
     output: str
     tokens_used: int
     processing_time: float
-
-class PublishPromptRequest(BaseModel):
-    version: int

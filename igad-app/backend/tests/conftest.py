@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime
-from app.models.prompt_model import Prompt, PromptCreate, ProposalSection, PromptStatus
+from app.models.prompt_model import Prompt, PromptCreate, ProposalSection
 
 @pytest.fixture
 def mock_dynamodb_table():
@@ -42,7 +42,7 @@ def sample_prompt():
         route="/test/route",
         tags=["test", "sample"],
         version=1,
-        status=PromptStatus.DRAFT,
+        is_active=True,
         system_prompt="You are a test assistant.",
         user_prompt_template="Help me with {{topic}}",
         context={

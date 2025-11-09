@@ -56,7 +56,6 @@ export interface Prompt {
   route?: string // e.g., "/proposal-writer/step-1"
   tags: string[]
   version: number
-  status: 'draft' | 'published'
   is_active: boolean
   system_prompt: string
   user_prompt_template: string

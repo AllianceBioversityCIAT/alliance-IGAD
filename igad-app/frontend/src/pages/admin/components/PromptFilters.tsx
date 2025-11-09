@@ -4,7 +4,6 @@ import styles from './PromptFilters.module.css'
 interface PromptFiltersProps {
   filters: {
     section?: ProposalSection
-    status?: 'draft' | 'published'
     tag?: string
     search?: string
     route?: string
@@ -18,27 +17,6 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
     onChange({
       ...filters,
       section: section === 'all' ? undefined : section as ProposalSection
-    })
-  }
-
-  const handleStatusChange = (status: string) => {
-    onChange({
-      ...filters,
-      status: status === 'all' ? undefined : status as 'draft' | 'published'
-    })
-  }
-
-  const handleTagChange = (tag: string) => {
-    onChange({
-      ...filters,
-      tag: tag.trim() || undefined
-    })
-  }
-
-  const handleRouteChange = (route: string) => {
-    onChange({
-      ...filters,
-      route: route.trim() || undefined
     })
   }
 
@@ -64,19 +42,6 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
               {label}
             </option>
           ))}
-        </select>
-      </div>
-
-      <div className={styles.filterGroup}>
-        <label className={styles.label}>Status</label>
-        <select
-          value={filters.status || 'all'}
-          onChange={(e) => handleStatusChange(e.target.value)}
-          className={styles.select}
-        >
-          <option value="all">All Status</option>
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
         </select>
       </div>
 
