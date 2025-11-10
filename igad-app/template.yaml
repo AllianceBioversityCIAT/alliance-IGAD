@@ -30,8 +30,8 @@ Resources:
         Variables:
           PORT: 8080
           AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
-          COGNITO_CLIENT_ID: 4l2sdk3cuq1pnm30q0nbcs7v3r
-          COGNITO_USER_POOL_ID: us-east-1_lLtVSWM9T
+          COGNITO_CLIENT_ID: 7p11hp6gcklhctcr9qffne71vl
+          COGNITO_USER_POOL_ID: us-east-1_IMi3kSuB8
           TABLE_NAME: igad-testing-main-table
       Policies:
         - AWSLambdaBasicExecutionRole
