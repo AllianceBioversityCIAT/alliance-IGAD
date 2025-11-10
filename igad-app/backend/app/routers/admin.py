@@ -110,15 +110,15 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
             <html>
             <head><meta charset="utf-8"><title>Welcome to IGAD Innovation Hub</title></head>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <div style="background: linear-gradient(135deg, #2D5016 0%, #4a7c59 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
                     <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to IGAD Innovation Hub</h1>
                     <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Your account has been created successfully</p>
                 </div>
 
                 <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e2e8f0;">
-                    <h2 style="color: #1e40af; margin-top: 0;">Your Login Credentials</h2>
+                    <h2 style="color: #2D5016; margin-top: 0;">Your Login Credentials</h2>
 
-                    <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin: 20px 0;">
+                    <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #2D5016; margin: 20px 0;">
                         <p style="margin: 0;"><strong>Username:</strong> {user_data.email}</p>
                         <p style="margin: 10px 0 0 0;"><strong>Temporary Password:</strong> <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;">{user_data.temporary_password}</code></p>
                     </div>
@@ -126,7 +126,7 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
                     <p style="margin: 20px 0;">Please log in and change your password on first access.</p>
 
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="http://localhost:3000/login" style="background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Access Platform</a>
+                        <a href="https://d1s9phi3b0di4q.cloudfront.net/login" style="background: #2D5016; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Access Platform</a>
                     </div>
 
                     <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">

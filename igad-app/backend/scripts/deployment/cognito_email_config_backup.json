@@ -1,5 +1,5 @@
 {
-  "user_pool_id": "us-east-1_EULeelICj",
+  "user_pool_id": "us-east-1_lLtVSWM9T",
   "profile": "IBD-DEV",
   "templates": {
     "welcome_email": {
@@ -26,11 +26,5 @@
     "background": "#f8f9fa",
     "text": "#333333",
     "light_green": "#f1f8e9"
-  },
-  "deployment_notes": [
-    "Run this script after creating User Pool in production",
-    "Verify SES email identity if using custom email",
-    "Test all email templates after configuration",
-    "Update localhost URLs to production URLs"
-  ]
+  }
 }
