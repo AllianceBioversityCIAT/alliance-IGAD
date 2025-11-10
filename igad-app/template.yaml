@@ -50,6 +50,7 @@ Resources:
                 - cognito-idp:AdminUpdateUserAttributes
                 - cognito-idp:AdminAddUserToGroup
                 - cognito-idp:AdminRemoveUserFromGroup
+                - cognito-idp:AdminListGroupsForUser
                 - cognito-idp:ListUsers
                 - cognito-idp:ListGroups
                 - cognito-idp:ForgotPassword

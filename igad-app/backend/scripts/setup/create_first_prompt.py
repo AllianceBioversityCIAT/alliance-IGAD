@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
-"""
-Script to create the first prompt in DynamoDB for testing
-"""
-
 import uuid
 from datetime import datetime
-
 import boto3
 
-
 def create_first_prompt():
-    """Create the first prompt for Problem Statement section"""
-
     dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table("igad-testing-main-table")  # Use existing table
-
-    # Generate prompt data
+    table = dynamodb.Table("igad-testing-main-table")
     prompt_id = str(uuid.uuid4())
     timestamp = datetime.utcnow().isoformat() + "Z"
 
@@ -95,10 +85,7 @@ Without immediate intervention, the situation will deteriorate further as climat
     }
 
     try:
-        # Insert the prompt
         table.put_item(Item=prompt_item)
-
-        # Create latest published pointer
         table.put_item(
             Item={
                 "PK": f"prompt#{prompt_id}",
@@ -107,25 +94,12 @@ Without immediate intervention, the situation will deteriorate further as climat
                 "updated_at": timestamp,
             }
         )
-
-        print("✅ First prompt created successfully!")
-        print(f"📝 Prompt ID: {prompt_id}")
-        print(f"📍 Section: Problem Statement")
-        print(f"🔗 Route: /proposal-writer/step-1")
-        print(f"📊 Status: Published")
-        print(f"🏷️  Tags: analysis, research, problem-identification")
-        print()
-        print("🎉 You can now test the Prompt Manager at:")
-        print("   http://localhost:3001/admin/prompt-manager")
-
+        print(f"✅ First prompt created: {prompt_id}")
         return prompt_id
-
     except Exception as e:
         print(f"❌ Error creating prompt: {e}")
         return None
 
 
 if __name__ == "__main__":
-    print("🚀 Creating first prompt for Prompt Manager...")
-    print()
     create_first_prompt()

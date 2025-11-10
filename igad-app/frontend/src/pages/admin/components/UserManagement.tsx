@@ -49,6 +49,7 @@ export function UserManagement() {
     message: '',
     onConfirm: () => {},
   })
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const { showSuccess, showError } = useToast()
 
@@ -96,6 +97,7 @@ export function UserManagement() {
       title: 'Delete User',
       message: `Are you sure you want to delete user "${email}"? This action cannot be undone.`,
       onConfirm: async () => {
+        setIsDeleting(true)
         try {
           const result = await userService.deleteUser(username)
           if (result.success) {
@@ -106,8 +108,10 @@ export function UserManagement() {
           }
         } catch (error) {
           showError('Delete failed', 'An unexpected error occurred')
+        } finally {
+          setIsDeleting(false)
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }))
         }
-        setConfirmDialog(prev => ({ ...prev, isOpen: false }))
       },
     })
   }
@@ -421,6 +425,7 @@ export function UserManagement() {
         message={confirmDialog.message}
         type="danger"
         confirmText="Delete"
+        isLoading={isDeleting}
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />

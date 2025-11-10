@@ -37,13 +37,16 @@ class CognitoUserManagementService:
                 user_data = self._format_user_data(user)
                 # Get user groups
                 try:
+                    print(f"Getting groups for user: {user_data['username']}")  # Debug
                     groups_response = self.cognito_client.admin_list_groups_for_user(
                         UserPoolId=self.user_pool_id, Username=user_data["username"]
                     )
+                    print(f"Groups response: {groups_response}")  # Debug
                     user_data["groups"] = [
                         group["GroupName"]
                         for group in groups_response.get("Groups", [])
                     ]
+                    print(f"User {user_data['username']} groups: {user_data['groups']}")  # Debug
                 except Exception as group_error:
                     print(
                         f"Error getting groups for user {user_data['username']}: {group_error}"

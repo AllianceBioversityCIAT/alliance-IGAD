@@ -1,44 +1,21 @@
 #!/usr/bin/env python3
-"""
-Production Deployment Script for IGAD Innovation Hub Cognito Email Templates
-
-This script is specifically configured for production deployment.
-Update the variables below for your production environment.
-
-Usage:
-    python3 deploy_production_emails.py
-"""
-
 import boto3
 from botocore.exceptions import ClientError
 
-# PRODUCTION CONFIGURATION - UPDATE THESE VALUES
 PRODUCTION_CONFIG = {
-    "user_pool_id": "us-east-1_XXXXXX",  # UPDATE: Production User Pool ID
-    "profile": "production-profile",  # UPDATE: Production AWS Profile
+    "user_pool_id": "us-east-1_XXXXXX",
+    "profile": "production-profile",
     "region": "us-east-1",
-    "domain": "https://igad-innovation-hub.com",  # UPDATE: Production domain
-    "ses_email": "noreply@igad-innovation-hub.com",  # UPDATE: Production email
+    "domain": "https://igad-innovation-hub.com",
+    "ses_email": "noreply@igad-innovation-hub.com",
 }
 
-# IGAD Branding Colors
-COLORS = {
-    "primary": "#2c5530",
-    "accent": "#7cb342",
-    "background": "#f8f9fa",
-    "text": "#333333",
-    "light_green": "#f1f8e9",
-}
-
+COLORS = {"primary": "#2c5530", "accent": "#7cb342", "background": "#f8f9fa", "text": "#333333", "light_green": "#f1f8e9"}
 
 def get_cognito_client():
-    """Initialize Cognito client for production"""
-    session = boto3.Session(profile_name=PRODUCTION_CONFIG["profile"])
-    return session.client("cognito-idp", region_name=PRODUCTION_CONFIG["region"])
-
+    return boto3.Session(profile_name=PRODUCTION_CONFIG["profile"]).client("cognito-idp", region_name=PRODUCTION_CONFIG["region"])
 
 def create_base_template(content):
-    """Create base HTML template with IGAD branding"""
     return f"""<div style="font-family: Arial, sans-serif; padding: 20px; background-color: {COLORS['background']};">
 <div style="background-color: white; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
 <h1 style="color: {COLORS['primary']}; text-align: center; margin: 0 0 10px 0;">IGAD Innovation Hub</h1>
@@ -51,15 +28,6 @@ def create_base_template(content):
 
 
 def deploy_production_templates():
-    """Deploy all email templates to production"""
-
-    print("🚀 Deploying IGAD Innovation Hub Email Templates to PRODUCTION")
-    print(f"User Pool ID: {PRODUCTION_CONFIG['user_pool_id']}")
-    print(f"Domain: {PRODUCTION_CONFIG['domain']}")
-    print(f"Profile: {PRODUCTION_CONFIG['profile']}")
-    print("-" * 60)
-
-    # Validation
     if "XXXXXX" in PRODUCTION_CONFIG["user_pool_id"]:
         print("❌ ERROR: Please update PRODUCTION_CONFIG with real User Pool ID")
         return False
@@ -67,16 +35,13 @@ def deploy_production_templates():
     try:
         cognito_client = get_cognito_client()
 
-        # 1. Configure email settings
-        print("📧 Configuring email settings...")
+        # Configure email settings
         cognito_client.update_user_pool(
             UserPoolId=PRODUCTION_CONFIG["user_pool_id"],
             EmailConfiguration={"EmailSendingAccount": "COGNITO_DEFAULT"},
         )
-        print("✅ Email configuration set")
 
-        # 2. Welcome Email Template
-        print("📝 Configuring welcome email template...")
+        # Welcome Email Template
         welcome_content = f"""<p style="color: {COLORS['text']};">Welcome to IGAD Innovation Hub! Your account has been created successfully.</p>
 <div style="background-color: {COLORS['light_green']}; padding: 20px; border-radius: 6px; margin: 20px 0;">
 <p style="margin: 0; color: {COLORS['primary']}; font-weight: bold;">Your account information:</p>
@@ -99,10 +64,8 @@ def deploy_production_templates():
                 },
             },
         )
-        print("✅ Welcome email template configured")
 
-        # 3. Email Verification Template
-        print("🔐 Configuring email verification template...")
+        # Email Verification Template
         verification_content = f"""<p style="color: {COLORS['text']};">To complete your email verification, use the following code:</p>
 <div style="background-color: #e3f2fd; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center;">
 <p style="margin: 0; color: #1976d2; font-size: 24px; font-weight: bold; letter-spacing: 2px;">{{####}}</p>
@@ -117,19 +80,8 @@ def deploy_production_templates():
                 "EmailSubject": "IGAD Innovation Hub - Verify Your Email",
             },
         )
-        print("✅ Email verification template configured")
 
-        print("-" * 60)
-        print("✅ PRODUCTION EMAIL TEMPLATES DEPLOYED SUCCESSFULLY!")
-        print(
-            "📧 Professional HTML emails with IGAD branding are now active in production"
-        )
-        print("🧪 NEXT STEPS:")
-        print("   1. Test user creation flow")
-        print("   2. Test email verification flow")
-        print("   3. Verify all emails arrive with HTML formatting")
-        print("   4. Check spam folders if emails don't arrive")
-
+        print("✅ Production email templates deployed successfully!")
         return True
 
     except ClientError as e:
@@ -141,17 +93,7 @@ def deploy_production_templates():
 
 
 def main():
-    """Main deployment function"""
-    success = deploy_production_templates()
-
-    if success:
-        print("\n🎉 Production deployment completed successfully!")
-    else:
-        print("\n💥 Production deployment failed!")
-        print("Please check the error messages above and try again.")
-
-    return success
-
+    return deploy_production_templates()
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,4 @@
-import { AlertTriangle, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Trash2, X, Loader2 } from 'lucide-react'
 import styles from './ConfirmDialog.module.css'
 
 interface ConfirmDialogProps {
@@ -8,6 +8,7 @@ interface ConfirmDialogProps {
   confirmText?: string
   cancelText?: string
   type?: 'danger' | 'warning' | 'info'
+  isLoading?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -19,6 +20,7 @@ export function ConfirmDialog({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   type = 'warning',
+  isLoading = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -42,7 +44,7 @@ export function ConfirmDialog({
       <div className={styles.dialog}>
         <div className={styles.header}>
           <div className={styles.iconContainer}>{getIcon()}</div>
-          <button onClick={onCancel} className={styles.closeButton}>
+          <button onClick={onCancel} className={styles.closeButton} disabled={isLoading}>
             <X size={20} />
           </button>
         </div>
@@ -53,11 +55,22 @@ export function ConfirmDialog({
         </div>
 
         <div className={styles.actions}>
-          <button onClick={onCancel} className={styles.cancelButton}>
+          <button onClick={onCancel} className={styles.cancelButton} disabled={isLoading}>
             {cancelText}
           </button>
-          <button onClick={onConfirm} className={`${styles.confirmButton} ${styles[type]}`}>
-            {confirmText}
+          <button 
+            onClick={onConfirm} 
+            className={`${styles.confirmButton} ${styles[type]}`}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 size={16} className={styles.spinner} />
+                Deleting...
+              </>
+            ) : (
+              confirmText
+            )}
           </button>
         </div>
       </div>
