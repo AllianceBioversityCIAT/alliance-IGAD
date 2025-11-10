@@ -1,103 +1,152 @@
+/* Modern IGAD-themed Create User Modal */
 .overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
 .modal {
   background: white;
-  border-radius: 12px;
+  border-radius: 20px;
   width: 100%;
-  max-width: 500px;
+  max-width: 520px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(185, 248, 207, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #016630 0%, #00A63E 50%, #008236 100%);
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 24px 0 24px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 32px 32px 0 32px;
   margin-bottom: 24px;
 }
 
 .title {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: #111827;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title::before {
+  content: '';
+  width: 8px;
+  height: 32px;
+  background: linear-gradient(180deg, #016630 0%, #008236 100%);
+  border-radius: 4px;
 }
 
 .closeButton {
-  background: none;
+  background: rgba(107, 114, 128, 0.1);
   border: none;
-  color: #6b7280;
+  color: #6B7280;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  transition: all 0.2s;
+  padding: 8px;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .closeButton:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background: rgba(220, 38, 38, 0.1);
+  color: #DC2626;
+  transform: scale(1.05);
 }
 
 .form {
-  padding: 0 24px 24px 24px;
+  padding: 0 32px 32px 32px;
 }
 
 .error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 0.875rem;
+  background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+  border: 1px solid #F87171;
+  color: #DC2626;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error::before {
+  content: '⚠️';
+  font-size: 16px;
 }
 
 .field {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 500;
+  gap: 10px;
+  font-weight: 600;
   color: #374151;
-  margin-bottom: 8px;
-  font-size: 0.875rem;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+.label svg {
+  color: #016630;
 }
 
 .input {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  transition: all 0.2s;
+  padding: 16px 20px;
+  border: 2px solid #E5E7EB;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #FAFAFA;
 }
 
 .input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #016630;
+  box-shadow: 0 0 0 4px rgba(1, 102, 48, 0.1);
+  background: white;
+  transform: translateY(-1px);
+}
+
+.input::placeholder {
+  color: #9CA3AF;
 }
 
 .passwordField {
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 
 .passwordField .input {
@@ -105,83 +154,139 @@
 }
 
 .generateButton {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  color: #374151;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 0.875rem;
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border: 2px solid #B9F8CF;
+  color: #016630;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
 }
 
 .generateButton:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
+  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
+  border-color: #00A63E;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(1, 102, 48, 0.2);
+}
+
+.hint {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: #6B7280;
+  font-style: italic;
 }
 
 .checkboxField {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: linear-gradient(135deg, #F0FDF4 0%, #FAFAFA 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(185, 248, 207, 0.5);
 }
 
 .checkboxLabel {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.875rem;
+  gap: 12px;
+  font-size: 15px;
   color: #374151;
   cursor: pointer;
+  font-weight: 500;
+}
+
+.checkboxLabel svg {
+  color: #016630;
 }
 
 .checkbox {
-  width: 16px;
-  height: 16px;
-  accent-color: #3b82f6;
+  width: 20px;
+  height: 20px;
+  accent-color: #016630;
+  cursor: pointer;
 }
 
 .actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: flex-end;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
+  padding-top: 24px;
+  border-top: 1px solid #F3F4F6;
 }
 
 .cancelButton {
   background: white;
-  border: 1px solid #d1d5db;
-  color: #374151;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 0.875rem;
+  border: 2px solid #E5E7EB;
+  color: #6B7280;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cancelButton:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: #9ca3af;
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+  color: #374151;
+  transform: translateY(-1px);
 }
 
 .createButton {
-  background: #3b82f6;
-  border: 1px solid #3b82f6;
+  background: linear-gradient(135deg, #016630 0%, #008236 100%);
+  border: 2px solid #016630;
   color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 0.875rem;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(1, 102, 48, 0.3);
 }
 
 .createButton:hover:not(:disabled) {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: linear-gradient(135deg, #00A63E 0%, #016630 100%);
+  border-color: #00A63E;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(1, 102, 48, 0.4);
 }
 
 .createButton:disabled,
 .cancelButton:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .modal {
+    margin: 16px;
+    max-width: calc(100vw - 32px);
+    border-radius: 16px;
+  }
+  
+  .header,
+  .form {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  
+  .title {
+    font-size: 20px;
+  }
+  
+  .actions {
+    flex-direction: column;
+  }
+  
+  .passwordField {
+    flex-direction: column;
+  }
 }
