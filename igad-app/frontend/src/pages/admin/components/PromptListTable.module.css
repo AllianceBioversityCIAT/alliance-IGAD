@@ -70,7 +70,23 @@
 
 /* Table */
 .tableContainer {
-  overflow-x: auto;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(185, 248, 207, 0.3);
+  position: relative;
+}
+
+.tableContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #016630 0%, #00A63E 50%, #008236 100%);
+  z-index: 1;
 }
 
 .table {
@@ -80,8 +96,8 @@
 }
 
 .tableHead {
-  background: #F9FAFB;
-  border-bottom: 1px solid #E5E7EB;
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+  border-bottom: 2px solid #F1F5F9;
 }
 
 .tableHeader {
@@ -337,7 +353,7 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .tableContainer {
-    border-radius: 0;
+    border-radius: 16px;
   }
   
   .tableHeader,

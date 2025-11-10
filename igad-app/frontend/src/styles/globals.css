@@ -1107,3 +1107,44 @@ body {
     padding: 24px 20px;
   }
 }
+/* Global Button Styles - Remove ugly focus outlines and add elegant effects */
+button {
+  outline: none !important;
+  transition: all 0.2s ease;
+}
+
+button:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(1, 102, 48, 0.2);
+}
+
+button:focus:not(:focus-visible) {
+  box-shadow: none;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Input focus styles */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(1, 102, 48, 0.2);
+}
+
+/* Remove focus outline for mouse users but keep for keyboard users */
+*:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/* Shimmer animation for skeletons */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

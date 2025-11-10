@@ -52,6 +52,8 @@ export function ProposalWriterPage() {
         const step = parseInt(stepId.replace('step-', ''))
         if (step >= 1 && step <= 5) {
           setCurrentStep(step)
+          // Scroll to top when changing steps
+          window.scrollTo({ top: 0, behavior: 'smooth' })
         } else {
           navigate('/proposal-writer/step-1', { replace: true })
         }
@@ -69,6 +71,7 @@ export function ProposalWriterPage() {
       const nextStep = currentStep + 1
       setCurrentStep(nextStep)
       navigate(`/proposal-writer/step-${nextStep}`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
@@ -77,6 +80,7 @@ export function ProposalWriterPage() {
       const prevStep = currentStep - 1
       setCurrentStep(prevStep)
       navigate(`/proposal-writer/step-${prevStep}`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 

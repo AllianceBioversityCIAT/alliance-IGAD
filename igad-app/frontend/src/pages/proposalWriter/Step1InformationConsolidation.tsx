@@ -8,8 +8,40 @@ interface Step1Props extends StepProps {
   proposalId?: string
 }
 
+function Step1Skeleton() {
+  return (
+    <div className={styles.stepContent}>
+      <div className={styles.skeletonCard}>
+        <div className={`${styles.skeleton} ${styles.skeletonTitle}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonText}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonTextShort}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonInput}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonButton}`}></div>
+      </div>
+      
+      <div className={styles.skeletonCard}>
+        <div className={`${styles.skeleton} ${styles.skeletonTitle}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonText}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonInput}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonInput}`}></div>
+      </div>
+      
+      <div className={styles.skeletonCard}>
+        <div className={`${styles.skeleton} ${styles.skeletonTitle}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonText}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonTextShort}`}></div>
+      </div>
+    </div>
+  )
+}
+
 export function Step1InformationConsolidation({ formData, setFormData, proposalId }: Step1Props) {
-  const { proposal, updateFormData, isUpdating } = useProposal(proposalId)
+  const { proposal, updateFormData, isUpdating, isLoading } = useProposal(proposalId)
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return <Step1Skeleton />
+  }
 
   // Load existing data when proposal is loaded
   useEffect(() => {

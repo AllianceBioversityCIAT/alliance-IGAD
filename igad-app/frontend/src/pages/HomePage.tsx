@@ -141,12 +141,12 @@ export function HomePage() {
           >
             {/* Report Generator - Coming Soon */}
             <div
+              className={`${styles.toolCard} ${styles.toolCardDisabled}`}
               style={{
                 position: 'relative',
                 width: '362px',
                 height: '324px',
                 background: '#FFFFFF',
-                opacity: '0.75',
                 border: '2px solid #E5E7EB',
                 borderRadius: '14px',
                 padding: '34px',
@@ -233,12 +233,12 @@ export function HomePage() {
 
             {/* Policy Analyzer - Coming Soon */}
             <div
+              className={`${styles.toolCard} ${styles.toolCardDisabled}`}
               style={{
                 position: 'relative',
                 width: '362px',
                 height: '324px',
                 background: '#FFFFFF',
-                opacity: '0.75',
                 border: '2px solid #E5E7EB',
                 borderRadius: '14px',
                 padding: '34px',
@@ -325,6 +325,7 @@ export function HomePage() {
 
             {/* Proposal Writer - Available */}
             <div
+              className={styles.toolCard}
               style={{
                 position: 'relative',
                 width: '362px',
@@ -421,6 +422,7 @@ export function HomePage() {
 
             {/* Newsletter Generator - Available */}
             <div
+              className={styles.toolCard}
               style={{
                 position: 'relative',
                 width: '362px',
@@ -619,10 +621,8 @@ export function HomePage() {
           justifyContent: 'center',
           padding: '16px',
           gap: '8px',
-          maxWidth: '1400px',
-          margin: '0 auto 32px auto',
+          margin: '0',
           background: '#016630',
-          borderRadius: '8px',
         }}
       >
         <p

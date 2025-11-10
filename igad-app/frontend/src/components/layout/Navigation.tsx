@@ -7,12 +7,53 @@ export function Navigation() {
   const location = useLocation()
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const [isLoadingDropdown, setIsLoadingDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const userDropdownRef = useRef<HTMLDivElement>(null)
 
   const userEmail = authService.getUserEmail()
   const isAuthenticated = authService.isAuthenticated()
   const { isAdmin } = useAdmin()
+
+  // Skeleton component for dropdown loading
+  const DropdownSkeleton = () => (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '8px',
+      }}
+    >
+      {[1, 2, 3].map((item) => (
+        <div
+          key={item}
+          style={{
+            height: '40px',
+            background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.5s infinite',
+            borderRadius: '4px',
+            margin: '4px 0',
+          }}
+        />
+      ))}
+    </div>
+  )
+
+  // Handle dropdown toggle with loading
+  const handleSettingsDropdownToggle = () => {
+    if (!showSettingsDropdown) {
+      setIsLoadingDropdown(true)
+      setShowSettingsDropdown(true)
+      // Simulate loading time
+      setTimeout(() => {
+        setIsLoadingDropdown(false)
+      }, 300)
+    } else {
+      setShowSettingsDropdown(false)
+      setIsLoadingDropdown(false)
+    }
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -179,7 +220,7 @@ export function Navigation() {
           {/* Settings Button */}
           <div ref={dropdownRef} style={{ position: 'relative' }}>
             <button
-              onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+              onClick={handleSettingsDropdownToggle}
               style={{
                 display: 'flex',
                 justifyContent: 'center',
@@ -224,14 +265,17 @@ export function Navigation() {
                   padding: '4px 0',
                 }}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-                >
-                  {/* Admin-only links */}
-                  {isAdmin && (
+                {isLoadingDropdown ? (
+                  <DropdownSkeleton />
+                ) : (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    {/* Admin-only links */}
+                    {isAdmin && (
                     <>
                       {/* Settings */}
                       <Link
@@ -239,13 +283,13 @@ export function Navigation() {
                         style={{
                           padding: '12px 16px',
                           background:
-                            location.pathname === '/admin/settings' ? '#EFF6FF' : 'transparent',
+                            location.pathname === '/admin/settings' ? '#DCFCE7' : 'transparent',
                           border: 'none',
                           textAlign: 'left',
                           cursor: 'pointer',
                           fontSize: '14px',
                           fontFamily: 'Arial',
-                          color: location.pathname === '/admin/settings' ? '#1D4ED8' : '#374151',
+                          color: location.pathname === '/admin/settings' ? '#016630' : '#374151',
                           width: '100%',
                           borderBottom: '1px solid #F3F4F6',
                           textDecoration: 'none',
@@ -264,7 +308,7 @@ export function Navigation() {
                           padding: '12px 16px',
                           background:
                             location.pathname === '/admin/prompt-manager'
-                              ? '#EFF6FF'
+                              ? '#DCFCE7'
                               : 'transparent',
                           border: 'none',
                           textAlign: 'left',
@@ -272,7 +316,7 @@ export function Navigation() {
                           fontSize: '14px',
                           fontFamily: 'Arial',
                           color:
-                            location.pathname === '/admin/prompt-manager' ? '#1D4ED8' : '#374151',
+                            location.pathname === '/admin/prompt-manager' ? '#016630' : '#374151',
                           width: '100%',
                           textDecoration: 'none',
                           display: 'block',
@@ -343,7 +387,8 @@ export function Navigation() {
                   >
                     Help & Support
                   </button>
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

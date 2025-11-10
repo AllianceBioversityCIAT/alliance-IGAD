@@ -94,7 +94,35 @@ export function GroupManagement() {
 
       <div className={styles.content}>
         {isLoading ? (
-          <div className={styles.loading}>Loading groups...</div>
+          <div className={styles.groupsList}>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className={styles.groupCard}>
+                <div className={styles.groupHeader}>
+                  <div className={styles.groupInfo}>
+                    <div className={styles.skeleton} style={{ width: '120px', height: '20px', marginBottom: '8px' }}></div>
+                    <div className={styles.skeleton} style={{ width: '200px', height: '16px' }}></div>
+                  </div>
+                  <div className={styles.groupActions}>
+                    <div className={styles.precedence}>
+                      <div className={styles.skeleton} style={{ width: '60px', height: '12px', marginBottom: '4px' }}></div>
+                      <div className={styles.skeleton} style={{ width: '20px', height: '16px' }}></div>
+                    </div>
+                    <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
+                  </div>
+                </div>
+                <div className={styles.groupMeta}>
+                  <div className={styles.metaItem}>
+                    <div className={styles.skeleton} style={{ width: '14px', height: '14px', borderRadius: '2px' }}></div>
+                    <div className={styles.skeleton} style={{ width: '100px', height: '14px' }}></div>
+                  </div>
+                  <div className={styles.metaItem}>
+                    <div className={styles.skeleton} style={{ width: '14px', height: '14px', borderRadius: '2px' }}></div>
+                    <div className={styles.skeleton} style={{ width: '110px', height: '14px' }}></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : groups.length === 0 ? (
           <div className={styles.empty}>
             <Shield size={48} className={styles.emptyIcon} />

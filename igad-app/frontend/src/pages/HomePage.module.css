@@ -74,6 +74,12 @@
   border: 1px solid #b9f8cf;
   box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
   border-radius: 14px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.missionCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0px 20px 30px -3px rgba(0, 0, 0, 0.2), 0px 8px 12px -4px rgba(0, 0, 0, 0.15);
 }
 
 .missionHeader {
@@ -169,6 +175,13 @@
   border: 2px solid #e5e7eb;
   border-radius: 14px;
   padding: 34px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.toolCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+  border-color: #b9f8cf;
 }
 
 .toolCardAvailable {
@@ -177,6 +190,12 @@
 
 .toolCardDisabled {
   opacity: 0.75;
+}
+
+.toolCardDisabled:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
 }
 
 .badge {

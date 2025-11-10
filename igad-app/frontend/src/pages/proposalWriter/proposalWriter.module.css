@@ -973,3 +973,59 @@
     width: 100%;
   }
 }
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+.skeletonCard {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+.skeletonTitle {
+  height: 24px;
+  width: 200px;
+  margin-bottom: 16px;
+}
+
+.skeletonText {
+  height: 16px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.skeletonTextShort {
+  height: 16px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.skeletonButton {
+  height: 40px;
+  width: 120px;
+  border-radius: 8px;
+}
+
+.skeletonInput {
+  height: 40px;
+  width: 100%;
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

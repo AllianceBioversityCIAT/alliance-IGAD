@@ -231,29 +231,6 @@ export function PromptManagerPage() {
 
   return (
     <div className={styles.container}>
-      {/* Context Banner */}
-      {contextData.fromRoute && (
-        <div className={styles.contextBanner}>
-          <div className={styles.contextContent}>
-            <Info className={styles.contextIcon} />
-            <div className={styles.contextText}>
-              <span className={styles.contextTitle}>Managing prompts from:</span>
-              <code className={styles.contextRoute}>{contextData.fromRoute}</code>
-              {contextData.defaultSection && (
-                <span className={styles.contextSection}>
-                  • Section: {contextData.defaultSection.replace('_', ' ')}
-                </span>
-              )}
-            </div>
-          </div>
-          <button onClick={() => navigate(contextData.fromRoute!)} className={styles.backButton}>
-            <ArrowLeft size={16} />
-            Back to{' '}
-            {contextData.fromRoute?.includes('proposal-writer') ? 'Proposal Writer' : 'Source'}
-          </button>
-        </div>
-      )}
-
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
@@ -275,8 +252,8 @@ export function PromptManagerPage() {
               <List size={16} />
             </button>
             <button
-              onClick={() => setViewMode('cards')}
-              className={`${styles.viewButton} ${viewMode === 'cards' ? styles.active : ''}`}
+              onClick={() => setViewMode('grid')}
+              className={`${styles.viewButton} ${viewMode === 'grid' ? styles.active : ''}`}
             >
               <Grid size={16} />
             </button>
@@ -289,50 +266,83 @@ export function PromptManagerPage() {
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className={styles.filtersBar}>
-        <div className={styles.searchContainer}>
-          <Search className={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Search prompts..."
-            value={filters.search || ''}
-            onChange={e => handleFiltersChange({ ...filters, search: e.target.value })}
-            className={styles.searchInput}
-          />
-        </div>
-
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`${styles.filterButton} ${showFilters ? styles.filterButtonActive : ''}`}
-        >
-          <Filter size={16} />
-          Filters
-        </button>
-      </div>
-
-      {/* Expandable Filters */}
-      {showFilters && (
-        <div className={styles.filtersPanel}>
-          <PromptFilters filters={filters} onChange={handleFiltersChange} />
+      {/* Context Banner */}
+      {contextData.fromRoute && (
+        <div className={styles.filtersBarWrapper}>
+          <div className={styles.filtersBarContent}>
+            <div className={styles.contextBanner}>
+              <div className={styles.contextContent}>
+                <Info className={styles.contextIcon} />
+                <div className={styles.contextText}>
+                  <span className={styles.contextTitle}>Managing prompts from:</span>
+                  <code className={styles.contextRoute}>{contextData.fromRoute}</code>
+                  {contextData.defaultSection && (
+                    <span className={styles.contextSection}>
+                      • Section: {contextData.defaultSection.replace('_', ' ')}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button onClick={() => navigate(contextData.fromRoute!)} className={styles.backButton}>
+                <ArrowLeft size={16} />
+                Back to{' '}
+                {contextData.fromRoute?.includes('proposal-writer') ? 'Proposal Writer' : 'Source'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Results Summary */}
-      <div className={styles.resultsInfo}>
-        <span className={styles.resultsCount}>
-          {total} prompt{total !== 1 ? 's' : ''} found
-        </span>
-        {Object.keys(filters).some(key => filters[key as keyof PromptManagerFilters]) && (
-          <button onClick={() => handleFiltersChange({})} className={styles.clearFilters}>
-            Clear filters
-          </button>
-        )}
+      {/* Filters Card */}
+      <div className={styles.filtersBarWrapper}>
+        <div className={styles.filtersBarContent}>
+          <div className={styles.filtersCard}>
+            <div className={styles.filtersBar}>
+              <div className={styles.searchContainer}>
+                <Search className={styles.searchIcon} />
+                <input
+                  type="text"
+                  placeholder="Search prompts..."
+                  value={filters.search || ''}
+                  onChange={e => handleFiltersChange({ ...filters, search: e.target.value })}
+                  className={styles.searchInput}
+                />
+              </div>
+
+              <div className={styles.resultsInfo}>
+                <span className={styles.resultsCount}>
+                  {total} prompt{total !== 1 ? 's' : ''} found
+                </span>
+                {Object.keys(filters).some(key => filters[key as keyof PromptManagerFilters]) && (
+                  <button onClick={() => handleFiltersChange({})} className={styles.clearFilters}>
+                    Clear filters
+                  </button>
+                )}
+              </div>
+
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`${styles.filterButton} ${showFilters ? styles.filterButtonActive : ''}`}
+              >
+                <Filter size={16} />
+                Filters
+              </button>
+            </div>
+
+            {/* Expandable Filters */}
+            {showFilters && (
+              <div className={styles.filtersPanel}>
+                <PromptFilters filters={filters} onChange={handleFiltersChange} />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}
       <div className={styles.content}>
-        {viewMode === 'table' ? (
+        <div className={styles.contentWrapper}>
+          {viewMode === 'table' ? (
           <PromptListTable
             prompts={prompts}
             isLoading={isLoading}
@@ -373,6 +383,7 @@ export function PromptManagerPage() {
             </button>
           </div>
         )}
+        </div>
       </div>
 
       {/* Create Prompt Modal */}

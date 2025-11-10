@@ -16,7 +16,7 @@
 }
 
 .titleIcon {
-  color: #3b82f6;
+  color: #016630;
 }
 
 .title {
@@ -218,4 +218,21 @@
   gap: 6px;
   color: #6b7280;
   font-size: 0.75rem;
+}
+
+/* Skeleton Loader */
+.skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
