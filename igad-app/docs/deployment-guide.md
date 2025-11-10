@@ -2,386 +2,293 @@
 
 ## Overview
 
-This guide provides comprehensive instructions for deploying the IGAD Innovation Hub platform, including backend services, frontend application, and email configuration setup.
-
-## Architecture Components
-
-### 1. Backend (AWS SAM + Lambda)
-- **Framework**: FastAPI with Lambda Web Adapter
-- **Runtime**: Python 3.11
-- **Infrastructure**: AWS SAM (Serverless Application Model)
-- **Services**: Lambda, API Gateway, DynamoDB, Cognito, SES
-
-### 2. Frontend (React + CloudFront)
-- **Framework**: React with TypeScript
-- **Hosting**: S3 + CloudFront distribution
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-
-### 3. Authentication
-- **Service**: AWS Cognito User Pool
-- **Features**: JWT tokens, email verification, password reset
-- **Email Templates**: Custom HTML templates with IGAD branding
+This guide covers the complete deployment process for the IGAD Innovation Hub, including infrastructure setup, application deployment, and troubleshooting based on real deployment experience.
 
 ## Prerequisites
 
 ### AWS Configuration
 ```bash
-# Set AWS profile and region
+# Required AWS profile and region
 aws configure set profile IBD-DEV
 aws configure set region us-east-1
 
 # Verify configuration
-aws sts get-caller-identity
+aws sts get-caller-identity --profile IBD-DEV
 ```
 
 ### Required Tools
-- AWS CLI v2
-- AWS SAM CLI
-- Node.js 18+
-- Python 3.11
-- Docker (for SAM builds)
+- **AWS CLI** (configured with IBD-DEV profile)
+- **AWS CDK** (`npm install -g aws-cdk`)
+- **AWS SAM CLI** (`brew install aws-sam-cli`)
+- **Node.js** (v20.5.1 or higher)
+- **Python** (3.9 or higher)
+- **Docker** (for SAM builds)
 
-## Project Structure
+## Architecture Overview
 
-```
-igad-app/
-├── backend/                 # FastAPI backend application
-│   ├── app/                # Source code
-│   └── dist/               # Distribution files for deployment
-├── frontend/               # React frontend application
-├── infrastructure/         # CDK infrastructure (legacy)
-├── scripts/               # Deployment scripts
-├── docs/                  # Documentation
-├── template.yaml          # SAM template
-└── samconfig.toml        # SAM configuration
-```
+The IGAD Innovation Hub uses a **hybrid deployment approach**:
 
-## Configuration Files
-
-### 1. SAM Configuration (`samconfig.toml`)
-```toml
-version = 0.1
-[default]
-[default.deploy]
-[default.deploy.parameters]
-stack_name = "igad-backend-testing"
-resolve_s3 = true
-confirm_changeset = false
-capabilities = "CAPABILITY_IAM"
-region = "us-east-1"
-```
-
-**Purpose**: Defines default parameters for SAM deployments
-- `stack_name`: CloudFormation stack name
-- `resolve_s3`: Auto-create S3 bucket for artifacts
-- `confirm_changeset`: Skip manual confirmation
-- `capabilities`: Required IAM permissions
-
-### 2. SAM Template (`template.yaml`)
-**Key Components**:
-- **Lambda Function**: FastAPI application with Web Adapter
-- **API Gateway**: REST API with CORS configuration
-- **DynamoDB**: NoSQL database for application data
-- **IAM Roles**: Permissions for Cognito, DynamoDB, SES, Bedrock
-- **CloudFront**: CDN for frontend distribution
-- **S3 Bucket**: Static website hosting
-
-### 3. Environment Configuration
-**Backend Environment Variables**:
-```yaml
-Environment:
-  Variables:
-    PORT: 8080
-    AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
-    COGNITO_CLIENT_ID: ${CognitoClientId}
-    COGNITO_USER_POOL_ID: ${CognitoUserPoolId}
-    TABLE_NAME: igad-testing-main-table
-```
+1. **CDK** - Infrastructure (Cognito, DynamoDB, API Gateway base)
+2. **SAM** - Lambda functions and application logic
+3. **S3 + CloudFront** - Frontend hosting
 
 ## Deployment Process
 
-### 1. Quick Deployment
-```bash
-# Deploy to testing environment
-./scripts/deploy.sh testing
+### 1. Infrastructure Deployment (CDK)
 
-# Deploy to production environment
-./scripts/deploy.sh production
+Deploy the base infrastructure first:
+
+```bash
+cd infrastructure
+npm install
+npm run deploy:testing    # For testing environment
+npm run deploy:production # For production environment
 ```
 
-### 2. Manual Deployment Steps
+**What this creates:**
+- Cognito User Pool with IGAD green email templates
+- DynamoDB table
+- API Gateway base configuration
+- S3 bucket for frontend
+- CloudFront distribution
 
-#### Backend Deployment
+### 2. Application Deployment (SAM)
+
+Deploy the Lambda functions and application logic:
+
 ```bash
-# 1. Copy source to distribution
-cd backend && cp -r app/* dist/
+# Build the application
+sam build
 
-# 2. Build SAM application
-sam build --use-container
+# Deploy to testing
+sam deploy --stack-name igad-backend-testing --profile IBD-DEV --region us-east-1 --resolve-s3 --no-confirm-changeset --capabilities CAPABILITY_IAM
 
-# 3. Deploy to AWS
-sam deploy
+# Deploy to production
+sam deploy --stack-name igad-backend-production --profile IBD-DEV --region us-east-1 --resolve-s3 --no-confirm-changeset --capabilities CAPABILITY_IAM
 ```
 
-#### Frontend Deployment
-```bash
-# 1. Install dependencies
-cd frontend && npm install
+### 3. Frontend Deployment
 
-# 2. Build for production
+Frontend is automatically deployed via the fullstack scripts, but can be done manually:
+
+```bash
+cd frontend
+npm install
 npm run build
 
-# 3. Deploy to S3 (manual)
-aws s3 sync dist/ s3://your-bucket-name --delete
-
-# 4. Invalidate CloudFront cache
-aws cloudfront create-invalidation \
-  --distribution-id YOUR_DISTRIBUTION_ID \
-  --paths "/*"
+# Upload to S3 and invalidate CloudFront
+aws s3 sync dist/ s3://your-bucket-name --profile IBD-DEV --region us-east-1
+aws cloudfront create-invalidation --distribution-id YOUR-DISTRIBUTION-ID --paths "/*" --profile IBD-DEV --region us-east-1
 ```
 
-## Cognito Email Templates Setup
+### 4. Fullstack Deployment (Recommended)
 
-### 1. User Pool Configuration
-The SAM template automatically creates:
-- Cognito User Pool with email as username
-- User Pool Client with required auth flows
-- Email verification and password reset capabilities
+Use the automated fullstack deployment scripts:
 
-### 2. Email Templates Configuration
-
-#### Welcome Email Template
 ```bash
-aws cognito-idp update-user-pool \
-  --user-pool-id us-east-1_XXXXXXXXX \
-  --admin-create-user-config '{
-    "AllowAdminCreateUserOnly": false,
-    "InviteMessageAction": "EMAIL",
-    "MessageAction": "EMAIL"
-  }'
+# Testing environment
+./scripts/deploy-fullstack-testing.sh
+
+# Production environment
+./scripts/deploy-fullstack-production.sh
 ```
 
-#### Custom HTML Templates
-Located in `backend/scripts/maintenance/`:
-- `configure_email_templates.py` - Sets up HTML email templates
-- `fix_email_templates.py` - Updates existing templates
-
-**Template Features**:
-- Professional IGAD branding
-- Responsive HTML design
-- Inline CSS for email client compatibility
-- Security-focused messaging
-- Call-to-action buttons
-
-#### Email Template Types
-1. **Welcome Email**: New user account creation
-2. **Email Verification**: Email address confirmation
-3. **Password Reset**: Forgot password functionality
-
-### 3. SES Configuration
-```bash
-# Verify email identity for sending
-aws ses verify-email-identity \
-  --email-address j.cadavid@cgiar.org
-
-# Check verification status
-aws ses get-identity-verification-attributes \
-  --identities j.cadavid@cgiar.org
-```
-
-## Infrastructure Components
-
-### 1. AWS Services Used
-- **Lambda**: Serverless compute for backend API
-- **API Gateway**: HTTP API endpoint management
-- **DynamoDB**: NoSQL database for application data
-- **Cognito**: User authentication and management
-- **SES**: Email delivery service
-- **S3**: Static website hosting
-- **CloudFront**: Content delivery network
-- **IAM**: Identity and access management
-
-### 2. Security Configuration
-**IAM Policies Include**:
-- Cognito user management permissions
-- DynamoDB read/write access
-- SES email sending capabilities
-- Bedrock AI model access
-- CloudWatch logging permissions
-
-### 3. Networking
-- **CORS**: Configured for cross-origin requests
-- **HTTPS**: Enforced for all API communications
-- **Custom Domain**: Optional Route 53 integration
-
-## Environment Management
+## Environment Configuration
 
 ### Testing Environment
-- **Stack Name**: `igad-backend-testing`
-- **Purpose**: Development and testing
-- **Database**: `igad-testing-main-table`
-- **Cognito Pool**: Testing user pool
+- **Stack Name**: `igad-testing-stack` (CDK), `igad-backend-testing` (SAM)
+- **User Pool**: `igad-testing-user-pool`
+- **Table**: `igad-testing-main-table`
 
 ### Production Environment
-- **Stack Name**: `igad-backend-production`
-- **Purpose**: Live production system
-- **Database**: `igad-production-main-table`
-- **Cognito Pool**: Production user pool
+- **Stack Name**: `igad-production-stack` (CDK), `igad-backend-production` (SAM)
+- **User Pool**: `igad-production-user-pool`
+- **Table**: `igad-production-main-table`
 
-## Deployment Scripts
+## Resource Configuration
 
-### 1. `scripts/deploy-testing.sh`
-- Validates AWS profile and region
-- Copies source files to distribution
-- Builds and deploys to testing environment
-- No confirmation required
+### Cognito User Pool Settings
 
-### 2. `scripts/deploy-production.sh`
-- Same validation as testing
-- Requires explicit confirmation
-- Deploys to production environment
-- Includes safety warnings
+The CDK automatically configures:
+- **Email templates** with IGAD green branding (#2D5016, #4a7c59)
+- **Password policy** (8+ chars, uppercase, lowercase, numbers)
+- **Email verification** enabled
+- **Username attributes** set to email
 
-### 3. `scripts/deploy.sh`
-- Helper script for environment selection
-- Routes to appropriate deployment script
-- Provides usage instructions
+### Lambda Configuration
 
-## Monitoring and Troubleshooting
-
-### 1. CloudWatch Logs
-```bash
-# View Lambda logs
-aws logs describe-log-groups \
-  --log-group-name-prefix "/aws/lambda/igad-backend"
-
-# Get recent log events
-aws logs get-log-events \
-  --log-group-name "/aws/lambda/igad-backend-testing-ApiFunction" \
-  --log-stream-name "LATEST"
+```yaml
+Runtime: python3.9
+MemorySize: 512
+Timeout: 30
+Architecture: x86_64
+Environment:
+  PORT: 8080
+  AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+  COGNITO_CLIENT_ID: [from CDK output]
+  COGNITO_USER_POOL_ID: [from CDK output]
+  TABLE_NAME: [from CDK output]
 ```
 
-### 2. Health Checks
-```bash
-# Test API health
-curl https://your-api-gateway-url/health
+## Troubleshooting
 
-# Test authentication
-curl -X POST https://your-api-gateway-url/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "test@example.com", "password": "password"}'
+### Common Issues
+
+#### 1. Stack in DELETE_FAILED State
+```bash
+# Empty S3 bucket first
+aws s3 rm s3://bucket-name --recursive --profile IBD-DEV --region us-east-1
+
+# Delete the failed stack
+aws cloudformation delete-stack --stack-name stack-name --profile IBD-DEV --region us-east-1
 ```
 
-### 3. Common Issues
-
-#### Build Failures
-- **Network timeouts**: Retry with `sam build --use-container`
-- **Permission errors**: Verify AWS credentials and IAM roles
-- **Docker issues**: Ensure Docker is running for container builds
-
-#### Deployment Failures
-- **Stack exists**: Use `sam deploy --force-upload` to override
-- **IAM permissions**: Check CloudFormation stack events
-- **Resource conflicts**: Verify unique resource names
-
-#### Runtime Errors
-- **Environment variables**: Check Lambda configuration
-- **Database access**: Verify DynamoDB permissions
-- **Email delivery**: Check SES identity verification
-
-## Rollback Procedures
-
-### 1. Quick Rollback
+#### 2. Python Version Mismatch
+If you get Python version errors:
 ```bash
-# Rollback to previous version
-aws cloudformation cancel-update-stack \
-  --stack-name igad-backend-testing
+# Check available Python versions
+python3 --version
+python3.9 --version
 
-# Deploy previous version
-git checkout previous-commit
-./scripts/deploy.sh testing
+# Update template.yaml to match your Python version
+Runtime: python3.9  # Use your available version
 ```
 
-### 2. Database Rollback
-- DynamoDB point-in-time recovery available
-- Manual data export/import if needed
-- Backup strategies documented separately
+#### 3. Duplicate User Pools
+If you have multiple user pools:
+```bash
+# List all user pools
+aws cognito-idp list-user-pools --max-results 20 --profile IBD-DEV --region us-east-1
+
+# Delete unused pools
+aws cognito-idp delete-user-pool --user-pool-id us-east-1_XXXXXXX --profile IBD-DEV --region us-east-1
+```
+
+#### 4. CORS Issues
+CORS is configured in the API Gateway. If you have issues:
+- Check API Gateway CORS settings
+- Verify Lambda function is returning proper headers
+- Check CloudFront cache invalidation
+
+#### 5. Email Template Issues
+Email templates are configured in CDK. To update:
+1. Modify the CDK template
+2. Redeploy CDK infrastructure
+3. Templates are automatically applied
+
+### Deployment Validation
+
+After deployment, verify:
+
+```bash
+# Check stack status
+aws cloudformation describe-stacks --stack-name igad-testing-stack --profile IBD-DEV --region us-east-1
+
+# Test API endpoint
+curl https://your-api-endpoint.execute-api.us-east-1.amazonaws.com/prod/health
+
+# Check frontend
+curl https://your-cloudfront-distribution.cloudfront.net
+```
 
 ## Security Considerations
 
-### 1. Secrets Management
+### IAM Permissions
+- Lambda functions use least-privilege IAM roles
+- Cognito permissions scoped to specific operations
+- DynamoDB access limited to required tables
+
+### Secrets Management
 - No hardcoded credentials in code
 - Environment variables for configuration
 - AWS Secrets Manager for sensitive data
-- Regular credential rotation
 
-### 2. Access Control
-- Least privilege IAM policies
-- Cognito user pool security settings
-- API Gateway throttling and rate limiting
-- CloudFront security headers
+### Network Security
+- API Gateway with CORS properly configured
+- CloudFront with security headers
+- Lambda functions in VPC if needed
 
-### 3. Data Protection
-- Encryption at rest (DynamoDB)
-- Encryption in transit (HTTPS/TLS)
-- Input validation and sanitization
-- Output encoding for XSS prevention
+## Monitoring and Logging
 
-## Maintenance Tasks
+### CloudWatch Logs
+- Lambda function logs: `/aws/lambda/function-name`
+- API Gateway logs: Enabled in deployment
+- CloudFront logs: Optional, can be enabled
 
-### Regular Tasks
-- Monitor CloudWatch metrics and alarms
-- Review and rotate AWS credentials
-- Update dependencies and security patches
-- Backup critical data and configurations
+### Metrics
+- Lambda invocations, errors, duration
+- API Gateway requests, latency, errors
+- CloudFront cache hit ratio
 
-### Monthly Tasks
-- Review AWS costs and optimize resources
-- Update email templates if needed
-- Test disaster recovery procedures
-- Review and update documentation
+## Rollback Procedures
 
-## Support and Troubleshooting
-
-### Documentation References
-- `docs/backend-architecture.md` - Backend technical details
-- `docs/frontend-architecture.md` - Frontend technical details
-- `docs/EMAIL_CONFIGURATION.md` - Email setup details
-- `docs/cognito-testing.md` - Authentication testing
-
-### Contact Information
-- **Technical Lead**: Development Team
-- **AWS Account**: IBD-DEV profile
-- **Support Email**: j.cadavid@cgiar.org
-
-## Appendix
-
-### Useful Commands
+### Quick Rollback
 ```bash
-# Check deployment status
-aws cloudformation describe-stacks \
-  --stack-name igad-backend-testing
+# Rollback to previous Lambda version
+aws lambda update-function-code --function-name function-name --s3-bucket bucket --s3-key previous-version.zip --profile IBD-DEV --region us-east-1
 
-# List Lambda functions
-aws lambda list-functions \
-  --query 'Functions[?starts_with(FunctionName, `igad`)]'
-
-# Check Cognito user pool
-aws cognito-idp describe-user-pool \
-  --user-pool-id us-east-1_XXXXXXXXX
-
-# Monitor API Gateway
-aws apigateway get-rest-apis \
-  --query 'items[?name==`igad-backend-testing`]'
+# Rollback frontend
+aws s3 sync previous-build/ s3://bucket-name --profile IBD-DEV --region us-east-1
+aws cloudfront create-invalidation --distribution-id DISTRIBUTION-ID --paths "/*" --profile IBD-DEV --region us-east-1
 ```
 
-### Environment Variables Reference
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `COGNITO_CLIENT_ID` | Cognito app client ID | `4l2sdk3cuq1pnm30q0nbcs7v3r` |
-| `COGNITO_USER_POOL_ID` | Cognito user pool ID | `us-east-1_lLtVSWM9T` |
-| `TABLE_NAME` | DynamoDB table name | `igad-testing-main-table` |
-| `PORT` | Lambda web server port | `8080` |
+### Full Stack Rollback
+```bash
+# Rollback CDK stack
+cd infrastructure
+git checkout previous-commit
+npm run deploy:testing
 
-This deployment guide ensures consistent, secure, and maintainable deployments of the IGAD Innovation Hub platform across all environments.
+# Rollback SAM stack
+git checkout previous-commit
+sam deploy --stack-name igad-backend-testing --profile IBD-DEV --region us-east-1 --resolve-s3 --no-confirm-changeset --capabilities CAPABILITY_IAM
+```
+
+## Production Deployment Checklist
+
+- [ ] AWS credentials configured (IBD-DEV profile)
+- [ ] All dependencies installed
+- [ ] Code tested in testing environment
+- [ ] Database migrations completed (if any)
+- [ ] Environment variables updated
+- [ ] Security review completed
+- [ ] Backup of current production taken
+- [ ] Monitoring alerts configured
+- [ ] Rollback plan prepared
+
+## URLs and Endpoints
+
+### Testing Environment
+- **Frontend**: https://d1s9phi3b0di4q.cloudfront.net
+- **API**: https://c37x0xp38k.execute-api.us-east-1.amazonaws.com/prod/
+
+### Production Environment
+- **Frontend**: [To be configured]
+- **API**: [To be configured]
+
+## Support and Maintenance
+
+### Regular Tasks
+- Monitor CloudWatch logs and metrics
+- Update dependencies monthly
+- Review and rotate secrets quarterly
+- Performance optimization based on usage patterns
+
+### Emergency Contacts
+- AWS Support: [Configure based on support plan]
+- Development Team: [Add contact information]
+- Infrastructure Team: [Add contact information]
+
+## Additional Resources
+
+- [AWS CDK Documentation](https://docs.aws.amazon.com/cdk/)
+- [AWS SAM Documentation](https://docs.aws.amazon.com/serverless-application-model/)
+- [AWS Lambda Best Practices](https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html)
+- [IGAD Development Standards](../.amazonq/rules/development-standards.md)
+- [IGAD Deployment Rules](../.amazonq/rules/deployment-rules.md)
+
+---
+
+**Last Updated**: November 10, 2025  
+**Version**: 1.0  
+**Maintainer**: IGAD Innovation Hub Team

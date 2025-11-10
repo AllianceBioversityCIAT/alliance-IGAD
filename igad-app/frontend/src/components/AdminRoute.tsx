@@ -16,7 +16,7 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/" replace />
   }
 
   return <>{children}</>
