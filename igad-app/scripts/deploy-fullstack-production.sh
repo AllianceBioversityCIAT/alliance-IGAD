@@ -72,27 +72,28 @@ echo "🚀 Deploying to production..."
 sam build --use-container
 sam deploy --config-env production
 
-# Get CloudFront distribution ID from stack outputs
-echo "🔍 Getting CloudFront distribution ID..."
-DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
-  --stack-name igad-backend-production \
-  --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
-  --output text)
+# Get CloudFront distribution ID dynamically (find distribution serving the S3 bucket)
+echo "🔍 Finding CloudFront distribution for S3 bucket..."
+DISTRIBUTION_ID=""
+for dist_id in $(aws cloudfront list-distributions --profile IBD-DEV --region us-east-1 --query "DistributionList.Items[].Id" --output text); do
+  origin=$(aws cloudfront get-distribution --id $dist_id --profile IBD-DEV --region us-east-1 --query "Distribution.DistributionConfig.Origins.Items[0].DomainName" --output text 2>/dev/null)
+  if [[ $origin == *"$BUCKET_NAME"* ]]; then
+    DISTRIBUTION_ID=$dist_id
+    break
+  fi
+done
 
 if [ -z "$DISTRIBUTION_ID" ]; then
-    echo "❌ ERROR: Could not get CloudFront distribution ID"
+    echo "❌ ERROR: Could not find CloudFront distribution for bucket $BUCKET_NAME"
     exit 1
 fi
 
-# Get S3 bucket name from stack outputs
-echo "🔍 Getting S3 bucket name..."
-BUCKET_NAME=$(aws cloudformation describe-stacks \
-  --stack-name igad-backend-production \
-  --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucket`].OutputValue' \
-  --output text)
+# Get S3 bucket name dynamically (find bucket with igad-production pattern)
+echo "🔍 Finding S3 bucket for production environment..."
+BUCKET_NAME=$(aws s3 ls --profile IBD-DEV --region us-east-1 | grep "igad.*production.*websitebucket" | awk '{print $3}' | head -1)
 
 if [ -z "$BUCKET_NAME" ]; then
-    echo "❌ ERROR: Could not get S3 bucket name"
+    echo "❌ ERROR: Could not find S3 bucket for production environment"
     exit 1
 fi
 
