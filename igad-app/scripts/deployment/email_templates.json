@@ -1,25 +1,25 @@
 {
   "admin_create_user": {
-    "subject": "Bienvenido a IGAD Innovation Hub - Credenciales de Acceso",
-    "description": "Email enviado cuando un admin crea un usuario",
+    "subject": "Welcome to IGAD Innovation Hub - Access Credentials",
+    "description": "Email sent when an admin creates a user",
     "variables": ["{username}", "{####}"],
     "html_template": "admin_create_user.html"
   },
   "verification": {
-    "subject": "Bienvenido a IGAD Innovation Hub - Verifica tu Cuenta", 
-    "description": "Email de verificación para nuevos usuarios",
+    "subject": "Welcome to IGAD Innovation Hub - Verify Your Account", 
+    "description": "Verification email for new users",
     "variables": ["{##Verify Email##}"],
     "html_template": "verification.html"
   },
   "forgot_password": {
-    "subject": "IGAD Innovation Hub - Código de Recuperación de Contraseña",
-    "description": "Email para recuperación de contraseña",
+    "subject": "IGAD Innovation Hub - Password Recovery Code",
+    "description": "Email for password recovery",
     "variables": ["{####}"],
     "html_template": "forgot_password.html"
   },
   "resend_confirmation": {
-    "subject": "IGAD Innovation Hub - Confirma tu Email",
-    "description": "Reenvío de código de confirmación",
+    "subject": "IGAD Innovation Hub - Confirm Your Email",
+    "description": "Resend confirmation code",
     "variables": ["{####}"],
     "html_template": "resend_confirmation.html"
   },
@@ -35,7 +35,7 @@
     },
     "branding": {
       "company": "IGAD Innovation Hub",
-      "tagline": "Impulsando la innovación en agricultura",
+      "tagline": "Empowering Innovation for Sustainable Development",
       "website": "https://igad-innovation-hub.com",
       "support_email": "support@igad.org"
     }
