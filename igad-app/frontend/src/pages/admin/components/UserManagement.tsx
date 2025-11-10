@@ -257,11 +257,38 @@ export function UserManagement() {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr>
-                <td colSpan={6} className={styles.loadingCell}>
-                  <Spinner size="sm" />
-                </td>
-              </tr>
+              Array.from({ length: 5 }).map((_, index) => (
+                <tr key={index} className={styles.tableRow}>
+                  <td className={styles.tableCell}>
+                    <div className={styles.userInfo}>
+                      <div className={styles.skeleton} style={{ width: '40px', height: '40px', borderRadius: '50%' }}></div>
+                      <div>
+                        <div className={styles.skeleton} style={{ width: '120px', height: '16px', marginBottom: '4px' }}></div>
+                        <div className={styles.skeleton} style={{ width: '180px', height: '14px' }}></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.skeleton} style={{ width: '80px', height: '20px', borderRadius: '12px' }}></div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.skeleton} style={{ width: '60px', height: '16px' }}></div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.skeleton} style={{ width: '100px', height: '16px' }}></div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.skeleton} style={{ width: '90px', height: '16px' }}></div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.actionsCell}>
+                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
+                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
+                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
+                    </div>
+                  </td>
+                </tr>
+              ))
             ) : filteredUsers.length === 0 ? (
               <tr>
                 <td colSpan={6} className={styles.emptyCell}>

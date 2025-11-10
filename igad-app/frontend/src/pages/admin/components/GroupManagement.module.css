@@ -33,7 +33,7 @@
 }
 
 .createButton {
-  background: #3b82f6;
+  background: #00A63E;
   border: none;
   color: white;
   padding: 10px 16px;
@@ -47,7 +47,7 @@
 }
 
 .createButton:hover {
-  background: #2563eb;
+  background: #008236;
 }
 
 .closeError {

@@ -946,7 +946,7 @@ body {
 
 /* Focus Styles */
 *:focus {
-  outline: 2px solid var(--primary-blue);
+  outline: 2px solid var(--igad-primary);
   outline-offset: 2px;
 }
 
@@ -1009,9 +1009,9 @@ body {
 }
 
 .form-input:focus {
-  border-color: var(--border-focus);
+  border-color: var(--igad-primary);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(1, 102, 48, 0.1);
 }
 
 .form-label {

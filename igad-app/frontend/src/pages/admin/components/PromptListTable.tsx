@@ -71,9 +71,64 @@ export function PromptListTable({
 
   if (isLoading) {
     return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.loadingSpinner}></div>
-        <p className={styles.loadingText}>Loading prompts...</p>
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead className={styles.tableHead}>
+            <tr>
+              <th className={styles.tableHeader}>Name</th>
+              <th className={styles.tableHeader}>Section</th>
+              <th className={styles.tableHeader}>Route</th>
+              <th className={styles.tableHeader}>Status</th>
+              <th className={styles.tableHeader}>Updated</th>
+              <th className={`${styles.tableHeader} ${styles.actionsHeader}`}>Actions</th>
+              <th className={styles.tableHeader}>Comments</th>
+            </tr>
+          </thead>
+          <tbody className={styles.tableBody}>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <tr key={index} className={styles.tableRow}>
+                <td className={styles.tableCell}>
+                  <div className={styles.nameCell}>
+                    <div className={styles.skeleton} style={{ width: '180px', height: '16px', marginBottom: '8px' }}></div>
+                    <div className={styles.tags}>
+                      <div className={styles.skeleton} style={{ width: '60px', height: '20px', borderRadius: '10px' }}></div>
+                      <div className={styles.skeleton} style={{ width: '50px', height: '20px', borderRadius: '10px' }}></div>
+                    </div>
+                  </div>
+                </td>
+                <td className={styles.tableCell}>
+                  <div className={styles.skeleton} style={{ width: '120px', height: '16px' }}></div>
+                </td>
+                <td className={styles.tableCell}>
+                  <div className={styles.skeleton} style={{ width: '140px', height: '16px', borderRadius: '4px' }}></div>
+                </td>
+                <td className={styles.tableCell}>
+                  <div className={styles.skeleton} style={{ width: '60px', height: '24px', borderRadius: '12px' }}></div>
+                </td>
+                <td className={styles.tableCell}>
+                  <div className={styles.dateCell}>
+                    <div className={styles.skeleton} style={{ width: '100px', height: '14px', marginBottom: '4px' }}></div>
+                    <div className={styles.skeleton} style={{ width: '80px', height: '12px' }}></div>
+                  </div>
+                </td>
+                <td className={styles.tableCell}>
+                  <div className={styles.actionsCell}>
+                    <div className={styles.primaryActions}>
+                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
+                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
+                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
+                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
+                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
+                    </div>
+                  </div>
+                </td>
+                <td className={styles.tableCell}>
+                  <div className={styles.skeleton} style={{ width: '40px', height: '32px', borderRadius: '6px' }}></div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     )
   }

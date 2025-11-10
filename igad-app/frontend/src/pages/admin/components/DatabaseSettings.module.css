@@ -16,7 +16,7 @@
 }
 
 .titleIcon {
-  color: #3b82f6;
+  color: #016630;
 }
 
 .title {
@@ -27,14 +27,14 @@
 }
 
 .subtitle {
-  color: #6b7280;
+  color: #6B7280;
   font-size: 0.875rem;
   margin: 4px 0 0 0;
 }
 
 .refreshButton {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
   color: #374151;
   padding: 8px 16px;
   border-radius: 8px;
@@ -47,12 +47,13 @@
 }
 
 .refreshButton:hover:not(:disabled) {
-  background: #e5e7eb;
-  border-color: #9ca3af;
+  background: #DCFCE7;
+  border-color: #B9F8CF;
+  color: #016630;
 }
 
 .refreshButton:disabled {
-  opacity: 0.6;
+  opacity: 0.75;
   cursor: not-allowed;
 }
 
@@ -74,7 +75,7 @@
 .section {
   background: white;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #E5E7EB;
   padding: 24px;
 }
 
@@ -96,20 +97,20 @@
 
 .overviewItem {
   padding: 16px;
-  border: 1px solid #f3f4f6;
+  border: 1px solid #F3F4F6;
   border-radius: 8px;
   text-align: center;
   transition: all 0.2s;
 }
 
 .overviewItem:hover {
-  border-color: #e5e7eb;
-  background: #f9fafb;
+  border-color: #B9F8CF;
+  background: #F0FDF4;
 }
 
 .overviewLabel {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #6B7280;
   text-transform: uppercase;
   letter-spacing: 0.025em;
   margin-bottom: 8px;
@@ -122,7 +123,7 @@
 }
 
 .tablesContainer {
-  background: #f9fafb;
+  background: #F9FAFB;
   border-radius: 8px;
   padding: 16px;
 }
@@ -134,14 +135,14 @@
 
 .tableCard {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #E5E7EB;
   border-radius: 8px;
   padding: 16px;
   transition: all 0.2s;
 }
 
 .tableCard:hover {
-  border-color: #d1d5db;
+  border-color: #B9F8CF;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
@@ -176,12 +177,12 @@
 }
 
 .statusActive {
-  background: #10b981;
+  background: #10B981;
 }
 
 .statusText {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #6B7280;
 }
 
 .tableStats {
@@ -197,7 +198,7 @@
 
 .statLabel {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #6B7280;
 }
 
 .statValue {
@@ -217,18 +218,18 @@
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  border: 1px solid #f3f4f6;
+  border: 1px solid #F3F4F6;
   border-radius: 8px;
   transition: all 0.2s;
 }
 
 .infoItem:hover {
-  border-color: #e5e7eb;
-  background: #f9fafb;
+  border-color: #B9F8CF;
+  background: #F0FDF4;
 }
 
 .infoIcon {
-  color: #3b82f6;
+  color: #016630;
   margin-top: 2px;
   flex-shrink: 0;
 }
@@ -246,7 +247,7 @@
 
 .infoDescription {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #6B7280;
   margin: 0;
   line-height: 1.4;
 }

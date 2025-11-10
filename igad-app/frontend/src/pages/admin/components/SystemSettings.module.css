@@ -13,7 +13,7 @@
 }
 
 .titleIcon {
-  color: #3b82f6;
+  color: #016630;
 }
 
 .title {
@@ -24,7 +24,7 @@
 }
 
 .subtitle {
-  color: #6b7280;
+  color: #6B7280;
   font-size: 0.875rem;
   margin: 4px 0 0 0;
 }
@@ -38,7 +38,7 @@
 .section {
   background: white;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #E5E7EB;
   padding: 24px;
 }
 
@@ -58,15 +58,15 @@
 }
 
 .configItem {
-  border: 1px solid #f3f4f6;
+  border: 1px solid #F3F4F6;
   border-radius: 8px;
   padding: 16px;
   transition: all 0.2s;
 }
 
 .configItem:hover {
-  border-color: #e5e7eb;
-  background: #f9fafb;
+  border-color: #B9F8CF;
+  background: #F0FDF4;
 }
 
 .configHeader {
@@ -88,11 +88,11 @@
 }
 
 .statusSuccess {
-  color: #10b981;
+  color: #10B981;
 }
 
 .statusError {
-  color: #ef4444;
+  color: #EF4444;
 }
 
 .configValue {
@@ -102,8 +102,8 @@
 }
 
 .code {
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  background: #F3F4F6;
+  border: 1px solid #E5E7EB;
   border-radius: 6px;
   padding: 8px 12px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
@@ -115,8 +115,8 @@
 
 .copyButton {
   background: none;
-  border: 1px solid #d1d5db;
-  color: #6b7280;
+  border: 1px solid #D1D5DB;
+  color: #6B7280;
   padding: 6px;
   border-radius: 6px;
   cursor: pointer;
@@ -129,9 +129,9 @@
 }
 
 .copyButton:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-  color: #374151;
+  background: #DCFCE7;
+  border-color: #B9F8CF;
+  color: #016630;
 }
 
 .statusGrid {
@@ -144,14 +144,14 @@
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  border: 1px solid #f3f4f6;
+  border: 1px solid #F3F4F6;
   border-radius: 8px;
   transition: all 0.2s;
 }
 
 .statusItem:hover {
-  border-color: #e5e7eb;
-  background: #f9fafb;
+  border-color: #B9F8CF;
+  background: #F0FDF4;
 }
 
 .statusIndicator {
@@ -161,7 +161,7 @@
   min-width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #f9fafb;
+  background: #F9FAFB;
 }
 
 .statusContent {
@@ -177,7 +177,7 @@
 
 .statusDescription {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #6B7280;
   margin: 0;
   line-height: 1.4;
 }
