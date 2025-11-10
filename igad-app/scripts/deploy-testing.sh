@@ -1,53 +1,31 @@
 #!/bin/bash
 set -e
 
-echo "🚀 IGAD Innovation Hub - Testing Environment Deployment"
-echo "======================================================"
-
-# Set AWS profile
-export AWS_PROFILE=IBD-DEV
+# Validate AWS profile
+if [ "$(aws configure get profile)" != "IBD-DEV" ]; then
+    echo "❌ ERROR: Must use IBD-DEV profile"
+    echo "Run: aws configure set profile IBD-DEV"
+    exit 1
+fi
 
 # Validate AWS region
-CURRENT_REGION=$(aws configure get region --profile IBD-DEV 2>/dev/null || echo "")
-if [ "$CURRENT_REGION" != "us-east-1" ]; then
+if [ "$(aws configure get region)" != "us-east-1" ]; then
     echo "❌ ERROR: Must deploy to us-east-1 region"
-    echo "Run: aws configure set region us-east-1 --profile IBD-DEV"
+    echo "Run: aws configure set region us-east-1"
     exit 1
 fi
 
 echo "✅ AWS profile and region validated"
-echo "   Profile: IBD-DEV"
-echo "   Region: $CURRENT_REGION"
 
-# Check if we're in the right directory (igad-app root)
-if [ ! -f "infrastructure/package.json" ]; then
-    echo "❌ ERROR: Must run from igad-app root directory"
-    echo "Current directory: $(pwd)"
-    echo "Expected: /path/to/igad-app/"
-    exit 1
-fi
+# Copy source to dist
+echo "📦 Copying source files to dist..."
+cd backend && cp -r app/* dist/
 
-echo "✅ Project directory validated"
+# Build and deploy
+echo "🔨 Building SAM application..."
+sam build --use-container
 
-# Install dependencies if needed
-cd infrastructure
-if [ ! -d "node_modules" ]; then
-    echo "📦 Installing CDK dependencies..."
-    npm install
-fi
+echo "🚀 Deploying to testing environment..."
+sam deploy
 
-# Bootstrap CDK if needed
-echo "🔧 Bootstrapping CDK..."
-npx cdk bootstrap --profile IBD-DEV --context environment=testing
-
-# Deploy infrastructure
-echo "🚀 Deploying to Testing environment..."
-npx cdk deploy --profile IBD-DEV --context environment=testing --require-approval never
-
-echo ""
-echo "✅ Testing deployment completed successfully!"
-echo "📋 Next steps:"
-echo "   1. Verify deployment in AWS Console"
-echo "   2. Test Cognito User Pool functionality"
-echo "   3. Validate API Gateway endpoints"
-echo "   4. Check CloudWatch logs"
+echo "✅ Deployment completed successfully!"

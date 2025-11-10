@@ -37,29 +37,18 @@ if [ "$confirm" != "yes" ]; then
     exit 1
 fi
 
-# Check if we're in the right directory
-if [ ! -f "infrastructure/package.json" ]; then
-    echo "❌ ERROR: Must run from project root directory"
-    echo "Current directory: $(pwd)"
-    exit 1
-fi
+echo "✅ Production deployment confirmed"
 
-echo "✅ Project directory validated"
+# Copy source to dist
+echo "📦 Copying source files to dist..."
+cd backend && cp -r app/* dist/ && cd ..
 
-# Install dependencies if needed
-cd infrastructure
-if [ ! -d "node_modules" ]; then
-    echo "📦 Installing CDK dependencies..."
-    npm install
-fi
+# Build and deploy
+echo "🔨 Building SAM application..."
+sam build --use-container
 
-# Bootstrap CDK if needed
-echo "🔧 Bootstrapping CDK..."
-npx cdk bootstrap --context environment=production
-
-# Deploy infrastructure
-echo "🚀 Deploying to Production environment..."
-npx cdk deploy --context environment=production --require-approval never
+echo "🚀 Deploying to production environment..."
+sam deploy --config-env production
 
 echo ""
 echo "✅ Production deployment completed successfully!"

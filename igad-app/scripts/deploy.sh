@@ -18,11 +18,11 @@ ENVIRONMENT=$1
 case $ENVIRONMENT in
     testing)
         echo "🧪 Deploying to TESTING environment..."
-        ./scripts/deploy-fullstack-testing.sh
+        ./scripts/deploy-testing.sh
         ;;
     production)
         echo "🏭 Deploying to PRODUCTION environment..."
-        ./scripts/deploy-fullstack-production.sh
+        ./scripts/deploy-production.sh
         ;;
     *)
         echo "❌ Invalid environment: $ENVIRONMENT"
