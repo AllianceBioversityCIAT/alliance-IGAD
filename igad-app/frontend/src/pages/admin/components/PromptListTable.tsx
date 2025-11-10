@@ -1,13 +1,9 @@
-import { useState, useEffect } from 'react'
 import {
   Edit,
   Trash2,
   Copy,
-  CheckCircle,
-  MoreVertical,
   Power,
   PowerOff,
-  Eye,
   MessageCircle,
   History,
 } from 'lucide-react'
@@ -18,7 +14,6 @@ interface PromptListTableProps {
   prompts: Prompt[]
   isLoading: boolean
   onEdit: (promptId: string) => void
-  onPublish: (id: string, version: number) => void
   onDelete: (id: string, version?: number) => void
   onClone: (prompt: Prompt) => void
   onToggleActive: (id: string) => void
@@ -30,28 +25,12 @@ export function PromptListTable({
   prompts,
   isLoading,
   onEdit,
-  onPublish,
   onDelete,
   onClone,
   onToggleActive,
   onComments,
   onHistory,
 }: PromptListTableProps) {
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (activeDropdown) {
-        setActiveDropdown(null)
-      }
-    }
-
-    document.addEventListener('click', handleClickOutside)
-    return () => {
-      document.removeEventListener('click', handleClickOutside)
-    }
-  }, [activeDropdown])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -64,16 +43,9 @@ export function PromptListTable({
   }
 
   const handleActionClick = (promptId: string, action: string, prompt: Prompt) => {
-    setActiveDropdown(null)
-
     switch (action) {
       case 'edit':
         onEdit(promptId)
-        break
-      case 'publish':
-        if (prompt.is_active) {
-          onPublish(promptId, prompt.version)
-        }
         break
       case 'clone':
         onClone(prompt)
@@ -179,7 +151,6 @@ export function PromptListTable({
               </td>
               <td className={styles.tableCell}>
                 <div className={styles.actionsCell}>
-                  {/* Primary Actions - Always Visible */}
                   <div className={styles.primaryActions}>
                     <button
                       onClick={() => onEdit(prompt.id)}
@@ -200,68 +171,32 @@ export function PromptListTable({
                     >
                       {prompt.is_active ? <PowerOff size={14} /> : <Power size={14} />}
                     </button>
-                  </div>
 
-                  {/* Secondary Actions - Dropdown */}
-                  <div className={styles.dropdownContainer}>
                     <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        setActiveDropdown(activeDropdown === prompt.id ? null : prompt.id)
-                      }}
-                      className={`${styles.actionButton} ${styles.moreButton}`}
-                      title="More actions"
+                      onClick={() => handleActionClick(prompt.id, 'clone', prompt)}
+                      className={`${styles.actionButton} ${styles.cloneButton}`}
+                      title={`Create a copy of "${prompt.name}"`}
                     >
-                      <MoreVertical size={14} />
+                      <Copy size={14} />
                     </button>
 
-                    {activeDropdown === prompt.id && (
-                      <div
-                        className={`${styles.dropdown} ${index >= prompts.length - 2 ? styles.dropup : ''}`}
+                    {onHistory && (
+                      <button
+                        onClick={() => handleActionClick(prompt.id, 'history', prompt)}
+                        className={`${styles.actionButton} ${styles.historyButton}`}
+                        title={`View change history for "${prompt.name}"`}
                       >
-                        {prompt.is_active && (
-                          <button
-                            onClick={() => handleActionClick(prompt.id, 'publish', prompt)}
-                            className={styles.dropdownItem}
-                            title={`Publish "${prompt.name}" to make it available for use`}
-                          >
-                            <CheckCircle size={14} />
-                            Publish
-                          </button>
-                        )}
-
-                        <button
-                          onClick={() => handleActionClick(prompt.id, 'clone', prompt)}
-                          className={styles.dropdownItem}
-                          title={`Create a copy of "${prompt.name}"`}
-                        >
-                          <Copy size={14} />
-                          Clone
-                        </button>
-
-                        {onHistory && (
-                          <button
-                            onClick={() => handleActionClick(prompt.id, 'history', prompt)}
-                            className={styles.dropdownItem}
-                            title={`View change history for "${prompt.name}"`}
-                          >
-                            <History size={14} />
-                            History
-                          </button>
-                        )}
-
-                        <div className={styles.dropdownDivider}></div>
-
-                        <button
-                          onClick={() => handleActionClick(prompt.id, 'delete', prompt)}
-                          className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`}
-                          title={`Permanently delete "${prompt.name}" - this cannot be undone`}
-                        >
-                          <Trash2 size={14} />
-                          Delete
-                        </button>
-                      </div>
+                        <History size={14} />
+                      </button>
                     )}
+
+                    <button
+                      onClick={() => handleActionClick(prompt.id, 'delete', prompt)}
+                      className={`${styles.actionButton} ${styles.deleteButton}`}
+                      title={`Permanently delete "${prompt.name}" - this cannot be undone`}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               </td>

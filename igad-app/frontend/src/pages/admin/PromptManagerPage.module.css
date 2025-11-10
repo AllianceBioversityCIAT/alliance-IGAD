@@ -14,7 +14,7 @@
   align-items: flex-start;
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #F3F4F6;
+  border-bottom: 1px solid #E5E7EB;
 }
 
 .headerLeft {
@@ -31,7 +31,7 @@
 .titleIcon {
   width: 24px;
   height: 24px;
-  color: #6366F1;
+  color: #016630;
 }
 
 .title {
@@ -39,7 +39,7 @@
   font-size: 28px;
   font-weight: 600;
   line-height: 36px;
-  color: #111827;
+  color: #0A0A0A;
   margin: 0;
 }
 
@@ -47,7 +47,7 @@
   font-family: 'Arial', sans-serif;
   font-size: 16px;
   line-height: 24px;
-  color: #6B7280;
+  color: #4A5565;
   margin: 0;
 }
 
@@ -56,7 +56,7 @@
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: #6366F1;
+  background: #00A63E;
   color: #FFFFFF;
   border: none;
   border-radius: 8px;
@@ -68,7 +68,7 @@
 }
 
 .createButton:hover {
-  background: #5B5BD6;
+  background: #008236;
   transform: translateY(-1px);
 }
 
@@ -97,7 +97,7 @@
   transform: translateY(-50%);
   width: 16px;
   height: 16px;
-  color: #9CA3AF;
+  color: #6B7280;
 }
 
 .searchInput {
@@ -113,8 +113,8 @@
 
 .searchInput:focus {
   outline: none;
-  border-color: #6366F1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #016630;
+  box-shadow: 0 0 0 3px rgba(1, 102, 48, 0.1);
 }
 
 .filterButton {
@@ -138,15 +138,15 @@
 }
 
 .filterButtonActive {
-  background: #EEF2FF;
-  border-color: #6366F1;
-  color: #6366F1;
+  background: #DCFCE7;
+  border-color: #B9F8CF;
+  color: #016630;
 }
 
 /* Filters Panel */
 .filtersPanel {
-  background: #F9FAFB;
-  border: 1px solid #E5E7EB;
+  background: #F0FDF4;
+  border: 1px solid #B9F8CF;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 16px;
@@ -164,13 +164,13 @@
 .resultsCount {
   font-family: 'Arial', sans-serif;
   font-size: 14px;
-  color: #6B7280;
+  color: #4A5565;
 }
 
 .clearFilters {
   background: none;
   border: none;
-  color: #6366F1;
+  color: #00A63E;
   font-family: 'Arial', sans-serif;
   font-size: 14px;
   cursor: pointer;
@@ -178,7 +178,7 @@
 }
 
 .clearFilters:hover {
-  color: #5B5BD6;
+  color: #008236;
 }
 
 /* Content */
@@ -213,8 +213,8 @@
 }
 
 .paginationButton:hover:not(:disabled) {
-  border-color: #6366F1;
-  color: #6366F1;
+  border-color: #016630;
+  color: #016630;
 }
 
 .paginationButton:disabled {
@@ -225,8 +225,121 @@
 .paginationInfo {
   font-family: 'Arial', sans-serif;
   font-size: 14px;
-  color: #6B7280;
+  color: #4A5565;
   margin: 0 8px;
+}
+
+/* Context banner */
+.contextBanner {
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border: 1px solid #B9F8CF;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.contextContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contextIcon {
+  color: #016630;
+  flex-shrink: 0;
+}
+
+.contextText {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.contextTitle {
+  font-weight: 500;
+  color: #016630;
+  font-size: 14px;
+}
+
+.contextRoute {
+  background: #016630;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.contextSection {
+  color: #008236;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #00A63E;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background: #008236;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 166, 62, 0.3);
+}
+
+/* Header Actions */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* View Toggle */
+.viewToggle {
+  display: flex;
+  background: #F3F4F6;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.viewButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewButton:hover {
+  color: #374151;
+}
+
+.viewButton.active {
+  background: white;
+  color: #016630;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Responsive Design */
@@ -254,115 +367,4 @@
     flex-direction: column;
     gap: 12px;
   }
-}
-/* Context banner */
-.contextBanner {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
-  padding: 16px 20px;
-  margin-bottom: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.contextContent {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.contextIcon {
-  color: #2563eb;
-  flex-shrink: 0;
-}
-
-.contextText {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.contextTitle {
-  font-weight: 500;
-  color: #1e40af;
-  font-size: 14px;
-}
-
-.contextRoute {
-  background: #1e40af;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', monospace;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.contextSection {
-  color: #1e40af;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.backButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.backButton:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
-}
-/* Header Actions */
-.headerActions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* View Toggle */
-.viewToggle {
-  display: flex;
-  background: #f3f4f6;
-  border-radius: 8px;
-  padding: 2px;
-}
-
-.viewButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 32px;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.viewButton:hover {
-  color: #374151;
-}
-
-.viewButton.active {
-  background: white;
-  color: #3b82f6;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }

@@ -13,20 +13,20 @@
   justify-content: space-between;
   margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid #E5E7EB;
 }
 
 .sectionTitle {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #111827;
+  color: #0A0A0A;
 }
 
 .sectionCount {
   font-size: 14px;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: #4A5565;
+  background: #F3F4F6;
   padding: 4px 8px;
   border-radius: 12px;
 }
@@ -41,7 +41,7 @@
 /* Card Styles */
 .card {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #E5E7EB;
   border-radius: 12px;
   padding: 20px;
   transition: all 0.2s ease;
@@ -49,8 +49,8 @@
 }
 
 .card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  border-color: #016630;
+  box-shadow: 0 4px 12px rgba(1, 102, 48, 0.15);
   transform: translateY(-2px);
 }
 
@@ -70,7 +70,7 @@
   margin: 0 0 8px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #111827;
+  color: #0A0A0A;
   line-height: 1.3;
 }
 
@@ -83,13 +83,13 @@
 }
 
 .statusBadge.active {
-  background: #dcfce7;
-  color: #166534;
+  background: #DCFCE7;
+  color: #016630;
 }
 
 .statusBadge.inactive {
-  background: #fef2f2;
-  color: #991b1b;
+  background: #FEF2F2;
+  color: #991B1B;
 }
 
 /* Card Actions */
@@ -105,18 +105,30 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
   border-radius: 6px;
-  color: #6b7280;
+  color: #6B7280;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .actionButton:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
+  background: #F3F4F6;
+  border-color: #D1D5DB;
   color: #374151;
+}
+
+/* Toggle Button Specific Styles */
+.actionButton.activateButton {
+  background: #DCFCE7;
+  border-color: #B9F8CF;
+  color: #016630;
+}
+
+.actionButton.activateButton:hover {
+  background: #BBF7D0;
+  border-color: #86EFAC;
 }
 
 /* Card Content */
@@ -134,12 +146,12 @@
 .routeLabel {
   font-size: 12px;
   font-weight: 500;
-  color: #6b7280;
+  color: #4A5565;
 }
 
 .routeValue {
   font-size: 12px;
-  background: #f3f4f6;
+  background: #F3F4F6;
   padding: 2px 6px;
   border-radius: 4px;
   color: #374151;
@@ -153,7 +165,7 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
-  color: #6b7280;
+  color: #4A5565;
 }
 
 /* Tags */
@@ -166,8 +178,8 @@
 .tag {
   display: inline-block;
   padding: 2px 8px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #F0FDF4;
+  color: #016630;
   border-radius: 12px;
   font-size: 11px;
   font-weight: 500;
@@ -176,8 +188,8 @@
 .tagMore {
   display: inline-block;
   padding: 2px 8px;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: #F3F4F6;
+  color: #4A5565;
   border-radius: 12px;
   font-size: 11px;
   font-weight: 500;
@@ -186,10 +198,10 @@
 /* Card Footer */
 .cardFooter {
   padding-top: 12px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid #F3F4F6;
 }
 
 .updateInfo {
   font-size: 12px;
-  color: #9ca3af;
+  color: #6B7280;
 }

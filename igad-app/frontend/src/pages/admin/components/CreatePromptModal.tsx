@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Wand2, FileText, Settings, ArrowRight, ArrowLeft, Check } from 'lucide-react'
+import { X, Wand2, FileText, Settings, ArrowRight, ArrowLeft, Check, Tag, History } from 'lucide-react'
 import { ProposalSection, SECTION_LABELS } from '../../../types/prompt'
 import styles from './CreatePromptModal.module.css'
 
@@ -10,6 +10,7 @@ interface CreatePromptModalProps {
   isLoading?: boolean
   mode?: 'create' | 'edit'
   initialData?: any
+  onHistory?: () => void
   contextData?: {
     fromRoute?: string
     defaultSection?: ProposalSection
@@ -52,12 +53,14 @@ export function CreatePromptModal({
   isLoading = false,
   mode = 'create',
   initialData = null,
+  onHistory,
   contextData = {},
 }: CreatePromptModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
+  const [tagInput, setTagInput] = useState('')
   const [formData, setFormData] = useState({
     name: '',
-    section: ProposalSection.EXECUTIVE_SUMMARY,
+    section: ProposalSection.PROPOSAL_WRITER,
     route: '',
     system_prompt: '',
     user_prompt_template: '',
@@ -69,7 +72,7 @@ export function CreatePromptModal({
     if (mode === 'edit' && initialData) {
       setFormData({
         name: initialData.name || '',
-        section: initialData.section || ProposalSection.EXECUTIVE_SUMMARY,
+        section: initialData.section || ProposalSection.PROPOSAL_WRITER,
         route: initialData.route || '',
         system_prompt: initialData.system_prompt || '',
         user_prompt_template: initialData.user_prompt_template || '',
@@ -79,7 +82,7 @@ export function CreatePromptModal({
       // Reset form for create mode, but use context data if available
       setFormData({
         name: '',
-        section: contextData.defaultSection || ProposalSection.EXECUTIVE_SUMMARY,
+        section: contextData.defaultSection || ProposalSection.PROPOSAL_WRITER,
         route: contextData.fromRoute || '',
         system_prompt: '',
         user_prompt_template: '',
@@ -110,15 +113,35 @@ export function CreatePromptModal({
       // Reset form
       setFormData({
         name: '',
-        section: ProposalSection.EXECUTIVE_SUMMARY,
+        section: ProposalSection.PROPOSAL_WRITER,
         route: '',
         system_prompt: '',
         user_prompt_template: '',
         tags: [],
       })
+      setTagInput('')
       setCurrentStep(1)
     } catch (error) {
       // Error handling is done in parent component
+    }
+  }
+
+  const handleAddTag = () => {
+    const tag = tagInput.trim()
+    if (tag && !formData.tags.includes(tag)) {
+      setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }))
+      setTagInput('')
+    }
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setFormData(prev => ({ ...prev, tags: prev.tags.filter(tag => tag !== tagToRemove) }))
+  }
+
+  const handleTagKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddTag()
     }
   }
 
@@ -153,9 +176,16 @@ export function CreatePromptModal({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className={styles.closeButton}>
-            <X size={20} />
-          </button>
+          <div className={styles.headerActions}>
+            {onHistory && mode === 'edit' && (
+              <button onClick={onHistory} className={styles.historyButton} title="View change history">
+                <History size={18} />
+              </button>
+            )}
+            <button onClick={onClose} className={styles.closeButton}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Progress Bar */}
@@ -207,11 +237,12 @@ export function CreatePromptModal({
                   }
                   className={styles.select}
                 >
-                  {Object.entries(SECTION_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
+                  <option value={ProposalSection.PROPOSAL_WRITER}>
+                    {SECTION_LABELS[ProposalSection.PROPOSAL_WRITER]}
+                  </option>
+                  <option value={ProposalSection.NEWSLETTER_GENERATOR}>
+                    {SECTION_LABELS[ProposalSection.NEWSLETTER_GENERATOR]}
+                  </option>
                 </select>
                 {SECTION_DESCRIPTIONS[formData.section] && (
                   <p className={styles.sectionDescription}>
@@ -231,6 +262,47 @@ export function CreatePromptModal({
                 />
                 <p className={styles.helpText}>
                   The URL route where this prompt will be available in the application.
+                </p>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Tags</label>
+                <div className={styles.tagInputContainer}>
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyPress={handleTagKeyPress}
+                    className={styles.input}
+                    placeholder="Add tags (press Enter to add)"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddTag}
+                    className={styles.addTagButton}
+                    disabled={!tagInput.trim()}
+                  >
+                    <Tag size={16} />
+                  </button>
+                </div>
+                {formData.tags.length > 0 && (
+                  <div className={styles.tagsContainer}>
+                    {formData.tags.map((tag, index) => (
+                      <span key={index} className={styles.tag}>
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className={styles.removeTagButton}
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className={styles.helpText}>
+                  Add tags to help categorize and search for this prompt.
                 </p>
               </div>
             </div>
@@ -299,6 +371,18 @@ export function CreatePromptModal({
                   <span className={styles.reviewLabel}>Route:</span>
                   <span>{formData.route}</span>
                 </div>
+                {formData.tags.length > 0 && (
+                  <div className={styles.reviewItem}>
+                    <span className={styles.reviewLabel}>Tags:</span>
+                    <div className={styles.reviewTags}>
+                      {formData.tags.map((tag, index) => (
+                        <span key={index} className={styles.reviewTag}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className={styles.reviewCard}>
