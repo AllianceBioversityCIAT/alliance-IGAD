@@ -2,7 +2,7 @@ version = 0.1
     [default]
     [default.deploy]
     [default.deploy.parameters]
-    stack_name = "igad-innovation-hub"
+    stack_name = "igad-backend-testing"
     resolve_s3 = true
     confirm_changeset = false
     capabilities = "CAPABILITY_IAM"

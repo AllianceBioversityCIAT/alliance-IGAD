@@ -9,7 +9,7 @@ export function SystemSettings() {
     userPoolId: process.env.REACT_APP_COGNITO_USER_POOL_ID || 'Not configured',
     clientId: process.env.REACT_APP_COGNITO_CLIENT_ID || 'Not configured',
     region: process.env.REACT_APP_AWS_REGION || 'us-east-1',
-    apiEndpoint: process.env.REACT_APP_API_URL || 'http://localhost:8000',
+    apiEndpoint: process.env.REACT_APP_API_URL || import.meta.env.VITE_API_BASE_URL,
   }
 
   const handleCopy = async (text: string, key: string) => {

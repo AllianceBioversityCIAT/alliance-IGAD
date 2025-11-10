@@ -30,13 +30,51 @@ Resources:
         Variables:
           PORT: 8080
           AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
-          
-          
-          USER_POOL_CLIENT_ID: 7jb1a09mcg438sn3sqois0runr
-          
-          USER_POOL_ID: us-east-1_EULeelICj
-          
+          COGNITO_CLIENT_ID: 4l2sdk3cuq1pnm30q0nbcs7v3r
+          COGNITO_USER_POOL_ID: us-east-1_lLtVSWM9T
           TABLE_NAME: igad-testing-main-table
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminInitiateAuth
+                - cognito-idp:AdminRespondToAuthChallenge
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminSetUserPassword
+                - cognito-idp:AdminDeleteUser
+                - cognito-idp:AdminEnableUser
+                - cognito-idp:AdminDisableUser
+                - cognito-idp:AdminUpdateUserAttributes
+                - cognito-idp:AdminAddUserToGroup
+                - cognito-idp:AdminRemoveUserFromGroup
+                - cognito-idp:ListUsers
+                - cognito-idp:ListGroups
+                - cognito-idp:ForgotPassword
+                - cognito-idp:ConfirmForgotPassword
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+              Resource: 
+                - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/igad-testing-main-table'
+                - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/igad-testing-main-table/index/*'
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: '*'
           
           
           
@@ -57,6 +95,30 @@ Resources:
           Properties:
             RestApiId: !Ref ApiGateway
             Path: /api
+            Method: ANY
+        DocsEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /docs
+            Method: GET
+        RedocEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /redoc
+            Method: GET
+        OpenApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /openapi.json
+            Method: GET
+        RootCatchAllEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /{proxy+}
             Method: ANY
 
   

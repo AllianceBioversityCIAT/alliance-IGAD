@@ -3,15 +3,16 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-import boto3
 from botocore.exceptions import ClientError
+from app.utils.aws_session import get_aws_session
 
 logger = logging.getLogger(__name__)
 
 
 class BedrockClient:
     def __init__(self, region_name: str = "us-east-1"):
-        self.client = boto3.client("bedrock-runtime", region_name=region_name)
+        session = get_aws_session()
+        self.client = session.client("bedrock-runtime", region_name=region_name)
         self.model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
 
     def generate_content(

@@ -10,6 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from ..middleware.auth_middleware import AuthMiddleware
+from ..utils.aws_session import get_aws_session
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer()
@@ -44,14 +45,14 @@ async def login(credentials: LoginRequest):
         import boto3
         from botocore.exceptions import ClientError
 
-        session = boto3.Session(profile_name="IBD-DEV")
+        session = get_aws_session()
         cognito_client = session.client("cognito-idp", region_name="us-east-1")
 
         # Attempt to authenticate with Cognito
         response = cognito_client.admin_initiate_auth(
             UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
             ClientId=os.getenv("COGNITO_CLIENT_ID"),
-            AuthFlow="ADMIN_NO_SRP_AUTH",
+            AuthFlow="ADMIN_USER_PASSWORD_AUTH",
             AuthParameters={"USERNAME": email, "PASSWORD": password},
         )
 
@@ -79,9 +80,9 @@ async def login(credentials: LoginRequest):
         id_token = response["AuthenticationResult"]["IdToken"]
 
         # Decode ID token to get user info
-        import jwt
+        from jose import jwt
 
-        user_info = jwt.decode(id_token, options={"verify_signature": False})
+        user_info = jwt.decode(id_token, "", options={"verify_signature": False, "verify_aud": False})
 
         # Check if user is admin
         is_admin = email in [
@@ -143,13 +144,28 @@ async def forgot_password(request: ForgotPasswordRequest):
         import boto3
         from botocore.exceptions import ClientError
 
-        session = boto3.Session(profile_name="IBD-DEV")
+        session = get_aws_session()
         cognito_client = session.client("cognito-idp", region_name="us-east-1")
         ses_client = session.client("ses", region_name="us-east-1")
 
-        # First, trigger Cognito forgot password to generate the code
+        # Look up the actual username by email since Cognito uses UUID as username
+        username = request.username
+        if "@" in username:  # If it's an email, find the actual username
+            try:
+                users_response = cognito_client.list_users(
+                    UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
+                    Filter=f'email = "{username}"'
+                )
+                if users_response["Users"]:
+                    username = users_response["Users"][0]["Username"]
+                else:
+                    raise HTTPException(status_code=404, detail="User not found")
+            except ClientError:
+                raise HTTPException(status_code=404, detail="User not found")
+
+        # Trigger Cognito forgot password to generate the code
         cognito_response = cognito_client.forgot_password(
-            ClientId=os.getenv("COGNITO_CLIENT_ID"), Username=request.username
+            ClientId=os.getenv("COGNITO_CLIENT_ID"), Username=username
         )
 
         # Since we can't get the actual code from Cognito, we'll send our own email
@@ -246,7 +262,7 @@ async def reset_password(request: ResetPasswordRequest):
         import boto3
         from botocore.exceptions import ClientError
 
-        session = boto3.Session(profile_name="IBD-DEV")
+        session = get_aws_session()
         cognito_client = session.client("cognito-idp", region_name="us-east-1")
 
         # Confirm forgot password with code
@@ -294,7 +310,7 @@ async def complete_password_change(request: CompletePasswordChangeRequest):
         import boto3
         from botocore.exceptions import ClientError
 
-        session = boto3.Session(profile_name="IBD-DEV")
+        session = get_aws_session()
         cognito_client = session.client("cognito-idp", region_name="us-east-1")
 
         # Complete the password change challenge
@@ -314,9 +330,9 @@ async def complete_password_change(request: CompletePasswordChangeRequest):
         id_token = response["AuthenticationResult"]["IdToken"]
 
         # Decode ID token to get user info
-        import jwt
+        from jose import jwt
 
-        user_info = jwt.decode(id_token, options={"verify_signature": False})
+        user_info = jwt.decode(id_token, "", options={"verify_signature": False, "verify_aud": False})
 
         # Check if user is admin
         is_admin = request.username in [

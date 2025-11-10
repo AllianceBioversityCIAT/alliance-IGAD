@@ -33,7 +33,7 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
 
   const fetchComments = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/admin/prompts/${promptId}/comments`, {
+      const response = await fetch(`import.meta.env.VITE_API_BASE_URL/admin/prompts/${promptId}/comments`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -53,7 +53,7 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
 
     setIsLoading(true)
     try {
-      const response = await fetch(`http://localhost:8000/admin/prompts/${promptId}/comments`, {
+      const response = await fetch(`import.meta.env.VITE_API_BASE_URL/admin/prompts/${promptId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,12 +1,13 @@
-import boto3
 from botocore.exceptions import ClientError
+from app.utils.aws_session import get_aws_session
 
 
 class SimpleCognitoService:
     def __init__(self, user_pool_id: str, client_id: str, region: str = "us-east-1"):
         self.user_pool_id = user_pool_id
         self.client_id = client_id
-        self.cognito_client = boto3.client("cognito-idp", region_name=region)
+        session = get_aws_session()
+        self.cognito_client = session.client("cognito-idp", region_name=region)
 
     def authenticate_user(self, username: str, password: str):
         """Authenticate user with Cognito (sync version)"""
@@ -14,7 +15,7 @@ class SimpleCognitoService:
             response = self.cognito_client.admin_initiate_auth(
                 UserPoolId=self.user_pool_id,
                 ClientId=self.client_id,
-                AuthFlow="ADMIN_NO_SRP_AUTH",
+                AuthFlow="ADMIN_USER_PASSWORD_AUTH",
                 AuthParameters={"USERNAME": username, "PASSWORD": password},
             )
 

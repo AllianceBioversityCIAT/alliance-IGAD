@@ -4,16 +4,16 @@ import re
 import time
 from typing import Dict
 
-import boto3
-
 from app.models.prompt_model import PromptPreviewRequest, PromptPreviewResponse
+from app.utils.aws_session import get_aws_session
 
 logger = logging.getLogger(__name__)
 
 
 class BedrockService:
     def __init__(self):
-        self.bedrock = boto3.client("bedrock-runtime")
+        session = get_aws_session()
+        self.bedrock = session.client("bedrock-runtime")
         self.model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
         self.max_tokens = 4000
         self.temperature = 0.7

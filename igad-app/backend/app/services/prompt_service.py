@@ -367,7 +367,7 @@ class PromptService:
                 route = item.get("route", "")
 
                 # Check for other active prompts with same section and route
-                existing_active = await self._find_active_prompt_by_section_route(
+                existing_active = self._find_active_prompt_by_section_route(
                     section, route, prompt_id
                 )
                 if existing_active:

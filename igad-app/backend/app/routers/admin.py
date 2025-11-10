@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
+from ..utils.aws_session import get_aws_session
+
 from ..middleware.auth_middleware import AuthMiddleware
 from ..services.cognito_service import CognitoUserManagementService
 from ..services.simple_cognito import SimpleCognitoService
@@ -72,7 +74,7 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
         # Create user without sending Cognito email
         import boto3
 
-        session = boto3.Session(profile_name="IBD-DEV")
+        session = get_aws_session()
         cognito_client = session.client("cognito-idp", region_name="us-east-1")
         ses_client = session.client("ses", region_name="us-east-1")
 
