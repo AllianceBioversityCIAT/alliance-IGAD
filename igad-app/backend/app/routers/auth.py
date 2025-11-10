@@ -146,7 +146,6 @@ async def forgot_password(request: ForgotPasswordRequest):
 
         session = get_aws_session()
         cognito_client = session.client("cognito-idp", region_name="us-east-1")
-        ses_client = session.client("ses", region_name="us-east-1")
 
         # Look up the actual username by email since Cognito uses UUID as username
         username = request.username
@@ -213,21 +212,10 @@ async def forgot_password(request: ForgotPasswordRequest):
         </html>
         """
 
-        # Send our custom HTML email via SES
-        try:
-            ses_client.send_email(
-                Source="IGAD Innovation Hub <j.cadavid@cgiar.org>",
-                Destination={"ToAddresses": [request.username]},
-                Message={
-                    "Subject": {
-                        "Data": "Password Reset Instructions - IGAD Innovation Hub"
-                    },
-                    "Body": {"Html": {"Data": reset_html}},
-                },
-            )
-        except Exception as ses_error:
-            print(f"SES email failed: {ses_error}")
-            # Continue anyway since Cognito email was sent
+        # Use Cognito's built-in password reset (no custom email needed)
+        # Cognito will send the reset code using the configured email templates
+        # Updated: 2025-01-10 - Removed SES dependency
+        print("Password reset initiated via Cognito - using built-in email templates")
 
         return {
             "success": True,

@@ -173,23 +173,8 @@ class CognitoUserManagementService:
             except ClientError as pwd_error:
                 print(f"Failed to set temporary password: {pwd_error}")
 
-            # Email is sent automatically by Cognito when MessageAction='RESEND'
-
-            # Send welcome email if requested
-            if send_email:
-                try:
-                    print("Sending welcome email...")
-                    actual_username = response["User"]["Username"]
-                    # Use admin_create_user with RESEND to send email to existing user
-                    self.cognito_client.admin_create_user(
-                        UserPoolId=self.user_pool_id,
-                        Username=email,  # Use email for RESEND
-                        MessageAction="RESEND",
-                    )
-                    print("Welcome email sent successfully")
-                except ClientError as email_error:
-                    print(f"Failed to send welcome email: {email_error}")
-                    # Don't fail the whole operation if email fails
+            # Email is sent automatically by Cognito when user is created (unless suppressed)
+            # No need for additional email sending - Cognito handles it with custom templates
 
             return {
                 "success": True,

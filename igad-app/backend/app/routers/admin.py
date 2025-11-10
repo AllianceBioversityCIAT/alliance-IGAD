@@ -76,7 +76,6 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
 
         session = get_aws_session()
         cognito_client = session.client("cognito-idp", region_name="us-east-1")
-        ses_client = session.client("ses", region_name="us-east-1")
 
         # First check if user exists
         try:
@@ -91,65 +90,30 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
         except cognito_client.exceptions.UserNotFoundException:
             pass  # User doesn't exist, continue
 
-        # Create user with suppressed email
-        cognito_client.admin_create_user(
-            UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
-            Username=user_data.email,
-            UserAttributes=[
-                {"Name": "email", "Value": user_data.email},
-                {"Name": "email_verified", "Value": "true"},
-            ],
-            TemporaryPassword=user_data.temporary_password,
-            MessageAction="SUPPRESS",  # Don't send Cognito email
-        )
-
-        # Send custom HTML email via SES if requested
+        # Create user - let Cognito handle email sending
         if user_data.send_email:
-            welcome_html = f"""
-            <!DOCTYPE html>
-            <html>
-            <head><meta charset="utf-8"><title>Welcome to IGAD Innovation Hub</title></head>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="background: linear-gradient(135deg, #2D5016 0%, #4a7c59 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-                    <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to IGAD Innovation Hub</h1>
-                    <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Your account has been created successfully</p>
-                </div>
-
-                <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e2e8f0;">
-                    <h2 style="color: #2D5016; margin-top: 0;">Your Login Credentials</h2>
-
-                    <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #2D5016; margin: 20px 0;">
-                        <p style="margin: 0;"><strong>Username:</strong> {user_data.email}</p>
-                        <p style="margin: 10px 0 0 0;"><strong>Temporary Password:</strong> <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace;">{user_data.temporary_password}</code></p>
-                    </div>
-
-                    <p style="margin: 20px 0;">Please log in and change your password on first access.</p>
-
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="https://d1s9phi3b0di4q.cloudfront.net/login" style="background: #2D5016; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Access Platform</a>
-                    </div>
-
-                    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-
-                    <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0;">
-                        IGAD Innovation Hub - Driving Innovation in East Africa<br>
-                        If you have questions, contact us at <a href="mailto:j.cadavid@cgiar.org" style="color: #3b82f6;">j.cadavid@cgiar.org</a>
-                    </p>
-                </div>
-            </body>
-            </html>
-            """
-
-            # Send via SES
-            ses_client.send_email(
-                Source="IGAD Innovation Hub <j.cadavid@cgiar.org>",
-                Destination={"ToAddresses": [user_data.email]},
-                Message={
-                    "Subject": {
-                        "Data": "Welcome to IGAD Innovation Hub - Your Account Details"
-                    },
-                    "Body": {"Html": {"Data": welcome_html}},
-                },
+            # Let Cognito send the email with our custom templates
+            cognito_client.admin_create_user(
+                UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
+                Username=user_data.email,
+                UserAttributes=[
+                    {"Name": "email", "Value": user_data.email},
+                    {"Name": "email_verified", "Value": "true"},
+                ],
+                TemporaryPassword=user_data.temporary_password,
+                # MessageAction not specified - let Cognito send email with custom templates
+            )
+        else:
+            # Create user without sending email
+            cognito_client.admin_create_user(
+                UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
+                Username=user_data.email,
+                UserAttributes=[
+                    {"Name": "email", "Value": user_data.email},
+                    {"Name": "email_verified", "Value": "true"},
+                ],
+                TemporaryPassword=user_data.temporary_password,
+                MessageAction="SUPPRESS",  # Don't send email
             )
 
         return {
