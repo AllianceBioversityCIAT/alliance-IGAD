@@ -44,8 +44,47 @@ cd ..
 
 # Deploy using Lambda Web Adapter
 echo "🚀 Deploying fullstack application..."
-# Note: This would use the deploy_webapp tool we used earlier
-echo "Use: deploy_webapp tool with testing configuration"
+sam build --use-container
+sam deploy
+
+# Get CloudFront distribution ID from stack outputs
+echo "🔍 Getting CloudFront distribution ID..."
+DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+  --stack-name igad-backend-testing \
+  --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
+  --output text)
+
+if [ -z "$DISTRIBUTION_ID" ]; then
+    echo "❌ ERROR: Could not get CloudFront distribution ID"
+    exit 1
+fi
+
+# Get S3 bucket name from stack outputs
+echo "🔍 Getting S3 bucket name..."
+BUCKET_NAME=$(aws cloudformation describe-stacks \
+  --stack-name igad-backend-testing \
+  --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucket`].OutputValue' \
+  --output text)
+
+if [ -z "$BUCKET_NAME" ]; then
+    echo "❌ ERROR: Could not get S3 bucket name"
+    exit 1
+fi
+
+# Upload frontend to S3
+echo "📤 Uploading frontend to S3..."
+aws s3 sync frontend/dist/ s3://$BUCKET_NAME --delete
+
+# Invalidate CloudFront cache
+echo "🔄 Invalidating CloudFront cache..."
+INVALIDATION_ID=$(aws cloudfront create-invalidation \
+  --distribution-id $DISTRIBUTION_ID \
+  --paths "/*" \
+  --query 'Invalidation.Id' \
+  --output text)
+
+echo "✅ CloudFront invalidation created: $INVALIDATION_ID"
+echo "🎉 Fullstack testing deployment completed successfully!"
 
 echo ""
 echo "✅ Testing deployment completed!"

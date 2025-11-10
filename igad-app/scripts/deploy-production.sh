@@ -50,6 +50,60 @@ sam build --use-container
 echo "🚀 Deploying to production environment..."
 sam deploy --config-env production
 
+# Get CloudFront distribution ID from stack outputs
+echo "🔍 Getting CloudFront distribution ID..."
+DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+  --stack-name igad-backend-production \
+  --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
+  --output text)
+
+if [ -z "$DISTRIBUTION_ID" ]; then
+    echo "❌ ERROR: Could not get CloudFront distribution ID"
+    exit 1
+fi
+
+echo "📤 CloudFront Distribution ID: $DISTRIBUTION_ID"
+
+# Build and deploy frontend
+echo "🔨 Building frontend..."
+cd frontend
+npm install
+npm run build
+
+# Get S3 bucket name from stack outputs
+echo "🔍 Getting S3 bucket name..."
+cd ..
+BUCKET_NAME=$(aws cloudformation describe-stacks \
+  --stack-name igad-backend-production \
+  --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucket`].OutputValue' \
+  --output text)
+
+if [ -z "$BUCKET_NAME" ]; then
+    echo "❌ ERROR: Could not get S3 bucket name"
+    exit 1
+fi
+
+echo "📤 S3 Bucket: $BUCKET_NAME"
+
+# Upload frontend to S3
+echo "📤 Uploading frontend to S3..."
+aws s3 sync frontend/dist/ s3://$BUCKET_NAME --delete
+
+# Invalidate CloudFront cache
+echo "🔄 Invalidating CloudFront cache..."
+INVALIDATION_ID=$(aws cloudfront create-invalidation \
+  --distribution-id $DISTRIBUTION_ID \
+  --paths "/*" \
+  --query 'Invalidation.Id' \
+  --output text)
+
+echo "✅ CloudFront invalidation created: $INVALIDATION_ID"
+echo "🎉 Production deployment completed successfully!"
+echo ""
+echo "📋 Deployment Summary:"
+echo "   Frontend: https://$(aws cloudformation describe-stacks --stack-name igad-backend-production --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontURL`].OutputValue' --output text | sed 's|https://||')"
+echo "   API: $(aws cloudformation describe-stacks --stack-name igad-backend-production --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --output text)"
+
 echo ""
 echo "✅ Production deployment completed successfully!"
 echo "📋 Next steps:"
