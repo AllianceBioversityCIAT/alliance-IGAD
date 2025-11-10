@@ -16,21 +16,21 @@ def create_base_template(content):
 <hr style="border: 2px solid {COLORS['accent']}; margin: 20px 0; width: 60px; margin-left: auto; margin-right: auto;">
 {content}
 <hr style="margin-top: 30px; border: 1px solid #e0e0e0;">
-<p style="color: #666; font-size: 12px; text-align: center; margin: 10px 0 0 0;">IGAD Innovation Hub - Impulsando la innovación en agricultura</p>
+<p style="color: #666; font-size: 12px; text-align: center; margin: 10px 0 0 0;">IGAD Innovation Hub - Driving innovation in agriculture</p>
 </div>
 </div>"""
 
 
 def configure_welcome_email(cognito_client, user_pool_id):
-    content = f"""<p style="color: {COLORS['text']};">¡Bienvenido al IGAD Innovation Hub! Tu cuenta ha sido creada exitosamente.</p>
+    content = f"""<p style="color: {COLORS['text']};">Welcome to IGAD Innovation Hub! Your account has been successfully created.</p>
 <div style="background-color: {COLORS['light_green']}; padding: 20px; border-radius: 6px; margin: 20px 0;">
-<p style="margin: 0; color: {COLORS['primary']}; font-weight: bold;">Información de tu cuenta:</p>
-<p style="margin: 10px 0 0 0; color: {COLORS['text']};"><strong>Usuario:</strong> {{username}}</p>
-<p style="margin: 5px 0 0 0; color: {COLORS['text']};"><strong>Contraseña temporal:</strong> {{####}}</p>
+<p style="margin: 0; color: {COLORS['primary']}; font-weight: bold;">Your account information:</p>
+<p style="margin: 10px 0 0 0; color: {COLORS['text']};"><strong>Username:</strong> {{username}}</p>
+<p style="margin: 5px 0 0 0; color: {COLORS['text']};"><strong>Temporary password:</strong> {{####}}</p>
 </div>
-<p style="color: {COLORS['text']};">Por seguridad, deberás cambiar tu contraseña en el primer inicio de sesión.</p>
+<p style="color: {COLORS['text']};">For security, you will need to change your password on first login.</p>
 <p style="text-align: center; margin-top: 30px;">
-<a href="http://localhost:3000/login" style="background-color: {COLORS['primary']}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Iniciar Sesión</a>
+<a href="http://localhost:3000/login" style="background-color: {COLORS['primary']}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Login</a>
 </p>"""
     try:
         cognito_client.update_user_pool(
@@ -40,7 +40,7 @@ def configure_welcome_email(cognito_client, user_pool_id):
                 "UnusedAccountValidityDays": 7,
                 "InviteMessageTemplate": {
                     "EmailMessage": create_base_template(content),
-                    "EmailSubject": "Bienvenido al IGAD Innovation Hub - Cuenta Creada",
+                    "EmailSubject": "Welcome to IGAD Innovation Hub - Account Created",
                 },
             },
         )
@@ -52,18 +52,18 @@ def configure_welcome_email(cognito_client, user_pool_id):
 
 
 def configure_verification_email(cognito_client, user_pool_id):
-    content = f"""<p style="color: {COLORS['text']};">Para completar la verificación de tu email, usa el siguiente código:</p>
+    content = f"""<p style="color: {COLORS['text']};">To complete your email verification, use the following code:</p>
 <div style="background-color: #e3f2fd; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center;">
 <p style="margin: 0; color: #1976d2; font-size: 24px; font-weight: bold; letter-spacing: 2px;">{{####}}</p>
 </div>
-<p style="color: {COLORS['text']};">Este código expira en 24 horas por seguridad.</p>
-<p style="color: #666; font-size: 14px;">Si no solicitaste esta verificación, puedes ignorar este mensaje.</p>"""
+<p style="color: {COLORS['text']};">This code expires in 24 hours for security.</p>
+<p style="color: #666; font-size: 14px;">If you didn't request this verification, you can ignore this message.</p>"""
     try:
         cognito_client.update_user_pool(
             UserPoolId=user_pool_id,
             VerificationMessageTemplate={
                 "EmailMessage": create_base_template(content),
-                "EmailSubject": "IGAD Innovation Hub - Verifica tu Email",
+                "EmailSubject": "IGAD Innovation Hub - Verify Your Email",
             },
         )
         print("✅ Email verification configured")

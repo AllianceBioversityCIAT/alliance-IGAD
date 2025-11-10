@@ -22,7 +22,7 @@ def create_base_template(content):
 <hr style="border: 2px solid {COLORS['accent']}; margin: 20px 0; width: 60px; margin-left: auto; margin-right: auto;">
 {content}
 <hr style="margin-top: 30px; border: 1px solid #e0e0e0;">
-<p style="color: #666; font-size: 12px; text-align: center; margin: 10px 0 0 0;">IGAD Innovation Hub - Impulsando la innovación en agricultura</p>
+<p style="color: #666; font-size: 12px; text-align: center; margin: 10px 0 0 0;">IGAD Innovation Hub - Driving innovation in agriculture</p>
 </div>
 </div>"""
 

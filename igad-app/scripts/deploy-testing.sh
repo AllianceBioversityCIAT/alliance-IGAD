@@ -17,17 +17,16 @@ fi
 
 echo "✅ AWS profile and region validated"
 
-# Copy source to dist
-echo "📦 Copying source files to dist..."
-cd backend && cp -r app/* dist/
+# Get S3 bucket name dynamically (find bucket with igad-testing pattern)
+echo "🔍 Finding S3 bucket for testing environment..."
+BUCKET_NAME=$(aws s3 ls --profile IBD-DEV --region us-east-1 | grep "igad.*testing.*websitebucket" | awk '{print $3}' | head -1)
 
-# Build and deploy backend
-echo "🔨 Building SAM application..."
-cd ..
-sam build --use-container
+if [ -z "$BUCKET_NAME" ]; then
+    echo "❌ ERROR: Could not find S3 bucket for testing environment"
+    exit 1
+fi
 
-echo "🚀 Deploying backend to testing environment..."
-sam deploy
+echo "📤 S3 Bucket: $BUCKET_NAME"
 
 # Get CloudFront distribution ID dynamically (find distribution serving the S3 bucket)
 echo "🔍 Finding CloudFront distribution for S3 bucket..."
@@ -47,26 +46,27 @@ fi
 
 echo "📤 CloudFront Distribution ID: $DISTRIBUTION_ID"
 
+# Copy source to dist
+echo "📦 Copying source files to dist..."
+cd backend && cp -r app/* dist/
+
+# Build and deploy backend
+echo "🔨 Building SAM application..."
+cd ..
+sam build --use-container
+
+echo "🚀 Deploying backend to testing environment..."
+sam deploy
+
 # Build and deploy frontend
 echo "🔨 Building frontend..."
 cd frontend
 npm install
 npm run build
 
-# Get S3 bucket name dynamically (find bucket with igad-testing pattern)
-echo "🔍 Finding S3 bucket for testing environment..."
-BUCKET_NAME=$(aws s3 ls --profile IBD-DEV --region us-east-1 | grep "igad.*testing.*websitebucket" | awk '{print $3}' | head -1)
-
-if [ -z "$BUCKET_NAME" ]; then
-    echo "❌ ERROR: Could not find S3 bucket for testing environment"
-    exit 1
-fi
-
-echo "📤 S3 Bucket: $BUCKET_NAME"
-
 # Upload frontend to S3
 echo "📤 Uploading frontend to S3..."
-aws s3 sync frontend/dist/ s3://$BUCKET_NAME --delete
+aws s3 sync dist/ s3://$BUCKET_NAME --delete
 
 # Invalidate CloudFront cache
 echo "🔄 Invalidating CloudFront cache..."
@@ -77,8 +77,7 @@ INVALIDATION_ID=$(aws cloudfront create-invalidation \
   --output text)
 
 echo "✅ CloudFront invalidation created: $INVALIDATION_ID"
-echo "🎉 Testing deployment completed successfully!"
-echo ""
+
 # Get frontend URL dynamically
 FRONTEND_URL=$(aws cloudfront get-distribution --id $DISTRIBUTION_ID --profile IBD-DEV --region us-east-1 --query "Distribution.DomainName" --output text)
 

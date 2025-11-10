@@ -26,6 +26,7 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str
     user: Dict[str, Any]
     expires_in: int
@@ -119,6 +120,72 @@ async def login(credentials: LoginRequest):
             )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+@router.post("/refresh-token")
+async def refresh_token(request: RefreshTokenRequest):
+    """Refresh access token using refresh token"""
+    try:
+        import boto3
+        from botocore.exceptions import ClientError
+
+        session = get_aws_session()
+        cognito_client = session.client("cognito-idp", region_name="us-east-1")
+
+        # Use refresh token to get new access token
+        response = cognito_client.admin_initiate_auth(
+            UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
+            ClientId=os.getenv("COGNITO_CLIENT_ID"),
+            AuthFlow="REFRESH_TOKEN_AUTH",
+            AuthParameters={
+                "REFRESH_TOKEN": request.refresh_token
+            },
+        )
+
+        # Get new tokens
+        access_token = response["AuthenticationResult"]["AccessToken"]
+        id_token = response["AuthenticationResult"]["IdToken"]
+        new_refresh_token = response["AuthenticationResult"].get("RefreshToken")
+
+        # Decode ID token to get user info
+        from jose import jwt
+        user_info = jwt.decode(id_token, "", options={"verify_signature": False, "verify_aud": False})
+
+        # Check if user is admin
+        email = user_info.get("email", "")
+        is_admin = email in [
+            "test@example.com",
+            "admin@igad.int", 
+            "user@igad.int",
+            "j.cadavid@cgiar.org",
+        ]
+
+        return {
+            "access_token": access_token,
+            "refresh_token": new_refresh_token,
+            "token_type": "bearer",
+            "expires_in": 86400,  # 24 hours
+            "user": {
+                "user_id": user_info.get("sub", ""),
+                "email": email,
+                "role": "admin" if is_admin else "user",
+                "name": user_info.get("name", "IGAD User"),
+                "is_admin": is_admin,
+            }
+        }
+
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        if error_code == "NotAuthorizedException":
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+        else:
+            raise HTTPException(status_code=500, detail=f"Token refresh error: {error_code}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Token refresh failed: {str(e)}")
 
 
 @router.post("/logout")

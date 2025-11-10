@@ -8,7 +8,7 @@ Templates are configured directly in AWS Cognito User Pool settings.
 
 # Welcome Email Template (AdminCreateUser - HTML)
 WELCOME_EMAIL_TEMPLATE = {
-    "subject": "Bienvenido al IGAD Innovation Hub - Cuenta Creada",
+    "subject": "Welcome to IGAD Innovation Hub - Account Created",
     "type": "HTML",
     "colors": {
         "primary": "#2c5530",
@@ -28,7 +28,7 @@ WELCOME_EMAIL_TEMPLATE = {
 
 # Email Verification Template (HTML)
 EMAIL_VERIFICATION_TEMPLATE = {
-    "subject": "IGAD Innovation Hub - Verifica tu Email",
+    "subject": "IGAD Innovation Hub - Verify Your Email",
     "type": "HTML",
     "colors": {
         "primary": "#2c5530",
@@ -46,7 +46,7 @@ EMAIL_VERIFICATION_TEMPLATE = {
 
 # Password Recovery Template (HTML)
 PASSWORD_RECOVERY_TEMPLATE = {
-    "subject": "IGAD Innovation Hub - Restablecimiento de Contraseña",
+    "subject": "IGAD Innovation Hub - Password Reset",
     "type": "HTML",
     "colors": {
         "primary": "#2c5530",
@@ -97,7 +97,7 @@ def get_template_info():
             "All templates use HTML with inline CSS",
             "Templates are configured in AWS Cognito User Pool",
             "Uses SES for better email deliverability",
-            "Spanish language for better user experience",
+            "English language for international user experience",
             "Branded with IGAD Innovation Hub identity",
             "Responsive design for mobile compatibility",
             "Professional color scheme: #2c5530 (green), #7cb342 (light green), #ff9800 (orange)",

@@ -1,3 +1,5 @@
+import { tokenManager } from './tokenManager'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export interface LoginCredentials {
@@ -7,6 +9,7 @@ export interface LoginCredentials {
 
 export interface LoginResponse {
   access_token: string
+  refresh_token?: string
   token_type: string
   expires_in: number
   requires_password_change?: boolean
@@ -45,23 +48,16 @@ class AuthService {
     return response.json()
   }
 
-  setToken(token: string, rememberMe: boolean = false): void {
-    if (rememberMe) {
-      localStorage.setItem('access_token', token)
-      localStorage.setItem('remember_me', 'true')
-    } else {
-      sessionStorage.setItem('access_token', token)
-      localStorage.removeItem('remember_me')
-    }
+  setToken(token: string, refreshToken?: string, rememberMe: boolean = false): void {
+    tokenManager.setTokens(token, refreshToken, rememberMe)
   }
 
   getToken(): string | null {
-    return localStorage.getItem('access_token') || sessionStorage.getItem('access_token')
+    return tokenManager.getAccessToken()
   }
 
   removeToken(): void {
-    localStorage.removeItem('access_token')
-    sessionStorage.removeItem('access_token')
+    tokenManager.clearTokens()
 
     // Only remove email if remember me was not checked
     const rememberMe = localStorage.getItem('remember_me')
@@ -69,11 +65,10 @@ class AuthService {
       localStorage.removeItem('user_email')
     }
     sessionStorage.removeItem('user_email')
-    // Don't remove remember_me flag so email persists
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken()
+    return tokenManager.isAuthenticated()
   }
 
   setUserEmail(email: string, rememberMe: boolean = false): void {
@@ -103,6 +98,19 @@ class AuthService {
 
       if (!response.ok) {
         if (response.status === 401) {
+          // Try to refresh token before giving up
+          const newToken = await tokenManager.handleTokenRefreshOnDemand()
+          if (newToken) {
+            // Retry with new token
+            const retryResponse = await fetch(`${API_BASE_URL}/api/auth/me`, {
+              headers: {
+                Authorization: `Bearer ${newToken}`,
+              },
+            })
+            if (retryResponse.ok) {
+              return retryResponse.json()
+            }
+          }
           this.logout()
         }
         return null

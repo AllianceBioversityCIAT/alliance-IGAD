@@ -1,21 +1,21 @@
 {
-  "user_pool_id": "us-east-1_lLtVSWM9T",
+  "user_pool_id": "us-east-1_IMi3kSuB8",
   "profile": "IBD-DEV",
   "templates": {
     "welcome_email": {
-      "subject": "Bienvenido al IGAD Innovation Hub - Cuenta Creada",
+      "subject": "Welcome to IGAD Innovation Hub - Account Created",
       "configured": true
     },
     "email_verification": {
-      "subject": "IGAD Innovation Hub - Verifica tu Email",
+      "subject": "IGAD Innovation Hub - Verify Your Email",
       "configured": true
     },
     "password_reset": {
-      "subject": "IGAD Innovation Hub - Restablecimiento de Contrase\u00f1a",
+      "subject": "IGAD Innovation Hub - Password Reset",
       "configured": "prepared"
     },
     "mfa_setup": {
-      "subject": "IGAD Innovation Hub - Configuraci\u00f3n MFA",
+      "subject": "IGAD Innovation Hub - MFA Setup",
       "configured": "prepared"
     }
   },
