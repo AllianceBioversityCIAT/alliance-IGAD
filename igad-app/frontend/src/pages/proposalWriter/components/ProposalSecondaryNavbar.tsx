@@ -1,4 +1,3 @@
-import { BarChart3 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import styles from '../proposalWriter.module.css'
 
@@ -19,7 +18,6 @@ export function ProposalSecondaryNavbar() {
     <div className={styles.secondaryNavbar}>
       <div className={styles.secondaryNavbarContent}>
         <div className={styles.breadcrumb}>
-          <BarChart3 size={11} />
           <span>Proposal Writer</span>
         </div>
         <button className={styles.promptManagerButton} onClick={handlePromptManagerClick}>
