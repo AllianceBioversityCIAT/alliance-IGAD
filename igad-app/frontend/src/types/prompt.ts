@@ -44,7 +44,6 @@ export const SECTION_LABELS: Record<ProposalSection, string> = {
 
 export interface PromptContext {
   persona?: string
-  tone?: string
   sources?: string[]
   constraints?: string
   guardrails?: string
@@ -65,6 +64,8 @@ export interface Prompt {
   is_active: boolean
   system_prompt: string
   user_prompt_template: string
+  tone?: string
+  output_format?: string
   few_shot?: FewShotExample[]
   context?: PromptContext
   created_by: string
@@ -100,6 +101,8 @@ export interface CreatePromptRequest {
   tags?: string[]
   system_prompt: string
   user_prompt_template: string
+  tone?: string
+  output_format?: string
   few_shot?: FewShotExample[]
   context?: PromptContext
 }

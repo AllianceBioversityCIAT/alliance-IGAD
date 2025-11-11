@@ -60,6 +60,12 @@ class PromptService:
         if prompt.route:
             item["route"] = prompt.route
 
+        if prompt.tone:
+            item["tone"] = prompt.tone
+
+        if prompt.output_format:
+            item["output_format"] = prompt.output_format
+
         if prompt.few_shot:
             item["few_shot"] = [fs.dict() for fs in prompt.few_shot]
 
@@ -82,6 +88,8 @@ class PromptService:
             ),  # Default to True for backward compatibility
             system_prompt=item["system_prompt"],
             user_prompt_template=item["user_prompt_template"],
+            tone=item.get("tone"),
+            output_format=item.get("output_format"),
             few_shot=item.get("few_shot"),
             context=item.get("context"),
             created_by=item["created_by"],

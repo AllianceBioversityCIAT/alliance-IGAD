@@ -188,6 +188,31 @@
   font-size: 14px;
 }
 
+.exampleSection {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.exampleButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #016630 0%, #008236 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.exampleButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(1, 102, 48, 0.3);
+}
+
 /* Form Elements */
 .formGroup {
   margin-bottom: 24px;

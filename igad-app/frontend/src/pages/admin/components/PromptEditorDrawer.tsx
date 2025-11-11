@@ -183,9 +183,10 @@ export function PromptEditorDrawer({
     system_prompt: '',
     user_prompt_template: '',
     is_active: true,
+    tone: '',
+    output_format: '',
     context: {
       persona: '',
-      tone: '',
       constraints: '',
       guardrails: '',
     },
@@ -203,9 +204,10 @@ export function PromptEditorDrawer({
         system_prompt: existingPrompt.system_prompt,
         user_prompt_template: existingPrompt.user_prompt_template,
         is_active: existingPrompt.is_active,
+        tone: existingPrompt.tone || '',
+        output_format: existingPrompt.output_format || '',
         context: {
           persona: existingPrompt.context?.persona || '',
-          tone: existingPrompt.context?.tone || '',
           constraints: existingPrompt.context?.constraints || '',
           guardrails: existingPrompt.context?.guardrails || '',
         },
@@ -456,6 +458,42 @@ export function PromptEditorDrawer({
               required
               placeholder="Enter the user prompt template with variables like {{variable_name}}..."
             />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>Tone</label>
+            <input
+              type="text"
+              value={formData.tone}
+              onChange={e => setFormData(prev => ({ 
+                ...prev, 
+                tone: e.target.value
+              }))}
+              className={styles.input}
+              placeholder="Professional and informative"
+              maxLength={500}
+            />
+            <p className={styles.helpText}>
+              Define the tone and style for the AI's responses (optional).
+            </p>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>Output Format</label>
+            <input
+              type="text"
+              value={formData.output_format}
+              onChange={e => setFormData(prev => ({ 
+                ...prev, 
+                output_format: e.target.value
+              }))}
+              className={styles.input}
+              placeholder="Clear and structured response"
+              maxLength={500}
+            />
+            <p className={styles.helpText}>
+              Specify the desired format for the AI's output (optional).
+            </p>
           </div>
 
           <div className={styles.actions}>

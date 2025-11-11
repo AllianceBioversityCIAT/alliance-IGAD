@@ -31,7 +31,6 @@ class FewShotExample(BaseModel):
 
 class PromptContext(BaseModel):
     persona: Optional[str] = None
-    tone: Optional[str] = None
     sources: Optional[List[str]] = None
     constraints: Optional[str] = None
     guardrails: Optional[str] = None
@@ -44,6 +43,8 @@ class PromptBase(BaseModel):
     tags: List[str] = Field(default_factory=list)
     system_prompt: str = Field(..., min_length=1)
     user_prompt_template: str = Field(..., min_length=1)
+    output_format: Optional[str] = Field(default="Clear and structured response", max_length=500)
+    tone: Optional[str] = Field(default="Professional and informative", max_length=500)
     few_shot: Optional[List[FewShotExample]] = None
     context: Optional[PromptContext] = None
 
@@ -59,6 +60,8 @@ class PromptUpdate(BaseModel):
     tags: Optional[List[str]] = None
     system_prompt: Optional[str] = Field(None, min_length=1)
     user_prompt_template: Optional[str] = Field(None, min_length=1)
+    output_format: Optional[str] = Field(None, max_length=500)
+    tone: Optional[str] = Field(None, max_length=500)
     few_shot: Optional[List[FewShotExample]] = None
     context: Optional[PromptContext] = None
     change_comment: Optional[str] = Field(None, max_length=500)

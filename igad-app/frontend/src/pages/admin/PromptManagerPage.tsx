@@ -133,8 +133,19 @@ export function PromptManagerPage() {
       )
       setIsCreateModalOpen(false)
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
-      showError('Failed to create prompt', errorMessage)
+      const errorMessage = typeof error.response?.data?.detail === 'string' 
+        ? error.response.data.detail 
+        : error.message || 'Please try again.'
+      
+      // Handle duplicate prompt error specifically
+      if (errorMessage.includes('Duplicate active prompt')) {
+        showError(
+          'Duplicate Prompt', 
+          'A prompt already exists for this section and route. Please use a different route or deactivate the existing prompt first.'
+        )
+      } else {
+        showError('Failed to create prompt', errorMessage)
+      }
       throw error // Re-throw to let modal handle loading state
     }
   }
@@ -154,10 +165,19 @@ export function PromptManagerPage() {
         setEditingPrompt(null)
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
+      const errorMessage = typeof error.response?.data?.detail === 'string' 
+        ? error.response.data.detail 
+        : error.message || 'Please try again.'
 
-      // Show error confirmation modal instead of toast
-      await confirmation.showError('Failed to Update Prompt', errorMessage)
+      // Handle duplicate prompt error specifically
+      if (errorMessage.includes('Duplicate active prompt')) {
+        await confirmation.showError(
+          'Duplicate Prompt', 
+          'A prompt already exists for this section and route. Please use a different route or deactivate the existing prompt first.'
+        )
+      } else {
+        await confirmation.showError('Failed to Update Prompt', errorMessage)
+      }
       throw error // Re-throw to let modal handle loading state
     }
   }
@@ -217,7 +237,9 @@ export function PromptManagerPage() {
         `"${prompt?.name}" is now ${prompt?.is_active ? 'inactive' : 'active'}.`
       )
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || 'Please try again.'
+      const errorMessage = typeof error.response?.data?.detail === 'string' 
+        ? error.response.data.detail 
+        : error.message || 'Please try again.'
       if (errorMessage.includes('already active')) {
         showError(
           'Cannot activate prompt',
