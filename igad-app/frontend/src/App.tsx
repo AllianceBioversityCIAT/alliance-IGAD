@@ -9,6 +9,7 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { ProposalWriterPage } from '@/pages/proposalWriter/ProposalWriterPage'
 import { NewsletterGeneratorPage } from '@/pages/NewsletterGeneratorPage'
 import { PromptManagerPage } from '@/pages/admin/PromptManagerPage'
+import { PromptEditorPage } from '@/pages/admin/PromptEditorPage'
 import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { Layout } from '@/components/layout/Layout'
@@ -69,6 +70,22 @@ function App() {
                 element={
                   <AdminRoute>
                     <PromptManagerPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/prompt-manager/create"
+                element={
+                  <AdminRoute>
+                    <PromptEditorPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/prompt-manager/edit/:id"
+                element={
+                  <AdminRoute>
+                    <PromptEditorPage />
                   </AdminRoute>
                 }
               />

@@ -14,13 +14,13 @@
 
 .modal {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   width: 100%;
-  max-width: 800px;
+  max-width: 1000px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .header {
@@ -87,7 +87,107 @@
   font-size: 14px;
   font-weight: 600;
   color: #374151;
-  margin: 0 0 12px 0;
+  margin: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.copyButton {
+  background: #016630;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copyButton:hover {
+  background: #00A63E;
+}
+
+.markdownContent {
+  padding: 16px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.markdownContent h1,
+.markdownContent h2,
+.markdownContent h3,
+.markdownContent h4,
+.markdownContent h5,
+.markdownContent h6 {
+  color: #111827;
+  margin: 16px 0 8px 0;
+  font-weight: 600;
+}
+
+.markdownContent h1 { font-size: 18px; }
+.markdownContent h2 { font-size: 16px; }
+.markdownContent h3 { font-size: 14px; }
+
+.markdownContent p {
+  margin: 8px 0;
+}
+
+.markdownContent ul,
+.markdownContent ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdownContent li {
+  margin: 4px 0;
+}
+
+.markdownContent code {
+  background: #f1f5f9;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.markdownContent pre {
+  background: #f1f5f9;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.markdownContent pre code {
+  background: none;
+  padding: 0;
+  color: #374151;
+}
+
+.markdownContent blockquote {
+  border-left: 4px solid #016630;
+  padding-left: 12px;
+  margin: 12px 0;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.markdownContent strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.markdownContent em {
+  font-style: italic;
 }
 
 .variablesList {

@@ -1,4 +1,6 @@
-import { X, FileText } from 'lucide-react'
+import { X, FileText, Copy, Check } from 'lucide-react'
+import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { Prompt } from '../../../types/prompt'
 import styles from './PromptTemplateModal.module.css'
 
@@ -9,6 +11,8 @@ interface PromptTemplateModalProps {
 }
 
 export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateModalProps) {
+  const [copiedSection, setCopiedSection] = useState<string | null>(null)
+
   if (!isOpen || !prompt) return null
 
   // Extract variables from prompt templates
@@ -30,6 +34,17 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
       result = result.replace(new RegExp(`\\{${variable}\\}`, 'g'), exampleValue)
     })
     return result
+  }
+
+  // Copy to clipboard function
+  const copyToClipboard = async (text: string, section: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedSection(section)
+      setTimeout(() => setCopiedSection(null), 2000)
+    } catch (err) {
+      console.error('Failed to copy text: ', err)
+    }
   }
 
   return (
@@ -63,30 +78,57 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
           )}
 
           <div className={styles.promptSection}>
-            <h3 className={styles.sectionTitle}>System Prompt Template</h3>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>System Prompt Template</h3>
+              <button 
+                onClick={() => copyToClipboard(getTemplateView(prompt.system_prompt), 'system')}
+                className={styles.copyButton}
+                title="Copy to clipboard"
+              >
+                {copiedSection === 'system' ? <Check size={16} /> : <Copy size={16} />}
+              </button>
+            </div>
             <div className={styles.promptContent}>
-              <pre className={styles.promptText}>
+              <ReactMarkdown className={styles.markdownContent}>
                 {getTemplateView(prompt.system_prompt)}
-              </pre>
+              </ReactMarkdown>
             </div>
           </div>
 
           <div className={styles.promptSection}>
-            <h3 className={styles.sectionTitle}>User Prompt Template</h3>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>User Prompt Template</h3>
+              <button 
+                onClick={() => copyToClipboard(getTemplateView(prompt.user_prompt_template), 'user')}
+                className={styles.copyButton}
+                title="Copy to clipboard"
+              >
+                {copiedSection === 'user' ? <Check size={16} /> : <Copy size={16} />}
+              </button>
+            </div>
             <div className={styles.promptContent}>
-              <pre className={styles.promptText}>
+              <ReactMarkdown className={styles.markdownContent}>
                 {getTemplateView(prompt.user_prompt_template)}
-              </pre>
+              </ReactMarkdown>
             </div>
           </div>
 
           {prompt.output_format && (
             <div className={styles.promptSection}>
-              <h3 className={styles.sectionTitle}>Expected Output Format</h3>
+              <div className={styles.sectionHeader}>
+                <h3 className={styles.sectionTitle}>Expected Output Format</h3>
+                <button 
+                  onClick={() => copyToClipboard(prompt.output_format, 'output')}
+                  className={styles.copyButton}
+                  title="Copy to clipboard"
+                >
+                  {copiedSection === 'output' ? <Check size={16} /> : <Copy size={16} />}
+                </button>
+              </div>
               <div className={styles.promptContent}>
-                <pre className={styles.promptText}>
+                <ReactMarkdown className={styles.markdownContent}>
                   {prompt.output_format}
-                </pre>
+                </ReactMarkdown>
               </div>
             </div>
           )}
