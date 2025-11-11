@@ -1,4 +1,4 @@
-import { Edit, Trash2, Copy, Power, PowerOff, Eye, MoreVertical } from 'lucide-react'
+import { Edit, Trash2, Copy, Power, PowerOff, Eye, MoreVertical, FileText } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '../../../types/prompt'
 import styles from './PromptCardsView.module.css'
 
@@ -9,6 +9,7 @@ interface PromptCardsViewProps {
   onClone: (id: string) => void
   onToggleActive: (id: string) => void
   onPreview: (id: string) => void
+  onTemplate?: (prompt: Prompt) => void
 }
 
 export function PromptCardsView({
@@ -18,6 +19,7 @@ export function PromptCardsView({
   onClone,
   onToggleActive,
   onPreview,
+  onTemplate,
 }: PromptCardsViewProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -75,6 +77,16 @@ export function PromptCardsView({
                     >
                       <Edit size={14} />
                     </button>
+
+                    {onTemplate && (
+                      <button
+                        onClick={() => onTemplate(prompt)}
+                        className={styles.actionButton}
+                        title="View template"
+                      >
+                        <FileText size={14} />
+                      </button>
+                    )}
 
                     <button
                       onClick={() => onToggleActive(prompt.id)}

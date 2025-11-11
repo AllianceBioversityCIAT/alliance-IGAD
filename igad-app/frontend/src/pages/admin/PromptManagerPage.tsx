@@ -10,7 +10,7 @@ import { ConfirmationModal } from '../../components/ui/ConfirmationModal'
 import { useConfirmation } from '../../hooks/useConfirmation'
 import { PromptFilters } from './components/PromptFilters'
 import { CommentsPanel } from './components/CommentsPanel'
-import { HistoryPanel } from './components/HistoryPanel'
+import { PromptTemplateModal } from './components/PromptTemplateModal'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import type { ProposalSection, Prompt } from '../../types/prompt'
@@ -33,7 +33,7 @@ export function PromptManagerPage() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
   const [commentsPromptId, setCommentsPromptId] = useState<string | null>(null)
-  const [historyPromptId, setHistoryPromptId] = useState<string | null>(null)
+  const [templatePrompt, setTemplatePrompt] = useState<Prompt | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
@@ -251,6 +251,10 @@ export function PromptManagerPage() {
     }
   }
 
+  const handleTemplateView = (prompt: Prompt) => {
+    setTemplatePrompt(prompt)
+  }
+
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -374,7 +378,7 @@ export function PromptManagerPage() {
             onClone={handleClonePrompt}
             onToggleActive={handleToggleActive}
             onComments={id => setCommentsPromptId(id)}
-            onHistory={id => setHistoryPromptId(id)}
+            onTemplate={handleTemplateView}
           />
         ) : (
           <PromptCardsView
@@ -384,6 +388,7 @@ export function PromptManagerPage() {
             onClone={handleClonePrompt}
             onToggleActive={handleToggleActive}
             onPreview={id => {}}
+            onTemplate={handleTemplateView}
           />
         )}
 
@@ -483,11 +488,11 @@ export function PromptManagerPage() {
         onClose={() => setCommentsPromptId(null)}
       />
 
-      {/* History Panel */}
-      <HistoryPanel
-        promptId={historyPromptId || ''}
-        isOpen={!!historyPromptId}
-        onClose={() => setHistoryPromptId(null)}
+      {/* Template Modal */}
+      <PromptTemplateModal
+        prompt={templatePrompt}
+        isOpen={!!templatePrompt}
+        onClose={() => setTemplatePrompt(null)}
       />
     </div>
   )

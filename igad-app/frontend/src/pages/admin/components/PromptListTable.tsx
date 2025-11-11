@@ -5,7 +5,7 @@ import {
   Power,
   PowerOff,
   MessageCircle,
-  History,
+  FileText,
 } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '../../../types/prompt'
 import styles from './PromptListTable.module.css'
@@ -18,7 +18,7 @@ interface PromptListTableProps {
   onClone: (prompt: Prompt) => void
   onToggleActive: (id: string) => void
   onComments?: (id: string) => void
-  onHistory?: (id: string) => void
+  onTemplate?: (prompt: Prompt) => void
 }
 
 export function PromptListTable({
@@ -29,7 +29,7 @@ export function PromptListTable({
   onClone,
   onToggleActive,
   onComments,
-  onHistory,
+  onTemplate,
 }: PromptListTableProps) {
 
   const formatDate = (dateString: string) => {
@@ -58,9 +58,9 @@ export function PromptListTable({
           onComments(promptId)
         }
         break
-      case 'history':
-        if (onHistory) {
-          onHistory(promptId)
+      case 'template':
+        if (onTemplate) {
+          onTemplate(prompt)
         }
         break
       case 'delete':
@@ -215,6 +215,16 @@ export function PromptListTable({
                       <Edit size={14} />
                     </button>
 
+                    {onTemplate && (
+                      <button
+                        onClick={() => handleActionClick(prompt.id, 'template', prompt)}
+                        className={`${styles.actionButton} ${styles.templateButton}`}
+                        title={`View template for "${prompt.name}"`}
+                      >
+                        <FileText size={14} />
+                      </button>
+                    )}
+
                     <button
                       onClick={() => handleActionClick(prompt.id, 'toggle-active', prompt)}
                       className={`${styles.actionButton} ${prompt.is_active ? styles.deactivateButton : styles.activateButton}`}
@@ -234,16 +244,6 @@ export function PromptListTable({
                     >
                       <Copy size={14} />
                     </button>
-
-                    {onHistory && (
-                      <button
-                        onClick={() => handleActionClick(prompt.id, 'history', prompt)}
-                        className={`${styles.actionButton} ${styles.historyButton}`}
-                        title={`View change history for "${prompt.name}"`}
-                      >
-                        <History size={14} />
-                      </button>
-                    )}
 
                     <button
                       onClick={() => handleActionClick(prompt.id, 'delete', prompt)}

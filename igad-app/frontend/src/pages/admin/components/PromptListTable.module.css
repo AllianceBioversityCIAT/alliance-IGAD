@@ -262,6 +262,17 @@
   border-color: #2563eb;
 }
 
+.templateButton {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.templateButton:hover {
+  background: #f3f4f6;
+  border-color: #7c3aed;
+  color: #7c3aed;
+}
+
 .activateButton {
   border-color: #10b981;
   color: #10b981;
