@@ -13,6 +13,9 @@ export function HomePage() {
             <img src="/igad-logo.png" alt="IGAD Innovation Hub" className={styles.logo} />
           </div>
 
+          {/* Mission Tagline */}
+          <p className={styles.tagline}>PEACE, PROSPERITY AND REGIONAL INTEGRATION</p>
+
           {/* Main Heading */}
           <h1 className={styles.title}>AI-Powered Agricultural Intelligence Hub</h1>
 
@@ -21,69 +24,6 @@ export function HomePage() {
             Empowering agricultural experts across the IGAD region with intelligent tools for policy
             analysis, report generation, and strategic communication
           </p>
-
-          {/* Mission Card */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              padding:
-                'clamp(16px, 4vw, 32px) clamp(16px, 4vw, 32px) clamp(16px, 4vw, 32px) clamp(16px, 4vw, 32px)',
-              gap: 'clamp(16px, 3vw, 24px)',
-              width: '100%',
-              maxWidth: '896px',
-              minHeight: '188px',
-              margin: '0 auto 48px auto',
-              background: 'rgba(255, 255, 255, 0.8)',
-              border: '1px solid #B9F8CF',
-              boxShadow:
-                '0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1)',
-              borderRadius: '14px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '16px',
-                width: '830px',
-                height: '24px',
-              }}
-            >
-              <div style={{ width: '48px', height: '2px', background: '#00A63E' }} />
-              <span
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '16px',
-                  lineHeight: '24px',
-                  textAlign: 'center',
-                  color: '#016630',
-                }}
-              >
-                PEACE, PROSPERITY AND REGIONAL INTEGRATION
-              </span>
-              <div style={{ width: '48px', height: '2px', background: '#00A63E' }} />
-            </div>
-            <p
-              style={{
-                width: '830px',
-                fontFamily: 'Arial',
-                fontWeight: '400',
-                fontSize: '18px',
-                lineHeight: '29px',
-                textAlign: 'center',
-                color: '#364153',
-              }}
-            >
-              Supporting the Intergovernmental Authority on Development&apos;s mission through
-              advanced AI tools that enhance agricultural productivity, policy development, and
-              regional cooperation across East Africa.
-            </p>
-          </div>
         </div>
       </div>
 
@@ -139,191 +79,7 @@ export function HomePage() {
               margin: '0 auto',
             }}
           >
-            {/* Report Generator - Coming Soon */}
-            <div
-              className={`${styles.toolCard} ${styles.toolCardDisabled}`}
-              style={{
-                position: 'relative',
-                width: '362px',
-                height: '324px',
-                background: '#FFFFFF',
-                border: '2px solid #E5E7EB',
-                borderRadius: '14px',
-                padding: '34px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  padding: '16px 16px 0px',
-                  width: '64px',
-                  height: '64px',
-                  background: '#F3F4F6',
-                  borderRadius: '14px',
-                  marginBottom: '24px',
-                }}
-              >
-                <BarChart3 size={32} color="#6A7282" strokeWidth={2.67} />
-              </div>
-              <h3
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '20px',
-                  lineHeight: '28px',
-                  color: '#101828',
-                  marginBottom: '12px',
-                }}
-              >
-                Report Generator
-              </h3>
-              <p
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '16px',
-                  lineHeight: '26px',
-                  color: '#4A5565',
-                  marginBottom: '24px',
-                }}
-              >
-                Generate comprehensive agricultural and policy reports
-              </p>
-              <button
-                style={{
-                  width: '294px',
-                  height: '36px',
-                  background: '#FFFFFF',
-                  opacity: '0.5',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
-                  fontFamily: 'Arial',
-                  fontSize: '14px',
-                  color: '#0A0A0A',
-                }}
-              >
-                Coming Soon
-              </button>
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '18px',
-                  right: '18px',
-                  display: 'flex',
-                  padding: '4px 12px',
-                  background: '#F3F4F6',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '999px',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'Arial',
-                    fontSize: '12px',
-                    lineHeight: '16px',
-                    color: '#4A5565',
-                  }}
-                >
-                  Coming Soon
-                </span>
-              </div>
-            </div>
-
-            {/* Policy Analyzer - Coming Soon */}
-            <div
-              className={`${styles.toolCard} ${styles.toolCardDisabled}`}
-              style={{
-                position: 'relative',
-                width: '362px',
-                height: '324px',
-                background: '#FFFFFF',
-                border: '2px solid #E5E7EB',
-                borderRadius: '14px',
-                padding: '34px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  padding: '16px 16px 0px',
-                  width: '64px',
-                  height: '64px',
-                  background: '#F3F4F6',
-                  borderRadius: '14px',
-                  marginBottom: '24px',
-                }}
-              >
-                <Search size={32} color="#6A7282" strokeWidth={2.67} />
-              </div>
-              <h3
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '20px',
-                  lineHeight: '28px',
-                  color: '#101828',
-                  marginBottom: '12px',
-                }}
-              >
-                Policy Analyzer
-              </h3>
-              <p
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '16px',
-                  lineHeight: '26px',
-                  color: '#4A5565',
-                  marginBottom: '24px',
-                }}
-              >
-                Analyze and review regional policies for agricultural development
-              </p>
-              <button
-                style={{
-                  width: '294px',
-                  height: '36px',
-                  background: '#FFFFFF',
-                  opacity: '0.5',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
-                  fontFamily: 'Arial',
-                  fontSize: '14px',
-                  color: '#0A0A0A',
-                }}
-              >
-                Coming Soon
-              </button>
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '18px',
-                  right: '18px',
-                  display: 'flex',
-                  padding: '4px 12px',
-                  background: '#F3F4F6',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '999px',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'Arial',
-                    fontSize: '12px',
-                    lineHeight: '16px',
-                    color: '#4A5565',
-                  }}
-                >
-                  Coming Soon
-                </span>
-              </div>
-            </div>
-
-            {/* Proposal Writer - Available */}
+            {/* 1. Proposal Writer - Available */}
             <div
               className={styles.toolCard}
               style={{
@@ -420,13 +176,13 @@ export function HomePage() {
               </div>
             </div>
 
-            {/* Newsletter Generator - Available */}
+            {/* 2. Newsletter Generator - Available */}
             <div
               className={styles.toolCard}
               style={{
                 position: 'relative',
                 width: '362px',
-                height: '350px',
+                height: '324px',
                 background: '#FFFFFF',
                 border: '2px solid #B9F8CF',
                 borderRadius: '14px',
@@ -467,7 +223,7 @@ export function HomePage() {
                   fontSize: '16px',
                   lineHeight: '26px',
                   color: '#4A5565',
-                  marginBottom: '50px',
+                  marginBottom: '24px',
                 }}
               >
                 Create engaging newsletters on agricultural innovations and updates
@@ -517,14 +273,198 @@ export function HomePage() {
               </div>
             </div>
 
-            {/* Agribusiness Hub - Coming Soon */}
+            {/* 3. Report Generator - Coming Soon */}
             <div
+              className={`${styles.toolCard} ${styles.toolCardDisabled}`}
               style={{
                 position: 'relative',
                 width: '362px',
-                height: '350px',
+                height: '324px',
                 background: '#FFFFFF',
-                opacity: '0.75',
+                border: '2px solid #E5E7EB',
+                borderRadius: '14px',
+                padding: '34px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  padding: '16px 16px 0px',
+                  width: '64px',
+                  height: '64px',
+                  background: '#F3F4F6',
+                  borderRadius: '14px',
+                  marginBottom: '24px',
+                }}
+              >
+                <BarChart3 size={32} color="#6A7282" strokeWidth={2.67} />
+              </div>
+              <h3
+                style={{
+                  fontFamily: 'Arial',
+                  fontWeight: '400',
+                  fontSize: '20px',
+                  lineHeight: '28px',
+                  color: '#101828',
+                  marginBottom: '12px',
+                }}
+              >
+                Report Generator
+              </h3>
+              <p
+                style={{
+                  fontFamily: 'Arial',
+                  fontWeight: '400',
+                  fontSize: '16px',
+                  lineHeight: '26px',
+                  color: '#4A5565',
+                  marginBottom: '24px',
+                }}
+              >
+                Generate comprehensive agricultural and policy reports
+              </p>
+              <button
+                style={{
+                  width: '294px',
+                  height: '36px',
+                  background: '#FFFFFF',
+                  opacity: '0.5',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  fontFamily: 'Arial',
+                  fontSize: '14px',
+                  color: '#0A0A0A',
+                }}
+              >
+                Coming Soon
+              </button>
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '18px',
+                  right: '18px',
+                  display: 'flex',
+                  padding: '4px 12px',
+                  background: '#F3F4F6',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '999px',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'Arial',
+                    fontSize: '12px',
+                    lineHeight: '16px',
+                    color: '#4A5565',
+                  }}
+                >
+                  Coming Soon
+                </span>
+              </div>
+            </div>
+
+            {/* 4. Policy Analyzer - Coming Soon */}
+            <div
+              className={`${styles.toolCard} ${styles.toolCardDisabled}`}
+              style={{
+                position: 'relative',
+                width: '362px',
+                height: '324px',
+                background: '#FFFFFF',
+                border: '2px solid #E5E7EB',
+                borderRadius: '14px',
+                padding: '34px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  padding: '16px 16px 0px',
+                  width: '64px',
+                  height: '64px',
+                  background: '#F3F4F6',
+                  borderRadius: '14px',
+                  marginBottom: '24px',
+                }}
+              >
+                <Search size={32} color="#6A7282" strokeWidth={2.67} />
+              </div>
+              <h3
+                style={{
+                  fontFamily: 'Arial',
+                  fontWeight: '400',
+                  fontSize: '20px',
+                  lineHeight: '28px',
+                  color: '#101828',
+                  marginBottom: '12px',
+                }}
+              >
+                Policy Analyzer
+              </h3>
+              <p
+                style={{
+                  fontFamily: 'Arial',
+                  fontWeight: '400',
+                  fontSize: '16px',
+                  lineHeight: '26px',
+                  color: '#4A5565',
+                  marginBottom: '24px',
+                }}
+              >
+                Analyze and review regional policies for agricultural development
+              </p>
+              <button
+                style={{
+                  width: '294px',
+                  height: '36px',
+                  background: '#FFFFFF',
+                  opacity: '0.5',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  fontFamily: 'Arial',
+                  fontSize: '14px',
+                  color: '#0A0A0A',
+                }}
+              >
+                Coming Soon
+              </button>
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '18px',
+                  right: '18px',
+                  display: 'flex',
+                  padding: '4px 12px',
+                  background: '#F3F4F6',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '999px',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'Arial',
+                    fontSize: '12px',
+                    lineHeight: '16px',
+                    color: '#4A5565',
+                  }}
+                >
+                  Coming Soon
+                </span>
+              </div>
+            </div>
+
+            {/* 5. Agribusiness Hub - Coming Soon */}
+            <div
+              className={`${styles.toolCard} ${styles.toolCardDisabled}`}
+              style={{
+                position: 'relative',
+                width: '362px',
+                height: '324px',
+                background: '#FFFFFF',
                 border: '2px solid #E5E7EB',
                 borderRadius: '14px',
                 padding: '34px',
@@ -564,7 +504,7 @@ export function HomePage() {
                   fontSize: '16px',
                   lineHeight: '26px',
                   color: '#4A5565',
-                  marginBottom: '50px',
+                  marginBottom: '24px',
                 }}
               >
                 Connect with agribusiness development opportunities
