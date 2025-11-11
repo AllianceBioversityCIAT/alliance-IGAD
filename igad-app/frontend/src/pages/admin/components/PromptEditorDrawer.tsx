@@ -33,7 +33,7 @@ function HistoryContent({ promptId }: { promptId: string }) {
   const fetchHistory = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`import.meta.env.VITE_API_BASE_URL/admin/prompts/${promptId}/history`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}/history`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
