@@ -45,7 +45,7 @@ cd ..
 # Deploy using Lambda Web Adapter
 echo "🚀 Deploying fullstack application..."
 sam build --use-container
-sam deploy
+sam deploy --stack-name igad-backend-testing
 
 # Get CloudFront distribution ID dynamically (find distribution serving the S3 bucket)
 echo "🔍 Finding CloudFront distribution for S3 bucket..."

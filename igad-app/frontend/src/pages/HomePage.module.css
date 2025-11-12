@@ -28,7 +28,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to bottom, #016630 0%, rgba(1, 102, 48, 0.8) 50%, rgba(1, 102, 48, 0.4) 100%);
+  background: linear-gradient(180.2deg, #166534 38.46%, rgba(0, 130, 54, 0.14) 80.06%, rgba(0, 166, 62, 0.05) 99.79%);
+  box-shadow: 0px 2.0017px 11.0094px rgba(0, 182, 255, 0.1);
   z-index: 1;
 }
 
