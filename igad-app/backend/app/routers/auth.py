@@ -39,8 +39,15 @@ class LoginResponse(BaseModel):
 @router.post("/login", response_model=LoginResponse)
 async def login(credentials: LoginRequest):
     """Real Cognito login endpoint"""
-    email = credentials.username  # Frontend sends username but it's actually email
+    import urllib.parse
+    
+    # Properly handle email with special characters (dots, etc.)
+    email = credentials.username.strip()
+    # URL decode in case email was encoded
+    email = urllib.parse.unquote(email)
     password = credentials.password
+
+    print(f"Login attempt for email: '{email}'")  # Debug log
 
     try:
         import boto3
