@@ -116,15 +116,18 @@ class CognitoUserManagementService:
         - Uses SES for better deliverability
         """
         try:
-            print(f"Creating user with email: {email}")  # Debug
+            # Normalize email to lowercase for consistency
+            normalized_email = email.lower().strip()
+            
+            print(f"Creating user with email: {normalized_email}")  # Debug
             print(f"Using UserPoolId: {self.user_pool_id}")  # Debug
 
             # Since User Pool requires email as username, use email directly
             params = {
                 "UserPoolId": self.user_pool_id,
-                "Username": email,  # Must be email format
+                "Username": normalized_email,  # Must be email format
                 "UserAttributes": [
-                    {"Name": "email", "Value": email},
+                    {"Name": "email", "Value": normalized_email},
                     {"Name": "email_verified", "Value": "true"},
                 ],
                 "TemporaryPassword": temporary_password,
@@ -134,12 +137,12 @@ class CognitoUserManagementService:
             if not send_email:
                 params["MessageAction"] = "SUPPRESS"
 
-            print(f"Creating user with email as username: {email}")  # Debug
+            print(f"Creating user with email as username: {normalized_email}")  # Debug
 
             # First check if user already exists
             try:
                 existing_user = self.cognito_client.admin_get_user(
-                    UserPoolId=self.user_pool_id, Username=email
+                    UserPoolId=self.user_pool_id, Username=normalized_email
                 )
                 print(f"User already exists: {existing_user}")
                 return {

@@ -71,6 +71,9 @@ async def list_users(admin_user=Depends(verify_admin_access)):
 async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_access)):
     """Create a new user"""
     try:
+        # Normalize email to lowercase for consistency
+        normalized_email = user_data.email.lower().strip()
+        
         # Create user without sending Cognito email
         import boto3
 
@@ -80,7 +83,7 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
         # First check if user exists
         try:
             cognito_client.admin_get_user(
-                UserPoolId=os.getenv("COGNITO_USER_POOL_ID"), Username=user_data.email
+                UserPoolId=os.getenv("COGNITO_USER_POOL_ID"), Username=normalized_email
             )
             return {
                 "success": False,
@@ -95,9 +98,9 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
             # Let Cognito send the email with our custom templates
             cognito_client.admin_create_user(
                 UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
-                Username=user_data.email,
+                Username=normalized_email,
                 UserAttributes=[
-                    {"Name": "email", "Value": user_data.email},
+                    {"Name": "email", "Value": normalized_email},
                     {"Name": "email_verified", "Value": "true"},
                 ],
                 TemporaryPassword=user_data.temporary_password,
@@ -107,9 +110,9 @@ async def create_user(user_data: UserCreate, admin_user=Depends(verify_admin_acc
             # Create user without sending email
             cognito_client.admin_create_user(
                 UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
-                Username=user_data.email,
+                Username=normalized_email,
                 UserAttributes=[
-                    {"Name": "email", "Value": user_data.email},
+                    {"Name": "email", "Value": normalized_email},
                     {"Name": "email_verified", "Value": "true"},
                 ],
                 TemporaryPassword=user_data.temporary_password,
