@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Save, Eye, EyeOff, History, FileText, Copy, Check, X, Plus } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
@@ -23,6 +23,10 @@ export function PromptEditorPage() {
   const [prompt, setPrompt] = useState<Prompt | null>(null)
   const [customCategory, setCustomCategory] = useState('')
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false)
+  
+  // Refs for textareas
+  const systemPromptRef = useRef<HTMLTextAreaElement>(null)
+  const userPromptRef = useRef<HTMLTextAreaElement>(null)
   
   // Extract URL parameters for auto-population
   const searchParams = new URLSearchParams(location.search)
@@ -360,19 +364,25 @@ Please provide detailed documentation that covers all essential aspects.`,
   }
 
   const insertCategoryVariable = (field: 'system_prompt' | 'user_prompt_template', variable: string) => {
-    const textarea = document.querySelector(`textarea[name="${field}"]`) as HTMLTextAreaElement
+    const textarea = field === 'system_prompt' ? systemPromptRef.current : userPromptRef.current
     if (textarea) {
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
+      const scrollTop = textarea.scrollTop
       const currentValue = formData[field]
       const newValue = currentValue.substring(0, start) + variable + currentValue.substring(end)
       
+      // Update form data
       setFormData({ ...formData, [field]: newValue })
       
-      // Restore cursor position after the inserted variable
+      // Restore cursor and scroll position after React re-render
       setTimeout(() => {
-        textarea.focus()
-        textarea.setSelectionRange(start + variable.length, start + variable.length)
+        if (textarea) {
+          textarea.focus()
+          const newCursorPosition = start + variable.length
+          textarea.setSelectionRange(newCursorPosition, newCursorPosition)
+          textarea.scrollTop = scrollTop
+        }
       }, 0)
     }
   }
@@ -637,6 +647,7 @@ Please provide detailed documentation that covers all essential aspects.`,
               )}
             </div>
             <textarea
+              ref={systemPromptRef}
               name="system_prompt"
               value={formData.system_prompt}
               onChange={(e) => setFormData({ ...formData, system_prompt: e.target.value })}
@@ -675,6 +686,7 @@ Please provide detailed documentation that covers all essential aspects.`,
               )}
             </div>
             <textarea
+              ref={userPromptRef}
               name="user_prompt_template"
               value={formData.user_prompt_template}
               onChange={(e) => setFormData({ ...formData, user_prompt_template: e.target.value })}
