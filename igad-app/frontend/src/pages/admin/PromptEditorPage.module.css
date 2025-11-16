@@ -762,3 +762,50 @@
 * {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
+
+/* Categories Styles */
+.categoriesContainer {
+  margin-top: 8px;
+}
+
+.categoriesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.categoryCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.categoryCheckbox:hover {
+  border-color: #016630;
+  background: #F0FDF4;
+}
+
+.categoryCheckbox input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.categoryCheckbox input[type="checkbox"]:checked + span {
+  color: #016630;
+  font-weight: 500;
+}
+
+.fieldHint {
+  display: block;
+  color: #6B7280;
+  font-size: 12px;
+  margin-top: 4px;
+  line-height: 1.4;
+}

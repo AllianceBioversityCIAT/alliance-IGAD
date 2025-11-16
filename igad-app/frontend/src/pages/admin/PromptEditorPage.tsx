@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Save, Eye, EyeOff, History, FileText, Copy, Check, X } from 'lucide-react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { ArrowLeft, Save, Eye, EyeOff, History, FileText, Copy, Check, X, Plus } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { usePrompts } from '../../hooks/usePrompts'
 import { useToast } from '../../components/ui/ToastContainer'
-import { ProposalSection, SECTION_LABELS, type Prompt } from '../../types/prompt'
+import { ProposalSection, SECTION_LABELS, PROMPT_CATEGORIES, type Prompt } from '../../types/prompt'
 import styles from './PromptEditorPage.module.css'
 
 export function PromptEditorPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const isEdit = !!id
   const { showSuccess, showError } = useToast()
   const { createPrompt, updatePrompt, isCreating, isUpdating } = usePrompts()
@@ -20,18 +21,47 @@ export function PromptEditorPage() {
   const [isLoading, setIsLoading] = useState(isEdit) // Loading state for edit mode
   const [showHistory, setShowHistory] = useState(false)
   const [prompt, setPrompt] = useState<Prompt | null>(null)
-  const [formData, setFormData] = useState({
-    name: '',
-    section: 'proposal_writer' as ProposalSection,
-    route: '',
-    tags: [] as string[],
-    system_prompt: '',
-    user_prompt_template: '',
-    output_format: 'Clear and structured response',
-    tone: 'Professional and informative',
-    few_shot: [],
-    context: {}
-  })
+  
+  // Extract URL parameters for auto-population
+  const searchParams = new URLSearchParams(location.search)
+  const fromRoute = searchParams.get('from')
+  const urlSection = searchParams.get('section') as ProposalSection
+  
+  // Auto-populate initial form data from URL parameters
+  const getInitialFormData = () => {
+    const baseData = {
+      name: '',
+      section: 'proposal_writer' as ProposalSection,
+      sub_section: '',
+      route: '',
+      categories: [] as string[],
+      tags: [] as string[],
+      system_prompt: '',
+      user_prompt_template: '',
+      output_format: 'Clear and structured response',
+      tone: 'Professional and informative',
+      few_shot: [],
+      context: {}
+    }
+
+    // If coming from a specific route, auto-populate fields
+    if (!isEdit && fromRoute && urlSection) {
+      // Extract sub-section from route (e.g., "/proposal-writer/step-1" -> "step-1")
+      const routeParts = fromRoute.split('/')
+      const subSection = routeParts[routeParts.length - 1] // Get last part
+      
+      return {
+        ...baseData,
+        section: urlSection,
+        sub_section: subSection,
+        route: fromRoute
+      }
+    }
+
+    return baseData
+  }
+
+  const [formData, setFormData] = useState(getInitialFormData())
 
   useEffect(() => {
     if (isEdit && id) {
@@ -53,8 +83,10 @@ export function PromptEditorPage() {
         setFormData({
           name: data.name,
           section: data.section,
+          sub_section: data.sub_section || '',
           route: data.route || '',
-          tags: data.tags || [],
+          categories: Array.isArray(data.categories) ? data.categories : [],
+          tags: Array.isArray(data.tags) ? data.tags : [],
           system_prompt: data.system_prompt,
           user_prompt_template: data.user_prompt_template,
           output_format: data.output_format || 'Clear and structured response',
@@ -71,7 +103,7 @@ export function PromptEditorPage() {
   const handleSave = async () => {
     try {
       if (isEdit && id) {
-        await updatePrompt({ id, ...formData })
+        await updatePrompt({ id, data: formData })
         showSuccess('Prompt updated successfully')
       } else {
         await createPrompt(formData)
@@ -383,6 +415,20 @@ Please provide detailed documentation that covers all essential aspects.`,
               </div>
 
               <div className={styles.formGroup}>
+                <label className={styles.label}>Sub-section</label>
+                <input
+                  type="text"
+                  value={formData.sub_section}
+                  onChange={(e) => setFormData({ ...formData, sub_section: e.target.value })}
+                  className={styles.input}
+                  placeholder="e.g., step-1, step-2"
+                />
+                <small className={styles.fieldHint}>
+                  Organize prompts within sections (e.g., "step-1", "step-2")
+                </small>
+              </div>
+
+              <div className={styles.formGroup}>
                 <label className={styles.label}>Route</label>
                 <input
                   type="text"
@@ -391,6 +437,40 @@ Please provide detailed documentation that covers all essential aspects.`,
                   className={styles.input}
                   placeholder="Optional route identifier"
                 />
+              </div>
+            </div>
+
+            {/* Categories Section */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Categories</label>
+              <div className={styles.categoriesContainer}>
+                <div className={styles.categoriesGrid}>
+                  {PROMPT_CATEGORIES.map((category) => (
+                    <label key={category} className={styles.categoryCheckbox}>
+                      <input
+                        type="checkbox"
+                        checked={formData.categories.includes(category)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              categories: [...formData.categories, category]
+                            })
+                          } else {
+                            setFormData({
+                              ...formData,
+                              categories: formData.categories.filter(c => c !== category)
+                            })
+                          }
+                        }}
+                      />
+                      <span>{category}</span>
+                    </label>
+                  ))}
+                </div>
+                <small className={styles.fieldHint}>
+                  Select categories where this prompt can be used. Categories can be injected as variables using {`{{category_1}}`}, {`{{category_2}}`}, or {`{{categories}}`}.
+                </small>
               </div>
             </div>
           </div>

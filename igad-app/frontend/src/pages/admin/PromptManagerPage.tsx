@@ -17,6 +17,8 @@ import styles from './PromptManagerPage.module.css'
 
 interface PromptManagerFilters {
   section?: ProposalSection
+  sub_section?: string
+  category?: string
   status?: 'draft' | 'published'
   tag?: string
   search?: string
@@ -96,7 +98,17 @@ export function PromptManagerPage() {
   } = usePrompts(filters)
 
   const handleCreateNew = () => {
-    navigate('/admin/prompt-manager/create')
+    // Preserve URL parameters when creating new prompt
+    const currentParams = new URLSearchParams(window.location.search)
+    const fromRoute = currentParams.get('from')
+    const section = currentParams.get('section')
+    
+    let createUrl = '/admin/prompt-manager/create'
+    if (fromRoute && section) {
+      createUrl += `?from=${encodeURIComponent(fromRoute)}&section=${encodeURIComponent(section)}`
+    }
+    
+    navigate(createUrl)
   }
 
   const handleEditPrompt = (promptId: string) => {

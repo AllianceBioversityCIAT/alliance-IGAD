@@ -1,9 +1,11 @@
-import { ProposalSection, SECTION_LABELS } from '../../../types/prompt'
+import { ProposalSection, SECTION_LABELS, PROMPT_CATEGORIES } from '../../../types/prompt'
 import styles from './PromptFilters.module.css'
 
 interface PromptFiltersProps {
   filters: {
     section?: ProposalSection
+    sub_section?: string
+    category?: string
     tag?: string
     search?: string
     route?: string
@@ -58,6 +60,33 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
           {Object.entries(SECTION_LABELS).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className={styles.filterGroup}>
+        <label className={styles.label}>Sub-section</label>
+        <input
+          type="text"
+          placeholder="Filter by sub-section..."
+          value={filters.sub_section || ''}
+          onChange={e => onChange({ ...filters, sub_section: e.target.value || undefined })}
+          className={styles.input}
+        />
+      </div>
+
+      <div className={styles.filterGroup}>
+        <label className={styles.label}>Category</label>
+        <select
+          value={filters.category || 'all'}
+          onChange={e => onChange({ ...filters, category: e.target.value === 'all' ? undefined : e.target.value })}
+          className={styles.select}
+        >
+          <option value="all">All Categories</option>
+          {PROMPT_CATEGORIES.map(category => (
+            <option key={category} value={category}>
+              {category}
             </option>
           ))}
         </select>

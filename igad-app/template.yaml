@@ -242,13 +242,15 @@ Resources:
             return request;
           }
 
-          // Standard SPA routing
-          if (uri.includes('.')) {
+          // Don't rewrite requests for static assets (files with extensions)
+          if (uri.includes('.') && !uri.endsWith('/')) {
             return request;
           }
 
-          // Rewrite to index.html for SPA routing
-          request.uri = '/index.html';
+          // Only rewrite requests that look like routes (no file extension)
+          if (!uri.includes('.') || uri.endsWith('/')) {
+            request.uri = '/index.html';
+          }
 
           return request;
         }

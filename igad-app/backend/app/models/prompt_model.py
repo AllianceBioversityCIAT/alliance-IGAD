@@ -39,7 +39,9 @@ class PromptContext(BaseModel):
 class PromptBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     section: ProposalSection
+    sub_section: Optional[str] = Field(None, max_length=100, description="Sub-section identifier (e.g., 'step-1', 'step-2')")
     route: Optional[str] = None
+    categories: Optional[List[str]] = Field(default=None, description="Categories where this prompt can be used")
     tags: List[str] = Field(default_factory=list)
     system_prompt: str = Field(..., min_length=1)
     user_prompt_template: str = Field(..., min_length=1)
@@ -56,7 +58,9 @@ class PromptCreate(PromptBase):
 class PromptUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     section: Optional[ProposalSection] = None
+    sub_section: Optional[str] = Field(None, max_length=100)
     route: Optional[str] = None
+    categories: Optional[List[str]] = None
     tags: Optional[List[str]] = None
     system_prompt: Optional[str] = Field(None, min_length=1)
     user_prompt_template: Optional[str] = Field(None, min_length=1)

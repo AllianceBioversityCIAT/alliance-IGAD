@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from ..middleware.auth_middleware import AuthMiddleware
 from ..services.bedrock_service import BedrockService
+from ..services.prompt_service import PromptService
 
 router = APIRouter(prefix="/api/proposals", tags=["proposals"])
 security = HTTPBearer()
@@ -42,6 +43,11 @@ class AIGenerateRequest(BaseModel):
 class AIImproveRequest(BaseModel):
     section_id: str
     improvement_type: str = "general"
+
+
+class PromptWithCategoriesRequest(BaseModel):
+    prompt_id: str
+    categories: List[str]
 
 
 # Mock data storage
@@ -189,3 +195,31 @@ async def improve_ai_content(
         return {"improved_content": improved_content}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI improvement failed: {str(e)}")
+
+
+@router.post("/prompts/with-categories")
+async def get_prompt_with_categories(
+    request: PromptWithCategoriesRequest, user=Depends(get_current_user)
+):
+    """Get a prompt with categories injected as variables"""
+    try:
+        # Initialize prompt service
+        prompt_service = PromptService()
+
+        # Get prompt with injected categories
+        prompt = await prompt_service.get_prompt_with_categories(
+            request.prompt_id, request.categories
+        )
+
+        if not prompt:
+            raise HTTPException(status_code=404, detail="Prompt not found")
+
+        return {
+            "prompt": prompt,
+            "injected_categories": request.categories,
+            "available_variables": [
+                f"{{{{category_{i}}}}}" for i in range(1, len(request.categories) + 1)
+            ] + ["{{categories}}"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get prompt with categories: {str(e)}")

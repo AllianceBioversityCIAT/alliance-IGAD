@@ -77,6 +77,8 @@ export function PromptListTable({
             <tr>
               <th className={styles.tableHeader}>Name</th>
               <th className={styles.tableHeader}>Section</th>
+              <th className={styles.tableHeader}>Sub-section</th>
+              <th className={styles.tableHeader}>Categories</th>
               <th className={styles.tableHeader}>Route</th>
               <th className={styles.tableHeader}>Status</th>
               <th className={styles.tableHeader}>Updated</th>
@@ -98,6 +100,12 @@ export function PromptListTable({
                 </td>
                 <td className={styles.tableCell}>
                   <div className={styles.skeleton} style={{ width: '120px', height: '16px' }}></div>
+                </td>
+                <td className={styles.tableCell}>
+                  <div className={styles.skeleton} style={{ width: '80px', height: '16px' }}></div>
+                </td>
+                <td className={styles.tableCell}>
+                  <div className={styles.skeleton} style={{ width: '100px', height: '16px' }}></div>
                 </td>
                 <td className={styles.tableCell}>
                   <div className={styles.skeleton} style={{ width: '140px', height: '16px', borderRadius: '4px' }}></div>
@@ -154,6 +162,8 @@ export function PromptListTable({
           <tr>
             <th className={styles.tableHeader}>Name</th>
             <th className={styles.tableHeader}>Section</th>
+            <th className={styles.tableHeader}>Sub-section</th>
+            <th className={styles.tableHeader}>Categories</th>
             <th className={styles.tableHeader}>Route</th>
             <th className={styles.tableHeader}>Status</th>
             <th className={styles.tableHeader}>Updated</th>
@@ -183,6 +193,29 @@ export function PromptListTable({
               </td>
               <td className={styles.tableCell}>
                 <span className={styles.sectionLabel}>{SECTION_LABELS[prompt.section]}</span>
+              </td>
+              <td className={styles.tableCell}>
+                {prompt.sub_section ? (
+                  <code className={styles.subSectionCode}>{prompt.sub_section}</code>
+                ) : (
+                  <span className={styles.noSubSection}>—</span>
+                )}
+              </td>
+              <td className={styles.tableCell}>
+                {prompt.categories && prompt.categories.length > 0 ? (
+                  <div className={styles.categories}>
+                    {prompt.categories.slice(0, 2).map(category => (
+                      <span key={category} className={styles.category}>
+                        {category}
+                      </span>
+                    ))}
+                    {prompt.categories.length > 2 && (
+                      <span className={styles.categoryMore}>+{prompt.categories.length - 2}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className={styles.noCategories}>—</span>
+                )}
               </td>
               <td className={styles.tableCell}>
                 {prompt.route ? (

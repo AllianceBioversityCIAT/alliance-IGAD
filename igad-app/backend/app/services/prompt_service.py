@@ -47,6 +47,7 @@ class PromptService:
             "name": prompt.name,
             "section": prompt.section.value,
             "tags": prompt.tags,
+            "categories": prompt.categories or [],
             "version": prompt.version,
             "is_active": prompt.is_active,
             "system_prompt": prompt.system_prompt,
@@ -56,6 +57,9 @@ class PromptService:
             "created_at": prompt.created_at.isoformat() + "Z",
             "updated_at": prompt.updated_at.isoformat() + "Z",
         }
+
+        if prompt.sub_section:
+            item["sub_section"] = prompt.sub_section
 
         if prompt.route:
             item["route"] = prompt.route
@@ -80,7 +84,9 @@ class PromptService:
             id=item["id"],
             name=item["name"],
             section=ProposalSection(item["section"]),
+            sub_section=item.get("sub_section"),
             route=item.get("route"),
+            categories=item.get("categories", []),
             tags=item.get("tags", []),
             version=item["version"],
             is_active=item.get(
@@ -628,3 +634,40 @@ class PromptService:
 
         except Exception as e:
             logger.error(f"Error updating comments count for prompt {prompt_id}: {e}")
+
+    def inject_category_variables(self, prompt_text: str, categories: List[str]) -> str:
+        """
+        Inject categories as variables in prompt text.
+        Replaces {{category_1}}, {{category_2}}, etc. with actual category values.
+        Also supports {{categories}} for comma-separated list.
+        """
+        if not categories:
+            return prompt_text
+        
+        result = prompt_text
+        
+        # Replace individual category variables {{category_1}}, {{category_2}}, etc.
+        for i, category in enumerate(categories, 1):
+            placeholder = f"{{{{category_{i}}}}}"
+            result = result.replace(placeholder, category)
+        
+        # Replace {{categories}} with comma-separated list
+        categories_list = ", ".join(categories)
+        result = result.replace("{{categories}}", categories_list)
+        
+        return result
+
+    async def get_prompt_with_categories(self, prompt_id: str, categories: Optional[List[str]] = None) -> Optional[Prompt]:
+        """
+        Get a prompt and inject category variables if categories are provided.
+        """
+        prompt = await self.get_prompt(prompt_id)
+        if not prompt or not categories:
+            return prompt
+        
+        # Create a copy with injected categories
+        prompt_dict = prompt.dict()
+        prompt_dict["system_prompt"] = self.inject_category_variables(prompt.system_prompt, categories)
+        prompt_dict["user_prompt_template"] = self.inject_category_variables(prompt.user_prompt_template, categories)
+        
+        return Prompt(**prompt_dict)

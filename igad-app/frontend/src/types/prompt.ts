@@ -42,6 +42,27 @@ export const SECTION_LABELS: Record<ProposalSection, string> = {
   [ProposalSection.APPENDICES]: 'Appendices',
 }
 
+// Predefined categories for prompt usage
+export const PROMPT_CATEGORIES = [
+  'RFP / Call for Proposals',
+  'Reference Proposals',
+  'Existing Work & Experience',
+  'Initial Concept',
+  'Direction',
+  'Technical Approach',
+  'Budget Planning',
+  'Risk Management',
+  'Impact Assessment',
+  'Stakeholder Analysis',
+  'Literature Review',
+  'Methodology Design',
+  'Timeline Planning',
+  'Sustainability Planning',
+  'Monitoring & Evaluation',
+] as const
+
+export type PromptCategory = typeof PROMPT_CATEGORIES[number]
+
 export interface PromptContext {
   persona?: string
   sources?: string[]
@@ -58,7 +79,9 @@ export interface Prompt {
   id: string
   name: string
   section: ProposalSection
+  sub_section?: string // e.g., "step-1", "step-2"
   route?: string // e.g., "/proposal-writer/step-1"
+  categories: string[] // e.g., ["RFP / Call for Proposals", "Reference Proposals"]
   tags: string[]
   version: number
   is_active: boolean
@@ -97,7 +120,9 @@ export interface PromptPreviewResponse {
 export interface CreatePromptRequest {
   name: string
   section: ProposalSection
+  sub_section?: string
   route?: string
+  categories?: string[]
   tags?: string[]
   system_prompt: string
   user_prompt_template: string
