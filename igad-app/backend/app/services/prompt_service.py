@@ -112,11 +112,14 @@ class PromptService:
 
         # Check for active prompt conflict (new prompts are active by default)
         is_active = True
-        existing_active = self._find_active_prompt_by_section_route(
-            prompt_data.section, prompt_data.route or ""
+        existing_active = self._find_active_prompt_by_section_route_subsection_categories(
+            prompt_data.section, 
+            prompt_data.route or "", 
+            prompt_data.sub_section,
+            prompt_data.categories
         )
         if existing_active:
-            raise ValueError("Duplicate active prompt for this section and route")
+            raise ValueError("Duplicate active prompt for this section, route, subsection, and categories")
 
         prompt = Prompt(
             id=prompt_id,
@@ -209,13 +212,15 @@ class PromptService:
         if prompt_dict.get("is_active", False):
             section = prompt_dict.get("section")
             route = prompt_dict.get("route", "")
+            subsection = prompt_dict.get("sub_section")
+            categories = prompt_dict.get("categories", [])
 
-            existing_active = self._find_active_prompt_by_section_route(
-                section, route, exclude_id=prompt_id
+            existing_active = self._find_active_prompt_by_section_route_subsection_categories(
+                section, route, subsection, categories, exclude_id=prompt_id
             )
-            # If there's another active prompt with same section+route, reject the update
+            # If there's another active prompt with same section+route+subsection+categories, reject the update
             if existing_active:
-                raise ValueError("Duplicate active prompt for this section and route")
+                raise ValueError("Duplicate active prompt for this section, route, subsection, and categories")
 
         updated_prompt = Prompt(**prompt_dict)
         item = self._prompt_to_item(updated_prompt)
@@ -379,14 +384,16 @@ class PromptService:
             if new_active:
                 section = item.get("section")
                 route = item.get("route", "")
+                subsection = item.get("sub_section")
+                categories = item.get("categories", [])
 
-                # Check for other active prompts with same section and route
-                existing_active = self._find_active_prompt_by_section_route(
-                    section, route, prompt_id
+                # Check for other active prompts with same section, route, subsection, and categories
+                existing_active = self._find_active_prompt_by_section_route_subsection_categories(
+                    section, route, subsection, categories, prompt_id
                 )
                 if existing_active:
                     raise ValueError(
-                        f"Another prompt is already active for section '{section}' and route '{route}'. Only one prompt can be active per section-route combination."
+                        f"Another prompt is already active for section '{section}', route '{route}', subsection '{subsection}', and categories {categories}. Only one prompt can be active per unique combination."
                     )
 
             # Update active status
@@ -411,6 +418,51 @@ class PromptService:
         except Exception as e:
             logger.error(f"Error toggling prompt active status: {e}")
             raise
+
+    def _find_active_prompt_by_section_route_subsection_categories(
+        self, section: str, route: str, sub_section: str = None, categories: list = None, exclude_id: str = None
+    ) -> Optional[Prompt]:
+        """Find active prompt with same section, route, sub_section, and categories"""
+        try:
+            # Get all prompts and filter in Python (more reliable than DynamoDB FilterExpression)
+            response = self.table.scan()
+            items = response.get("Items", [])
+
+            # Filter for prompts (not other items)
+            prompt_items = [
+                item
+                for item in items
+                if item.get("PK", "").startswith("prompt#")
+                and item.get("SK", "").startswith("version#")
+            ]
+
+            # Normalize categories for comparison
+            categories_set = set(categories or [])
+
+            # Find active prompt with matching section, route, subsection, and categories
+            for item in prompt_items:
+                item_categories_set = set(item.get("categories", []))
+                
+                if (
+                    item.get("section") == section
+                    and item.get("route") == route
+                    and item.get("sub_section") == sub_section
+                    and item_categories_set == categories_set
+                    and item.get("is_active", False) is True
+                ):
+
+                    # Exclude the current prompt if specified
+                    prompt_id = item.get("PK", "").replace("prompt#", "")
+                    if exclude_id and prompt_id == exclude_id:
+                        continue
+
+                    return self._item_to_prompt(item)
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Error finding active prompt by section/route/subsection/categories: {e}")
+            return None
 
     def _find_active_prompt_by_section_route(
         self, section: str, route: str, exclude_id: str = None

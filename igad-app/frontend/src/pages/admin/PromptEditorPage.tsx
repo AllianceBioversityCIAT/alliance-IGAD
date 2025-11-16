@@ -21,6 +21,8 @@ export function PromptEditorPage() {
   const [isLoading, setIsLoading] = useState(isEdit) // Loading state for edit mode
   const [showHistory, setShowHistory] = useState(false)
   const [prompt, setPrompt] = useState<Prompt | null>(null)
+  const [customCategory, setCustomCategory] = useState('')
+  const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false)
   
   // Extract URL parameters for auto-population
   const searchParams = new URLSearchParams(location.search)
@@ -120,18 +122,46 @@ export function PromptEditorPage() {
   }
 
   const extractVariables = (text: string): string[] => {
-    const matches = text.match(/\{([^}]+)\}/g) || []
-    return [...new Set(matches.map(match => match.slice(1, -1)))]
+    // Extract both single {variable} and double {{variable}} patterns
+    const singleBraces = text.match(/\{([^{}]+)\}/g) || []
+    const doubleBraces = text.match(/\{\{([^{}]+)\}\}/g) || []
+    
+    const singleVars = singleBraces.map(match => match.slice(1, -1))
+    const doubleVars = doubleBraces.map(match => match.slice(2, -2))
+    
+    return [...new Set([...singleVars, ...doubleVars])]
   }
 
   const getPreviewText = (text: string) => {
-    const variables = extractVariables(text)
     let result = text
+    
+    // Handle category variables (double braces)
+    if (formData.categories.length > 0) {
+      // Handle individual category variables using actual category names
+      formData.categories.forEach((category) => {
+        const variableName = category.toLowerCase().replace(/\s+/g, '_')
+        const variablePattern = new RegExp(`\\{\\{${variableName}\\}\\}`, 'g')
+        result = result.replace(variablePattern, `[${category}]`)
+      })
+      
+      // Handle legacy category_1, category_2 format for backward compatibility
+      formData.categories.forEach((category, index) => {
+        const variablePattern = new RegExp(`\\{\\{category_${index + 1}\\}\\}`, 'g')
+        result = result.replace(variablePattern, `[${category}]`)
+      })
+      
+      // Handle all categories variable
+      result = result.replace(/\{\{categories\}\}/g, `[${formData.categories.join(', ')}]`)
+    }
+    
+    // Handle regular variables (single braces)
+    const variables = result.match(/\{([^{}]+)\}/g) || []
     variables.forEach(variable => {
-      const placeholder = `{${variable}}`
-      const exampleValue = `[${variable.replace(/_/g, ' ').toUpperCase()}]`
-      result = result.replace(new RegExp(`\\{${variable}\\}`, 'g'), exampleValue)
+      const varName = variable.slice(1, -1)
+      const exampleValue = `[${varName.replace(/_/g, ' ').toUpperCase()}]`
+      result = result.replace(new RegExp(`\\{${varName}\\}`, 'g'), exampleValue)
     })
+    
     return result
   }
 
@@ -311,6 +341,42 @@ Please provide detailed documentation that covers all essential aspects.`,
     ...extractVariables(formData.user_prompt_template)
   ].filter((v, i, arr) => arr.indexOf(v) === i)
 
+  const handleAddCustomCategory = () => {
+    if (customCategory.trim() && !formData.categories.includes(customCategory.trim())) {
+      setFormData({
+        ...formData,
+        categories: [...formData.categories, customCategory.trim()]
+      })
+      setCustomCategory('')
+      setShowCustomCategoryInput(false)
+    }
+  }
+
+  const handleRemoveCategory = (categoryToRemove: string) => {
+    setFormData({
+      ...formData,
+      categories: formData.categories.filter(c => c !== categoryToRemove)
+    })
+  }
+
+  const insertCategoryVariable = (field: 'system_prompt' | 'user_prompt_template', variable: string) => {
+    const textarea = document.querySelector(`textarea[name="${field}"]`) as HTMLTextAreaElement
+    if (textarea) {
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const currentValue = formData[field]
+      const newValue = currentValue.substring(0, start) + variable + currentValue.substring(end)
+      
+      setFormData({ ...formData, [field]: newValue })
+      
+      // Restore cursor position after the inserted variable
+      setTimeout(() => {
+        textarea.focus()
+        textarea.setSelectionRange(start + variable.length, start + variable.length)
+      }, 0)
+    }
+  }
+
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -444,6 +510,25 @@ Please provide detailed documentation that covers all essential aspects.`,
             <div className={styles.formGroup}>
               <label className={styles.label}>Categories</label>
               <div className={styles.categoriesContainer}>
+                {/* Selected Categories */}
+                {formData.categories.length > 0 && (
+                  <div className={styles.selectedCategories}>
+                    {formData.categories.map((category) => (
+                      <span key={category} className={styles.selectedCategory}>
+                        {category}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCategory(category)}
+                          className={styles.removeCategoryButton}
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Predefined Categories */}
                 <div className={styles.categoriesGrid}>
                   {PROMPT_CATEGORIES.map((category) => (
                     <label key={category} className={styles.categoryCheckbox}>
@@ -468,6 +553,53 @@ Please provide detailed documentation that covers all essential aspects.`,
                     </label>
                   ))}
                 </div>
+
+                {/* Custom Category Input */}
+                {showCustomCategoryInput ? (
+                  <div className={styles.customCategoryInput}>
+                    <input
+                      type="text"
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      placeholder="Enter custom category name"
+                      className={styles.input}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleAddCustomCategory()
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomCategory}
+                      className={styles.addCategoryButton}
+                      disabled={!customCategory.trim()}
+                    >
+                      <Check size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCustomCategoryInput(false)
+                        setCustomCategory('')
+                      }}
+                      className={styles.cancelCategoryButton}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomCategoryInput(true)}
+                    className={styles.addCustomCategoryButton}
+                  >
+                    <Plus size={16} />
+                    Add Custom Category
+                  </button>
+                )}
+
                 <small className={styles.fieldHint}>
                   Select categories where this prompt can be used. Categories can be injected as variables using {`{{category_1}}`}, {`{{category_2}}`}, or {`{{categories}}`}.
                 </small>
@@ -477,8 +609,35 @@ Please provide detailed documentation that covers all essential aspects.`,
 
           {/* Prompts */}
           <div className={styles.formSection}>
-            <h3 className={styles.sectionTitle}>System Role *</h3>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>System Role *</h3>
+              {formData.categories.length > 0 && (
+                <div className={styles.categoryInjectors}>
+                  <span className={styles.injectorLabel}>Insert:</span>
+                  {formData.categories.map((category, index) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => insertCategoryVariable('system_prompt', `{{${category.toLowerCase().replace(/\s+/g, '_')}}}`)}
+                      className={styles.injectorButton}
+                      title={`Insert: ${category}`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => insertCategoryVariable('system_prompt', '{{categories}}')}
+                    className={styles.injectorButton}
+                    title={`Insert all: ${formData.categories.join(', ')}`}
+                  >
+                    All Categories
+                  </button>
+                </div>
+              )}
+            </div>
             <textarea
+              name="system_prompt"
               value={formData.system_prompt}
               onChange={(e) => setFormData({ ...formData, system_prompt: e.target.value })}
               className={styles.textareaLarge}
@@ -488,8 +647,35 @@ Please provide detailed documentation that covers all essential aspects.`,
           </div>
 
           <div className={styles.formSection}>
-            <h3 className={styles.sectionTitle}>User Instructions *</h3>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>User Instructions *</h3>
+              {formData.categories.length > 0 && (
+                <div className={styles.categoryInjectors}>
+                  <span className={styles.injectorLabel}>Insert:</span>
+                  {formData.categories.map((category, index) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => insertCategoryVariable('user_prompt_template', `{{${category.toLowerCase().replace(/\s+/g, '_')}}}`)}
+                      className={styles.injectorButton}
+                      title={`Insert: ${category}`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => insertCategoryVariable('user_prompt_template', '{{categories}}')}
+                    className={styles.injectorButton}
+                    title={`Insert all: ${formData.categories.join(', ')}`}
+                  >
+                    All Categories
+                  </button>
+                </div>
+              )}
+            </div>
             <textarea
+              name="user_prompt_template"
               value={formData.user_prompt_template}
               onChange={(e) => setFormData({ ...formData, user_prompt_template: e.target.value })}
               className={styles.textareaLarge}
@@ -520,6 +706,9 @@ Please provide detailed documentation that covers all essential aspects.`,
                   </span>
                 ))}
               </div>
+              <small className={styles.fieldHint}>
+                <strong>Note:</strong> Category variables ({'{{category_1}}'}, {'{{category_2}}'}, {'{{categories}}'}) will be replaced with actual category names when the prompt is retrieved from the backend.
+              </small>
             </div>
           )}
         </div>
