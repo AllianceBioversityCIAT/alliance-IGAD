@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Eye, EyeOff, History, FileText, Copy, Check, X, Plus }
 import ReactMarkdown from 'react-markdown'
 import { usePrompts } from '../../hooks/usePrompts'
 import { useToast } from '../../components/ui/ToastContainer'
+import { ErrorModal } from '../../components/ui/ErrorModal'
 import { ProposalSection, SECTION_LABELS, PROMPT_CATEGORIES, type Prompt } from '../../types/prompt'
 import styles from './PromptEditorPage.module.css'
 
@@ -23,6 +24,17 @@ export function PromptEditorPage() {
   const [prompt, setPrompt] = useState<Prompt | null>(null)
   const [customCategory, setCustomCategory] = useState('')
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false)
+  const [errorModal, setErrorModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    details?: string
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    details: undefined
+  })
   
   // Refs for textareas
   const systemPromptRef = useRef<HTMLTextAreaElement>(null)
@@ -117,7 +129,34 @@ export function PromptEditorPage() {
       }
       navigate('/admin/prompt-manager')
     } catch (error: any) {
-      showError('Failed to save prompt', error.message || 'Please try again.')
+      console.error('Save error:', error)
+      
+      // Parse error message for better UX
+      let title = 'Failed to Save Prompt'
+      let message = 'An unexpected error occurred while saving your prompt.'
+      let details = error.message || 'Please try again.'
+
+      // Handle specific error cases
+      if (error.message?.includes('Duplicate active prompt')) {
+        title = 'Duplicate Prompt Detected'
+        message = 'A prompt with the same configuration already exists and is currently active.'
+        details = 'Please check if there\'s already an active prompt for this section, route, subsection, and categories combination. You can either deactivate the existing prompt or modify your current prompt\'s configuration.'
+      } else if (error.message?.includes('validation')) {
+        title = 'Validation Error'
+        message = 'Please check your input and try again.'
+        details = error.message
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        title = 'Connection Error'
+        message = 'Unable to connect to the server. Please check your internet connection.'
+        details = 'If the problem persists, please contact support.'
+      }
+
+      setErrorModal({
+        isOpen: true,
+        title,
+        message,
+        details
+      })
     }
   }
 
@@ -831,6 +870,14 @@ Please provide detailed documentation that covers all essential aspects.`,
           </div>
         </div>
       )}
+
+      <ErrorModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+        title={errorModal.title}
+        message={errorModal.message}
+        details={errorModal.details}
+      />
     </div>
   )
 }
