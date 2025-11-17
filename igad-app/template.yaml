@@ -14,6 +14,10 @@ Resources:
         AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
         AllowOrigin: "'*'"
       
+      BinaryMediaTypes:
+        - 'multipart/form-data'
+        - 'application/pdf'
+        - 'application/octet-stream'
 
   # Lambda Function with Web Adapter
   ApiFunction:

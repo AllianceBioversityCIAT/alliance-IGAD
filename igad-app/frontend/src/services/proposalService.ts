@@ -127,6 +127,16 @@ class ProposalService {
       text_inputs: formData.textInputs,
     })
   }
+
+  async analyzeRFP(proposalId: string): Promise<{
+    success: boolean
+    rfp_analysis: any
+    message?: string
+    cached?: boolean
+  }> {
+    const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-rfp`)
+    return response.data
+  }
 }
 
 export const proposalService = new ProposalService()

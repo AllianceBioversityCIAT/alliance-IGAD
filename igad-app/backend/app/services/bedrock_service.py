@@ -121,3 +121,43 @@ class BedrockService:
         )
 
         return output
+    
+    def invoke_claude(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        max_tokens: int = 4000,
+        temperature: float = 0.7
+    ) -> str:
+        """
+        Simple Claude invocation for analysis tasks
+        Returns the raw text response
+        """
+        try:
+            messages = [{"role": "user", "content": user_prompt}]
+            
+            body = {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "system": system_prompt,
+                "messages": messages,
+            }
+            
+            response = self.bedrock.invoke_model(
+                modelId=self.model_id,
+                body=json.dumps(body),
+                contentType="application/json",
+                accept="application/json",
+            )
+            
+            response_body = json.loads(response["body"].read())
+            
+            if "content" in response_body and response_body["content"]:
+                return response_body["content"][0]["text"]
+            else:
+                return ""
+                
+        except Exception as e:
+            logger.error(f"Error invoking Claude: {e}")
+            raise

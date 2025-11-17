@@ -22,6 +22,8 @@ export function ProposalWriterPage() {
   const [proposalCode, setProposalCode] = useState<string>()
   const [showExitModal, setShowExitModal] = useState(false)
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
+  const [isAnalyzingRFP, setIsAnalyzingRFP] = useState(false)
+  const [rfpAnalysis, setRfpAnalysis] = useState<any>(null)
   const [formData, setFormData] = useState({
     uploadedFiles: {} as { [key: string]: File[] },
     textInputs: {} as { [key: string]: string },
@@ -145,7 +147,45 @@ export function ProposalWriterPage() {
     }
   }
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
+    // If on Step 1 and trying to go to Step 2, analyze RFP first
+    if (currentStep === 1 && !rfpAnalysis) {
+      // Check if RFP is uploaded
+      const hasRFP = formData.uploadedFiles['rfp-document']?.length > 0
+      
+      if (!hasRFP) {
+        alert('Please upload an RFP document before proceeding.')
+        return
+      }
+      
+      // Analyze RFP
+      setIsAnalyzingRFP(true)
+      
+      try {
+        const { proposalService } = await import('../../services/proposalService')
+        const result = await proposalService.analyzeRFP(proposalId!)
+        
+        setRfpAnalysis(result.rfp_analysis)
+        
+        // Now proceed to next step
+        if (currentStep < 5) {
+          setCompletedSteps(prev => [...prev, currentStep])
+          const nextStep = currentStep + 1
+          setCurrentStep(nextStep)
+          navigate(`/proposal-writer/step-${nextStep}`)
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }
+      } catch (error) {
+        console.error('RFP analysis failed:', error)
+        alert('Failed to analyze RFP. Please try again.')
+      } finally {
+        setIsAnalyzingRFP(false)
+      }
+      
+      return
+    }
+    
+    // Normal navigation for other steps
     if (currentStep < 5) {
       setCompletedSteps(prev => [...prev, currentStep])
       const nextStep = currentStep + 1
@@ -201,10 +241,21 @@ export function ProposalWriterPage() {
       key="next"
       className={`${styles.button} ${styles.buttonPrimary}`}
       onClick={handleNextStep}
-      disabled={currentStep === 5}
+      disabled={currentStep === 5 || isAnalyzingRFP}
     >
-      {currentStep === 5 ? 'Complete' : 'Next'}
-      <ChevronRight size={16} />
+      {isAnalyzingRFP ? (
+        <>
+          <span className={styles.spinner}></span>
+          Analyzing RFP...
+        </>
+      ) : currentStep === 5 ? (
+        'Complete'
+      ) : (
+        <>
+          {currentStep === 1 ? 'Analyze & Continue' : 'Next'}
+          <ChevronRight size={16} />
+        </>
+      )}
     </button>,
   ]
 

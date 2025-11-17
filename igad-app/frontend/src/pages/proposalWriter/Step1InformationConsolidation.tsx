@@ -1,8 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { FileText, AlertTriangle } from 'lucide-react'
 import { useProposal } from '../../hooks/useProposal'
 import { StepProps } from './stepConfig'
 import styles from './proposalWriter.module.css'
+import { apiClient } from '../../services/apiClient'
+import { SuccessNotification } from './components/SuccessNotification'
+import { ErrorNotification } from './components/ErrorNotification'
+import { ManualRFPInput } from './components/ManualRFPInput'
 
 interface Step1Props extends StepProps {
   proposalId?: string
@@ -37,6 +41,12 @@ function Step1Skeleton() {
 
 export function Step1InformationConsolidation({ formData, setFormData, proposalId }: Step1Props) {
   const { proposal, updateFormData, isUpdating, isLoading } = useProposal(proposalId)
+  const [isUploadingRFP, setIsUploadingRFP] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [showError, setShowError] = useState(false)
+  const [uploadResult, setUploadResult] = useState<any>(null)
+  const [errorDetails, setErrorDetails] = useState<string>('')
+  const [showManualInput, setShowManualInput] = useState(false)
 
   // Show skeleton while loading
   if (isLoading) {
@@ -54,7 +64,8 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   }, [proposal, setFormData])
 
   const handleFileUpload = async (section: string, files: FileList | null) => {
-    if (files) {
+    if (files && files.length > 0) {
+      const file = files[0] // Take first file
       const newFiles = Array.from(files)
       const updatedFiles = {
         ...formData.uploadedFiles,
@@ -66,7 +77,55 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         uploadedFiles: updatedFiles,
       }))
 
-      // Save to backend if we have a proposal ID
+      // Upload to S3 and create vectors if we have a proposal ID
+      if (proposalId && section === 'rfp-document') {
+        setIsUploadingRFP(true)
+        try {
+          // Create FormData for file upload
+          const uploadFormData = new FormData()
+          uploadFormData.append('file', file)
+          
+          console.log('Uploading document to:', `/api/proposals/${proposalId}/documents/upload`)
+          console.log('File:', file.name, 'Size:', file.size)
+          
+          // Upload document - this will process and create vectors
+          const response = await apiClient.post(
+            `/api/proposals/${proposalId}/documents/upload`,
+            uploadFormData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              },
+            }
+          )
+          
+          console.log('Document uploaded and vectorized:', response.data)
+          
+          // Show success notification
+          setUploadResult(response.data)
+          setShowSuccess(true)
+          
+        } catch (error: any) {
+          console.error('Failed to upload document:', error)
+          console.error('Error response:', error.response?.data)
+          console.error('Error status:', error.response?.status)
+          
+          const errorMessage = error.response?.data?.detail || error.message || 'Unknown error'
+          setErrorDetails(errorMessage)
+          setShowError(true)
+          
+          // If it's a scanned PDF error, offer manual input
+          if (errorMessage.includes('image-based') || errorMessage.includes('scanned')) {
+            setTimeout(() => {
+              setShowManualInput(true)
+            }, 2000)
+          }
+        } finally {
+          setIsUploadingRFP(false)
+        }
+      }
+      
+      // Update proposal metadata with filename
       if (proposalId) {
         try {
           await updateFormData({
@@ -77,6 +136,42 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           console.error('Failed to save form data:', error)
         }
       }
+    }
+  }
+
+  const handleManualTextSubmit = async (text: string) => {
+    if (!proposalId) return
+    
+    setIsUploadingRFP(true)
+    setShowManualInput(false)
+    
+    try {
+      const formData = new FormData()
+      formData.append('rfp_text', text)
+      
+      const response = await apiClient.post(
+        `/api/proposals/${proposalId}/documents/upload-text`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      )
+      
+      console.log('Manual text processed:', response.data)
+      
+      setUploadResult(response.data)
+      setShowSuccess(true)
+      setShowError(false)
+      
+    } catch (error: any) {
+      console.error('Failed to process manual text:', error)
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error'
+      setErrorDetails(errorMessage)
+      setShowError(true)
+    } finally {
+      setIsUploadingRFP(false)
     }
   }
 
@@ -189,18 +284,24 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         {/* Upload Area */}
         <div className={styles.uploadArea}>
           <FileText className={styles.uploadAreaIcon} size={48} />
-          <p className={styles.uploadAreaTitle}>Drop RFP file here or click to upload</p>
-          <p className={styles.uploadAreaDescription}>Supports PDF, DOC, DOCX files up to 10MB</p>
+          <p className={styles.uploadAreaTitle}>
+            {isUploadingRFP ? 'Processing document...' : 'Drop RFP file here or click to upload'}
+          </p>
+          <p className={styles.uploadAreaDescription}>
+            {isUploadingRFP 
+              ? 'Extracting text and creating embeddings...' 
+              : 'Supports PDF, DOC, DOCX files up to 10MB'}
+          </p>
           <input
             type="file"
             accept=".pdf,.doc,.docx"
             onChange={e => handleFileUpload('rfp-document', e.target.files)}
             className={styles.hiddenInput}
             id="rfp-document"
-            disabled={isUpdating}
+            disabled={isUpdating || isUploadingRFP}
           />
           <label htmlFor="rfp-document" className={styles.uploadButton}>
-            {isUpdating ? 'Saving...' : 'Choose File'}
+            {isUploadingRFP ? 'Processing...' : isUpdating ? 'Saving...' : 'Choose File'}
           </label>
 
           {/* Show uploaded files */}
@@ -395,6 +496,32 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           </div>
         </div>
       </div>
+
+      {/* Success Notification */}
+      <SuccessNotification
+        isOpen={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        title="Document Uploaded Successfully!"
+        message="Your RFP document has been uploaded and will be analyzed when you click 'Analyze & Continue'."
+        details={uploadResult?.filename ? `File: ${uploadResult.filename}` : undefined}
+      />
+
+      {/* Error Notification */}
+      <ErrorNotification
+        isOpen={showError}
+        onClose={() => setShowError(false)}
+        title="Upload Failed"
+        message="We couldn't process your document. Please try again."
+        error={errorDetails}
+      />
+
+      {/* Manual RFP Input Modal */}
+      <ManualRFPInput
+        isOpen={showManualInput}
+        onClose={() => setShowManualInput(false)}
+        onSubmit={handleManualTextSubmit}
+        isProcessing={isUploadingRFP}
+      />
     </div>
   )
 }
