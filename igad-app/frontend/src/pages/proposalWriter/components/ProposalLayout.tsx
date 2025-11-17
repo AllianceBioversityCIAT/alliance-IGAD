@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ProposalSecondaryNavbar } from './ProposalSecondaryNavbar'
 import { ProposalSidebar } from './ProposalSidebar'
 import styles from '../proposalWriter.module.css'
@@ -8,6 +9,9 @@ interface ProposalLayoutProps {
   completedSteps: number[]
   children: React.ReactNode
   navigationButtons: React.ReactNode
+  proposalCode?: string
+  isLoadingProposal?: boolean
+  onNavigateAway?: () => void
 }
 
 export function ProposalLayout({
@@ -15,10 +19,37 @@ export function ProposalLayout({
   completedSteps,
   children,
   navigationButtons,
+  proposalCode,
+  isLoadingProposal = false,
+  onNavigateAway,
 }: ProposalLayoutProps) {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Intercept navigation to other pages
+  useEffect(() => {
+    const handleNavClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      const link = target.closest('a[href]')
+      
+      if (link && link instanceof HTMLAnchorElement) {
+        const href = link.getAttribute('href')
+        
+        // Check if navigating away from proposal writer
+        if (href && !href.startsWith('/proposal-writer') && onNavigateAway) {
+          e.preventDefault()
+          onNavigateAway()
+        }
+      }
+    }
+
+    document.addEventListener('click', handleNavClick, true)
+    return () => document.removeEventListener('click', handleNavClick, true)
+  }, [onNavigateAway])
+
   return (
     <>
-      <ProposalSecondaryNavbar />
+      <ProposalSecondaryNavbar proposalCode={proposalCode} isLoading={isLoadingProposal} />
       <div className={styles.proposalWriterContainer}>
         <ProposalSidebar currentStep={currentStep} completedSteps={completedSteps} />
         <div className={styles.contentArea}>

@@ -1,7 +1,12 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import styles from '../proposalWriter.module.css'
 
-export function ProposalSecondaryNavbar() {
+interface ProposalSecondaryNavbarProps {
+  proposalCode?: string
+  isLoading?: boolean
+}
+
+export function ProposalSecondaryNavbar({ proposalCode, isLoading = false }: ProposalSecondaryNavbarProps) {
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -19,6 +24,14 @@ export function ProposalSecondaryNavbar() {
       <div className={styles.secondaryNavbarContent}>
         <div className={styles.breadcrumb}>
           <span>Proposal Writer</span>
+          {isLoading ? (
+            <span className={styles.proposalCodeSkeleton}></span>
+          ) : proposalCode ? (
+            <span className={styles.proposalCode}>
+              <span className={styles.proposalCodeDivider}>•</span>
+              {proposalCode}
+            </span>
+          ) : null}
         </div>
         <button className={styles.promptManagerButton} onClick={handlePromptManagerClick}>
           Prompt Manager
