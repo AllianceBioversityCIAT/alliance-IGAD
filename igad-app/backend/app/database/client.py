@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import boto3
 from aws_lambda_powertools import Logger
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 logger = Logger()
@@ -88,11 +89,20 @@ class DynamoDBClient:
         index_name: Optional[str] = None,
         limit: Optional[int] = None,
         scan_index_forward: bool = True,
+        pk_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Query items by partition key"""
         try:
+            # Determine the partition key name based on index
+            if pk_name:
+                partition_key_name = pk_name
+            elif index_name == "GSI1":
+                partition_key_name = "GSI1PK"
+            else:
+                partition_key_name = "PK"
+            
             kwargs = {
-                "KeyConditionExpression": boto3.dynamodb.conditions.Key("PK").eq(pk)
+                "KeyConditionExpression": Key(partition_key_name).eq(pk)
             }
 
             if sk_condition:

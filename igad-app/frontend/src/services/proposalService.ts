@@ -2,19 +2,22 @@ import { apiClient } from './apiClient'
 
 export interface Proposal {
   id: string
+  proposalCode: string
   user_id: string
+  user_email?: string
+  user_name?: string
   title: string
   description: string
   template_id?: string
   status: 'draft' | 'in_progress' | 'review' | 'completed' | 'archived'
-  sections: ProposalSection[]
+  sections?: ProposalSection[]
   metadata: Record<string, any>
   uploaded_files: Record<string, string[]>
   text_inputs: Record<string, string>
-  ai_context: Record<string, any>
+  ai_context?: Record<string, any>
   created_at: string
   updated_at: string
-  version: number
+  version?: number
 }
 
 export interface ProposalSection {
