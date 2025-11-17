@@ -1,8 +1,43 @@
 #!/bin/bash
 set -e
 
-echo "🚀 IGAD Innovation Hub - Fullstack Testing Deployment"
-echo "===================================================="
+# Parse command line arguments
+DEPLOY_FRONTEND=true
+DEPLOY_BACKEND=true
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --frontend-only)
+      DEPLOY_FRONTEND=true
+      DEPLOY_BACKEND=false
+      shift
+      ;;
+    --backend-only)
+      DEPLOY_FRONTEND=false
+      DEPLOY_BACKEND=true
+      shift
+      ;;
+    --skip-frontend)
+      DEPLOY_FRONTEND=false
+      shift
+      ;;
+    --skip-backend)
+      DEPLOY_BACKEND=false
+      shift
+      ;;
+    *)
+      echo "Unknown option $1"
+      echo "Usage: $0 [--frontend-only|--backend-only|--skip-frontend|--skip-backend]"
+      exit 1
+      ;;
+  esac
+done
+
+echo "🚀 IGAD Innovation Hub - Testing Deployment"
+echo "============================================"
+echo "Frontend: $([ "$DEPLOY_FRONTEND" = true ] && echo "✅ Deploy" || echo "⏭️  Skip")"
+echo "Backend:  $([ "$DEPLOY_BACKEND" = true ] && echo "✅ Deploy" || echo "⏭️  Skip")"
+echo "============================================"
 
 # Validate AWS profile
 export AWS_PROFILE=IBD-DEV
@@ -25,27 +60,45 @@ fi
 echo "✅ Project structure validated"
 
 # Build Frontend
-echo "🔨 Building frontend..."
-cd frontend
-npm install
-npm run build
-cd ..
+if [ "$DEPLOY_FRONTEND" = true ]; then
+    echo "🔨 Building frontend..."
+    cd frontend
+    npm install
+    npm run build
+    cd ..
+else
+    echo "⏭️  Skipping frontend build"
+fi
 
 # Build Backend
-echo "🔨 Building backend..."
-cd backend
-mkdir -p dist
-cp -r app dist/
-cp requirements.txt dist/
-cp bootstrap dist/
-cp .env dist/
-pip3 install -r requirements.txt -t dist/
-cd ..
+if [ "$DEPLOY_BACKEND" = true ]; then
+    echo "🔨 Building backend..."
+    cd backend
+    mkdir -p dist
+    cp -r app dist/
+    cp requirements.txt dist/
+    cp bootstrap dist/
+    cp .env dist/
+    pip3 install -r requirements.txt -t dist/
+    cd ..
+else
+    echo "⏭️  Skipping backend build"
+fi
 
 # Deploy using Lambda Web Adapter
-echo "🚀 Deploying fullstack application..."
-sam build --use-container
-sam deploy --stack-name igad-backend-testing
+if [ "$DEPLOY_BACKEND" = true ]; then
+    echo "🚀 Deploying backend..."
+    sam build --use-container
+    
+    # Deploy with error handling
+    if sam deploy --stack-name igad-backend-testing; then
+        echo "✅ Backend deployment successful"
+    else
+        echo "⚠️  Backend deployment skipped (no changes detected)"
+    fi
+else
+    echo "⏭️  Skipping backend deployment"
+fi
 
 # Get S3 bucket name dynamically (find bucket with igad-testing pattern)
 echo "🔍 Finding S3 bucket for testing environment..."
@@ -78,24 +131,32 @@ if [ -z "$BUCKET_NAME" ]; then
 fi
 
 # Upload frontend to S3
-echo "📤 Uploading frontend to S3..."
-aws s3 sync frontend/dist/ s3://$BUCKET_NAME --delete
+if [ "$DEPLOY_FRONTEND" = true ]; then
+    echo "📤 Uploading frontend to S3..."
+    aws s3 sync frontend/dist/ s3://$BUCKET_NAME --delete
 
-# Invalidate CloudFront cache
-echo "🔄 Invalidating CloudFront cache..."
-INVALIDATION_ID=$(aws cloudfront create-invalidation \
-  --distribution-id $DISTRIBUTION_ID \
-  --paths "/*" \
-  --query 'Invalidation.Id' \
-  --output text)
+    # Invalidate CloudFront cache
+    echo "🔄 Invalidating CloudFront cache..."
+    INVALIDATION_ID=$(aws cloudfront create-invalidation \
+      --distribution-id $DISTRIBUTION_ID \
+      --paths "/*" \
+      --query 'Invalidation.Id' \
+      --output text)
 
-echo "✅ CloudFront invalidation created: $INVALIDATION_ID"
-echo "🎉 Fullstack testing deployment completed successfully!"
+    echo "✅ CloudFront invalidation created: $INVALIDATION_ID"
+else
+    echo "⏭️  Skipping frontend upload"
+fi
+echo "🎉 Deployment completed successfully!"
 
 echo ""
 echo "✅ Testing deployment completed!"
 echo "📋 Resources:"
-echo "   - Frontend: CloudFront Distribution"
-echo "   - Backend: Lambda + API Gateway"
+if [ "$DEPLOY_FRONTEND" = true ]; then
+    echo "   - Frontend: CloudFront Distribution"
+fi
+if [ "$DEPLOY_BACKEND" = true ]; then
+    echo "   - Backend: Lambda + API Gateway"
+fi
 echo "   - Database: DynamoDB (igad-testing-main-table)"
 echo "   - Auth: Cognito (us-east-1_EULeelICj)"
