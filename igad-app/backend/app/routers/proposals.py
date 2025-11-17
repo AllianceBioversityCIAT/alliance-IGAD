@@ -13,6 +13,8 @@ from pydantic import BaseModel
 from ..middleware.auth_middleware import AuthMiddleware
 from ..services.bedrock_service import BedrockService
 from ..services.prompt_service import PromptService
+from ..services.rfp_analysis_service import RFPAnalysisService
+from ..services.document_service import DocumentService
 from ..database.client import db_client
 
 router = APIRouter(prefix="/api/proposals", tags=["proposals"])
@@ -314,7 +316,19 @@ async def delete_proposal(proposal_id: str, user=Depends(get_current_user)):
         if proposal.get("user_id") != user.get("user_id"):
             raise HTTPException(status_code=403, detail="Access denied")
         
-        # Delete the proposal
+        # Get proposal code for S3 cleanup
+        proposal_code = proposal.get("proposalCode", proposal_id)
+        
+        # Delete S3 folder with all documents and vectors
+        try:
+            doc_service = DocumentService()
+            doc_service.delete_proposal_folder(proposal_code)
+            print(f"Deleted S3 folder for proposal: {proposal_code}")
+        except Exception as e:
+            print(f"Warning: Failed to delete S3 folder for {proposal_code}: {str(e)}")
+            # Continue with deletion even if S3 cleanup fails
+        
+        # Delete the proposal from DynamoDB
         await db_client.delete_item(pk=pk, sk="METADATA")
         
         return {"message": "Proposal deleted successfully"}
@@ -420,6 +434,73 @@ async def improve_ai_content(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI improvement failed: {str(e)}")
+
+
+@router.post("/{proposal_id}/analyze-rfp")
+async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
+    """
+    Analyze uploaded RFP document (Step 1 - Part 1)
+    - Retrieves RFP vectors
+    - Gets analysis prompt from DynamoDB
+    - Sends to Bedrock for analysis
+    - Returns structured analysis (summary + extracted_data)
+    """
+    try:
+        # Verify proposal ownership
+        if proposal_id.startswith("PROP-"):
+            pk = f"PROPOSAL#{proposal_id}"
+            proposal_code = proposal_id
+        else:
+            items = await db_client.query_items(
+                pk=f"USER#{user.get('user_id')}",
+                index_name="GSI1"
+            )
+            
+            proposal_item = None
+            for item in items:
+                if item.get("id") == proposal_id:
+                    proposal_item = item
+                    break
+            
+            if not proposal_item:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+            
+            pk = proposal_item["PK"]
+            proposal_code = proposal_item.get("proposalCode", proposal_id)
+        
+        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        if proposal.get("user_id") != user.get("user_id"):
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Check if RFP analysis already exists (no re-analysis)
+        if proposal.get("rfp_analysis"):
+            return {
+                "success": True,
+                "rfp_analysis": proposal.get("rfp_analysis"),
+                "message": "RFP already analyzed",
+                "cached": True
+            }
+        
+        # Perform RFP analysis
+        analysis_service = RFPAnalysisService()
+        result = await analysis_service.analyze_rfp(
+            proposal_code=proposal_code,
+            proposal_id=proposal.get("id")
+        )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"RFP analysis failed: {str(e)}"
+        )
 
 
 @router.post("/prompts/with-categories")
