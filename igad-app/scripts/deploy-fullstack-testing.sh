@@ -47,6 +47,15 @@ echo "🚀 Deploying fullstack application..."
 sam build --use-container
 sam deploy --stack-name igad-backend-testing
 
+# Get S3 bucket name dynamically (find bucket with igad-testing pattern)
+echo "🔍 Finding S3 bucket for testing environment..."
+BUCKET_NAME=$(aws s3 ls --profile IBD-DEV --region us-east-1 | grep "igad.*testing.*websitebucket" | awk '{print $3}' | head -1)
+
+if [ -z "$BUCKET_NAME" ]; then
+    echo "❌ ERROR: Could not find S3 bucket for testing environment"
+    exit 1
+fi
+
 # Get CloudFront distribution ID dynamically (find distribution serving the S3 bucket)
 echo "🔍 Finding CloudFront distribution for S3 bucket..."
 DISTRIBUTION_ID=""
@@ -62,10 +71,6 @@ if [ -z "$DISTRIBUTION_ID" ]; then
     echo "❌ ERROR: Could not find CloudFront distribution for bucket $BUCKET_NAME"
     exit 1
 fi
-
-# Get S3 bucket name dynamically (find bucket with igad-testing pattern)
-echo "🔍 Finding S3 bucket for testing environment..."
-BUCKET_NAME=$(aws s3 ls --profile IBD-DEV --region us-east-1 | grep "igad.*testing.*websitebucket" | awk '{print $3}' | head -1)
 
 if [ -z "$BUCKET_NAME" ]; then
     echo "❌ ERROR: Could not find S3 bucket for testing environment"

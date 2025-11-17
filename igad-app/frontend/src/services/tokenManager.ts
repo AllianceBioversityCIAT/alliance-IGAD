@@ -128,7 +128,7 @@ class TokenManager {
     }
   }
 
-  setTokens(accessToken: string, refreshToken?: string, rememberMe: boolean = false): void {
+  setTokens(accessToken: string, refreshToken?: string, rememberMe: boolean = true): void {
     if (rememberMe) {
       localStorage.setItem('access_token', accessToken)
       if (refreshToken) {
