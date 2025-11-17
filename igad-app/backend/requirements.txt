@@ -8,3 +8,4 @@ passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
 mangum==0.17.0
 aws-lambda-powertools==2.25.0
+PyPDF2==3.0.1

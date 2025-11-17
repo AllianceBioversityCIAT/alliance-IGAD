@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .handlers.admin_prompts import router as admin_prompts_router
 from .middleware.auth_middleware import AuthMiddleware
 from .middleware.error_middleware import ErrorMiddleware
-from .routers import admin, auth, health, prompts, proposals
+from .routers import admin, auth, health, prompts, proposals, documents
 
 # Load environment variables
 load_dotenv()
@@ -42,6 +42,7 @@ app.add_middleware(ErrorMiddleware)
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(proposals.router)
+app.include_router(documents.router)
 app.include_router(admin.router)
 app.include_router(prompts.router)
 app.include_router(admin_prompts_router)

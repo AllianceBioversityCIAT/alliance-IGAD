@@ -33,6 +33,7 @@ Resources:
           COGNITO_CLIENT_ID: 7p11hp6gcklhctcr9qffne71vl
           COGNITO_USER_POOL_ID: us-east-1_IMi3kSuB8
           TABLE_NAME: igad-testing-main-table
+          PROPOSALS_BUCKET: !Ref ProposalDocumentsBucket
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: '2012-10-17'
@@ -76,6 +77,15 @@ Resources:
                 - bedrock:InvokeModel
                 - bedrock:InvokeModelWithResponseStream
               Resource: '*'
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:GetObject
+                - s3:DeleteObject
+                - s3:ListBucket
+              Resource:
+                - !Sub '${ProposalDocumentsBucket.Arn}/*'
+                - !GetAtt ProposalDocumentsBucket.Arn
           
           
           
@@ -258,6 +268,30 @@ Resources:
         Comment: "Rewrite requests for frontend routing"
         Runtime: cloudfront-js-1.0
 
+  # S3 Bucket for Proposal Documents and Vectors
+  ProposalDocumentsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'igad-proposal-documents-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST, DELETE]
+            AllowedOrigins: ['*']
+            MaxAge: 3000
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
@@ -285,4 +319,6 @@ Outputs:
     Description: CloudFront distribution ID
     Value: !Ref WebsiteDistribution
 
-  
+  ProposalDocumentsBucket:
+    Description: S3 bucket for proposal documents and vectors
+    Value: !Ref ProposalDocumentsBucket
