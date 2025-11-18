@@ -12,6 +12,7 @@ aws-credentials.json
 # Amazon Q Rules and Configuration
 .amazonq/
 .copilot/
+.docs/archive/
 
 # Internal Planning and Development Documentation
 planning/

@@ -3,12 +3,14 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ProposalLayout } from './components/ProposalLayout'
 import { DraftConfirmationModal } from './components/DraftConfirmationModal'
+import AnalysisProgressModal from '../../components/AnalysisProgressModal'
 import { Step1InformationConsolidation } from './Step1InformationConsolidation'
 import { Step2ContentGeneration } from './Step2ContentGeneration'
 import { Step3StructureValidation } from './Step3StructureValidation'
 import { Step4ReviewRefinement } from './Step4ReviewRefinement'
 import { Step5FinalExport } from './Step5FinalExport'
 import { useProposals } from '../../hooks/useProposal'
+import { useProposalDraft } from '../../hooks/useProposalDraft'
 import { authService } from '../../services/authService'
 import styles from './proposalWriter.module.css'
 
@@ -30,8 +32,43 @@ export function ProposalWriterPage() {
   })
 
   const { createProposal, isCreating, deleteProposal, isDeleting } = useProposals()
+  const { 
+    saveProposalId, 
+    saveProposalCode, 
+    saveFormData, 
+    saveRfpAnalysis, 
+    loadDraft, 
+    clearDraft 
+  } = useProposalDraft()
 
-  // Create a proposal when the component mounts (only if authenticated)
+  // Load from localStorage on mount
+  useEffect(() => {
+    const draft = loadDraft()
+    
+    if (draft.proposalId) setProposalId(draft.proposalId)
+    if (draft.proposalCode) setProposalCode(draft.proposalCode)
+    if (draft.formData) setFormData(draft.formData)
+    if (draft.rfpAnalysis) setRfpAnalysis(draft.rfpAnalysis)
+  }, [])
+
+  // Save to localStorage whenever state changes
+  useEffect(() => {
+    if (proposalId) saveProposalId(proposalId)
+  }, [proposalId, saveProposalId])
+
+  useEffect(() => {
+    if (proposalCode) saveProposalCode(proposalCode)
+  }, [proposalCode, saveProposalCode])
+
+  useEffect(() => {
+    saveFormData(formData)
+  }, [formData, saveFormData])
+
+  useEffect(() => {
+    if (rfpAnalysis) saveRfpAnalysis(rfpAnalysis)
+  }, [rfpAnalysis, saveRfpAnalysis])
+
+  // Create a proposal when the component mounts (only if authenticated and no saved proposal)
   useEffect(() => {
     const isAuthenticated = authService.isAuthenticated()
 
@@ -53,6 +90,17 @@ export function ProposalWriterPage() {
       )
     }
   }, [proposalId, isCreating, createProposal])
+
+  // Listen for RFP deletion event to clear analysis
+  useEffect(() => {
+    const handleRfpDeleted = () => {
+      setRfpAnalysis(null)
+      saveRfpAnalysis(null)
+    }
+
+    window.addEventListener('rfp-deleted', handleRfpDeleted)
+    return () => window.removeEventListener('rfp-deleted', handleRfpDeleted)
+  }, [saveRfpAnalysis])
 
   useEffect(() => {
     if (stepId) {
@@ -127,6 +175,9 @@ export function ProposalWriterPage() {
     if (proposalId) {
       deleteProposal(proposalId, {
         onSuccess: () => {
+          // Clear localStorage
+          clearDraft()
+          
           // Always redirect to home after deleting draft
           setShowExitModal(false)
           setPendingNavigation(null)
@@ -147,45 +198,8 @@ export function ProposalWriterPage() {
     }
   }
 
-  const handleNextStep = async () => {
-    // If on Step 1 and trying to go to Step 2, analyze RFP first
-    if (currentStep === 1 && !rfpAnalysis) {
-      // Check if RFP is uploaded
-      const hasRFP = formData.uploadedFiles['rfp-document']?.length > 0
-      
-      if (!hasRFP) {
-        alert('Please upload an RFP document before proceeding.')
-        return
-      }
-      
-      // Analyze RFP
-      setIsAnalyzingRFP(true)
-      
-      try {
-        const { proposalService } = await import('../../services/proposalService')
-        const result = await proposalService.analyzeRFP(proposalId!)
-        
-        setRfpAnalysis(result.rfp_analysis)
-        
-        // Now proceed to next step
-        if (currentStep < 5) {
-          setCompletedSteps(prev => [...prev, currentStep])
-          const nextStep = currentStep + 1
-          setCurrentStep(nextStep)
-          navigate(`/proposal-writer/step-${nextStep}`)
-          window.scrollTo({ top: 0, behavior: 'smooth' })
-        }
-      } catch (error) {
-        console.error('RFP analysis failed:', error)
-        alert('Failed to analyze RFP. Please try again.')
-      } finally {
-        setIsAnalyzingRFP(false)
-      }
-      
-      return
-    }
-    
-    // Normal navigation for other steps
+  // Helper function to proceed to next step
+  const proceedToNextStep = useCallback(() => {
     if (currentStep < 5) {
       setCompletedSteps(prev => [...prev, currentStep])
       const nextStep = currentStep + 1
@@ -193,6 +207,97 @@ export function ProposalWriterPage() {
       navigate(`/proposal-writer/step-${nextStep}`)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+  }, [currentStep, navigate])
+
+  const handleNextStep = async () => {
+    console.log('🔵 handleNextStep called - Current step:', currentStep, 'Has RFP Analysis:', !!rfpAnalysis)
+    
+    // If on Step 1 and trying to go to Step 2, analyze RFP first
+    if (currentStep === 1 && !rfpAnalysis) {
+      // Check if RFP is uploaded
+      const hasRFP = formData.uploadedFiles['rfp-document']?.length > 0
+      
+      console.log('🔵 Step 1 → Step 2 transition, hasRFP:', hasRFP)
+      
+      if (!hasRFP) {
+        alert('Please upload an RFP document before proceeding.')
+        return
+      }
+      
+      // Start RFP analysis and poll for completion
+      console.log('🟢 Starting RFP analysis for proposal:', proposalId)
+      setIsAnalyzingRFP(true)
+      
+      let pollInterval: NodeJS.Timeout | null = null
+      let timeoutId: NodeJS.Timeout | null = null
+      
+      const cleanup = () => {
+        if (pollInterval) clearInterval(pollInterval)
+        if (timeoutId) clearTimeout(timeoutId)
+        setIsAnalyzingRFP(false)
+      }
+      
+      try {
+        const { proposalService } = await import('../../services/proposalService')
+        
+        // Start analysis
+        console.log('📡 Calling proposalService.analyzeRFP...')
+        const startResult = await proposalService.analyzeRFP(proposalId!)
+        console.log('📡 Analysis start result:', startResult)
+        
+        if (startResult.status === 'completed' && startResult.cached) {
+          // Already analyzed
+          console.log('✅ Analysis already completed (cached)')
+          setRfpAnalysis(startResult.rfp_analysis)
+          cleanup()
+          proceedToNextStep()
+          return
+        }
+        
+        console.log('⏳ Starting polling for analysis completion...')
+        // Poll for completion
+        pollInterval = setInterval(async () => {
+          try {
+            const statusResult = await proposalService.getAnalysisStatus(proposalId!)
+            console.log('📊 Polling status:', statusResult.status)
+            
+            if (statusResult.status === 'completed') {
+              console.log('✅ Analysis completed!', statusResult.rfp_analysis)
+              setRfpAnalysis(statusResult.rfp_analysis)
+              cleanup()
+              proceedToNextStep()
+            } else if (statusResult.status === 'failed') {
+              console.error('❌ Analysis failed:', statusResult.error)
+              cleanup()
+              alert(`Analysis failed: ${statusResult.error || 'Unknown error'}`)
+            }
+            // Otherwise keep polling (status === 'processing')
+          } catch (pollError) {
+            console.error('Polling error:', pollError)
+            cleanup()
+            alert('Failed to check analysis status. Please refresh and try again.')
+          }
+        }, 3000) // Poll every 3 seconds
+        
+        // Timeout after 5 minutes
+        timeoutId = setTimeout(() => {
+          console.warn('⏰ Analysis timeout')
+          cleanup()
+          alert('Analysis is taking longer than expected. Please try again later.')
+        }, 300000) // 5 minutes
+        
+      } catch (error) {
+        console.error('RFP analysis failed:', error)
+        cleanup()
+        alert('Failed to start analysis. Please try again.')
+      }
+      
+      return
+    }
+    
+    // Normal navigation for other steps
+    console.log('➡️ Normal navigation to next step')
+    proceedToNextStep()
   }
 
   const handlePreviousStep = () => {
@@ -209,6 +314,7 @@ export function ProposalWriterPage() {
       formData,
       setFormData,
       proposalId,
+      rfpAnalysis,
     }
 
     switch (currentStep) {
@@ -241,7 +347,16 @@ export function ProposalWriterPage() {
       key="next"
       className={`${styles.button} ${styles.buttonPrimary}`}
       onClick={handleNextStep}
-      disabled={currentStep === 5 || isAnalyzingRFP}
+      disabled={
+        currentStep === 5 || 
+        isAnalyzingRFP || 
+        (currentStep === 1 && (!formData.uploadedFiles['rfp-document'] || formData.uploadedFiles['rfp-document'].length === 0))
+      }
+      title={
+        currentStep === 1 && (!formData.uploadedFiles['rfp-document'] || formData.uploadedFiles['rfp-document'].length === 0)
+          ? 'Please upload an RFP document first'
+          : ''
+      }
     >
       {isAnalyzingRFP ? (
         <>
@@ -261,6 +376,7 @@ export function ProposalWriterPage() {
 
   return (
     <>
+      <AnalysisProgressModal isOpen={isAnalyzingRFP} />
       <DraftConfirmationModal
         isOpen={showExitModal}
         proposalCode={proposalCode}

@@ -110,7 +110,7 @@ class ProposalService {
   async updateFormData(
     proposalId: string,
     formData: {
-      uploadedFiles?: Record<string, File[]>
+      uploadedFiles?: Record<string, File[] | string[]>
       textInputs?: Record<string, string>
     }
   ): Promise<Proposal> {
@@ -118,7 +118,9 @@ class ProposalService {
     const uploadedFiles: Record<string, string[]> = {}
     if (formData.uploadedFiles) {
       for (const [key, files] of Object.entries(formData.uploadedFiles)) {
-        uploadedFiles[key] = files.map(file => file.name)
+        uploadedFiles[key] = files.map(file => 
+          typeof file === 'string' ? file : file.name
+        )
       }
     }
 
@@ -129,12 +131,31 @@ class ProposalService {
   }
 
   async analyzeRFP(proposalId: string): Promise<{
-    success: boolean
-    rfp_analysis: any
+    status: string
+    rfp_analysis?: any
     message?: string
     cached?: boolean
   }> {
     const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-rfp`)
+    return response.data
+  }
+
+  async getAnalysisStatus(proposalId: string): Promise<{
+    status: string
+    rfp_analysis?: any
+    error?: string
+    started_at?: string
+    completed_at?: string
+  }> {
+    const response = await apiClient.get(`/api/proposals/${proposalId}/analysis-status`)
+    return response.data
+  }
+
+  async deleteDocument(proposalId: string, filename: string): Promise<{
+    success: boolean
+    message: string
+  }> {
+    const response = await apiClient.delete(`/api/proposals/${proposalId}/documents/${filename}`)
     return response.data
   }
 }

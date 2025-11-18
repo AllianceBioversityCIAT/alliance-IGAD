@@ -27,7 +27,7 @@ Resources:
       Handler: bootstrap
       Runtime: python3.9
       MemorySize: 512
-      Timeout: 30
+      Timeout: 120
       Architectures:
         - x86_64
       Environment:
@@ -38,6 +38,7 @@ Resources:
           COGNITO_USER_POOL_ID: us-east-1_IMi3kSuB8
           TABLE_NAME: igad-testing-main-table
           PROPOSALS_BUCKET: !Ref ProposalDocumentsBucket
+          # VECTOR_BUCKET: !Ref VectorStorageBucket  # Uncomment when S3 Vector bucket is enabled
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: '2012-10-17'
@@ -295,6 +296,22 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+
+  # S3 Express One Zone Bucket for Vector Storage (Future Implementation)
+  # Note: Uncomment when ready to use S3 Vector metadata buckets
+  # VectorStorageBucket:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     BucketName: !Sub 'igad-vectors--use1-az4--x-s3'
+  #     # S3 Express One Zone configuration
+  #     # DataRedundancy: SingleAvailabilityZone
+  #     # Type: Directory
+  #     # LocationName: !Sub '${AWS::Region}az4'
+  #     PublicAccessBlockConfiguration:
+  #       BlockPublicAcls: true
+  #       BlockPublicPolicy: true
+  #       IgnorePublicAcls: true
+  #       RestrictPublicBuckets: true
 
 Outputs:
   ApiEndpoint:

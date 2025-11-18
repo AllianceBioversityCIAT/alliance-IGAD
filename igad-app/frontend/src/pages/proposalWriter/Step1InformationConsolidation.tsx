@@ -4,12 +4,11 @@ import { useProposal } from '../../hooks/useProposal'
 import { StepProps } from './stepConfig'
 import styles from './proposalWriter.module.css'
 import { apiClient } from '../../services/apiClient'
-import { SuccessNotification } from './components/SuccessNotification'
-import { ErrorNotification } from './components/ErrorNotification'
-import { ManualRFPInput } from './components/ManualRFPInput'
+import ManualRFPInput from '../../components/ManualRFPInput'
 
 interface Step1Props extends StepProps {
   proposalId?: string
+  rfpAnalysis?: any
 }
 
 function Step1Skeleton() {
@@ -39,37 +38,59 @@ function Step1Skeleton() {
   )
 }
 
-export function Step1InformationConsolidation({ formData, setFormData, proposalId }: Step1Props) {
+export function Step1InformationConsolidation({ formData, setFormData, proposalId, rfpAnalysis }: Step1Props) {
   const { proposal, updateFormData, isUpdating, isLoading } = useProposal(proposalId)
   const [isUploadingRFP, setIsUploadingRFP] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [showError, setShowError] = useState(false)
-  const [uploadResult, setUploadResult] = useState<any>(null)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [uploadError, setUploadError] = useState<string>('')
   const [errorDetails, setErrorDetails] = useState<string>('')
   const [showManualInput, setShowManualInput] = useState(false)
 
-  // Show skeleton while loading
+  // Load data from localStorage or proposal when component mounts
+  useEffect(() => {
+    if (proposalId) {
+      const storageKey = `proposal_draft_${proposalId}`
+      const savedData = localStorage.getItem(storageKey)
+      
+      if (savedData) {
+        // Load from localStorage if available
+        try {
+          const parsed = JSON.parse(savedData)
+          setFormData(parsed)
+        } catch (e) {
+          console.error('Failed to parse saved proposal data:', e)
+        }
+      } else if (proposal) {
+        // Otherwise load from proposal
+        setFormData({
+          uploadedFiles: proposal.uploaded_files || {},
+          textInputs: proposal.text_inputs || {},
+        })
+      }
+    }
+  }, [proposalId, proposal, setFormData])
+
+  // Save to localStorage whenever formData changes
+  useEffect(() => {
+    if (proposalId && (formData.uploadedFiles || formData.textInputs)) {
+      const storageKey = `proposal_draft_${proposalId}`
+      localStorage.setItem(storageKey, JSON.stringify(formData))
+    }
+  }, [formData, proposalId])
+
+  // Show skeleton while loading (after all hooks)
   if (isLoading) {
     return <Step1Skeleton />
   }
 
-  // Load existing data when proposal is loaded
-  useEffect(() => {
-    if (proposal) {
-      setFormData({
-        uploadedFiles: {}, // Files would need to be reconstructed from file names
-        textInputs: proposal.text_inputs || {},
-      })
-    }
-  }, [proposal, setFormData])
-
   const handleFileUpload = async (section: string, files: FileList | null) => {
     if (files && files.length > 0) {
       const file = files[0] // Take first file
-      const newFiles = Array.from(files)
+      
+      // Store just the filename, not the File object
       const updatedFiles = {
         ...formData.uploadedFiles,
-        [section]: newFiles,
+        [section]: [file.name],
       }
 
       setFormData(prev => ({
@@ -101,25 +122,23 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           
           console.log('Document uploaded and vectorized:', response.data)
           
-          // Show success notification
-          setUploadResult(response.data)
-          setShowSuccess(true)
+          // Clear any previous errors
+          setUploadError('')
           
         } catch (error: any) {
           console.error('Failed to upload document:', error)
-          console.error('Error response:', error.response?.data)
-          console.error('Error status:', error.response?.status)
           
-          const errorMessage = error.response?.data?.detail || error.message || 'Unknown error'
-          setErrorDetails(errorMessage)
-          setShowError(true)
+          const errorMessage = error.response?.data?.detail || error.message || 'Upload failed. Please try again.'
+          setUploadError(errorMessage)
           
-          // If it's a scanned PDF error, offer manual input
-          if (errorMessage.includes('image-based') || errorMessage.includes('scanned')) {
-            setTimeout(() => {
-              setShowManualInput(true)
-            }, 2000)
-          }
+          // Remove the file from state on error
+          setFormData(prev => ({
+            ...prev,
+            uploadedFiles: {
+              ...prev.uploadedFiles,
+              [section]: [],
+            },
+          }))
         } finally {
           setIsUploadingRFP(false)
         }
@@ -207,6 +226,63 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
     return getUploadedFileCount('rfp-document') > 0
   }
 
+  const handleDeleteFile = async (section: string, fileIndex: number) => {
+    const updatedFiles = { ...formData.uploadedFiles }
+    const fileName = updatedFiles[section][fileIndex]
+    
+    // Remove from local state first for immediate UI feedback
+    updatedFiles[section].splice(fileIndex, 1)
+    
+    setFormData(prev => ({
+      ...prev,
+      uploadedFiles: updatedFiles,
+    }))
+
+    // Delete from backend (S3 + DynamoDB) if we have a proposal ID
+    if (proposalId) {
+      try {
+        // Import proposalService dynamically
+        const { proposalService } = await import('../../services/proposalService')
+        
+        // Delete from S3
+        await proposalService.deleteDocument(proposalId, fileName)
+        
+        // Update DynamoDB metadata
+        await updateFormData({
+          uploadedFiles: updatedFiles,
+        })
+        
+        console.log(`Deleted file from S3 and DynamoDB: ${fileName}`)
+        
+        // If deleting RFP document, also clear the analysis
+        if (section === 'rfp-document' && window.location.pathname.includes('proposal-writer')) {
+          // Clear rfpAnalysis from parent component
+          // This will be handled by the parent ProposalWriterPage
+          localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
+          window.dispatchEvent(new CustomEvent('rfp-deleted'))
+        }
+      } catch (error) {
+        console.error('Failed to delete file from backend:', error)
+        // Optionally: revert the local state change if backend deletion failed
+        setUploadError('Failed to delete file from server')
+      }
+    }
+  }
+
+  // Show skeleton until proposal is loaded
+  if (!proposalId) {
+    return (
+      <div className={styles.mainContent}>
+        <div className={styles.stepHeader}>
+          <div className={styles.skeleton} style={{ height: '40px', width: '60%', marginBottom: '16px' }}></div>
+          <div className={styles.skeleton} style={{ height: '20px', width: '80%' }}></div>
+        </div>
+        <div className={styles.skeleton} style={{ height: '150px', marginTop: '24px' }}></div>
+        <div className={styles.skeleton} style={{ height: '200px', marginTop: '24px' }}></div>
+      </div>
+    )
+  }
+
   return (
     <div className={styles.mainContent}>
       {/* Header */}
@@ -282,40 +358,97 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         )}
 
         {/* Upload Area */}
-        <div className={styles.uploadArea}>
-          <FileText className={styles.uploadAreaIcon} size={48} />
-          <p className={styles.uploadAreaTitle}>
-            {isUploadingRFP ? 'Processing document...' : 'Drop RFP file here or click to upload'}
-          </p>
-          <p className={styles.uploadAreaDescription}>
-            {isUploadingRFP 
-              ? 'Extracting text and creating embeddings...' 
-              : 'Supports PDF, DOC, DOCX files up to 10MB'}
-          </p>
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx"
-            onChange={e => handleFileUpload('rfp-document', e.target.files)}
-            className={styles.hiddenInput}
-            id="rfp-document"
-            disabled={isUpdating || isUploadingRFP}
-          />
-          <label htmlFor="rfp-document" className={styles.uploadButton}>
-            {isUploadingRFP ? 'Processing...' : isUpdating ? 'Saving...' : 'Choose File'}
-          </label>
-
-          {/* Show uploaded files */}
-          {getUploadedFileCount('rfp-document') > 0 && (
-            <div className={styles.fileList}>
-              {formData.uploadedFiles['rfp-document']?.map((file, index) => (
-                <div key={index} className={styles.fileItem}>
-                  <FileText size={16} />
-                  {file.name}
+        {getUploadedFileCount('rfp-document') === 0 ? (
+          <div className={styles.uploadArea}>
+            {isUploadingRFP ? (
+              <>
+                <div className={styles.uploadingSpinner}>
+                  <div className={styles.spinner}></div>
                 </div>
-              ))}
+                <p className={styles.uploadAreaTitle}>Processing your document...</p>
+                <p className={styles.uploadAreaDescription}>
+                  Uploading and preparing for analysis
+                </p>
+              </>
+            ) : (
+              <>
+                <FileText className={styles.uploadAreaIcon} size={48} />
+                <p className={styles.uploadAreaTitle}>Drop RFP file here or click to upload</p>
+                <p className={styles.uploadAreaDescription}>Supports PDF files up to 10MB</p>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={e => handleFileUpload('rfp-document', e.target.files)}
+                  className={styles.hiddenInput}
+                  id="rfp-document"
+                  disabled={isUpdating || isUploadingRFP}
+                />
+                <label htmlFor="rfp-document" className={styles.uploadButton}>
+                  {isUpdating ? 'Saving...' : 'Choose File'}
+                </label>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className={styles.uploadedFileCard}>
+            <div className={styles.uploadedFileHeader}>
+              <div className={styles.uploadedFileInfo}>
+                <div className={styles.uploadedFileIconWrapper}>
+                  <FileText className={styles.uploadedFileIcon} size={24} />
+                  <div className={styles.uploadedFileCheck}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="8" r="8" fill="#10b981"/>
+                      <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <p className={styles.uploadedFileName}>
+                    {typeof formData.uploadedFiles['rfp-document']?.[0] === 'string' 
+                      ? formData.uploadedFiles['rfp-document'][0]
+                      : formData.uploadedFiles['rfp-document']?.[0]?.name || 'Document'}
+                  </p>
+                  <p className={styles.uploadedFileDescription}>
+                    ✓ Document uploaded successfully • Ready for analysis
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleDeleteFile('rfp-document', 0)}
+                className={styles.deleteFileButton}
+                title="Delete and upload a different file"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M6 8v8m4-8v8m4-8v8M4 6h12M9 4h2a1 1 0 011 1v1H8V5a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </button>
             </div>
-          )}
-        </div>
+            <div className={styles.uploadedFileActions}>
+              <label htmlFor="rfp-document-replace" className={styles.replaceFileButton}>
+                Replace Document
+              </label>
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={e => {
+                  handleDeleteFile('rfp-document', 0)
+                  handleFileUpload('rfp-document', e.target.files)
+                }}
+                className={styles.hiddenInput}
+                id="rfp-document-replace"
+                disabled={isUpdating || isUploadingRFP}
+              />
+            </div>
+          </div>
+        )}
+        
+        {/* Upload Error Message */}
+        {uploadError && (
+          <div className={styles.errorMessage}>
+            <AlertTriangle size={16} />
+            <span>{uploadError}</span>
+          </div>
+        )}
       </div>
 
       {/* Reference Proposals Section */}
@@ -354,7 +487,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
               {formData.uploadedFiles['reference-proposals']?.map((file, index) => (
                 <div key={index} className={styles.fileItem}>
                   <FileText size={16} />
-                  {file.name}
+                  {typeof file === 'string' ? file : file.name}
                 </div>
               ))}
             </div>
@@ -488,7 +621,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
                 {formData.uploadedFiles['concept-document']?.map((file, index) => (
                   <div key={index} className={styles.fileItem}>
                     <FileText size={16} />
-                    {file.name}
+                    {typeof file === 'string' ? file : file.name}
                   </div>
                 ))}
               </div>
@@ -496,24 +629,6 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           </div>
         </div>
       </div>
-
-      {/* Success Notification */}
-      <SuccessNotification
-        isOpen={showSuccess}
-        onClose={() => setShowSuccess(false)}
-        title="Document Uploaded Successfully!"
-        message="Your RFP document has been uploaded and will be analyzed when you click 'Analyze & Continue'."
-        details={uploadResult?.filename ? `File: ${uploadResult.filename}` : undefined}
-      />
-
-      {/* Error Notification */}
-      <ErrorNotification
-        isOpen={showError}
-        onClose={() => setShowError(false)}
-        title="Upload Failed"
-        message="We couldn't process your document. Please try again."
-        error={errorDetails}
-      />
 
       {/* Manual RFP Input Modal */}
       <ManualRFPInput

@@ -1,14 +1,17 @@
 """
-Documents Router - Handle RFP upload and vector processing
+Documents Router - Simplified RFP upload
+Upload documents to S3, vectorization happens during analysis
 """
 
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from datetime import datetime
+from io import BytesIO
+import os
 
 from ..middleware.auth_middleware import AuthMiddleware
-from ..services.document_service import DocumentService
 from ..database.client import db_client
+from ..utils.aws_session import get_aws_session
 
 router = APIRouter(prefix="/api/proposals/{proposal_id}/documents", tags=["documents"])
 security = HTTPBearer()
@@ -29,25 +32,159 @@ async def upload_document(
     user=Depends(get_current_user)
 ):
     """
-    Upload RFP document - stores PDF in S3
+    Upload RFP document to S3 - Simple and fast
+    Vectorization will happen during the "Analyze & Continue" step
     """
-    from ..utils.aws_session import get_aws_session
-    import os
-    from datetime import datetime
-    
     try:
-        print(f"=== UPLOAD START ===")
-        print(f"Proposal ID: {proposal_id}")
-        print(f"Filename: {file.filename}")
-        print(f"Content-Type: {file.content_type}")
-        
-        # Validate file type
-        if not file.filename.lower().endswith('.pdf'):
+        # Validate file
+        if not file.filename or not file.filename.lower().endswith('.pdf'):
             raise HTTPException(status_code=400, detail="Only PDF files are supported")
         
-        # Read file content
+        # Read file
         file_bytes = await file.read()
         file_size = len(file_bytes)
+        
+        if file_size == 0:
+            raise HTTPException(status_code=400, detail="File is empty")
+        
+        if file_size > 10 * 1024 * 1024:  # 10MB limit
+            raise HTTPException(status_code=400, detail="File size must be less than 10MB")
+        
+        # Validate PDF format
+        if not file_bytes.startswith(b'%PDF'):
+            raise HTTPException(status_code=400, detail="File doesn't appear to be a valid PDF")
+        
+        # Get proposal by ID (query by user to find the right proposal)
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+        
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        proposal_code = proposal.get("proposalCode")
+        
+        # Upload to S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+        
+        if not bucket:
+            raise HTTPException(status_code=500, detail="S3 bucket not configured")
+        
+        s3_key = f"{proposal_code}/documents/{file.filename}"
+        
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=s3_key,
+            Body=BytesIO(file_bytes),
+            ContentType='application/pdf',
+            Metadata={
+                'proposal-id': proposal_id,
+                'uploaded-by': user.get('user_id'),
+                'original-size': str(file_size)
+            }
+        )
+        
+        # Verify upload
+        response = s3_client.head_object(Bucket=bucket, Key=s3_key)
+        if response['ContentLength'] != file_size:
+            raise HTTPException(status_code=500, detail="Upload verification failed")
+        
+        # Update proposal metadata
+        await db_client.update_item(
+            pk=f"PROPOSAL#{proposal_code}",
+            sk="METADATA",
+            update_expression="SET uploaded_files.#rfp = :files, updated_at = :updated",
+            expression_attribute_names={"#rfp": "rfp-document"},
+            expression_attribute_values={
+                ":files": [file.filename],
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": "PDF uploaded successfully",
+            "filename": file.filename,
+            "document_key": s3_key,
+            "size": file_size
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Upload error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to upload document: {str(e)}")
+
+
+@router.delete("/{filename}")
+async def delete_document(
+    proposal_id: str,
+    filename: str,
+    user=Depends(get_current_user)
+):
+    """Delete an uploaded RFP document"""
+    try:
+        # Get proposal by ID (query by user to find the right proposal)
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+        
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        proposal_code = proposal.get("proposalCode")
+        
+        # Delete from S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+        
+        s3_key = f"{proposal_code}/documents/{filename}"
+        
+        s3_client.delete_object(Bucket=bucket, Key=s3_key)
+        
+        # Update proposal metadata - remove file AND clear RFP analysis
+        await db_client.update_item(
+            pk=f"PROPOSAL#{proposal_code}",
+            sk="METADATA",
+            update_expression="REMOVE uploaded_files.#rfp, rfp_analysis, analysis_status, analysis_started_at, analysis_completed_at, analysis_error SET updated_at = :updated",
+            expression_attribute_names={"#rfp": "rfp-document"},
+            expression_attribute_values={
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": "Document deleted successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Delete error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete document: {str(e)}")
+
+
+# Legacy code below - to be removed after cleanup
         
         print(f"File size read: {file_size} bytes")
         
@@ -140,7 +277,7 @@ async def upload_document(
         
         print("Size verification PASSED")
         
-        # Update proposal metadata
+        # Update proposal metadata with upload info
         update_expression = "SET uploaded_files.#rfp = :files, updated_at = :updated"
         expression_attribute_names = {"#rfp": "rfp-document"}
         expression_attribute_values = {

@@ -195,7 +195,7 @@ class DocumentService:
                 }
                 
                 # Store chunk with vector in S3
-                vector_key = f"{proposal_code}/vectors/{chunk_id}.json"
+                vector_key = f"{proposal_code}/documents/vectors/{chunk_id}.json"
                 self.s3.put_object(
                     Bucket=self.bucket_name,
                     Key=vector_key,
@@ -226,7 +226,7 @@ class DocumentService:
                 "total_characters": len(full_text)
             }
             
-            metadata_key = f"{proposal_code}/vectors/metadata.json"
+            metadata_key = f"{proposal_code}/documents/vectors/metadata.json"
             self.s3.put_object(
                 Bucket=self.bucket_name,
                 Key=metadata_key,
@@ -290,7 +290,7 @@ class DocumentService:
                 }
                 
                 # Store chunk with vector in S3
-                vector_key = f"{proposal_code}/vectors/{chunk_id}.json"
+                vector_key = f"{proposal_code}/documents/vectors/{chunk_id}.json"
                 self.s3.put_object(
                     Bucket=self.bucket_name,
                     Key=vector_key,
@@ -359,7 +359,7 @@ class DocumentService:
             query_embedding = self._generate_embedding(query_text)
             
             # 2. List all vector files for this proposal
-            prefix = f"{proposal_code}/vectors/"
+            prefix = f"{proposal_code}/documents/vectors/"
             response = self.s3.list_objects_v2(
                 Bucket=self.bucket_name,
                 Prefix=prefix

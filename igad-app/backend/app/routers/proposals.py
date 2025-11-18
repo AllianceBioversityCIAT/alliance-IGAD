@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from ..middleware.auth_middleware import AuthMiddleware
 from ..services.bedrock_service import BedrockService
 from ..services.prompt_service import PromptService
-from ..services.rfp_analysis_service import RFPAnalysisService
+from ..services.simple_rfp_analyzer import SimpleRFPAnalyzer
 from ..services.document_service import DocumentService
 from ..database.client import db_client
 
@@ -439,11 +439,8 @@ async def improve_ai_content(
 @router.post("/{proposal_id}/analyze-rfp")
 async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
     """
-    Analyze uploaded RFP document (Step 1 - Part 1)
-    - Retrieves RFP vectors
-    - Gets analysis prompt from DynamoDB
-    - Sends to Bedrock for analysis
-    - Returns structured analysis (summary + extracted_data)
+    Start RFP analysis (async - returns immediately with status)
+    Frontend should poll GET /{proposal_id}/analysis-status for completion
     """
     try:
         # Verify proposal ownership
@@ -479,20 +476,82 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
         # Check if RFP analysis already exists (no re-analysis)
         if proposal.get("rfp_analysis"):
             return {
-                "success": True,
+                "status": "completed",
                 "rfp_analysis": proposal.get("rfp_analysis"),
                 "message": "RFP already analyzed",
                 "cached": True
             }
         
-        # Perform RFP analysis
-        analysis_service = RFPAnalysisService()
-        result = await analysis_service.analyze_rfp(
-            proposal_code=proposal_code,
-            proposal_id=proposal.get("id")
+        # Check if analysis is already in progress
+        analysis_status = proposal.get("analysis_status")
+        if analysis_status == "processing":
+            return {
+                "status": "processing",
+                "message": "Analysis already in progress"
+            }
+        
+        # Set status to processing
+        from datetime import datetime
+        await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="SET analysis_status = :status, analysis_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat()
+            }
         )
         
-        return result
+        # Start async analysis (will update proposal when complete)
+        import threading
+        def run_analysis():
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                analyzer = SimpleRFPAnalyzer()
+                result = loop.run_until_complete(
+                    analyzer.analyze_rfp(
+                        proposal_code=proposal_code,
+                        proposal_id=proposal.get("id")
+                    )
+                )
+                # Update proposal with results
+                loop.run_until_complete(
+                    db_client.update_item(
+                        pk=pk,
+                        sk="METADATA",
+                        update_expression="SET rfp_analysis = :analysis, analysis_status = :status, analysis_completed_at = :completed",
+                        expression_attribute_values={
+                            ":analysis": result.get("rfp_analysis"),
+                            ":status": "completed",
+                            ":completed": datetime.utcnow().isoformat()
+                        }
+                    )
+                )
+            except Exception as e:
+                # Update proposal with error
+                loop.run_until_complete(
+                    db_client.update_item(
+                        pk=pk,
+                        sk="METADATA",
+                        update_expression="SET analysis_status = :status, analysis_error = :error",
+                        expression_attribute_values={
+                            ":status": "failed",
+                            ":error": str(e)
+                        }
+                    )
+                )
+            finally:
+                loop.close()
+        
+        thread = threading.Thread(target=run_analysis, daemon=True)
+        thread.start()
+        
+        return {
+            "status": "processing",
+            "message": "RFP analysis started. Poll /analysis-status for completion."
+        }
         
     except HTTPException:
         raise
@@ -501,6 +560,67 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
             status_code=500,
             detail=f"RFP analysis failed: {str(e)}"
         )
+
+
+@router.get("/{proposal_id}/analysis-status")
+async def get_analysis_status(proposal_id: str, user=Depends(get_current_user)):
+    """Poll for RFP analysis completion status"""
+    try:
+        # Verify proposal ownership
+        if proposal_id.startswith("PROP-"):
+            pk = f"PROPOSAL#{proposal_id}"
+        else:
+            items = await db_client.query_items(
+                pk=f"USER#{user.get('user_id')}",
+                index_name="GSI1"
+            )
+            
+            proposal_item = None
+            for item in items:
+                if item.get("id") == proposal_id:
+                    proposal_item = item
+                    break
+            
+            if not proposal_item:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+            
+            pk = proposal_item["PK"]
+        
+        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        if proposal.get("user_id") != user.get("user_id"):
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        status = proposal.get("analysis_status", "not_started")
+        
+        if status == "completed":
+            return {
+                "status": "completed",
+                "rfp_analysis": proposal.get("rfp_analysis"),
+                "completed_at": proposal.get("analysis_completed_at")
+            }
+        elif status == "failed":
+            return {
+                "status": "failed",
+                "error": proposal.get("analysis_error", "Unknown error")
+            }
+        elif status == "processing":
+            return {
+                "status": "processing",
+                "started_at": proposal.get("analysis_started_at")
+            }
+        else:
+            return {
+                "status": "not_started"
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to check status: {str(e)}")
 
 
 @router.post("/prompts/with-categories")

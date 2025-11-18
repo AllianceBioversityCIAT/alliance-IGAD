@@ -73,7 +73,7 @@ class RFPAnalysisService:
                 raise Exception("S3 bucket not configured")
             
             # Check for vectors
-            vector_prefix = f"{proposal_code}/vectors/"
+            vector_prefix = f"{proposal_code}/documents/vectors/"
             try:
                 response = s3.list_objects_v2(
                     Bucket=bucket_name,

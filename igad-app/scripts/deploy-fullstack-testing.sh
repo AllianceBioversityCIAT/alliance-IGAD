@@ -88,7 +88,12 @@ fi
 # Deploy using Lambda Web Adapter
 if [ "$DEPLOY_BACKEND" = true ]; then
     echo "🚀 Deploying backend..."
-    sam build --use-container
+    
+    # Try container build first, fallback to local build
+    if ! sam build --use-container; then
+        echo "⚠️  Container build failed, trying local build..."
+        sam build
+    fi
     
     # Deploy with error handling
     if sam deploy --stack-name igad-backend-testing; then
@@ -160,3 +165,7 @@ if [ "$DEPLOY_BACKEND" = true ]; then
 fi
 echo "   - Database: DynamoDB (igad-testing-main-table)"
 echo "   - Auth: Cognito (us-east-1_EULeelICj)"
+echo "   - Documents: S3 (igad-proposal-documents-${AWS::AccountId})"
+echo ""
+echo "📝 Note: S3 Vector bucket is commented out in template.yaml"
+echo "   Uncomment VectorStorageBucket when ready to use S3 Vector metadata"

@@ -3,12 +3,14 @@ import { Target, CheckCircle, AlertCircle } from 'lucide-react'
 import { useProposal } from '../../hooks/useProposal'
 import { StepProps } from './stepConfig'
 import styles from './proposalWriter.module.css'
+import RFPAnalysisResults from './components/RFPAnalysisResults'
 
 interface Step2Props extends StepProps {
   proposalId?: string
+  rfpAnalysis?: any
 }
 
-export function Step2ContentGeneration({ formData, setFormData: _setFormData, proposalId }: Step2Props) {
+export function Step2ContentGeneration({ formData, setFormData: _setFormData, proposalId, rfpAnalysis }: Step2Props) {
   const { generateContent, isGenerating, generateError } = useProposal(proposalId)
 
   const [analysisComplete, setAnalysisComplete] = useState(false)
@@ -141,6 +143,13 @@ export function Step2ContentGeneration({ formData, setFormData: _setFormData, pr
           AI review of your high-level concept with fit assessment and elaboration suggestions
         </p>
       </div>
+
+      {/* RFP Analysis Results */}
+      {rfpAnalysis && (
+        <div className={styles.uploadSection}>
+          <RFPAnalysisResults analysis={rfpAnalysis} />
+        </div>
+      )}
 
       {/* Analysis Complete */}
       <div className={styles.analysisCompleteContainer}>
