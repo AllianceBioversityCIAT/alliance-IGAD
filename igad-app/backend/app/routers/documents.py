@@ -135,11 +135,18 @@ async def delete_document(
 ):
     """Delete an uploaded RFP document"""
     try:
+        print(f"\n🗑️ DELETE REQUEST:")
+        print(f"  - Proposal ID: {proposal_id}")
+        print(f"  - Filename: {filename}")
+        print(f"  - User ID: {user.get('user_id')}")
+        
         # Get proposal by ID (query by user to find the right proposal)
         all_proposals = await db_client.query_items(
             pk=f"USER#{user.get('user_id')}",
             index_name="GSI1"
         )
+        
+        print(f"  - Found {len(all_proposals)} proposals for user")
         
         proposal = None
         for p in all_proposals:
@@ -148,9 +155,11 @@ async def delete_document(
                 break
         
         if not proposal:
+            print(f"❌ Proposal not found: {proposal_id}")
             raise HTTPException(status_code=404, detail="Proposal not found")
         
         proposal_code = proposal.get("proposalCode")
+        print(f"  - Proposal Code: {proposal_code}")
         
         # Delete from S3
         session = get_aws_session()
@@ -158,10 +167,19 @@ async def delete_document(
         bucket = os.environ.get('PROPOSALS_BUCKET')
         
         s3_key = f"{proposal_code}/documents/{filename}"
+        print(f"  - S3 Bucket: {bucket}")
+        print(f"  - S3 Key: {s3_key}")
         
-        s3_client.delete_object(Bucket=bucket, Key=s3_key)
+        # Try to delete from S3
+        try:
+            s3_client.delete_object(Bucket=bucket, Key=s3_key)
+            print(f"✅ Deleted from S3: {s3_key}")
+        except Exception as s3_error:
+            print(f"❌ S3 Delete Error: {str(s3_error)}")
+            raise
         
         # Update proposal metadata - remove file AND clear RFP analysis
+        print(f"  - Updating DynamoDB...")
         await db_client.update_item(
             pk=f"PROPOSAL#{proposal_code}",
             sk="METADATA",
@@ -171,6 +189,9 @@ async def delete_document(
                 ":updated": datetime.utcnow().isoformat()
             }
         )
+        print(f"✅ Updated DynamoDB")
+        
+        print(f"✅ DELETE SUCCESSFUL\n")
         
         return {
             "success": True,
@@ -180,7 +201,9 @@ async def delete_document(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Delete error: {str(e)}")
+        print(f"❌ Delete error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to delete document: {str(e)}")
 
 

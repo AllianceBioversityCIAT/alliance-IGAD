@@ -27,7 +27,7 @@ Resources:
       Handler: bootstrap
       Runtime: python3.9
       MemorySize: 512
-      Timeout: 120
+      Timeout: 300  # Increased from 120 to 300 seconds (5 minutes)
       Architectures:
         - x86_64
       Environment:

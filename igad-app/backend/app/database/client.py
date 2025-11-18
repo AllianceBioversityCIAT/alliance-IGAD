@@ -146,6 +146,32 @@ class DynamoDBClient:
             logger.error(f"Error batch writing items: {e}")
             raise
 
+    async def scan_table(self, filter_expression=None, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Scan entire table (use sparingly, prefer query when possible)"""
+        try:
+            kwargs = {}
+            
+            if filter_expression:
+                kwargs["FilterExpression"] = filter_expression
+            
+            if limit:
+                kwargs["Limit"] = limit
+            
+            response = self.table.scan(**kwargs)
+            items = response.get("Items", [])
+            
+            # Handle pagination if needed
+            while "LastEvaluatedKey" in response:
+                kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+                response = self.table.scan(**kwargs)
+                items.extend(response.get("Items", []))
+            
+            logger.info(f"Scanned table: {len(items)} items found")
+            return items
+        except ClientError as e:
+            logger.error(f"Error scanning table: {e}")
+            raise
+
 
 # Global client instance
 db_client = DynamoDBClient()

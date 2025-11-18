@@ -240,51 +240,54 @@ export function ProposalWriterPage() {
       try {
         const { proposalService } = await import('../../services/proposalService')
         
-        // Start analysis
+        // Start analysis (now synchronous, returns result directly)
         console.log('📡 Calling proposalService.analyzeRFP...')
-        const startResult = await proposalService.analyzeRFP(proposalId!)
-        console.log('📡 Analysis start result:', startResult)
+        const result = await proposalService.analyzeRFP(proposalId!)
+        console.log('📡 Analysis result:', result)
         
-        if (startResult.status === 'completed' && startResult.cached) {
-          // Already analyzed
-          console.log('✅ Analysis already completed (cached)')
-          setRfpAnalysis(startResult.rfp_analysis)
+        if (result.status === 'completed') {
+          // Analysis completed successfully
+          console.log('✅ Analysis completed!', result.rfp_analysis)
+          setRfpAnalysis(result.rfp_analysis)
           cleanup()
           proceedToNextStep()
           return
         }
         
-        console.log('⏳ Starting polling for analysis completion...')
-        // Poll for completion
-        pollInterval = setInterval(async () => {
-          try {
-            const statusResult = await proposalService.getAnalysisStatus(proposalId!)
-            console.log('📊 Polling status:', statusResult.status)
-            
-            if (statusResult.status === 'completed') {
-              console.log('✅ Analysis completed!', statusResult.rfp_analysis)
-              setRfpAnalysis(statusResult.rfp_analysis)
+        // If still processing (shouldn't happen with sync), fall back to polling
+        if (result.status === 'processing') {
+          console.log('⏳ Starting polling for analysis completion...')
+          // Poll for completion
+          pollInterval = setInterval(async () => {
+            try {
+              const statusResult = await proposalService.getAnalysisStatus(proposalId!)
+              console.log('📊 Polling status:', statusResult.status)
+              
+              if (statusResult.status === 'completed') {
+                console.log('✅ Analysis completed!', statusResult.rfp_analysis)
+                setRfpAnalysis(statusResult.rfp_analysis)
+                cleanup()
+                proceedToNextStep()
+              } else if (statusResult.status === 'failed') {
+                console.error('❌ Analysis failed:', statusResult.error)
+                cleanup()
+                alert(`Analysis failed: ${statusResult.error || 'Unknown error'}`)
+              }
+              // Otherwise keep polling (status === 'processing')
+            } catch (pollError) {
+              console.error('Polling error:', pollError)
               cleanup()
-              proceedToNextStep()
-            } else if (statusResult.status === 'failed') {
-              console.error('❌ Analysis failed:', statusResult.error)
-              cleanup()
-              alert(`Analysis failed: ${statusResult.error || 'Unknown error'}`)
+              alert('Failed to check analysis status. Please refresh and try again.')
             }
-            // Otherwise keep polling (status === 'processing')
-          } catch (pollError) {
-            console.error('Polling error:', pollError)
+          }, 3000) // Poll every 3 seconds
+          
+          // Timeout after 5 minutes
+          timeoutId = setTimeout(() => {
+            console.warn('⏰ Analysis timeout')
             cleanup()
-            alert('Failed to check analysis status. Please refresh and try again.')
-          }
-        }, 3000) // Poll every 3 seconds
-        
-        // Timeout after 5 minutes
-        timeoutId = setTimeout(() => {
-          console.warn('⏰ Analysis timeout')
-          cleanup()
-          alert('Analysis is taking longer than expected. Please try again later.')
-        }, 300000) // 5 minutes
+            alert('Analysis is taking longer than expected. Please try again later.')
+          }, 300000) // 5 minutes
+        }
         
       } catch (error) {
         console.error('RFP analysis failed:', error)
@@ -365,9 +368,19 @@ export function ProposalWriterPage() {
         </>
       ) : currentStep === 5 ? (
         'Complete'
+      ) : currentStep === 1 && rfpAnalysis ? (
+        <>
+          Next: View Analysis
+          <ChevronRight size={16} />
+        </>
+      ) : currentStep === 1 ? (
+        <>
+          Analyze & Continue
+          <ChevronRight size={16} />
+        </>
       ) : (
         <>
-          {currentStep === 1 ? 'Analyze & Continue' : 'Next'}
+          Next
           <ChevronRight size={16} />
         </>
       )}

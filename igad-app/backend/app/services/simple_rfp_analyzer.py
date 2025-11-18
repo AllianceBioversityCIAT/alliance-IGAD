@@ -1,68 +1,40 @@
 """
-Simple RFP Analyzer - Direct approach without vectorization
-Extracts text from PDF and sends directly to Bedrock
+Simple RFP Analyzer - Uses default prompts for speed
 """
 
 import json
-import boto3
 import os
-from typing import Dict, Any
-from datetime import datetime
-import PyPDF2
+from typing import Any, Dict
+import boto3
+from PyPDF2 import PdfReader
 from io import BytesIO
 
-from .bedrock_service import BedrockService
 from ..database.client import db_client
+from .bedrock_service import BedrockService
 
 
 class SimpleRFPAnalyzer:
     def __init__(self):
-        self.bedrock = BedrockService()
-        self.s3 = boto3.client('s3', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+        self.s3 = boto3.client('s3')
+        # Use same bucket as document upload
         self.bucket = os.environ.get('PROPOSALS_BUCKET')
-    
-    def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
-        """Extract all text from PDF"""
-        try:
-            pdf_file = BytesIO(pdf_bytes)
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
-            
-            text_parts = []
-            for page in pdf_reader.pages:
-                text = page.extract_text()
-                if text:
-                    text_parts.append(text)
-            
-            full_text = "\n\n".join(text_parts)
-            return full_text
-            
-        except Exception as e:
-            print(f"Error extracting PDF text: {str(e)}")
-            raise Exception(f"Failed to extract text from PDF: {str(e)}")
+        if not self.bucket:
+            raise Exception("PROPOSALS_BUCKET environment variable not set")
+        self.bedrock = BedrockService()
     
     async def analyze_rfp(self, proposal_code: str, proposal_id: str) -> Dict[str, Any]:
-        """
-        Simple RFP Analysis:
-        1. Get PDF from S3
-        2. Extract text
-        3. Send to Bedrock with prompt
-        4. Return structured response
-        """
+        """Analyze RFP document"""
         try:
             # 1. Get PDF from S3
             print(f"Getting PDF for proposal: {proposal_code}")
             pdf_key = f"{proposal_code}/documents/"
             
-            # List files in the documents folder
-            response = self.s3.list_objects_v2(
-                Bucket=self.bucket,
-                Prefix=pdf_key
-            )
+            response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=pdf_key)
             
             if 'Contents' not in response or len(response['Contents']) == 0:
                 raise Exception("No RFP document found. Please upload a PDF first.")
             
-            # Get the first PDF file
+            # Find PDF file
             pdf_file = None
             for obj in response['Contents']:
                 if obj['Key'].lower().endswith('.pdf'):
@@ -86,21 +58,25 @@ class SimpleRFPAnalyzer:
             
             print(f"Extracted {len(rfp_text)} characters from PDF")
             
-            # 3. Get analysis prompt from DynamoDB
-            prompt_data = await self.get_analysis_prompt()
+            # 3. Get default prompts (fast, no DynamoDB lookup)
+            print("📝 Using default prompt (fast)")
+            system_prompt = self.get_default_system_prompt()
+            user_template = self.get_default_user_template()
             
-            if prompt_data:
-                system_prompt = prompt_data.get('system_prompt', self.get_default_system_prompt())
-                user_template = prompt_data.get('user_prompt_template', self.get_default_user_prompt())
-            else:
-                system_prompt = self.get_default_system_prompt()
-                user_template = self.get_default_user_prompt()
+            # 4. Inject RFP text (limit to 10k chars for speed)
+            max_chars = 10000
+            truncated_text = rfp_text[:max_chars]
+            if len(rfp_text) > max_chars:
+                print(f"⚠️ RFP text truncated from {len(rfp_text)} to {max_chars} chars")
+                truncated_text += "\n\n[... Document truncated for analysis ...]"
             
-            # Inject RFP text into prompt
-            user_prompt = user_template.replace('{rfp_text}', rfp_text[:15000])  # Limit to 15k chars
+            user_prompt = user_template.replace('[RFP TEXT]', truncated_text)
             
-            # 4. Call Bedrock
-            print("Sending to Bedrock for analysis...")
+            # 5. Call Bedrock
+            print("📡 Sending to Bedrock for analysis...")
+            import time
+            start_time = time.time()
+            
             ai_response = self.bedrock.invoke_claude(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
@@ -108,101 +84,41 @@ class SimpleRFPAnalyzer:
                 temperature=0.5
             )
             
-            # 5. Parse response
-            print("Parsing AI response...")
-            analysis_result = self.parse_response(ai_response)
+            elapsed = time.time() - start_time
+            print(f"⏱️ Bedrock response time: {elapsed:.2f} seconds")
             
-            # 6. Save to DynamoDB
-            await self.save_analysis(proposal_code, proposal_id, analysis_result)
+            # 6. Parse response
+            print("Parsing AI response...")
+            result = self.parse_response(ai_response)
+            
+            print("✅ Analysis completed successfully")
             
             return {
-                "success": True,
-                "rfp_analysis": analysis_result,
-                "analyzed_at": datetime.utcnow().isoformat()
+                "rfp_analysis": result,
+                "status": "completed"
             }
             
         except Exception as e:
-            print(f"Error analyzing RFP: {str(e)}")
+            print(f"❌ Analysis error: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise Exception(f"RFP analysis failed: {str(e)}")
     
-    def parse_response(self, response: str) -> Dict[str, Any]:
-        """Parse AI response into structured format"""
+    def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
+        """Extract text from PDF bytes"""
         try:
-            # Try to extract JSON from response
-            # AI might wrap JSON in markdown code blocks
-            response = response.strip()
-            
-            # Remove markdown code blocks if present
-            if response.startswith('```json'):
-                response = response[7:]
-            if response.startswith('```'):
-                response = response[3:]
-            if response.endswith('```'):
-                response = response[:-3]
-            
-            response = response.strip()
-            
-            # Parse JSON
-            parsed = json.loads(response)
-            return parsed
-            
-        except json.JSONDecodeError:
-            # Fallback: return as plain text
-            return {
-                "summary": {
-                    "raw_response": response
-                },
-                "extracted_data": {},
-                "ai_insights": {}
-            }
-    
-    async def get_analysis_prompt(self) -> Dict[str, Any]:
-        """Get RFP analysis prompt from DynamoDB"""
-        try:
-            # Query for active prompt
-            response = await db_client.scan_table()
-            
-            for item in response:
-                if (item.get('PK', '').startswith('PROMPT#') and
-                    item.get('section') == 'Proposal writer' and
-                    item.get('sub_section') == 'step-1' and
-                    item.get('category') == 'RFP / Call for Proposals' and
-                    item.get('status') == 'active'):
-                    return item
-            
-            return None
-            
+            pdf_file = BytesIO(pdf_bytes)
+            reader = PdfReader(pdf_file)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
+            return text.strip()
         except Exception as e:
-            print(f"Error getting prompt: {str(e)}")
-            return None
-    
-    async def save_analysis(self, proposal_code: str, proposal_id: str, analysis: Dict[str, Any]):
-        """Save analysis to proposal"""
-        try:
-            pk = f"PROPOSAL#{proposal_code}"
-            
-            update_expr = "SET rfp_analysis = :analysis, updated_at = :updated"
-            expr_values = {
-                ":analysis": analysis,
-                ":updated": datetime.utcnow().isoformat()
-            }
-            
-            await db_client.update_item(
-                pk=pk,
-                sk="METADATA",
-                update_expression=update_expr,
-                expression_attribute_values=expr_values
-            )
-            
-            print(f"Saved analysis for {proposal_code}")
-            
-        except Exception as e:
-            print(f"Error saving analysis: {str(e)}")
-            raise
+            raise Exception(f"PDF text extraction failed: {str(e)}")
     
     def get_default_system_prompt(self) -> str:
+        """Default system prompt that works"""
         return """You are an expert proposal analyst for international development projects.
-
 Analyze the RFP document and provide a structured JSON response with:
 
 {
@@ -224,9 +140,35 @@ Analyze the RFP document and provide a structured JSON response with:
 
 Respond ONLY with valid JSON."""
     
-    def get_default_user_prompt(self) -> str:
-        return """Analyze this RFP document and extract key information:
+    def get_default_user_template(self) -> str:
+        """Default user template"""
+        return """Analyze the following RFP document and extract the key information:
 
-{rfp_text}
+[RFP TEXT]
 
-Provide your analysis as a JSON object with summary and extracted_data fields."""
+Provide your analysis as a JSON object following the structure specified above."""
+    
+    def parse_response(self, response: str) -> Dict[str, Any]:
+        """Parse AI response into structured format"""
+        try:
+            # Clean markdown code blocks
+            response = response.strip()
+            if response.startswith('```json'):
+                response = response[7:]
+            if response.startswith('```'):
+                response = response[3:]
+            if response.endswith('```'):
+                response = response[:-3]
+            response = response.strip()
+            
+            # Parse JSON
+            parsed = json.loads(response)
+            print("✅ Response parsed successfully")
+            return parsed
+            
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON decode error: {str(e)}")
+            return {
+                "summary": {"raw_response": response, "parse_error": str(e)},
+                "extracted_data": {}
+            }

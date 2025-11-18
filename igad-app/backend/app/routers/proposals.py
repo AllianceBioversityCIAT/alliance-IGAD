@@ -490,68 +490,53 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
                 "message": "Analysis already in progress"
             }
         
-        # Set status to processing
-        from datetime import datetime
-        await db_client.update_item(
-            pk=pk,
-            sk="METADATA",
-            update_expression="SET analysis_status = :status, analysis_started_at = :started",
-            expression_attribute_values={
-                ":status": "processing",
-                ":started": datetime.utcnow().isoformat()
+        # Start analysis SYNCHRONOUSLY (Lambda doesn't work well with threads)
+        # The timeout is 300 seconds, which should be enough
+        try:
+            analyzer = SimpleRFPAnalyzer()
+            result = await analyzer.analyze_rfp(
+                proposal_code=proposal_code,
+                proposal_id=proposal.get("id")
+            )
+            
+            # Update proposal with results
+            await db_client.update_item(
+                pk=pk,
+                sk="METADATA",
+                update_expression="SET rfp_analysis = :analysis, analysis_status = :status, analysis_completed_at = :completed",
+                expression_attribute_values={
+                    ":analysis": result.get("rfp_analysis"),
+                    ":status": "completed",
+                    ":completed": datetime.utcnow().isoformat()
+                }
+            )
+            
+            return {
+                "status": "completed",
+                "rfp_analysis": result.get("rfp_analysis"),
+                "message": "RFP analysis completed successfully."
             }
-        )
-        
-        # Start async analysis (will update proposal when complete)
-        import threading
-        def run_analysis():
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                analyzer = SimpleRFPAnalyzer()
-                result = loop.run_until_complete(
-                    analyzer.analyze_rfp(
-                        proposal_code=proposal_code,
-                        proposal_id=proposal.get("id")
-                    )
-                )
-                # Update proposal with results
-                loop.run_until_complete(
-                    db_client.update_item(
-                        pk=pk,
-                        sk="METADATA",
-                        update_expression="SET rfp_analysis = :analysis, analysis_status = :status, analysis_completed_at = :completed",
-                        expression_attribute_values={
-                            ":analysis": result.get("rfp_analysis"),
-                            ":status": "completed",
-                            ":completed": datetime.utcnow().isoformat()
-                        }
-                    )
-                )
-            except Exception as e:
-                # Update proposal with error
-                loop.run_until_complete(
-                    db_client.update_item(
-                        pk=pk,
-                        sk="METADATA",
-                        update_expression="SET analysis_status = :status, analysis_error = :error",
-                        expression_attribute_values={
-                            ":status": "failed",
-                            ":error": str(e)
-                        }
-                    )
-                )
-            finally:
-                loop.close()
-        
-        thread = threading.Thread(target=run_analysis, daemon=True)
-        thread.start()
-        
-        return {
-            "status": "processing",
-            "message": "RFP analysis started. Poll /analysis-status for completion."
-        }
+            
+        except Exception as e:
+            print(f"❌ Analysis error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            
+            # Update proposal with error
+            await db_client.update_item(
+                pk=pk,
+                sk="METADATA",
+                update_expression="SET analysis_status = :status, analysis_error = :error",
+                expression_attribute_values={
+                    ":status": "failed",
+                    ":error": str(e)
+                }
+            )
+            
+            raise HTTPException(
+                status_code=500,
+                detail=f"RFP analysis failed: {str(e)}"
+            )
         
     except HTTPException:
         raise

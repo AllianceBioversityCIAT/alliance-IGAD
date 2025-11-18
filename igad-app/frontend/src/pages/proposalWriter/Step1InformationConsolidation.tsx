@@ -230,6 +230,14 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
     const updatedFiles = { ...formData.uploadedFiles }
     const fileName = updatedFiles[section][fileIndex]
     
+    console.log('🗑️ DELETE FILE:', {
+      section,
+      fileIndex,
+      fileName,
+      proposalId,
+      allFiles: formData.uploadedFiles
+    })
+    
     // Remove from local state first for immediate UI feedback
     updatedFiles[section].splice(fileIndex, 1)
     
@@ -244,15 +252,22 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         // Import proposalService dynamically
         const { proposalService } = await import('../../services/proposalService')
         
+        console.log('📡 Calling deleteDocument API:', {
+          proposalId,
+          fileName
+        })
+        
         // Delete from S3
-        await proposalService.deleteDocument(proposalId, fileName)
+        const deleteResult = await proposalService.deleteDocument(proposalId, fileName)
+        
+        console.log('✅ Delete API response:', deleteResult)
         
         // Update DynamoDB metadata
         await updateFormData({
           uploadedFiles: updatedFiles,
         })
         
-        console.log(`Deleted file from S3 and DynamoDB: ${fileName}`)
+        console.log(`✅ Deleted file from S3 and DynamoDB: ${fileName}`)
         
         // If deleting RFP document, also clear the analysis
         if (section === 'rfp-document' && window.location.pathname.includes('proposal-writer')) {
@@ -260,9 +275,15 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           // This will be handled by the parent ProposalWriterPage
           localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
           window.dispatchEvent(new CustomEvent('rfp-deleted'))
+          console.log('🧹 Cleared RFP analysis from localStorage')
         }
-      } catch (error) {
-        console.error('Failed to delete file from backend:', error)
+      } catch (error: any) {
+        console.error('❌ Failed to delete file from backend:', error)
+        console.error('❌ Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        })
         // Optionally: revert the local state change if backend deletion failed
         setUploadError('Failed to delete file from server')
       }
@@ -365,9 +386,9 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
                 <div className={styles.uploadingSpinner}>
                   <div className={styles.spinner}></div>
                 </div>
-                <p className={styles.uploadAreaTitle}>Processing your document...</p>
+                <p className={styles.uploadAreaTitle}>Uploading and processing...</p>
                 <p className={styles.uploadAreaDescription}>
-                  Uploading and preparing for analysis
+                  Please wait while we upload your document to secure storage
                 </p>
               </>
             ) : (
@@ -438,6 +459,11 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
                 id="rfp-document-replace"
                 disabled={isUpdating || isUploadingRFP}
               />
+              {rfpAnalysis && (
+                <p className={styles.replaceHint}>
+                  ℹ️ Replacing will automatically trigger re-analysis
+                </p>
+              )}
             </div>
           </div>
         )}
