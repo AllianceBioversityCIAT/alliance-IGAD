@@ -13,8 +13,10 @@ logger = logging.getLogger(__name__)
 class BedrockService:
     def __init__(self):
         session = get_aws_session()
-        self.bedrock = session.client("bedrock-runtime")
-        self.model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
+        self.bedrock = session.client("bedrock-runtime", region_name="us-east-1")
+        # Use cross-region inference profile for Claude 3.7 Sonnet (Claude Sonnet 4)
+        # This supports on-demand throughput
+        self.model_id = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
         self.max_tokens = 4000
         self.temperature = 0.7
 
