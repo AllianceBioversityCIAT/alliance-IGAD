@@ -4,8 +4,9 @@ Simple RFP Analyzer - Uses default prompts for speed
 
 import json
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import boto3
+from boto3.dynamodb.conditions import Attr
 from PyPDF2 import PdfReader
 from io import BytesIO
 
@@ -21,6 +22,10 @@ class SimpleRFPAnalyzer:
         if not self.bucket:
             raise Exception("PROPOSALS_BUCKET environment variable not set")
         self.bedrock = BedrockService()
+        
+        # Initialize DynamoDB resource for prompt queries
+        self.dynamodb = boto3.resource('dynamodb')
+        self.table_name = os.environ.get('TABLE_NAME', 'igad-testing-main-table')
     
     async def analyze_rfp(self, proposal_code: str, proposal_id: str) -> Dict[str, Any]:
         """Analyze RFP document"""
@@ -58,31 +63,67 @@ class SimpleRFPAnalyzer:
             
             print(f"Extracted {len(rfp_text)} characters from PDF")
             
-            # 3. Get default prompts (fast, no DynamoDB lookup)
-            print("📝 Using default prompt (fast)")
-            system_prompt = self.get_default_system_prompt()
-            user_template = self.get_default_user_template()
+            # 3. Get prompt from DynamoDB
+            print("📝 Loading prompt from DynamoDB...")
+            prompt_parts = await self.get_prompt_from_dynamodb()
             
-            # 4. Inject RFP text (limit to 10k chars for speed)
-            max_chars = 10000
-            truncated_text = rfp_text[:max_chars]
-            if len(rfp_text) > max_chars:
-                print(f"⚠️ RFP text truncated from {len(rfp_text)} to {max_chars} chars")
-                truncated_text += "\n\n[... Document truncated for analysis ...]"
-            
-            user_prompt = user_template.replace('[RFP TEXT]', truncated_text)
-            
-            # 5. Call Bedrock
-            print("📡 Sending to Bedrock for analysis...")
-            import time
-            start_time = time.time()
-            
-            ai_response = self.bedrock.invoke_claude(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                max_tokens=4000,
-                temperature=0.5
-            )
+            if prompt_parts:
+                print("✅ Using DynamoDB prompt")
+                # Inject RFP text into the prompt
+                max_chars = 10000
+                truncated_text = rfp_text[:max_chars]
+                if len(rfp_text) > max_chars:
+                    print(f"⚠️ RFP text truncated from {len(rfp_text)} to {max_chars} chars")
+                    truncated_text += "\n\n[... Document truncated for analysis ...]"
+                
+                # Replace {rfp_text} placeholder in user prompt
+                user_prompt_with_text = prompt_parts['user_prompt'].replace("{rfp_text}", truncated_text)
+                
+                # Combine user instructions + output format
+                final_user_prompt = f"""
+{user_prompt_with_text}
+
+{prompt_parts['output_format']}
+""".strip()
+                
+                # 4. Call Bedrock with separated prompts
+                print("📡 Sending to Bedrock for analysis...")
+                import time
+                start_time = time.time()
+                
+                ai_response = self.bedrock.invoke_claude(
+                    system_prompt=prompt_parts['system_prompt'],
+                    user_prompt=final_user_prompt,
+                    max_tokens=4000,
+                    temperature=0.5
+                )
+                
+            else:
+                # Fallback to default prompts
+                print("⚠️ Falling back to default prompts")
+                system_prompt = self.get_default_system_prompt()
+                user_template = self.get_default_user_template()
+                
+                # 4. Inject RFP text (limit to 10k chars for speed)
+                max_chars = 10000
+                truncated_text = rfp_text[:max_chars]
+                if len(rfp_text) > max_chars:
+                    print(f"⚠️ RFP text truncated from {len(rfp_text)} to {max_chars} chars")
+                    truncated_text += "\n\n[... Document truncated for analysis ...]"
+                
+                user_prompt = user_template.replace('[RFP TEXT]', truncated_text)
+                
+                # 5. Call Bedrock
+                print("📡 Sending to Bedrock for analysis...")
+                import time
+                start_time = time.time()
+                
+                ai_response = self.bedrock.invoke_claude(
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    max_tokens=4000,
+                    temperature=0.5
+                )
             
             elapsed = time.time() - start_time
             print(f"⏱️ Bedrock response time: {elapsed:.2f} seconds")
@@ -115,6 +156,54 @@ class SimpleRFPAnalyzer:
             return text.strip()
         except Exception as e:
             raise Exception(f"PDF text extraction failed: {str(e)}")
+    
+    async def get_prompt_from_dynamodb(self) -> Optional[Dict[str, str]]:
+        """Get prompt from DynamoDB with specific filters
+        
+        Returns:
+            Dict with 'system_prompt', 'user_prompt', 'output_format' or None if not found
+        """
+        try:
+            print("🔍 Querying DynamoDB for prompt...")
+            table = self.dynamodb.Table(self.table_name)
+            
+            # Scan with filters
+            response = table.scan(
+                FilterExpression=
+                    Attr("is_active").eq(True) &
+                    Attr("section").eq("proposal_writer") &
+                    Attr("sub_section").eq("step-1") &
+                    Attr("categories").contains("RFP / Call for Proposals")
+            )
+            
+            items = response.get("Items", [])
+            
+            if not items:
+                print("⚠️ No active prompts found for the section/sub_section/category")
+                return None
+            
+            prompt_item = items[0]
+            print(f"✅ Found prompt: {prompt_item.get('name', 'Unnamed')}")
+            
+            # Return the 3 fields separately
+            system_prompt = prompt_item.get("system_prompt", "")
+            user_prompt = prompt_item.get("user_prompt_template", "")
+            output_format = prompt_item.get("output_format", "")
+            
+            print(f"📝 Prompt parts loaded:")
+            print(f"   - system_prompt: {len(system_prompt)} chars")
+            print(f"   - user_prompt_template: {len(user_prompt)} chars")
+            print(f"   - output_format: {len(output_format)} chars")
+            
+            return {
+                'system_prompt': system_prompt,
+                'user_prompt': user_prompt,
+                'output_format': output_format
+            }
+            
+        except Exception as e:
+            print(f"❌ Error loading prompt from DynamoDB: {str(e)}")
+            return None
     
     def get_default_system_prompt(self) -> str:
         """Default system prompt that works"""
