@@ -27,6 +27,15 @@ class DynamoDBClient:
 
         logger.info(f"DynamoDB client initialized for table: {self.table_name}")
 
+    def get_item_sync(self, pk: str, sk: str) -> Optional[Dict[str, Any]]:
+        """Get single item by primary key (synchronous for Lambda workers)"""
+        try:
+            response = self.table.get_item(Key={"PK": pk, "SK": sk})
+            return response.get("Item")
+        except ClientError as e:
+            logger.error(f"Error getting item: {e}")
+            raise
+
     async def get_item(self, pk: str, sk: str) -> Optional[Dict[str, Any]]:
         """Get single item by primary key"""
         try:

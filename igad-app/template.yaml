@@ -38,6 +38,8 @@ Resources:
           COGNITO_USER_POOL_ID: us-east-1_IMi3kSuB8
           TABLE_NAME: igad-testing-main-table
           PROPOSALS_BUCKET: !Ref ProposalDocumentsBucket
+          AWS_STACK_NAME: !Ref AWS::StackName
+          ANALYSIS_WORKER_FUNCTION_NAME: !Ref AnalysisWorkerFunction
           # VECTOR_BUCKET: !Ref VectorStorageBucket  # Uncomment when S3 Vector bucket is enabled
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -91,9 +93,10 @@ Resources:
               Resource:
                 - !Sub '${ProposalDocumentsBucket.Arn}/*'
                 - !GetAtt ProposalDocumentsBucket.Arn
-          
-          
-          
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: !GetAtt AnalysisWorkerFunction.Arn
       
       Layers:
         
@@ -137,7 +140,54 @@ Resources:
             Path: /{proxy+}
             Method: ANY
 
-  
+  # RFP Analysis Worker Lambda (async background processing)
+  AnalysisWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: /Users/jcadavid/Desktop/DEV/Desarrollos/alliance-IGAD/igad-app/backend/dist
+      Handler: app.workers.analysis_worker.handler
+      Runtime: python3.9
+      MemorySize: 1024
+      Timeout: 900  # 15 minutes for long-running analysis
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TABLE_NAME: igad-testing-main-table
+          PROPOSALS_BUCKET: !Ref ProposalDocumentsBucket
+          COGNITO_CLIENT_ID: 7p11hp6gcklhctcr9qffne71vl
+          COGNITO_USER_POOL_ID: us-east-1_IMi3kSuB8
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:Query
+                - dynamodb:Scan
+              Resource: 
+                - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/igad-testing-main-table'
+                - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/igad-testing-main-table/index/*'
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:ListBucket
+              Resource:
+                - !Sub '${ProposalDocumentsBucket.Arn}/*'
+                - !GetAtt ProposalDocumentsBucket.Arn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource:
+                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-AnalysisWorkerFunction'
 
   # S3 bucket for website content
   WebsiteBucket:

@@ -2,7 +2,10 @@
 Proposals Router
 """
 
+import json
+import os
 import uuid
+import boto3
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -20,6 +23,9 @@ from ..database.client import db_client
 router = APIRouter(prefix="/api/proposals", tags=["proposals"])
 security = HTTPBearer()
 auth_middleware = AuthMiddleware()
+
+# Initialize Lambda client
+lambda_client = boto3.client('lambda')
 
 
 # Pydantic models
@@ -487,60 +493,54 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
         if analysis_status == "processing":
             return {
                 "status": "processing",
-                "message": "Analysis already in progress"
+                "message": "Analysis already in progress",
+                "started_at": proposal.get("analysis_started_at")
             }
         
-        # Start analysis SYNCHRONOUSLY (Lambda doesn't work well with threads)
-        # The timeout is 300 seconds, which should be enough
-        try:
-            analyzer = SimpleRFPAnalyzer()
-            result = await analyzer.analyze_rfp(
-                proposal_code=proposal_code,
-                proposal_id=proposal.get("id")
-            )
-            
-            # Update proposal with results
-            await db_client.update_item(
-                pk=pk,
-                sk="METADATA",
-                update_expression="SET rfp_analysis = :analysis, analysis_status = :status, analysis_completed_at = :completed",
-                expression_attribute_values={
-                    ":analysis": result.get("rfp_analysis"),
-                    ":status": "completed",
-                    ":completed": datetime.utcnow().isoformat()
-                }
-            )
-            
-            return {
-                "status": "completed",
-                "rfp_analysis": result.get("rfp_analysis"),
-                "message": "RFP analysis completed successfully."
+        # Update status to processing
+        await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="SET analysis_status = :status, analysis_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat()
             }
-            
-        except Exception as e:
-            print(f"❌ Analysis error: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            
-            # Update proposal with error
-            await db_client.update_item(
-                pk=pk,
-                sk="METADATA",
-                update_expression="SET analysis_status = :status, analysis_error = :error",
-                expression_attribute_values={
-                    ":status": "failed",
-                    ":error": str(e)
-                }
-            )
-            
-            raise HTTPException(
-                status_code=500,
-                detail=f"RFP analysis failed: {str(e)}"
-            )
+        )
+        
+        # Invoke Worker Lambda asynchronously
+        print(f"🚀 Invoking AnalysisWorkerFunction for proposal {proposal_id}")
+        
+        # Build worker function name from stack name
+        stack_name = os.environ.get("AWS_STACK_NAME", "igad-backend-testing")
+        worker_function_name = f"{stack_name}-AnalysisWorkerFunction"
+        
+        print(f"📝 Worker function name: {worker_function_name}")
+        
+        # Invoke async
+        lambda_client.invoke(
+            FunctionName=worker_function_name,
+            InvocationType='Event',  # Async invocation
+            Payload=json.dumps({
+                "proposal_id": proposal_id
+            })
+        )
+        
+        print(f"✅ Worker Lambda invoked successfully")
+        
+        return {
+            "status": "processing",
+            "message": "RFP analysis started. Poll /analysis-status for completion.",
+            "started_at": datetime.utcnow().isoformat()
+        }
         
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"❌ ERROR in analyze_rfp endpoint:")
+        print(error_details)
         raise HTTPException(
             status_code=500,
             detail=f"RFP analysis failed: {str(e)}"

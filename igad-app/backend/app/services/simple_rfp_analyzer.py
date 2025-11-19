@@ -27,10 +27,24 @@ class SimpleRFPAnalyzer:
         self.dynamodb = boto3.resource('dynamodb')
         self.table_name = os.environ.get('TABLE_NAME', 'igad-testing-main-table')
     
-    async def analyze_rfp(self, proposal_code: str, proposal_id: str) -> Dict[str, Any]:
-        """Analyze RFP document"""
+    def analyze_rfp(self, proposal_id: str) -> Dict[str, Any]:
+        """Analyze RFP document (synchronous for Lambda worker)"""
         try:
-            # 1. Get PDF from S3
+            # 1. Get proposal from DynamoDB
+            print(f"📋 Getting proposal: {proposal_id}")
+            proposal = db_client.get_item_sync(
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA"
+            )
+            
+            if not proposal:
+                raise Exception(f"Proposal {proposal_id} not found")
+            
+            proposal_code = proposal.get("proposal_code")
+            if not proposal_code:
+                raise Exception("Proposal code not found")
+            
+            # 2. Get PDF from S3
             print(f"Getting PDF for proposal: {proposal_code}")
             pdf_key = f"{proposal_code}/documents/"
             
@@ -54,7 +68,7 @@ class SimpleRFPAnalyzer:
             pdf_obj = self.s3.get_object(Bucket=self.bucket, Key=pdf_file)
             pdf_bytes = pdf_obj['Body'].read()
             
-            # 2. Extract text
+            # 3. Extract text
             print("Extracting text from PDF...")
             rfp_text = self.extract_text_from_pdf(pdf_bytes)
             
@@ -63,9 +77,9 @@ class SimpleRFPAnalyzer:
             
             print(f"Extracted {len(rfp_text)} characters from PDF")
             
-            # 3. Get prompt from DynamoDB
+            # 4. Get prompt from DynamoDB
             print("📝 Loading prompt from DynamoDB...")
-            prompt_parts = await self.get_prompt_from_dynamodb()
+            prompt_parts = self.get_prompt_from_dynamodb()
             
             if prompt_parts:
                 print("✅ Using DynamoDB prompt")
@@ -86,7 +100,7 @@ class SimpleRFPAnalyzer:
 {prompt_parts['output_format']}
 """.strip()
                 
-                # 4. Call Bedrock with separated prompts
+                # 5. Call Bedrock with separated prompts
                 print("📡 Sending to Bedrock for analysis...")
                 import time
                 start_time = time.time()
@@ -157,7 +171,7 @@ class SimpleRFPAnalyzer:
         except Exception as e:
             raise Exception(f"PDF text extraction failed: {str(e)}")
     
-    async def get_prompt_from_dynamodb(self) -> Optional[Dict[str, str]]:
+    def get_prompt_from_dynamodb(self) -> Optional[Dict[str, str]]:
         """Get prompt from DynamoDB with specific filters
         
         Returns:
