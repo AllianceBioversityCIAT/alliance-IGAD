@@ -508,21 +508,27 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
             }
         )
         
+        # Get proposal code for Worker
+        proposal_code = proposal.get("proposalCode")
+        if not proposal_code:
+            raise HTTPException(status_code=400, detail="Proposal code not found")
+        
         # Invoke Worker Lambda asynchronously
-        print(f"🚀 Invoking AnalysisWorkerFunction for proposal {proposal_id}")
+        print(f"🚀 Invoking AnalysisWorkerFunction for proposal {proposal_code}")
         
-        # Build worker function name from stack name
-        stack_name = os.environ.get("AWS_STACK_NAME", "igad-backend-testing")
-        worker_function_name = f"{stack_name}-AnalysisWorkerFunction"
+        # Get worker function ARN from environment variable
+        worker_function_arn = os.environ.get("WORKER_FUNCTION_ARN")
+        if not worker_function_arn:
+            raise Exception("WORKER_FUNCTION_ARN environment variable not set")
         
-        print(f"📝 Worker function name: {worker_function_name}")
+        print(f"📝 Worker function ARN: {worker_function_arn}")
         
         # Invoke async
         lambda_client.invoke(
-            FunctionName=worker_function_name,
+            FunctionName=worker_function_arn,
             InvocationType='Event',  # Async invocation
             Payload=json.dumps({
-                "proposal_id": proposal_id
+                "proposal_id": proposal_code  # Send proposal_code, not UUID
             })
         )
         

@@ -36,6 +36,32 @@ class DynamoDBClient:
             logger.error(f"Error getting item: {e}")
             raise
 
+    def update_item_sync(
+        self,
+        pk: str,
+        sk: str,
+        update_expression: str,
+        expression_attribute_values: Dict[str, Any],
+        expression_attribute_names: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Update item with expression (synchronous for Lambda workers)"""
+        try:
+            kwargs = {
+                "Key": {"PK": pk, "SK": sk},
+                "UpdateExpression": update_expression,
+                "ExpressionAttributeValues": expression_attribute_values,
+                "ReturnValues": "ALL_NEW",
+            }
+
+            if expression_attribute_names:
+                kwargs["ExpressionAttributeNames"] = expression_attribute_names
+
+            response = self.table.update_item(**kwargs)
+            return response.get("Attributes", {})
+        except ClientError as e:
+            logger.error(f"Error updating item: {e}")
+            raise
+
     async def get_item(self, pk: str, sk: str) -> Optional[Dict[str, Any]]:
         """Get single item by primary key"""
         try:

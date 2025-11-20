@@ -1,7 +1,6 @@
 import { AlertCircle } from 'lucide-react'
 import { StepProps } from './stepConfig'
 import styles from './proposalWriter.module.css'
-import RFPAnalysisResults from './components/RFPAnalysisResults'
 
 interface Step2Props extends StepProps {
   proposalId?: string
@@ -9,6 +8,11 @@ interface Step2Props extends StepProps {
 }
 
 export function Step2ContentGeneration({ formData, setFormData: _setFormData, proposalId, rfpAnalysis }: Step2Props) {
+  // Extract rfp_analysis data safely
+  const analysisData = rfpAnalysis?.rfp_analysis || rfpAnalysis
+  
+  console.log('🔍 Step2 - analysisData:', analysisData)
+  
   // Check if we should show "Missing Required Information"
   // Only show if no RFP has been uploaded (rfpAnalysis doesn't exist)
   if (!rfpAnalysis) {
@@ -47,10 +51,23 @@ export function Step2ContentGeneration({ formData, setFormData: _setFormData, pr
         </p>
       </div>
 
-      {/* RFP Analysis Results - Main Content */}
-      {rfpAnalysis && (
+      {/* RFP Analysis Results - Show complete AI response */}
+      {analysisData && (
         <div className={styles.uploadSection}>
-          <RFPAnalysisResults analysis={rfpAnalysis} />
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center gap-3 p-6 border-b border-gray-200">
+              <div className="w-6 h-6 text-green-600">✓</div>
+              <h3 className="text-xl font-semibold text-gray-900">
+                RFP Analysis Complete
+              </h3>
+            </div>
+            
+            <div className="p-6 bg-gray-900 overflow-auto max-h-[600px]" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+              <pre className="text-sm text-green-400 font-mono leading-relaxed whitespace-pre-wrap">
+                {JSON.stringify(analysisData, null, 2)}
+              </pre>
+            </div>
+          </div>
         </div>
       )}
 

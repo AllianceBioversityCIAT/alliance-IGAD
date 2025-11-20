@@ -36,12 +36,10 @@ def handler(event, context):
         
         # Update status to processing with timestamp
         db_client.update_item_sync(
-            Key={
-                "PK": f"PROPOSAL#{proposal_id}",
-                "SK": "METADATA"
-            },
-            UpdateExpression="SET analysis_status = :status, analysis_started_at = :started",
-            ExpressionAttributeValues={
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="SET analysis_status = :status, analysis_started_at = :started",
+            expression_attribute_values={
                 ":status": "processing",
                 ":started": datetime.utcnow().isoformat()
             }
@@ -57,17 +55,15 @@ def handler(event, context):
         
         # Save the result to DynamoDB
         db_client.update_item_sync(
-            Key={
-                "PK": f"PROPOSAL#{proposal_id}",
-                "SK": "METADATA"
-            },
-            UpdateExpression="""
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
                 SET rfp_analysis = :analysis,
                     analysis_status = :status,
                     analysis_completed_at = :completed,
                     updated_at = :updated
             """,
-            ExpressionAttributeValues={
+            expression_attribute_values={
                 ":analysis": result,
                 ":status": "completed",
                 ":completed": datetime.utcnow().isoformat(),
@@ -102,17 +98,15 @@ def handler(event, context):
         # Update status to failed
         try:
             db_client.update_item_sync(
-                Key={
-                    "PK": f"PROPOSAL#{proposal_id}",
-                    "SK": "METADATA"
-                },
-                UpdateExpression="""
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA",
+                update_expression="""
                     SET analysis_status = :status,
                         analysis_error = :error,
                         analysis_failed_at = :failed,
                         updated_at = :updated
                 """,
-                ExpressionAttributeValues={
+                expression_attribute_values={
                     ":status": "failed",
                     ":error": error_msg,
                     ":failed": datetime.utcnow().isoformat(),

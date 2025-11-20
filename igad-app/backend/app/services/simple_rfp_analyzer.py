@@ -40,7 +40,7 @@ class SimpleRFPAnalyzer:
             if not proposal:
                 raise Exception(f"Proposal {proposal_id} not found")
             
-            proposal_code = proposal.get("proposal_code")
+            proposal_code = proposal.get("proposalCode")
             if not proposal_code:
                 raise Exception("Proposal code not found")
             
@@ -256,12 +256,30 @@ Provide your analysis as a JSON object following the structure specified above."
         try:
             # Clean markdown code blocks
             response = response.strip()
-            if response.startswith('```json'):
-                response = response[7:]
-            if response.startswith('```'):
-                response = response[3:]
-            if response.endswith('```'):
-                response = response[:-3]
+            
+            # Extract JSON from markdown if present
+            import re
+            
+            # Try to find JSON code block (greedy match to get the largest JSON)
+            json_match = re.search(r'```json\s*(\{.*\})\s*```', response, re.DOTALL)
+            if json_match:
+                print("📦 Found JSON in code block")
+                response = json_match.group(1)
+            else:
+                # Try to find JSON object directly (look for outermost braces)
+                json_match = re.search(r'\{.*\}', response, re.DOTALL)
+                if json_match:
+                    print("📦 Found JSON object in response")
+                    response = json_match.group(0)
+                else:
+                    # Clean markdown markers
+                    if response.startswith('```json'):
+                        response = response[7:]
+                    if response.startswith('```'):
+                        response = response[3:]
+                    if response.endswith('```'):
+                        response = response[:-3]
+            
             response = response.strip()
             
             # Parse JSON
