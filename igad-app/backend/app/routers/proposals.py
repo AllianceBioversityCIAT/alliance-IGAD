@@ -489,19 +489,19 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
             }
         
         # Check if analysis is already in progress
-        analysis_status = proposal.get("analysis_status")
+        analysis_status = proposal.get("analysis_status_rfp")
         if analysis_status == "processing":
             return {
                 "status": "processing",
                 "message": "Analysis already in progress",
-                "started_at": proposal.get("analysis_started_at")
+                "started_at": proposal.get("rfp_analysis_started_at")
             }
         
         # Update status to processing
         await db_client.update_item(
             pk=pk,
             sk="METADATA",
-            update_expression="SET analysis_status = :status, analysis_started_at = :started",
+            update_expression="SET analysis_status_rfp = :status, rfp_analysis_started_at = :started",
             expression_attribute_values={
                 ":status": "processing",
                 ":started": datetime.utcnow().isoformat()
@@ -528,7 +528,8 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
             FunctionName=worker_function_arn,
             InvocationType='Event',  # Async invocation
             Payload=json.dumps({
-                "proposal_id": proposal_code  # Send proposal_code, not UUID
+                "proposal_id": proposal_code,  # Send proposal_code, not UUID
+                "analysis_type": "rfp"
             })
         )
         
@@ -585,23 +586,23 @@ async def get_analysis_status(proposal_id: str, user=Depends(get_current_user)):
         if proposal.get("user_id") != user.get("user_id"):
             raise HTTPException(status_code=403, detail="Access denied")
         
-        status = proposal.get("analysis_status", "not_started")
+        status = proposal.get("analysis_status_rfp", "not_started")
         
         if status == "completed":
             return {
                 "status": "completed",
                 "rfp_analysis": proposal.get("rfp_analysis"),
-                "completed_at": proposal.get("analysis_completed_at")
+                "completed_at": proposal.get("rfp_analysis_completed_at")
             }
         elif status == "failed":
             return {
                 "status": "failed",
-                "error": proposal.get("analysis_error", "Unknown error")
+                "error": proposal.get("rfp_analysis_error", "Unknown error")
             }
         elif status == "processing":
             return {
                 "status": "processing",
-                "started_at": proposal.get("analysis_started_at")
+                "started_at": proposal.get("rfp_analysis_started_at")
             }
         else:
             return {
@@ -612,6 +613,174 @@ async def get_analysis_status(proposal_id: str, user=Depends(get_current_user)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to check status: {str(e)}")
+
+
+@router.post("/{proposal_id}/analyze-concept")
+async def analyze_concept(proposal_id: str, user=Depends(get_current_user)):
+    """
+    Start Concept analysis (async - returns immediately with status)
+    Requires RFP analysis to be completed first
+    """
+    try:
+        # Get proposal
+        if proposal_id.startswith("PROP-"):
+            pk = f"PROPOSAL#{proposal_id}"
+            proposal_code = proposal_id
+        else:
+            items = await db_client.query_items(
+                pk=f"USER#{user.get('user_id')}",
+                index_name="GSI1"
+            )
+            
+            proposal_item = None
+            for item in items:
+                if item.get("id") == proposal_id:
+                    proposal_item = item
+                    break
+            
+            if not proposal_item:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+            
+            pk = proposal_item["PK"]
+            proposal_code = proposal_item.get("proposalCode", proposal_id)
+        
+        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        if proposal.get("user_id") != user.get("user_id"):
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Check if RFP analysis exists
+        if not proposal.get("rfp_analysis"):
+            raise HTTPException(status_code=400, detail="RFP analysis must be completed first")
+        
+        # Check if concept analysis already exists
+        if proposal.get("concept_analysis"):
+            return {
+                "status": "completed",
+                "concept_analysis": proposal.get("concept_analysis"),
+                "message": "Concept already analyzed",
+                "cached": True
+            }
+        
+        # Check if analysis is already in progress
+        analysis_status = proposal.get("analysis_status_concept")
+        if analysis_status == "processing":
+            return {
+                "status": "processing",
+                "message": "Concept analysis already in progress",
+                "started_at": proposal.get("concept_analysis_started_at")
+            }
+        
+        # Update status to processing
+        await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="SET analysis_status_concept = :status, concept_analysis_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat()
+            }
+        )
+        
+        # Invoke Worker Lambda asynchronously
+        print(f"🚀 Invoking AnalysisWorkerFunction for concept analysis: {proposal_code}")
+        
+        worker_function_arn = os.environ.get("WORKER_FUNCTION_ARN")
+        if not worker_function_arn:
+            raise Exception("WORKER_FUNCTION_ARN environment variable not set")
+        
+        lambda_client.invoke(
+            FunctionName=worker_function_arn,
+            InvocationType='Event',
+            Payload=json.dumps({
+                "proposal_id": proposal_code,
+                "analysis_type": "concept"
+            })
+        )
+        
+        print(f"✅ Concept analysis worker invoked successfully")
+        
+        return {
+            "status": "processing",
+            "message": "Concept analysis started. Poll /concept-status for completion.",
+            "started_at": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"❌ ERROR in analyze_concept endpoint:")
+        print(error_details)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Concept analysis failed: {str(e)}"
+        )
+
+
+@router.get("/{proposal_id}/concept-status")
+async def get_concept_status(proposal_id: str, user=Depends(get_current_user)):
+    """Poll for Concept analysis completion status"""
+    try:
+        # Get proposal
+        if proposal_id.startswith("PROP-"):
+            pk = f"PROPOSAL#{proposal_id}"
+        else:
+            items = await db_client.query_items(
+                pk=f"USER#{user.get('user_id')}",
+                index_name="GSI1"
+            )
+            
+            proposal_item = None
+            for item in items:
+                if item.get("id") == proposal_id:
+                    proposal_item = item
+                    break
+            
+            if not proposal_item:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+            
+            pk = proposal_item["PK"]
+        
+        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        if proposal.get("user_id") != user.get("user_id"):
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        status = proposal.get("analysis_status_concept", "not_started")
+        
+        if status == "completed":
+            return {
+                "status": "completed",
+                "concept_analysis": proposal.get("concept_analysis"),
+                "completed_at": proposal.get("concept_analysis_completed_at")
+            }
+        elif status == "failed":
+            return {
+                "status": "failed",
+                "error": proposal.get("concept_analysis_error", "Unknown error")
+            }
+        elif status == "processing":
+            return {
+                "status": "processing",
+                "started_at": proposal.get("concept_analysis_started_at")
+            }
+        else:
+            return {
+                "status": "not_started"
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to check concept status: {str(e)}")
 
 
 @router.post("/prompts/with-categories")

@@ -1,6 +1,6 @@
 """
-RFP Analysis Worker Lambda
-Handles long-running RFP analysis tasks asynchronously.
+Analysis Worker Lambda
+Handles long-running RFP and Concept analysis tasks asynchronously.
 """
 import json
 import logging
@@ -8,6 +8,7 @@ import traceback
 from datetime import datetime
 
 from ..services.simple_rfp_analyzer import SimpleRFPAnalyzer
+from ..services.simple_concept_analyzer import SimpleConceptAnalyzer
 from ..database.client import db_client
 
 logger = logging.getLogger(__name__)
@@ -15,73 +16,136 @@ logger.setLevel(logging.INFO)
 
 def handler(event, context):
     """
-    Lambda handler for async RFP analysis.
+    Lambda handler for async analysis.
     
     Expected event format:
     {
-        "proposal_id": "uuid-string"
+        "proposal_id": "uuid-string",
+        "analysis_type": "rfp" | "concept"
     }
     """
     try:
         logger.info("=" * 80)
-        logger.info("🚀 RFP Analysis Worker Started")
+        logger.info("🚀 Analysis Worker Started")
         logger.info("=" * 80)
         
-        # Extract proposal_id from event
+        # Extract parameters from event
         proposal_id = event.get("proposal_id")
+        analysis_type = event.get("analysis_type", "rfp")
+        
         if not proposal_id:
             raise ValueError("Missing proposal_id in event")
         
         logger.info(f"📋 Processing proposal: {proposal_id}")
+        logger.info(f"📊 Analysis type: {analysis_type}")
         
-        # Update status to processing with timestamp
-        db_client.update_item_sync(
-            pk=f"PROPOSAL#{proposal_id}",
-            sk="METADATA",
-            update_expression="SET analysis_status = :status, analysis_started_at = :started",
-            expression_attribute_values={
-                ":status": "processing",
-                ":started": datetime.utcnow().isoformat()
-            }
-        )
+        if analysis_type == "rfp":
+            # Update status to processing with timestamp
+            db_client.update_item_sync(
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA",
+                update_expression="SET analysis_status_rfp = :status, rfp_analysis_started_at = :started",
+                expression_attribute_values={
+                    ":status": "processing",
+                    ":started": datetime.utcnow().isoformat()
+                }
+            )
+            
+            # Run the RFP analysis
+            logger.info("🔍 Starting RFP analysis...")
+            analyzer = SimpleRFPAnalyzer()
+            result = analyzer.analyze_rfp(proposal_id)
+            
+            logger.info("✅ RFP analysis completed successfully")
+            logger.info(f"📊 Result keys: {list(result.keys())}")
+            
+            # Save the result to DynamoDB
+            db_client.update_item_sync(
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA",
+                update_expression="""
+                    SET rfp_analysis = :analysis,
+                        analysis_status_rfp = :status,
+                        rfp_analysis_completed_at = :completed,
+                        updated_at = :updated
+                """,
+                expression_attribute_values={
+                    ":analysis": result,
+                    ":status": "completed",
+                    ":completed": datetime.utcnow().isoformat(),
+                    ":updated": datetime.utcnow().isoformat()
+                }
+            )
+            
+            logger.info("💾 RFP result saved to DynamoDB")
         
-        # Run the analysis
-        logger.info("🔍 Starting RFP analysis...")
-        analyzer = SimpleRFPAnalyzer()
-        result = analyzer.analyze_rfp(proposal_id)
+        elif analysis_type == "concept":
+            # Get proposal to check RFP analysis exists
+            proposal = db_client.get_item_sync(
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA"
+            )
+            
+            if not proposal:
+                raise Exception(f"Proposal {proposal_id} not found")
+            
+            rfp_analysis = proposal.get("rfp_analysis")
+            if not rfp_analysis:
+                raise Exception("RFP analysis must be completed first")
+            
+            # Update status to processing
+            db_client.update_item_sync(
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA",
+                update_expression="SET analysis_status_concept = :status, concept_analysis_started_at = :started",
+                expression_attribute_values={
+                    ":status": "processing",
+                    ":started": datetime.utcnow().isoformat()
+                }
+            )
+            
+            # Run the Concept analysis
+            logger.info("🔍 Starting Concept analysis...")
+            analyzer = SimpleConceptAnalyzer()
+            result = analyzer.analyze_concept(proposal_id, rfp_analysis)
+            
+            logger.info("✅ Concept analysis completed successfully")
+            logger.info(f"📊 Result keys: {list(result.keys())}")
+            
+            # Save the result to DynamoDB
+            db_client.update_item_sync(
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA",
+                update_expression="""
+                    SET concept_analysis = :analysis,
+                        analysis_status_concept = :status,
+                        concept_analysis_completed_at = :completed,
+                        updated_at = :updated
+                """,
+                expression_attribute_values={
+                    ":analysis": result,
+                    ":status": "completed",
+                    ":completed": datetime.utcnow().isoformat(),
+                    ":updated": datetime.utcnow().isoformat()
+                }
+            )
+            
+            logger.info("💾 Concept result saved to DynamoDB")
         
-        logger.info("✅ Analysis completed successfully")
-        logger.info(f"📊 Result keys: {list(result.keys())}")
+        else:
+            raise ValueError(f"Invalid analysis_type: {analysis_type}")
         
-        # Save the result to DynamoDB
-        db_client.update_item_sync(
-            pk=f"PROPOSAL#{proposal_id}",
-            sk="METADATA",
-            update_expression="""
-                SET rfp_analysis = :analysis,
-                    analysis_status = :status,
-                    analysis_completed_at = :completed,
-                    updated_at = :updated
-            """,
-            expression_attribute_values={
-                ":analysis": result,
-                ":status": "completed",
-                ":completed": datetime.utcnow().isoformat(),
-                ":updated": datetime.utcnow().isoformat()
-            }
-        )
-        
-        logger.info("💾 Result saved to DynamoDB")
         logger.info("=" * 80)
-        logger.info("✅ RFP Analysis Worker Completed Successfully")
+        logger.info(f"✅ {analysis_type.upper()} Analysis Worker Completed Successfully")
         logger.info("=" * 80)
         
         return {
             "statusCode": 200,
             "body": json.dumps({
                 "proposal_id": proposal_id,
+                "analysis_type": analysis_type,
                 "status": "completed",
-                "message": "Analysis completed successfully"
+                "message": f"{analysis_type.upper()} analysis completed successfully"
             })
         }
         
@@ -90,29 +154,50 @@ def handler(event, context):
         error_trace = traceback.format_exc()
         
         logger.error("=" * 80)
-        logger.error("❌ RFP Analysis Worker Failed")
+        logger.error(f"❌ {event.get('analysis_type', 'RFP').upper()} Analysis Worker Failed")
         logger.error("=" * 80)
         logger.error(f"Error: {error_msg}")
         logger.error(f"Traceback:\n{error_trace}")
         
-        # Update status to failed
+        # Update status to failed based on analysis type
         try:
-            db_client.update_item_sync(
-                pk=f"PROPOSAL#{proposal_id}",
-                sk="METADATA",
-                update_expression="""
-                    SET analysis_status = :status,
-                        analysis_error = :error,
-                        analysis_failed_at = :failed,
-                        updated_at = :updated
-                """,
-                expression_attribute_values={
-                    ":status": "failed",
-                    ":error": error_msg,
-                    ":failed": datetime.utcnow().isoformat(),
-                    ":updated": datetime.utcnow().isoformat()
-                }
-            )
+            analysis_type = event.get("analysis_type", "rfp")
+            
+            if analysis_type == "rfp":
+                db_client.update_item_sync(
+                    pk=f"PROPOSAL#{proposal_id}",
+                    sk="METADATA",
+                    update_expression="""
+                        SET analysis_status_rfp = :status,
+                            rfp_analysis_error = :error,
+                            rfp_analysis_failed_at = :failed,
+                            updated_at = :updated
+                    """,
+                    expression_attribute_values={
+                        ":status": "failed",
+                        ":error": error_msg,
+                        ":failed": datetime.utcnow().isoformat(),
+                        ":updated": datetime.utcnow().isoformat()
+                    }
+                )
+            else:  # concept
+                db_client.update_item_sync(
+                    pk=f"PROPOSAL#{proposal_id}",
+                    sk="METADATA",
+                    update_expression="""
+                        SET analysis_status_concept = :status,
+                            concept_analysis_error = :error,
+                            concept_analysis_failed_at = :failed,
+                            updated_at = :updated
+                    """,
+                    expression_attribute_values={
+                        ":status": "failed",
+                        ":error": error_msg,
+                        ":failed": datetime.utcnow().isoformat(),
+                        ":updated": datetime.utcnow().isoformat()
+                    }
+                )
+            
             logger.info("💾 Error status saved to DynamoDB")
         except Exception as db_error:
             logger.error(f"Failed to save error status: {str(db_error)}")
@@ -121,6 +206,7 @@ def handler(event, context):
             "statusCode": 500,
             "body": json.dumps({
                 "proposal_id": proposal_id,
+                "analysis_type": event.get("analysis_type", "rfp"),
                 "status": "failed",
                 "error": error_msg
             })

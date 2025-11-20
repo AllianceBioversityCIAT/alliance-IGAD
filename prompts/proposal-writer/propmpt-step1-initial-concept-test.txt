@@ -1,0 +1,499 @@
+GOLDEN PROMPT SKELETON — KIRO Testing Plan (Step 1 – Second Part: Initial Concept)
+Engine Context: KIRO
+ROLE: Senior QA / Full-Stack Engineer (Executor)
+Principle: “Test end-to-end, keep it simple, log everything clearly.”
+
+======================================================================
+GOAL
+======================================================================
+Run a complete end-to-end test of **Step 1 – Second Part (Initial Concept)** of the Proposal Writer to verify:
+
+- Backend endpoints work correctly.
+- Files are stored in S3 in the correct paths.
+- Data is written correctly to DynamoDB.
+- Sequential analysis flow works: **RFP → Concept**.
+
+At the end you should be able to confirm that:
+- RFP and Concept data are correctly uploaded/created.
+- RFP analysis completes successfully.
+- Concept analysis uses the RFP analysis result and completes successfully.
+- All status fields and timestamps are stored and readable.
+
+======================================================================
+OUTPUT
+======================================================================
+By following the test steps below, KIRO must:
+
+1. Execute the described API calls (curl/CLI).
+2. Verify S3 and DynamoDB state via AWS CLI commands.
+3. Confirm logs in CloudWatch for the Worker Lambda.
+4. Produce a **final checklist** of passed/failed tests.
+
+All tests are **manual + scripted**; do not invent new flows outside this plan.
+
+======================================================================
+LIMITS
+======================================================================
+- Do NOT modify any code; only call APIs and inspect data/logs.
+- Assume environment (infra, code) is already deployed.
+- Use only the endpoints, paths, and AWS commands defined here.
+- Use a dedicated **test proposal** (e.g., `PROP-20231120-TEST`), never production data.
+
+======================================================================
+DATA
+======================================================================
+Environment variables and table/bucket names must already be configured.
+
+You will interact with:
+- API Gateway endpoint: `https://YOUR_API_ENDPOINT`
+- S3 bucket: `YOUR_BUCKET`
+- DynamoDB table: `igad-testing-main-table`
+- Worker Lambda: `AnalysisWorkerFunction` (name may vary, adjust accordingly)
+
+======================================================================
+EVALUATION
+======================================================================
+The testing is considered successful when:
+
+- All phases (1–5) complete without unexpected errors.
+- RFP and Concept analyses both show `status = "completed"`.
+- S3 structure exactly matches the new layout.
+- Backward compatibility fallback works for old RFP paths.
+- Final checklist shows all items marked as passed.
+
+======================================================================
+🧪 INSTRUCCIONES DE TESTING PARA KIRO
+======================================================================
+
+📋 OBJETIVO
+
+Probar la implementación completa de Step 1 - Second Part (Initial Concept) verificando:
+
+  - Backend endpoints funcionan correctamente
+  - Archivos se guardan en S3 en las rutas correctas
+  - Datos se guardan en DynamoDB
+  - Análisis secuencial funciona (RFP → Concept)
+
+----------------------------------------------------------------------
+🔧 PRE-REQUISITOS
+----------------------------------------------------------------------
+
+1. Verificar Variables de Entorno
+
+  # Backend debe tener configuradas:
+  echo $PROPOSALS_BUCKET
+  echo $TABLE_NAME
+  echo $WORKER_FUNCTION_ARN
+
+2. Verificar Prompt en DynamoDB
+
+  # Query para verificar que existe el prompt de Initial Concept
+  aws dynamodb scan \
+    --table-name igad-testing-main-table \
+    --filter-expression "is_active = :active AND section = :section AND sub_section = :sub AND contains(categories, :cat)" \
+    --expression-attribute-values '{
+      ":active": {"BOOL": true},
+      ":section": {"S": "proposal_writer"},
+      ":sub": {"S": "step-1"},
+      ":cat": {"S": "Initial Concept"}
+    }'
+
+Resultado esperado: Debe retornar 1 item con el prompt de Initial Concept.  
+Si no existe, necesitas crearlo primero.
+
+======================================================================
+🧪 FASE 1: TEST BACKEND - ENDPOINTS CONCEPT
+======================================================================
+
+Test 1.1: Upload Concept File
+
+Objetivo: Verificar que archivos se suben a `/documents/initial_concept/`
+
+  # 1. Crear un proposal de test (o usar uno existente)
+  PROPOSAL_ID="PROP-20231120-TEST"  # Reemplazar con uno real
+  
+  # 2. Crear archivo de test
+  echo "This is a test concept document with more than 100 characters to meet the minimum requirement. This document outlines our initial concept for the proposal." > /tmp/test_concept.txt
+  
+  # 3. Upload usando API
+  curl -X POST \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}/documents/upload-concept-file" \
+    -H "Authorization: Bearer YOUR_TOKEN" \
+    -F "file=@/tmp/test_concept.txt"
+
+Verificar en S3:
+
+  aws s3 ls s3://YOUR_BUCKET/${PROPOSAL_ID}/documents/initial_concept/ --recursive
+
+Resultado esperado:
+
+  2024-11-20 14:45:00       XXX test_concept.txt
+
+----------------------------------------------------------------------
+Test 1.2: Save Concept Text
+
+Objetivo: Verificar que texto se guarda como archivo `concept_text.txt`
+
+  PROPOSAL_ID="PROP-20231120-TEST"
+  
+  # Upload texto
+  curl -X POST \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}/documents/save-concept-text" \
+    -H "Authorization: Bearer YOUR_TOKEN" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d "concept_text=This is our initial concept for the project. We plan to develop a comprehensive solution that addresses the key challenges identified in the RFP. Our approach includes innovative methodologies."
+
+Verificar en S3:
+
+  aws s3 cp s3://YOUR_BUCKET/${PROPOSAL_ID}/documents/initial_concept/concept_text.txt -
+
+Resultado esperado: Debe mostrar el texto guardado.
+
+----------------------------------------------------------------------
+Test 1.3: Delete Concept Text
+
+  curl -X DELETE \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}/documents/concept-text" \
+    -H "Authorization: Bearer YOUR_TOKEN"
+
+Verificar en S3: El archivo `concept_text.txt` NO debe existir.
+
+----------------------------------------------------------------------
+Test 1.4: Delete Concept File
+
+  curl -X DELETE \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}/documents/concept/test_concept.txt" \
+    -H "Authorization: Bearer YOUR_TOKEN"
+
+Verificar en S3: El archivo NO debe existir.
+
+======================================================================
+🧪 FASE 2: TEST ANÁLISIS RFP (Verificar cambio de path)
+======================================================================
+
+Test 2.1: Verificar RFP Upload con nueva estructura
+
+Objetivo: Confirmar que RFPs se suben a `/documents/rfp/` (no `/documents/`)
+
+  PROPOSAL_ID="PROP-20231120-TEST"
+  
+  # Subir RFP
+  curl -X POST \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}/documents/upload" \
+    -H "Authorization: Bearer YOUR_TOKEN" \
+    -F "file=@/path/to/test.pdf"
+
+Verificar en S3:
+
+  # Debe estar en subcarpeta /rfp/
+  aws s3 ls s3://YOUR_BUCKET/${PROPOSAL_ID}/documents/rfp/ --recursive
+
+Resultado esperado:
+
+  2024-11-20 14:50:00    XXXXX test.pdf
+
+----------------------------------------------------------------------
+Test 2.2: Trigger RFP Analysis
+
+  PROPOSAL_ID="PROP-20231120-TEST"
+  
+  # Iniciar análisis
+  curl -X POST \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}/analyze-rfp" \
+    -H "Authorization: Bearer YOUR_TOKEN"
+
+Resultado esperado:
+
+  {
+    "status": "processing",
+    "message": "RFP analysis started...",
+    "started_at": "2024-11-20T14:50:00.000Z"
+  }
+
+----------------------------------------------------------------------
+Test 2.3: Poll RFP Analysis Status
+
+  # Esperar 10–30 segundos
+  curl -X GET \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}/analysis-status" \
+    -H "Authorization: Bearer YOUR_TOKEN"
+
+Resultado esperado (cuando complete):
+
+  {
+    "status": "completed",
+    "rfp_analysis": {
+      "rfp_analysis": { ... },
+      "status": "completed"
+    },
+    "completed_at": "2024-11-20T14:50:30.000Z"
+  }
+
+Verificar en DynamoDB:
+
+  aws dynamodb get-item \
+    --table-name igad-testing-main-table \
+    --key '{"PK": {"S": "PROPOSAL#'${PROPOSAL_ID}'"}, "SK": {"S": "METADATA"}}'
+
+Debe tener:
+
+  - analysis_status_rfp = "completed"
+  - rfp_analysis con los resultados
+  - rfp_analysis_completed_at con timestamp
+
+----------------------------------------------------------------------
+Test 2.4: Ver Logs del Worker
+
+  # Ver logs recientes
+  aws logs tail /aws/lambda/AnalysisWorkerFunction --follow
+
+Buscar en logs:
+
+  - "🚀 Analysis Worker Started"
+  - "📋 Processing proposal: PROP-..."
+  - "📊 Analysis type: rfp"
+  - "Getting PDF for proposal..."
+  - "Downloading PDF: .../rfp/test.pdf"
+  - "✅ RFP analysis completed successfully"
+
+======================================================================
+🧪 FASE 3: TEST ANÁLISIS CONCEPT (COMPLETO)
+======================================================================
+
+Test 3.1: Preparar datos para Concept Analysis
+
+  PROPOSAL_ID="PROP-20231120-TEST"
+  
+  # Asegurarse de tener:
+  # - RFP analizado (Fase 2 completa)
+  # - Concept text o concept file
+
+  # Opción A: Subir texto
+  curl -X POST \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}/documents/save-concept-text" \
+    -H "Authorization: Bearer YOUR_TOKEN" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d "concept_text=Our project concept focuses on climate resilience in IGAD member states. We will develop community-based adaptation strategies integrating traditional knowledge with modern climate science. Target beneficiaries include 50,000 smallholder farmers across Ethiopia, Kenya, and Somalia."
+
+----------------------------------------------------------------------
+Test 3.2: Trigger Concept Analysis
+
+  curl -X POST \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}/analyze-concept" \
+    -H "Authorization: Bearer YOUR_TOKEN"
+
+Resultado esperado:
+
+  {
+    "status": "processing",
+    "message": "Concept analysis started...",
+    "started_at": "2024-11-20T14:55:00.000Z"
+  }
+
+Si falla con 400:
+
+  {
+    "detail": "RFP analysis must be completed first"
+  }
+
+→ Completar Fase 2 primero.
+
+----------------------------------------------------------------------
+Test 3.3: Poll Concept Analysis Status
+
+  # Esperar 15–40 segundos
+  curl -X GET \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}/concept-status" \
+    -H "Authorization: Bearer YOUR_TOKEN"
+
+Resultado esperado (cuando complete):
+
+  {
+    "status": "completed",
+    "concept_analysis": {
+      "concept_analysis": {
+        "fit_assessment": { ... },
+        "strong_aspects": [ ... ],
+        "sections_needing_elaboration": [ ... ]
+      },
+      "status": "completed"
+    },
+    "completed_at": "2024-11-20T14:55:40.000Z"
+  }
+
+----------------------------------------------------------------------
+Test 3.4: Ver Logs del Concept Worker
+
+  aws logs tail /aws/lambda/AnalysisWorkerFunction --follow
+
+Buscar en logs:
+
+  - "📊 Analysis type: concept"
+  - "Getting concept for proposal..."
+  - "Trying to get concept text: .../initial_concept/concept_text.txt"
+  - "✅ Found concept text: XXX characters"
+  - "📝 Loading prompt from DynamoDB..."
+  - "✅ Found prompt: Initial Concept Analyzer..."
+  - "📡 Sending to Bedrock for concept analysis..."
+  - "✅ Concept analysis completed successfully"
+
+O si usa archivo:
+
+  - "Looking for concept files..."
+  - "Extracting text from: .../initial_concept/XXX.pdf"
+
+----------------------------------------------------------------------
+Test 3.5: Verificar DynamoDB Final
+
+  aws dynamodb get-item \
+    --table-name igad-testing-main-table \
+    --key '{"PK": {"S": "PROPOSAL#'${PROPOSAL_ID}'"}, "SK": {"S": "METADATA"}}' \
+    --output json | jq '.Item | {
+      rfp_status: .analysis_status_rfp.S,
+      concept_status: .analysis_status_concept.S,
+      has_rfp_analysis: (.rfp_analysis != null),
+      has_concept_analysis: (.concept_analysis != null)
+    }'
+
+Resultado esperado:
+
+  {
+    "rfp_status": "completed",
+    "concept_status": "completed",
+    "has_rfp_analysis": true,
+    "has_concept_analysis": true
+  }
+
+======================================================================
+🧪 FASE 4: TEST ESTRUCTURA S3 COMPLETA
+======================================================================
+
+Test 4.1: Verificar estructura de folders
+
+  PROPOSAL_ID="PROP-20231120-TEST"
+  
+  aws s3 ls s3://YOUR_BUCKET/${PROPOSAL_ID}/ --recursive
+
+Resultado esperado:
+
+  documents/rfp/test.pdf
+  documents/initial_concept/concept_text.txt
+
+NO debe existir:
+
+  documents/test.pdf   (estructura vieja)
+
+----------------------------------------------------------------------
+Test 4.2: Test de Compatibilidad hacia atrás
+
+  OLD_PROPOSAL="PROP-OLD-TEST"
+  echo "Old RFP" > /tmp/old_rfp.pdf
+  aws s3 cp /tmp/old_rfp.pdf s3://YOUR_BUCKET/${OLD_PROPOSAL}/documents/old_rfp.pdf
+  
+  curl -X POST \
+    "https://YOUR_API_ENDPOINT/api/proposals/${OLD_PROPOSAL}/analyze-rfp" \
+    -H "Authorization: Bearer YOUR_TOKEN"
+  
+  aws logs tail /aws/lambda/AnalysisWorkerFunction --follow
+
+Buscar:
+
+  - "⚠️ No RFP in new structure /rfp/, trying old structure..."
+  - "Downloading PDF: .../documents/old_rfp.pdf"
+
+======================================================================
+🧪 FASE 5: TEST LIMPIEZA (DELETE)
+======================================================================
+
+Test 5.1: Delete Draft completo
+
+  PROPOSAL_ID="PROP-20231120-TEST"
+  
+  aws s3 ls s3://YOUR_BUCKET/${PROPOSAL_ID}/ --recursive
+  
+  curl -X DELETE \
+    "https://YOUR_API_ENDPOINT/api/proposals/${PROPOSAL_ID}" \
+    -H "Authorization: Bearer YOUR_TOKEN"
+  
+  aws s3 ls s3://YOUR_BUCKET/${PROPOSAL_ID}/ --recursive
+
+Resultado esperado: ningún archivo listado.
+
+======================================================================
+📊 CHECKLIST FINAL
+======================================================================
+
+Backend Endpoints
+  - [ ] POST upload-concept-file
+  - [ ] POST save-concept-text
+  - [ ] DELETE concept-text
+  - [ ] DELETE concept/{filename}
+  - [ ] POST analyze-concept
+  - [ ] GET concept-status
+
+S3 Structure
+  - [ ] RFP → /documents/rfp/
+  - [ ] concept_text → /documents/initial_concept/concept_text.txt
+  - [ ] Concept files → /documents/initial_concept/
+  - [ ] Fallback funciona para propuestas viejas
+
+RFP Analysis
+  - [ ] Worker usa analysis_type="rfp"
+  - [ ] Lee de /documents/rfp/ o fallback de /documents/
+  - [ ] Guarda en rfp_analysis
+  - [ ] Estado en analysis_status_rfp
+
+Concept Analysis
+  - [ ] Worker usa analysis_type="concept"
+  - [ ] Verifica rfp_analysis
+  - [ ] Lee concept de S3 (texto o archivo)
+  - [ ] Obtiene prompt correcto de DynamoDB
+  - [ ] Inyecta rfp_analysis en prompt
+  - [ ] Guarda concept_analysis
+  - [ ] Estado en analysis_status_concept
+
+DynamoDB
+  - [ ] Proposal tiene ambos análisis
+  - [ ] Estados separados
+  - [ ] Timestamps correctos
+
+Cleanup
+  - [ ] Delete draft elimina todo el folder S3
+
+======================================================================
+🐛 TROUBLESHOOTING
+======================================================================
+
+Error: "PROPOSALS_BUCKET environment variable not set"
+  aws lambda get-function-configuration \
+    --function-name YOUR_LAMBDA_NAME \
+    --query 'Environment.Variables'
+
+Error: "No active prompts found for Initial Concept"
+  aws dynamodb scan \
+    --table-name igad-testing-main-table \
+    --filter-expression "contains(categories, :cat)" \
+    --expression-attribute-values '{":cat": {"S": "Initial Concept"}}'
+
+Error: "No concept content found"
+  aws s3 ls s3://YOUR_BUCKET/PROP-XXX/documents/initial_concept/ --recursive
+
+Worker no se invoca
+  aws lambda get-function-configuration \
+    --function-name YOUR_API_LAMBDA \
+    --query 'Environment.Variables.WORKER_FUNCTION_ARN'
+
+======================================================================
+📝 REPORTE FINAL
+======================================================================
+
+Al finalizar, reportar:
+
+  - Tests pasados: X / total
+  - Tests fallidos: lista y causa principal
+  - Logs relevantes (snippets)
+  - Observaciones y recomendaciones
+
+======================================================================
+
+you can use this file as initial concept example : specs/proposal-writer/ConceptNote - Milkywire AI Concept.docx

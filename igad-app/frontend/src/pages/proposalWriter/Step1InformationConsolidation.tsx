@@ -45,6 +45,13 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   const [uploadError, setUploadError] = useState<string>('')
   const [errorDetails, setErrorDetails] = useState<string>('')
   const [showManualInput, setShowManualInput] = useState(false)
+  
+  // Concept states
+  const [isUploadingConcept, setIsUploadingConcept] = useState(false)
+  const [isSavingConceptText, setIsSavingConceptText] = useState(false)
+  const [conceptTextSaved, setConceptTextSaved] = useState(false)
+  const [isEditingConceptText, setIsEditingConceptText] = useState(false)
+  const [conceptUploadError, setConceptUploadError] = useState('')
 
   // Load data from localStorage or proposal when component mounts
   useEffect(() => {
@@ -223,7 +230,12 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   }
 
   const hasRequiredFiles = () => {
-    return getUploadedFileCount('rfp-document') > 0
+    const hasRFP = getUploadedFileCount('rfp-document') > 0
+    const hasConcept = 
+      (formData.textInputs['initial-concept'] || '').length >= 100 ||
+      getUploadedFileCount('concept-document') > 0
+    
+    return hasRFP && hasConcept
   }
 
   const handleDeleteFile = async (section: string, fileIndex: number) => {
@@ -290,6 +302,115 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
     }
   }
 
+  // Concept handlers
+  const handleSaveConceptText = async () => {
+    const text = formData.textInputs['initial-concept'] || ''
+    
+    if (text.length < 100) {
+      setConceptUploadError('Concept text must be at least 100 characters')
+      return
+    }
+    
+    if (!proposalId) return
+    
+    setIsSavingConceptText(true)
+    setConceptUploadError('')
+    
+    try {
+      const { proposalService } = await import('../../services/proposalService')
+      await proposalService.saveConceptText(proposalId, text)
+      
+      setConceptTextSaved(true)
+      setIsEditingConceptText(false)
+      console.log('✅ Concept text saved successfully')
+    } catch (error: any) {
+      console.error('❌ Failed to save concept text:', error)
+      setConceptUploadError(error.response?.data?.detail || 'Failed to save concept text')
+    } finally {
+      setIsSavingConceptText(false)
+    }
+  }
+
+  const handleEditConceptText = () => {
+    setIsEditingConceptText(true)
+    setConceptTextSaved(false)
+  }
+
+  const handleDeleteConceptText = async () => {
+    if (!confirm('Delete saved concept text?')) return
+    if (!proposalId) return
+    
+    try {
+      const { proposalService } = await import('../../services/proposalService')
+      await proposalService.deleteConceptText(proposalId)
+      
+      setFormData(prev => ({
+        ...prev,
+        textInputs: { ...prev.textInputs, 'initial-concept': '' }
+      }))
+      
+      setConceptTextSaved(false)
+      setIsEditingConceptText(false)
+      console.log('✅ Concept text deleted')
+    } catch (error: any) {
+      console.error('❌ Failed to delete concept text:', error)
+      setConceptUploadError(error.response?.data?.detail || 'Failed to delete concept text')
+    }
+  }
+
+  const handleConceptFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    if (!proposalId) return
+    
+    const file = files[0]
+    setIsUploadingConcept(true)
+    setConceptUploadError('')
+    
+    try {
+      const { proposalService } = await import('../../services/proposalService')
+      await proposalService.uploadConceptFile(proposalId, file)
+      
+      // Update local state
+      setFormData(prev => ({
+        ...prev,
+        uploadedFiles: {
+          ...prev.uploadedFiles,
+          'concept-document': [file.name]
+        }
+      }))
+      
+      console.log('✅ Concept file uploaded successfully')
+    } catch (error: any) {
+      console.error('❌ Failed to upload concept file:', error)
+      setConceptUploadError(error.response?.data?.detail || 'Failed to upload concept file')
+    } finally {
+      setIsUploadingConcept(false)
+    }
+  }
+
+  const handleDeleteConceptFile = async (filename: string) => {
+    if (!confirm(`Delete ${filename}?`)) return
+    if (!proposalId) return
+    
+    try {
+      const { proposalService } = await import('../../services/proposalService')
+      await proposalService.deleteConceptFile(proposalId, filename)
+      
+      setFormData(prev => ({
+        ...prev,
+        uploadedFiles: {
+          ...prev.uploadedFiles,
+          'concept-document': []
+        }
+      }))
+      
+      console.log('✅ Concept file deleted')
+    } catch (error: any) {
+      console.error('❌ Failed to delete concept file:', error)
+      setConceptUploadError(error.response?.data?.detail || 'Failed to delete concept file')
+    }
+  }
+
   // Show skeleton until proposal is loaded
   if (!proposalId) {
     return (
@@ -321,18 +442,20 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           <div className={styles.progressCardInfo}>
             <h3 className={styles.progressCardTitle}>Information Gathering Progress</h3>
             <p className={styles.progressCardDescription}>
-              Collect all necessary documents and context before AI analysis
+              Complete RFP and Initial Concept sections to proceed with AI analysis
             </p>
           </div>
           <div className={styles.progressCardStats}>
-            <span className={styles.progressCount}>{hasRequiredFiles() ? '1' : '0'}/3</span>
-            <span className={styles.progressLabel}>sections complete</span>
+            <span className={styles.progressCount}>
+              {hasRequiredFiles() ? '2/2' : (getUploadedFileCount('rfp-document') > 0 ? '1/2' : '0/2')}
+            </span>
+            <span className={styles.progressLabel}>required sections complete</span>
           </div>
         </div>
         <div className={styles.progressCardBar}>
           <div
             className={styles.progressCardFill}
-            style={{ width: hasRequiredFiles() ? '33%' : '1%' }}
+            style={{ width: hasRequiredFiles() ? '100%' : (getUploadedFileCount('rfp-document') > 0 ? '50%' : '1%') }}
           />
         </div>
       </div>
@@ -596,8 +719,8 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           <div className={styles.uploadSectionInfo}>
             <h3 className={styles.uploadSectionTitle}>Initial Concept or Direction*</h3>
             <p className={styles.uploadSectionDescription}>
-              Outline your initial ideas, approach, or hypothesis for this proposal. You can have
-              formal or upload a document outlining your concept.
+              Outline your initial ideas, approach, or hypothesis for this proposal. You can write
+              text or upload a document outlining your concept.
             </p>
           </div>
         </div>
@@ -607,17 +730,48 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           placeholder="Describe your initial concept, proposed approach, target beneficiaries, expected outcomes, implementation strategy, or any specific innovations you plan to include..."
           value={formData.textInputs['initial-concept'] || ''}
           onChange={e => handleTextChange('initial-concept', e.target.value)}
-          disabled={isUpdating}
+          disabled={(conceptTextSaved && !isEditingConceptText) || isSavingConceptText}
         />
 
         <div className={styles.textAreaFooter}>
-          <span className={styles.textAreaHint}>
-            Please provide more detail about your concept (minimum 100 characters)
-          </span>
-          <span className={styles.textAreaCount}>
-            {(formData.textInputs['initial-concept'] || '').length} characters
-          </span>
+          <div>
+            <span className={styles.textAreaHint}>
+              Please provide more detail about your concept (minimum 100 characters)
+            </span>
+            <span className={styles.textAreaCount}>
+              {(formData.textInputs['initial-concept'] || '').length} characters
+            </span>
+          </div>
+          
+          <div className={styles.textAreaActions}>
+            {!conceptTextSaved ? (
+              <button
+                onClick={handleSaveConceptText}
+                disabled={isSavingConceptText || (formData.textInputs['initial-concept'] || '').length < 100}
+                className={styles.saveButton}
+              >
+                {isSavingConceptText ? 'Saving...' : 'Save Text'}
+              </button>
+            ) : (
+              <>
+                <span className={styles.savedIndicator}>✓ Text saved</span>
+                <button onClick={handleEditConceptText} className={styles.editButton}>
+                  Edit
+                </button>
+                <button onClick={handleDeleteConceptText} className={styles.deleteButton}>
+                  Delete
+                </button>
+              </>
+            )}
+          </div>
         </div>
+
+        {conceptUploadError && (
+          <div className={styles.errorMessage}>
+            <AlertTriangle size={16} />
+            <span>{conceptUploadError}</span>
+          </div>
+        )}
 
         {/* Upload Alternative */}
         <div className={styles.uploadAlternative}>
@@ -626,33 +780,69 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             Upload an existing Word document, PDF, or other file outlining your concept instead
           </p>
 
-          <div className={styles.uploadAreaSmall}>
-            <FileText className={styles.uploadAreaIcon} size={24} />
-            <p className={styles.uploadAreaTitle}>Drop concept document here</p>
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={e => handleFileUpload('concept-document', e.target.files)}
-              className={styles.hiddenInput}
-              id="concept-document"
-              disabled={isUpdating}
-            />
-            <label htmlFor="concept-document" className={styles.uploadButtonSecondary}>
-              {isUpdating ? 'Saving...' : 'Choose File'}
-            </label>
-
-            {/* Show uploaded files */}
-            {getUploadedFileCount('concept-document') > 0 && (
-              <div className={styles.fileList}>
-                {formData.uploadedFiles['concept-document']?.map((file, index) => (
-                  <div key={index} className={styles.fileItem}>
-                    <FileText size={16} />
-                    {typeof file === 'string' ? file : file.name}
+          {getUploadedFileCount('concept-document') === 0 ? (
+            <div className={styles.uploadAreaSmall}>
+              {isUploadingConcept ? (
+                <>
+                  <div className={styles.uploadingSpinner}>
+                    <div className={styles.spinner}></div>
                   </div>
-                ))}
+                  <p className={styles.uploadAreaTitle}>Uploading concept file...</p>
+                </>
+              ) : (
+                <>
+                  <FileText className={styles.uploadAreaIcon} size={24} />
+                  <p className={styles.uploadAreaTitle}>Drop concept document here</p>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={e => handleConceptFileUpload(e.target.files)}
+                    className={styles.hiddenInput}
+                    id="concept-document"
+                    disabled={isUploadingConcept}
+                  />
+                  <label htmlFor="concept-document" className={styles.uploadButtonSecondary}>
+                    {isUploadingConcept ? 'Uploading...' : 'Choose File'}
+                  </label>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className={styles.uploadedFileCard}>
+              <div className={styles.uploadedFileHeader}>
+                <div className={styles.uploadedFileInfo}>
+                  <div className={styles.uploadedFileIconWrapper}>
+                    <FileText className={styles.uploadedFileIcon} size={24} />
+                    <div className={styles.uploadedFileCheck}>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="8" r="8" fill="#10b981"/>
+                        <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div>
+                    <p className={styles.uploadedFileName}>
+                      {typeof formData.uploadedFiles['concept-document']?.[0] === 'string' 
+                        ? formData.uploadedFiles['concept-document'][0]
+                        : formData.uploadedFiles['concept-document']?.[0]?.name || 'Document'}
+                    </p>
+                    <p className={styles.uploadedFileDescription}>
+                      ✓ Concept document uploaded successfully
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteConceptFile(formData.uploadedFiles['concept-document'][0])}
+                  className={styles.deleteFileButton}
+                  title="Delete and upload a different file"
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M6 8v8m4-8v8m4-8v8M4 6h12M9 4h2a1 1 0 011 1v1H8V5a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

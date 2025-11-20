@@ -79,7 +79,7 @@ async def upload_document(
         if not bucket:
             raise HTTPException(status_code=500, detail="S3 bucket not configured")
         
-        s3_key = f"{proposal_code}/documents/{file.filename}"
+        s3_key = f"{proposal_code}/documents/rfp/{file.filename}"
         
         s3_client.put_object(
             Bucket=bucket,
@@ -166,7 +166,7 @@ async def delete_document(
         s3_client = session.client('s3')
         bucket = os.environ.get('PROPOSALS_BUCKET')
         
-        s3_key = f"{proposal_code}/documents/{filename}"
+        s3_key = f"{proposal_code}/documents/rfp/{filename}"
         print(f"  - S3 Bucket: {bucket}")
         print(f"  - S3 Key: {s3_key}")
         
@@ -183,7 +183,7 @@ async def delete_document(
         await db_client.update_item(
             pk=f"PROPOSAL#{proposal_code}",
             sk="METADATA",
-            update_expression="REMOVE uploaded_files.#rfp, rfp_analysis, analysis_status, analysis_started_at, analysis_completed_at, analysis_error SET updated_at = :updated",
+            update_expression="REMOVE uploaded_files.#rfp, rfp_analysis, analysis_status_rfp, rfp_analysis_started_at, rfp_analysis_completed_at, rfp_analysis_error SET updated_at = :updated",
             expression_attribute_names={"#rfp": "rfp-document"},
             expression_attribute_values={
                 ":updated": datetime.utcnow().isoformat()
@@ -205,6 +205,252 @@ async def delete_document(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to delete document: {str(e)}")
+
+
+@router.post("/upload-concept-file")
+async def upload_concept_file(
+    proposal_id: str,
+    file: UploadFile = File(...),
+    user=Depends(get_current_user)
+):
+    """Upload Initial Concept file (PDF/DOC/DOCX)"""
+    try:
+        # Validate file
+        allowed_extensions = ('.pdf', '.doc', '.docx')
+        if not file.filename or not file.filename.lower().endswith(allowed_extensions):
+            raise HTTPException(status_code=400, detail="Only PDF, DOC, and DOCX files are supported")
+        
+        # Read file
+        file_bytes = await file.read()
+        file_size = len(file_bytes)
+        
+        if file_size == 0:
+            raise HTTPException(status_code=400, detail="File is empty")
+        
+        if file_size > 10 * 1024 * 1024:  # 10MB limit
+            raise HTTPException(status_code=400, detail="File size must be less than 10MB")
+        
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+        
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        proposal_code = proposal.get("proposalCode")
+        
+        # Upload to S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+        
+        if not bucket:
+            raise HTTPException(status_code=500, detail="S3 bucket not configured")
+        
+        s3_key = f"{proposal_code}/documents/initial_concept/{file.filename}"
+        
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=s3_key,
+            Body=BytesIO(file_bytes),
+            ContentType=file.content_type or 'application/octet-stream',
+            Metadata={
+                'proposal-id': proposal_id,
+                'uploaded-by': user.get('user_id'),
+                'original-size': str(file_size)
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": "Concept file uploaded successfully",
+            "filename": file.filename,
+            "document_key": s3_key,
+            "size": file_size
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Upload concept file error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to upload concept file: {str(e)}")
+
+
+@router.post("/save-concept-text")
+async def save_concept_text(
+    proposal_id: str,
+    concept_text: str = Form(...),
+    user=Depends(get_current_user)
+):
+    """Save Initial Concept as text"""
+    try:
+        if len(concept_text.strip()) < 50:
+            raise HTTPException(status_code=400, detail="Concept text must be at least 50 characters")
+        
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+        
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        proposal_code = proposal.get("proposalCode")
+        
+        # Save to S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+        
+        if not bucket:
+            raise HTTPException(status_code=500, detail="S3 bucket not configured")
+        
+        s3_key = f"{proposal_code}/documents/initial_concept/concept_text.txt"
+        
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=s3_key,
+            Body=concept_text.encode('utf-8'),
+            ContentType='text/plain',
+            Metadata={
+                'proposal-id': proposal_id,
+                'uploaded-by': user.get('user_id')
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": "Concept text saved successfully",
+            "text_length": len(concept_text)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Save concept text error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to save concept text: {str(e)}")
+
+
+@router.delete("/concept-text")
+async def delete_concept_text(
+    proposal_id: str,
+    user=Depends(get_current_user)
+):
+    """Delete concept text file"""
+    try:
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+        
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        proposal_code = proposal.get("proposalCode")
+        
+        # Delete from S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+        
+        s3_key = f"{proposal_code}/documents/initial_concept/concept_text.txt"
+        
+        try:
+            s3_client.delete_object(Bucket=bucket, Key=s3_key)
+        except Exception as s3_error:
+            print(f"S3 Delete Error: {str(s3_error)}")
+            raise
+        
+        return {
+            "success": True,
+            "message": "Concept text deleted successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Delete concept text error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to delete concept text: {str(e)}")
+
+
+@router.delete("/concept/{filename}")
+async def delete_concept_file(
+    proposal_id: str,
+    filename: str,
+    user=Depends(get_current_user)
+):
+    """Delete a concept file"""
+    try:
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+        
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        proposal_code = proposal.get("proposalCode")
+        
+        # Delete from S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+        
+        s3_key = f"{proposal_code}/documents/initial_concept/{filename}"
+        
+        try:
+            s3_client.delete_object(Bucket=bucket, Key=s3_key)
+        except Exception as s3_error:
+            print(f"S3 Delete Error: {str(s3_error)}")
+            raise
+        
+        return {
+            "success": True,
+            "message": "Concept file deleted successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Delete concept file error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to delete concept file: {str(e)}")
 
 
 # Legacy code below - to be removed after cleanup
@@ -432,59 +678,65 @@ async def list_documents(
 ):
     """List all documents uploaded for a proposal"""
     try:
-        # Verify proposal ownership
-        if proposal_id.startswith("PROP-"):
-            pk = f"PROPOSAL#{proposal_id}"
-        else:
-            items = await db_client.query_items(
-                pk=f"USER#{user.get('user_id')}",
-                index_name="GSI1"
-            )
-            
-            proposal_item = None
-            for item in items:
-                if item.get("id") == proposal_id:
-                    proposal_item = item
-                    break
-            
-            if not proposal_item:
-                raise HTTPException(status_code=404, detail="Proposal not found")
-            
-            pk = proposal_item["PK"]
-            proposal_id = proposal_item.get("proposalCode", proposal_id)
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
         
-        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
         
         if not proposal:
             raise HTTPException(status_code=404, detail="Proposal not found")
         
-        if proposal.get("user_id") != user.get("user_id"):
-            raise HTTPException(status_code=403, detail="Access denied")
+        proposal_code = proposal.get("proposalCode")
         
         # Get documents from S3
-        doc_service = DocumentService()
-        import boto3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
         
-        s3 = doc_service.s3
-        bucket = doc_service.bucket_name
+        if not bucket:
+            raise HTTPException(status_code=500, detail="S3 bucket not configured")
         
-        # List documents
-        response = s3.list_objects_v2(
+        # List all documents
+        response = s3_client.list_objects_v2(
             Bucket=bucket,
-            Prefix=f"{proposal_id}/documents/"
+            Prefix=f"{proposal_code}/documents/"
         )
         
         documents = []
         if 'Contents' in response:
             for obj in response['Contents']:
-                # Get metadata
-                head = s3.head_object(Bucket=bucket, Key=obj['Key'])
+                key = obj['Key']
+                
+                # Skip folders (keys ending with /)
+                if key.endswith('/'):
+                    continue
+                
+                # Determine document type based on path
+                doc_type = "unknown"
+                if '/rfp/' in key:
+                    doc_type = "rfp"
+                elif '/initial_concept/' in key:
+                    doc_type = "initial_concept"
+                
+                # Extract filename
+                filename = key.split('/')[-1]
+                
+                # Use LastModified from S3
+                uploaded_at = obj['LastModified'].isoformat() if 'LastModified' in obj else ""
                 
                 documents.append({
-                    "filename": obj['Key'].split('/')[-1],
+                    "filename": filename,
                     "size": obj['Size'],
-                    "uploaded_at": head['Metadata'].get('upload-date', ''),
-                    "key": obj['Key']
+                    "type": doc_type,
+                    "uploaded_at": uploaded_at,
+                    "key": key
                 })
         
         return {"documents": documents}
@@ -492,10 +744,10 @@ async def list_documents(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to list documents: {str(e)}"
-        )
+        print(f"List documents error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to list documents: {str(e)}")
 
 
 @router.post("/analyze")

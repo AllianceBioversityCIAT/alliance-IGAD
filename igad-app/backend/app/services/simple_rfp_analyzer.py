@@ -46,9 +46,16 @@ class SimpleRFPAnalyzer:
             
             # 2. Get PDF from S3
             print(f"Getting PDF for proposal: {proposal_code}")
-            pdf_key = f"{proposal_code}/documents/"
             
+            # Try new structure first
+            pdf_key = f"{proposal_code}/documents/rfp/"
             response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=pdf_key)
+            
+            # Fallback for old proposals
+            if 'Contents' not in response or len(response['Contents']) == 0:
+                print(f"⚠️ No RFP in /rfp/. Trying old path for {proposal_code}")
+                pdf_key = f"{proposal_code}/documents/"
+                response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=pdf_key)
             
             if 'Contents' not in response or len(response['Contents']) == 0:
                 raise Exception("No RFP document found. Please upload a PDF first.")

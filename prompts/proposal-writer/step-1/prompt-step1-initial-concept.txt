@@ -1,0 +1,322 @@
+GOLDEN PROMPT SKELETON — KIRO Implementation Plan (UPDATED VERSION)
+Engine Context: KIRO
+ROLE: Senior Backend/Frontend Engineer (Executor)
+Principle: “Simplicity first. Build sequentially.”
+
+======================================================================
+GOAL
+======================================================================
+Implement the ENTIRE second half of Step 1 for the Proposal Writer, including:
+
+1) Adding Initial Concept / Direction analysis.
+2) Reorganizing S3 content into the NEW folder structure.
+3) Sequential analysis flow: run RFP first → then Concept.
+4) Fix RFP analyzer to work with NEW and OLD folder structures.
+5) Add missing endpoints and frontend wiring.
+6) Ensure backward compatibility.
+
+Target S3 structure:
+
+{proposal_code}/documents/
+  ├── rfp/*.pdf
+  └── initial_concept/
+       ├── *.pdf|.doc|.docx
+       └── concept_text.txt
+
+======================================================================
+OUTPUT
+======================================================================
+Deliver the following:
+
+- New backend service → simple_concept_analyzer.py
+- Updated worker → analysis_worker.py
+- Updated RFP analyzer → simple_rfp_analyzer.py
+- Updated documents.py endpoints
+- Updated proposals.py endpoints
+- Updated frontend Step 1 + Analyze & Continue button
+- Updated list-documents endpoint
+- Backward compatibility strategy
+
+======================================================================
+LIMITS
+======================================================================
+- Do NOT modify logic not referenced in this plan.
+- Maintain backward compatibility.
+- Minimal changes, follow existing code patterns.
+- Maintain existing DynamoDB fields except when explicitly stated.
+
+======================================================================
+DATA
+======================================================================
+Reference UI snippet: /mnt/data/bbaf3aef-e2f6-4b62-960c-c53115dec116.png
+Reference service: simple_rfp_analyzer.py
+
+======================================================================
+EVALUATION
+======================================================================
+Success when:
+- RFP + Concept analyses run sequentially without errors.
+- New S3 structure works.
+- Old RFP files still work thanks to fallback.
+- Concept endpoints work fully.
+- Frontend triggers both analyses with modal progress.
+- List endpoint returns correct types (rfp, initial_concept).
+- All tests in checklist pass.
+
+======================================================================
+TAREA 1: CREAR simple_concept_analyzer.py ✨
+======================================================================
+Ubicación:
+backend/app/services/simple_concept_analyzer.py
+
+Objetivo:
+Analizar Initial Concept usando contenido de texto o archivos PDF/DOC/DOCX.
+
+Requisitos esenciales:
+def analyze_concept(self, proposal_id: str, rfp_analysis: Dict) -> Dict:
+    concept_folder = f"{proposal_code}/documents/initial_concept/"
+
+    # 1. Buscar concept_text.txt
+    try:
+        text_key = f"{concept_folder}concept_text.txt"
+        obj = self.s3.get_object(Bucket=self.bucket, Key=text_key)
+        concept_text = obj['Body'].read().decode('utf-8')
+    except:
+        concept_text = None
+
+    # 2. Si no hay texto, buscar archivos pdf/doc/docx
+    response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=concept_folder)
+    # extraer texto del primer archivo encontrado
+
+- Query DynamoDB prompts with:
+  Attr("is_active").eq(True) &
+  Attr("section").eq("proposal_writer") &
+  Attr("sub_section").eq("step-1") &
+  Attr("categories").contains("Initial Concept")
+
+- Inyectar en user_prompt_template:
+  {rfp_analysis}
+  {concept_text}
+
+- Llamar a Bedrock
+- Parsear JSON como en RFP
+
+======================================================================
+TAREA 2: MODIFICAR analysis_worker.py 🔧
+======================================================================
+Event structure:
+
+{
+  "proposal_id": "PROP-...",
+  "analysis_type": "rfp" | "concept"
+}
+
+Lógica concept (nuevo):
+
+elif analysis_type == "concept":
+    proposal = db_client.get_item_sync(...)
+    rfp_analysis = proposal.get("rfp_analysis")
+    if not rfp_analysis:
+        raise Exception("RFP analysis must be completed first")
+
+    from ..services.simple_concept_analyzer import SimpleConceptAnalyzer
+    analyzer = SimpleConceptAnalyzer()
+    result = analyzer.analyze_concept(proposal_id, rfp_analysis)
+
+    db_client.update_item_sync(
+        pk=f"PROPOSAL#{proposal_id}",
+        sk="METADATA",
+        update_expression="SET concept_analysis = :analysis, analysis_status_concept = :status, concept_analysis_completed_at = :completed, updated_at = :updated",
+        ...
+    )
+
+Errores:
+- RFP → analysis_status_rfp="failed"
+- Concept → analysis_status_concept="failed"
+
+======================================================================
+🆕 TAREA 2.5: ACTUALIZAR simple_rfp_analyzer.py
+======================================================================
+Ubicación:
+backend/app/services/simple_rfp_analyzer.py
+
+BUSCAR línea ~48:
+
+pdf_key = f"{proposal_code}/documents/"
+
+REEMPLAZAR con:
+
+# Try new structure first
+pdf_key = f"{proposal_code}/documents/rfp/"
+response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=pdf_key)
+
+# Fallback for old proposals
+if 'Contents' not in response or len(response['Contents']) == 0:
+    print(f"⚠️ No RFP in /rfp/. Trying old path for {proposal_code}")
+    pdf_key = f"{proposal_code}/documents/"
+    response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=pdf_key)
+
+if 'Contents' not in response or len(response['Contents']) == 0:
+    raise Exception("No RFP document found. Please upload a PDF.")
+
+El resto sigue igual (escoger PDF y extraer texto).
+
+IMPORTANTE:
+- Sin este cambio, RFP analysis romperá.
+
+======================================================================
+TAREA 3: MODIFICAR documents.py - NUEVA ESTRUCTURA S3 🔧
+======================================================================
+Ubicación:
+backend/app/routers/documents.py
+
+--------------------------------------
+Cambio 1: Upload RFP → nueva ruta
+--------------------------------------
+ANTES:
+s3_key = f"{proposal_code}/documents/{file.filename}"
+
+DESPUÉS:
+s3_key = f"{proposal_code}/documents/rfp/{file.filename}"
+
+--------------------------------------
+Cambio 2: Delete RFP → nueva ruta
+--------------------------------------
+ANTES:
+s3_key = f"{proposal_code}/documents/{filename}"
+
+DESPUÉS:
+s3_key = f"{proposal_code}/documents/rfp/{filename}"
+
+update_expression:
+REMOVE uploaded_files.#rfp, rfp_analysis, analysis_status_rfp, rfp_analysis_started_at, rfp_analysis_completed_at SET updated_at ...
+
+--------------------------------------
+Cambio 3: 🆕 Upload Concept File
+--------------------------------------
+Nuevo endpoint:
+POST /api/proposals/{proposal_id}/documents/upload-concept-file
+
+Debe:
+- Validar extensión
+- Guardar en:
+  {proposal_code}/documents/initial_concept/{filename}
+
+--------------------------------------
+Cambio 4: 🆕 Save Concept Text
+--------------------------------------
+POST /api/proposals/{proposal_id}/documents/save-concept-text
+
+Guardar en:
+{proposal_code}/documents/initial_concept/concept_text.txt
+
+--------------------------------------
+Cambio 5: 🆕 Delete Concept Text
+--------------------------------------
+DELETE /api/proposals/{proposal_id}/documents/concept-text
+
+Eliminar:
+{proposal_code}/documents/initial_concept/concept_text.txt
+
+--------------------------------------
+Cambio 6: 🆕 Delete Concept File
+--------------------------------------
+DELETE /api/proposals/{proposal_id}/documents/concept/{filename}
+
+======================================================================
+🆕 TAREA 3.5: ACTUALIZAR LIST DOCUMENTS ENDPOINT
+======================================================================
+Ubicación:
+backend/app/routers/documents.py
+Endpoint:
+GET /api/proposals/{proposal_id}/documents/
+
+Reemplazar lógica actual con:
+
+- Ignorar carpetas (keys ending `/`)
+- Añadir campo "type" → rfp | initial_concept | unknown
+- Usar LastModified en vez de metadata obsoleta
+
+documents.append({
+  "filename": ...,
+  "size": ...,
+  "type": doc_type,
+  "uploaded_at": uploaded_at,
+  "key": obj['Key']
+})
+
+======================================================================
+TAREA 4: MODIFICAR proposals.py 🔧
+======================================================================
+Nuevos endpoints:
+- POST /api/proposals/{id}/analyze-concept
+- GET /api/proposals/{id}/concept-status
+
+Actualizaciones:
+- analyze-rfp → usar analysis_status_rfp
+- analysis-status → devolver analysis_status_rfp
+
+======================================================================
+TAREA 5-6: FRONTEND 🎨
+======================================================================
+Cambios en Step1InformationConsolidation.tsx:
+- Estados nuevos
+- Funciones upload/delete/save concept
+- Spinners
+- UI para concept_text
+- Card para concept-document
+- Validación campos
+
+Cambios en ProposalWriterPage.tsx:
+- handleAnalyzeAndContinue → hacer análisis secuencial (2 pasos)
+- Modal con barra de progreso
+
+======================================================================
+TAREA 7: TESTING CHECKLIST
+======================================================================
+📌 TODOS los tests del plan anterior + revalidar list-documents.
+
+======================================================================
+🆕 TAREA 8: BACKWARD COMPATIBILITY
+======================================================================
+Problema:
+Propuestas viejas tienen archivos en:
+{proposal}/documents/
+
+Solución:
+Ya implementado en TAREA 2.5:
+
+- Leer primero desde /documents/rfp/
+- Si no existe, fallback a /documents/
+
+Opcional:
+Migración masiva con script:
+migrate_existing_proposals.py (incluido en plan anterior)
+
+======================================================================
+ORDEN DE EJECUCIÓN FINAL
+======================================================================
+1. TAREA 1 — simple_concept_analyzer.py
+2. TAREA 2 — analysis_worker.py
+3. TAREA 2.5 🆕 — simple_rfp_analyzer.py
+4. TAREA 3 — documents.py
+5. TAREA 3.5 🆕 — list-documents endpoint
+6. TAREA 4 — proposals.py
+7. TAREA 5-6 — Frontend
+8. TAREA 7 — Testing completo
+9. TAREA 8 — Compatibilidad opcional
+
+======================================================================
+FILES TO CREATE
+======================================================================
+✨ backend/app/services/simple_concept_analyzer.py
+
+======================================================================
+FILES TO MODIFY
+======================================================================
+🔧 backend/app/workers/analysis_worker.py  
+🔧 backend/app/services/simple_rfp_analyzer.py  
+🔧 backend/app/routers/documents.py  
+🔧 backend/app/routers/proposals.py  
+🔧 frontend/src/pages/proposalWriter/Step1InformationConsolidation.tsx  
+🔧 frontend/src/pages/proposalWriter/ProposalWriterPage.tsx  

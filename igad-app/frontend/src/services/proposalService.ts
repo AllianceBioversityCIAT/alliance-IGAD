@@ -158,6 +158,92 @@ class ProposalService {
     const response = await apiClient.delete(`/api/proposals/${proposalId}/documents/${filename}`)
     return response.data
   }
+
+  // Concept file operations
+  async uploadConceptFile(proposalId: string, file: File): Promise<{
+    success: boolean
+    filename: string
+    document_key: string
+    size: number
+  }> {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/documents/upload-concept-file`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    )
+    return response.data
+  }
+
+  // Concept text operations
+  async saveConceptText(proposalId: string, text: string): Promise<{
+    success: boolean
+    message: string
+    text_length: number
+  }> {
+    const formData = new FormData()
+    formData.append('concept_text', text)
+    
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/documents/save-concept-text`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    )
+    return response.data
+  }
+
+  async deleteConceptText(proposalId: string): Promise<{
+    success: boolean
+    message: string
+  }> {
+    const response = await apiClient.delete(
+      `/api/proposals/${proposalId}/documents/concept-text`
+    )
+    return response.data
+  }
+
+  async deleteConceptFile(proposalId: string, filename: string): Promise<{
+    success: boolean
+    message: string
+  }> {
+    const response = await apiClient.delete(
+      `/api/proposals/${proposalId}/documents/concept/${filename}`
+    )
+    return response.data
+  }
+
+  // Concept analysis operations
+  async analyzeConcept(proposalId: string): Promise<{
+    status: string
+    concept_analysis?: any
+    message?: string
+    cached?: boolean
+    started_at?: string
+  }> {
+    const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-concept`)
+    return response.data
+  }
+
+  async getConceptStatus(proposalId: string): Promise<{
+    status: string
+    concept_analysis?: any
+    error?: string
+    started_at?: string
+    completed_at?: string
+  }> {
+    const response = await apiClient.get(`/api/proposals/${proposalId}/concept-status`)
+    return response.data
+  }
 }
 
 export const proposalService = new ProposalService()

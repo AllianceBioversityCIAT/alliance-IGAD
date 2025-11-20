@@ -3,9 +3,14 @@ import styles from './AnalysisProgressModal.module.css'
 
 interface AnalysisProgressModalProps {
   isOpen: boolean
+  progress?: {
+    step: number
+    total: number
+    message: string
+  } | null
 }
 
-const AnalysisProgressModal: React.FC<AnalysisProgressModalProps> = ({ isOpen }) => {
+const AnalysisProgressModal: React.FC<AnalysisProgressModalProps> = ({ isOpen, progress }) => {
   if (!isOpen) return null
 
   return (
@@ -14,26 +19,31 @@ const AnalysisProgressModal: React.FC<AnalysisProgressModalProps> = ({ isOpen })
         <div className={styles.spinnerContainer}>
           <div className={styles.spinner}></div>
         </div>
-        <h2 className={styles.title}>Analyzing RFP Document</h2>
+        <h2 className={styles.title}>
+          {progress ? progress.message : 'Analyzing Your Proposal'}
+        </h2>
         <p className={styles.description}>
-          Our AI is extracting text, creating embeddings, and analyzing your RFP document. 
-          This may take 1-2 minutes.
+          Our AI is analyzing your RFP and initial concept to provide strategic insights.
+          This may take 1-3 minutes.
         </p>
+        {progress && (
+          <div className={styles.progressBar}>
+            <div className={styles.progressFill} style={{ width: `${(progress.step / progress.total) * 100}%` }} />
+          </div>
+        )}
         <div className={styles.steps}>
-          <div className={styles.step}>
+          <div className={`${styles.step} ${progress && progress.step >= 1 ? styles.stepActive : ''}`}>
             <div className={styles.stepIcon}>1</div>
-            <div className={styles.stepText}>Extracting text from PDF</div>
+            <div className={styles.stepText}>Analyzing RFP Document</div>
           </div>
-          <div className={styles.step}>
+          <div className={`${styles.step} ${progress && progress.step >= 2 ? styles.stepActive : ''}`}>
             <div className={styles.stepIcon}>2</div>
-            <div className={styles.stepText}>Creating semantic embeddings</div>
-          </div>
-          <div className={styles.step}>
-            <div className={styles.stepIcon}>3</div>
-            <div className={styles.stepText}>Analyzing requirements with AI</div>
+            <div className={styles.stepText}>Analyzing Initial Concept</div>
           </div>
         </div>
-        <p className={styles.note}>Please don't close this window</p>
+        <p className={styles.note}>
+          {progress ? `Step ${progress.step} of ${progress.total}` : 'Please don\'t close this window'}
+        </p>
       </div>
     </div>
   )
