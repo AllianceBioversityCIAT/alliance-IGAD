@@ -594,6 +594,7 @@
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 166, 62, 0.2);
   margin-top: 4px;
+  display: inline-block;
 }
 
 .uploadButton:hover {
@@ -602,9 +603,14 @@
   transform: translateY(-1px);
 }
 
+.uploadButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 166, 62, 0.3);
+}
+
 .uploadButtonSecondary {
-  background: linear-gradient(135deg, #00A63E 0%, #008236 100%);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #00A63E 0%, #008236 100%) !important;
+  color: #FFFFFF !important;
   border: none;
   padding: 10px 24px;
   border-radius: 8px;
@@ -614,12 +620,19 @@
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 166, 62, 0.2);
   margin-top: 4px;
+  display: inline-block;
 }
 
 .uploadButtonSecondary:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  color: #FFFFFF !important;
   box-shadow: 0 4px 12px rgba(0, 166, 62, 0.3);
   transform: translateY(-1px);
+}
+
+.uploadButtonSecondary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 166, 62, 0.3);
 }
 
 /* Spinner for loading states */

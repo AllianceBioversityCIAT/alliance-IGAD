@@ -93,17 +93,6 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   const handleFileUpload = async (section: string, files: FileList | null) => {
     if (files && files.length > 0) {
       const file = files[0] // Take first file
-      
-      // Store just the filename, not the File object
-      const updatedFiles = {
-        ...formData.uploadedFiles,
-        [section]: [file.name],
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        uploadedFiles: updatedFiles,
-      }))
 
       // Upload to S3 and create vectors if we have a proposal ID
       if (proposalId && section === 'rfp-document') {
@@ -129,6 +118,23 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           
           console.log('Document uploaded and vectorized:', response.data)
           
+          // Only update state after successful upload
+          const updatedFiles = {
+            ...formData.uploadedFiles,
+            [section]: [file.name],
+          }
+
+          setFormData(prev => ({
+            ...prev,
+            uploadedFiles: updatedFiles,
+          }))
+
+          // Update proposal metadata with filename
+          await updateFormData({
+            uploadedFiles: updatedFiles,
+            textInputs: formData.textInputs,
+          })
+          
           // Clear any previous errors
           setUploadError('')
           
@@ -137,29 +143,31 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           
           const errorMessage = error.response?.data?.detail || error.message || 'Upload failed. Please try again.'
           setUploadError(errorMessage)
-          
-          // Remove the file from state on error
-          setFormData(prev => ({
-            ...prev,
-            uploadedFiles: {
-              ...prev.uploadedFiles,
-              [section]: [],
-            },
-          }))
         } finally {
           setIsUploadingRFP(false)
         }
-      }
-      
-      // Update proposal metadata with filename
-      if (proposalId) {
-        try {
-          await updateFormData({
-            uploadedFiles: updatedFiles,
-            textInputs: formData.textInputs,
-          })
-        } catch (error) {
-          console.error('Failed to save form data:', error)
+      } else {
+        // For non-RFP sections, update immediately (old behavior)
+        const updatedFiles = {
+          ...formData.uploadedFiles,
+          [section]: [file.name],
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          uploadedFiles: updatedFiles,
+        }))
+
+        // Update proposal metadata with filename
+        if (proposalId) {
+          try {
+            await updateFormData({
+              uploadedFiles: updatedFiles,
+              textInputs: formData.textInputs,
+            })
+          } catch (error) {
+            console.error('Failed to save form data:', error)
+          }
         }
       }
     }
