@@ -6,6 +6,7 @@ import { usePrompts } from '../../hooks/usePrompts'
 import { useToast } from '../../components/ui/ToastContainer'
 import { ErrorModal } from '../../components/ui/ErrorModal'
 import { ProposalSection, SECTION_LABELS, PROMPT_CATEGORIES, type Prompt } from '../../types/prompt'
+import { PromptEditorSkeleton } from './PromptEditorSkeleton'
 import styles from './PromptEditorPage.module.css'
 
 export function PromptEditorPage() {
@@ -90,11 +91,33 @@ export function PromptEditorPage() {
   const fetchPrompt = async (promptId: string) => {
     try {
       setIsLoading(true)
+      const token = localStorage.getItem('token')
+      
+      if (!token) {
+        showError('Authentication required', 'Please log in again.')
+        navigate('/login')
+        return
+      }
+      
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       })
+      
+      if (response.status === 401) {
+        showError('Session expired', 'Please log in again.')
+        navigate('/login')
+        return
+      }
+      
+      if (response.status === 403) {
+        showError('Access denied', 'You need admin permissions to access this resource.')
+        navigate('/admin/prompt-manager')
+        return
+      }
+      
       if (response.ok) {
         const data = await response.json()
         setPrompt(data)
@@ -112,9 +135,15 @@ export function PromptEditorPage() {
           few_shot: data.few_shot || [],
           context: data.context || {}
         })
+      } else {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to load prompt' }))
+        showError('Error loading prompt', errorData.detail || 'Please try again.')
       }
     } catch (error) {
+      console.error('Error fetching prompt:', error)
       showError('Failed to load prompt', 'Please try again.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -427,7 +456,11 @@ Please provide detailed documentation that covers all essential aspects.`,
   }
 
   return (
-    <div className={styles.container}>
+    <>
+      {isLoading ? (
+        <PromptEditorSkeleton />
+      ) : (
+        <div className={styles.container}>
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
@@ -879,5 +912,7 @@ Please provide detailed documentation that covers all essential aspects.`,
         details={errorModal.details}
       />
     </div>
+      )}
+    </>
   )
 }

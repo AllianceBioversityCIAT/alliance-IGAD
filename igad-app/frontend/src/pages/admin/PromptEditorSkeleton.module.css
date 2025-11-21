@@ -1,0 +1,34 @@
+.titleSkeleton {
+  margin-bottom: 8px;
+}
+
+.breadcrumbSkeleton {
+  margin-top: 4px;
+}
+
+.sectionTitle {
+  margin-bottom: 16px;
+}
+
+.label {
+  margin-bottom: 8px;
+}
+
+.categoriesGrid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.previewContent {
+  padding: 20px;
+}
+
+.previewItem {
+  margin: 24px 0 12px 0;
+}
+
+.previewText {
+  margin-bottom: 20px;
+}

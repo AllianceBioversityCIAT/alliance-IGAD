@@ -1,0 +1,28 @@
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0px,
+    #f8f8f8 40px,
+    #f0f0f0 80px
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 1.5s infinite;
+  display: inline-block;
+}
+
+.textLine {
+  margin-bottom: 8px;
+}
+
+.textLine:last-child {
+  margin-bottom: 0;
+}
