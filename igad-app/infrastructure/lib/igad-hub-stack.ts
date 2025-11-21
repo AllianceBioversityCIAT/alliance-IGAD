@@ -113,11 +113,20 @@ export class IgadHubStack extends cdk.Stack {
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED
       },
       defaultRootObject: 'index.html',
-      errorResponses: [{
-        httpStatus: 404,
-        responseHttpStatus: 200,
-        responsePagePath: '/index.html'
-      }]
+      errorResponses: [
+        {
+          httpStatus: 403,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+          ttl: cdk.Duration.minutes(5)
+        },
+        {
+          httpStatus: 404,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+          ttl: cdk.Duration.minutes(5)
+        }
+      ]
     });
 
     // Placeholder Lambda Function
