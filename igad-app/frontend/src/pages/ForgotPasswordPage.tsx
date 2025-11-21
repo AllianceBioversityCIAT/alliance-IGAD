@@ -48,8 +48,10 @@ export function ForgotPasswordPage() {
     setSuccess(null)
 
     try {
-      await authService.forgotPassword(data.email)
-      setEmail(data.email)
+      // Normalize email to lowercase
+      const normalizedEmail = data.email.toLowerCase().trim()
+      await authService.forgotPassword(normalizedEmail)
+      setEmail(normalizedEmail)
       setSuccess('Reset code sent to your email')
       setStep('reset')
     } catch (error) {
@@ -136,14 +138,17 @@ export function ForgotPasswordPage() {
                   <input
                     type="email"
                     placeholder="you@organization.org"
+                    autoComplete="email"
                     {...registerEmail('email', {
                       required: 'Email is required',
                       pattern: {
                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                         message: 'Invalid email address',
                       },
+                      setValueAs: (value) => value.toLowerCase().trim(),
                     })}
                     className={styles.input}
+                    style={{ textTransform: 'lowercase' }}
                   />
                   {emailErrors.email && (
                     <span className={styles.errorText}>{emailErrors.email.message}</span>

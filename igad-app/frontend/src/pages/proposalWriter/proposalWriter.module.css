@@ -441,8 +441,12 @@
 }
 
 .uploadSectionIcon {
-  color: #E7000B;
+  color: #00A63E;
   margin-top: 4px;
+}
+
+.uploadSectionIcon[data-color="red"] {
+  color: #E7000B;
 }
 
 .uploadSectionIcon[data-color="green"] {
@@ -517,43 +521,53 @@
 
 /* Upload Areas */
 .uploadArea {
-  border: 2px solid #D1D5DC;
-  border-radius: 10px;
-  padding: 34px;
+  border: 2px dashed #D1D5DC;
+  border-radius: 12px;
+  padding: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   text-align: center;
   transition: all 0.3s ease;
+  background: #FAFBFC;
+  cursor: pointer;
 }
 
 .uploadArea:hover {
   border-color: #00A63E;
-  background: #fafafa;
+  background: #F0FDF4;
 }
 
 .uploadAreaSmall {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
-  padding: 17px;
+  border: 2px dashed #E5E7EB;
+  border-radius: 12px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   text-align: center;
   transition: all 0.3s ease;
+  background: #FAFBFC;
+  cursor: pointer;
+}
+
+.uploadAreaSmall:hover {
+  border-color: #00A63E;
+  background: #F0FDF4;
 }
 
 .uploadAreaIcon {
-  color: #99A1AF;
+  color: #9CA3AF;
 }
 
 .uploadAreaTitle {
-  font-size: 18px;
-  color: #0A0A0A;
+  font-size: 16px;
+  color: #374151;
   margin: 0;
-  line-height: 28px;
+  line-height: 24px;
+  font-weight: 500;
 }
 
 .uploadAreaSmall .uploadAreaTitle {
@@ -562,36 +576,50 @@
 }
 
 .uploadAreaDescription {
-  font-size: 14px;
-  color: #717182;
+  font-size: 13px;
+  color: #6B7280;
   margin: 0;
-  line-height: 20px;
+  line-height: 18px;
 }
 
 .uploadButton {
-  background: #166534;
+  background: linear-gradient(135deg, #00A63E 0%, #008236 100%);
   color: #FFFFFF;
   border: none;
-  padding: 8px 16px;
+  padding: 10px 24px;
   border-radius: 8px;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 166, 62, 0.2);
+  margin-top: 4px;
 }
 
 .uploadButton:hover {
-  background: #15803d;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 12px rgba(0, 166, 62, 0.3);
+  transform: translateY(-1px);
 }
 
 .uploadButtonSecondary {
-  background: #FFFFFF;
-  color: #0A0A0A;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 6px 12px;
+  background: linear-gradient(135deg, #00A63E 0%, #008236 100%);
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 24px;
   border-radius: 8px;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 166, 62, 0.2);
+  margin-top: 4px;
+}
+
+.uploadButtonSecondary:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 12px rgba(0, 166, 62, 0.3);
+  transform: translateY(-1px);
 }
 
 /* Spinner for loading states */
@@ -728,16 +756,16 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 48px;
+  padding: 12px;
 }
 
 .spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #E5E7EB;
+  width: 40px;
+  height: 40px;
+  border: 3px solid #E5E7EB;
   border-top-color: #00A63E;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -776,16 +804,110 @@
   justify-content: space-between;
   align-items: center;
   margin-top: 8px;
+  gap: 16px;
+}
+
+.textAreaFooter > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.textAreaActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .textAreaHint {
-  font-size: 14px;
+  font-size: 12px;
   color: #717182;
+  line-height: 16px;
 }
 
 .textAreaCount {
+  font-size: 13px;
+  color: #00A63E;
+  font-weight: 500;
+}
+
+.saveButton {
+  background: linear-gradient(135deg, #00A63E 0%, #008236 100%);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
   font-size: 14px;
-  color: #717182;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 166, 62, 0.2);
+  white-space: nowrap;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 12px rgba(0, 166, 62, 0.3);
+  transform: translateY(-1px);
+}
+
+.saveButton:disabled {
+  background: #E5E7EB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.savedIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #00A63E;
+  font-weight: 500;
+  padding: 8px 12px;
+  background: #F0FDF4;
+  border-radius: 8px;
+  border: 1px solid #BBF7D0;
+}
+
+.editButton {
+  background: white;
+  color: #0A0A0A;
+  border: 1px solid #D1D5DB;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.editButton:hover {
+  background: #F9FAFB;
+  border-color: #00A63E;
+  color: #00A63E;
+}
+
+.deleteButton {
+  background: white;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.deleteButton:hover {
+  background: #FEF2F2;
+  border-color: #DC2626;
+  color: #B91C1C;
 }
 
 /* Supporting Documents */

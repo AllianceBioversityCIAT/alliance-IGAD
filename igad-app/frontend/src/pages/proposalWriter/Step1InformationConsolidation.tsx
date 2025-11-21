@@ -516,7 +516,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
               </>
             ) : (
               <>
-                <FileText className={styles.uploadAreaIcon} size={48} />
+                <FileText className={styles.uploadAreaIcon} size={32} />
                 <p className={styles.uploadAreaTitle}>Drop RFP file here or click to upload</p>
                 <p className={styles.uploadAreaDescription}>Supports PDF files up to 10MB</p>
                 <input
@@ -525,10 +525,10 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
                   onChange={e => handleFileUpload('rfp-document', e.target.files)}
                   className={styles.hiddenInput}
                   id="rfp-document"
-                  disabled={isUpdating || isUploadingRFP}
+                  disabled={isUploadingRFP}
                 />
                 <label htmlFor="rfp-document" className={styles.uploadButton}>
-                  {isUpdating ? 'Saving...' : 'Choose File'}
+                  Choose File
                 </label>
               </>
             )}

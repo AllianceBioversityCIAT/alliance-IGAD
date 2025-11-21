@@ -49,8 +49,11 @@ export function LoginPage() {
     setError(null)
 
     try {
+      // Normalize email to lowercase to avoid case sensitivity issues
+      const normalizedEmail = data.email.toLowerCase().trim()
+      
       const response = await authService.login({
-        username: data.email,
+        username: normalizedEmail,
         password: data.password,
       })
 
@@ -58,16 +61,16 @@ export function LoginPage() {
       if (response.requires_password_change) {
         navigate('/change-password', {
           state: {
-            username: response.username || data.email,
+            username: response.username || normalizedEmail,
             session: response.session,
           },
         })
         return
       }
 
-      // Store the token and user email
+      // Store the token and user email (normalized)
       authService.setToken(response.access_token, data.rememberMe)
-      authService.setUserEmail(data.email, data.rememberMe)
+      authService.setUserEmail(normalizedEmail, data.rememberMe)
 
       // Navigate to dashboard
       navigate('/')
@@ -126,14 +129,17 @@ export function LoginPage() {
                 <input
                   type="email"
                   placeholder="you@organization.org"
+                  autoComplete="email"
                   {...register('email', {
                     required: 'Email is required',
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                       message: 'Invalid email address',
                     },
+                    setValueAs: (value) => value.toLowerCase().trim(),
                   })}
                   className={styles.input}
+                  style={{ textTransform: 'lowercase' }}
                 />
                 {errors.email && <span className={styles.errorText}>{errors.email.message}</span>}
               </div>
