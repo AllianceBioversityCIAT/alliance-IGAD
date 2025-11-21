@@ -32,9 +32,24 @@ bedrock_service = BedrockService()
 def get_current_admin_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict:
-    """Get current admin user - simplified for MVP"""
-    # TODO: Implement proper admin verification
-    return {"user_id": "test-user-123", "email": "test@example.com", "role": "admin"}
+    """Get current admin user - uses real user from token"""
+    from app.middleware.auth_middleware import auth_middleware
+    
+    user_data = auth_middleware.verify_token(credentials)
+    
+    if not user_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+    
+    # Return real user data from token
+    return {
+        "user_id": user_data.get("user_id", "unknown"),
+        "email": user_data.get("email", "unknown@example.com"),
+        "role": user_data.get("role", "user"),
+        "is_admin": user_data.get("is_admin", False)
+    }
 
 
 @router.get("/list", response_model=PromptListResponse)

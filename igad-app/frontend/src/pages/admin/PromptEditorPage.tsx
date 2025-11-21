@@ -7,6 +7,7 @@ import { useToast } from '../../components/ui/ToastContainer'
 import { ErrorModal } from '../../components/ui/ErrorModal'
 import { ProposalSection, SECTION_LABELS, PROMPT_CATEGORIES, type Prompt } from '../../types/prompt'
 import { PromptEditorSkeleton } from './PromptEditorSkeleton'
+import { tokenManager } from '../../services/tokenManager'
 import styles from './PromptEditorPage.module.css'
 
 export function PromptEditorPage() {
@@ -91,7 +92,7 @@ export function PromptEditorPage() {
   const fetchPrompt = async (promptId: string) => {
     try {
       setIsLoading(true)
-      const token = localStorage.getItem('token')
+      const token = tokenManager.getAccessToken()
       
       if (!token) {
         showError('Authentication required', 'Please log in again.')

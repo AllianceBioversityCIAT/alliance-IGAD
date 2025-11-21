@@ -4,7 +4,6 @@ import {
   Copy,
   Power,
   PowerOff,
-  MessageCircle,
   FileText,
 } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '../../../types/prompt'
@@ -17,7 +16,6 @@ interface PromptListTableProps {
   onDelete: (id: string, version?: number) => void
   onClone: (prompt: Prompt) => void
   onToggleActive: (id: string) => void
-  onComments?: (id: string) => void
   onTemplate?: (prompt: Prompt) => void
 }
 
@@ -28,7 +26,6 @@ export function PromptListTable({
   onDelete,
   onClone,
   onToggleActive,
-  onComments,
   onTemplate,
 }: PromptListTableProps) {
 
@@ -52,11 +49,6 @@ export function PromptListTable({
         break
       case 'toggle-active':
         onToggleActive(promptId)
-        break
-      case 'comments':
-        if (onComments) {
-          onComments(promptId)
-        }
         break
       case 'template':
         if (onTemplate) {
@@ -130,9 +122,6 @@ export function PromptListTable({
                     </div>
                   </div>
                 </td>
-                <td className={styles.tableCell}>
-                  <div className={styles.skeleton} style={{ width: '40px', height: '32px', borderRadius: '6px' }}></div>
-                </td>
               </tr>
             ))}
           </tbody>
@@ -168,7 +157,6 @@ export function PromptListTable({
             <th className={styles.tableHeader}>Status</th>
             <th className={styles.tableHeader}>Updated</th>
             <th className={`${styles.tableHeader} ${styles.actionsHeader}`}>Actions</th>
-            <th className={styles.tableHeader}>Comments</th>
           </tr>
         </thead>
         <tbody className={styles.tableBody}>
@@ -287,22 +275,6 @@ export function PromptListTable({
                     </button>
                   </div>
                 </div>
-              </td>
-              <td className={styles.tableCell}>
-                {onComments && (
-                  <div className={styles.commentsButtonContainer}>
-                    <button
-                      onClick={() => handleActionClick(prompt.id, 'comments', prompt)}
-                      className={`${styles.commentsButton} ${(prompt.comments_count || 0) > 0 ? styles.hasComments : ''}`}
-                      title={`${prompt.comments_count || 0} comment${prompt.comments_count !== 1 ? 's' : ''} - View comments for "${prompt.name}"`}
-                    >
-                      <MessageCircle size={16} />
-                      {(prompt.comments_count || 0) > 0 && (
-                        <span className={styles.commentsBadge}>{prompt.comments_count}</span>
-                      )}
-                    </button>
-                  </div>
-                )}
               </td>
             </tr>
           ))}

@@ -14,7 +14,7 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(1, 102, 48, 0.2);
-  max-width: 1400px;
+  max-width: 1480px;
   margin: 0 auto 32px auto;
 }
 
@@ -150,7 +150,7 @@
 }
 
 .contentWrapper {
-  max-width: 1200px;
+  max-width: 1480px;
   margin: 0 auto;
   width: 100%;
 }
@@ -190,7 +190,7 @@
 }
 
 .filtersBarContent {
-  max-width: 1200px;
+  max-width: 1480px;
   margin: 0 auto;
 }
 
