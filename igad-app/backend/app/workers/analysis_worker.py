@@ -9,6 +9,7 @@ from datetime import datetime
 
 from ..services.simple_rfp_analyzer import SimpleRFPAnalyzer
 from ..services.simple_concept_analyzer import SimpleConceptAnalyzer
+from ..services.concept_document_generator import concept_generator
 from ..database.client import db_client
 
 logger = logging.getLogger(__name__)
@@ -132,6 +133,70 @@ def handler(event, context):
             
             logger.info("💾 Concept result saved to DynamoDB")
         
+        elif analysis_type == "concept_document":
+            # Get proposal
+            proposal = db_client.get_item_sync(
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA"
+            )
+            
+            if not proposal:
+                raise Exception(f"Proposal {proposal_id} not found")
+            
+            rfp_analysis = proposal.get("rfp_analysis")
+            if not rfp_analysis:
+                raise Exception("RFP analysis must be completed first")
+            
+            # Get concept evaluation from event
+            concept_evaluation = event.get("concept_evaluation")
+            if not concept_evaluation:
+                raise Exception("Concept evaluation not provided")
+            
+            # Update status to processing
+            db_client.update_item_sync(
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA",
+                update_expression="SET concept_document_status = :status, concept_document_started_at = :started",
+                expression_attribute_values={
+                    ":status": "processing",
+                    ":started": datetime.utcnow().isoformat()
+                }
+            )
+            
+            # Generate document
+            logger.info("🔍 Starting concept document generation...")
+            proposal_code = proposal.get("proposalCode", proposal_id)
+            
+            generated_document = concept_generator.generate_document(
+                proposal_code=proposal_code,
+                rfp_analysis=rfp_analysis,
+                concept_evaluation=concept_evaluation
+            )
+            
+            logger.info("✅ Concept document generated successfully")
+            
+            # Save to DynamoDB
+            db_client.update_item_sync(
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA",
+                update_expression="""
+                    SET concept_evaluation = :evaluation,
+                        concept_document_v2 = :document,
+                        concept_document_status = :status,
+                        concept_document_completed_at = :completed,
+                        updated_at = :updated
+                """,
+                expression_attribute_values={
+                    ":evaluation": concept_evaluation,
+                    ":document": generated_document,
+                    ":status": "completed",
+                    ":completed": datetime.utcnow().isoformat(),
+                    ":updated": datetime.utcnow().isoformat()
+                }
+            )
+            
+            logger.info("💾 Concept document saved to DynamoDB")
+        
         else:
             raise ValueError(f"Invalid analysis_type: {analysis_type}")
         
@@ -188,6 +253,24 @@ def handler(event, context):
                         SET analysis_status_concept = :status,
                             concept_analysis_error = :error,
                             concept_analysis_failed_at = :failed,
+                            updated_at = :updated
+                    """,
+                    expression_attribute_values={
+                        ":status": "failed",
+                        ":error": error_msg,
+                        ":failed": datetime.utcnow().isoformat(),
+                        ":updated": datetime.utcnow().isoformat()
+                    }
+                )
+            
+            if analysis_type == "concept_document":
+                db_client.update_item_sync(
+                    pk=f"PROPOSAL#{proposal_id}",
+                    sk="METADATA",
+                    update_expression="""
+                        SET concept_document_status = :status,
+                            concept_document_error = :error,
+                            concept_document_failed_at = :failed,
                             updated_at = :updated
                     """,
                     expression_attribute_values={

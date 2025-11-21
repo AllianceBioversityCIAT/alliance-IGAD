@@ -18,6 +18,7 @@ from ..services.bedrock_service import BedrockService
 from ..services.prompt_service import PromptService
 from ..services.simple_rfp_analyzer import SimpleRFPAnalyzer
 from ..services.document_service import DocumentService
+from ..services.concept_document_generator import concept_generator
 from ..database.client import db_client
 
 router = APIRouter(prefix="/api/proposals", tags=["proposals"])
@@ -781,6 +782,147 @@ async def get_concept_status(proposal_id: str, user=Depends(get_current_user)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to check concept status: {str(e)}")
+
+
+@router.post("/{proposal_id}/generate-concept-document")
+async def generate_concept_document(
+    proposal_id: str,
+    concept_evaluation: dict,
+    user=Depends(get_current_user)
+):
+    """
+    Generate updated concept document based on RFP analysis and user's concept evaluation
+    
+    This endpoint:
+    1. Validates proposal exists
+    2. Sets status to "processing"
+    3. Invokes Worker Lambda asynchronously
+    4. Returns immediately with status
+    
+    Frontend should poll /concept-document-status for completion
+    """
+    try:
+        user_id = user.get('user_id')
+        print(f"🟢 Generate concept document request for proposal: {proposal_id}")
+        
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user_id}",
+            index_name="GSI1"
+        )
+        
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        # Validate required data exists
+        rfp_analysis = proposal.get('rfp_analysis')
+        if not rfp_analysis:
+            raise HTTPException(
+                status_code=400,
+                detail="RFP analysis not found. Complete Step 1 first."
+            )
+        
+        concept_analysis = proposal.get('concept_analysis')
+        if not concept_analysis:
+            raise HTTPException(
+                status_code=400,
+                detail="Concept analysis not found. Complete Step 1 first."
+            )
+        
+        # Update status to processing
+        await db_client.update_item(
+            pk=proposal['PK'],
+            sk=proposal['SK'],
+            update_expression="SET concept_document_status = :status, concept_document_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat()
+            }
+        )
+        
+        # Invoke Worker Lambda asynchronously
+        worker_function = os.getenv('WORKER_FUNCTION_ARN')
+        
+        # Get proposal code for Worker (same as Step 1)
+        proposal_code = proposal.get('proposalCode')
+        if not proposal_code:
+            raise HTTPException(status_code=400, detail="Proposal code not found")
+        
+        payload = {
+            'analysis_type': 'concept_document',
+            'proposal_id': proposal_code,  # Send proposal_code, not UUID
+            'user_id': user_id,
+            'concept_evaluation': concept_evaluation
+        }
+        
+        print(f"📡 Invoking worker lambda for concept document generation: {proposal_id}")
+        
+        lambda_client.invoke(
+            FunctionName=worker_function,
+            InvocationType='Event',  # Asynchronous
+            Payload=json.dumps(payload)
+        )
+        
+        print(f"✅ Worker lambda invoked successfully for {proposal_id}")
+        
+        # Return immediately
+        return {
+            'status': 'processing',
+            'message': 'Concept document generation started. Poll /concept-document-status for updates.'
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error starting concept document generation: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{proposal_id}/concept-document-status")
+async def get_concept_document_status(
+    proposal_id: str,
+    user=Depends(get_current_user)
+):
+    """Get concept document generation status"""
+    try:
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+        
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        status = proposal.get('concept_document_status', 'not_started')
+        
+        response = {
+            'status': status,
+            'started_at': proposal.get('concept_document_started_at'),
+            'completed_at': proposal.get('concept_document_completed_at')
+        }
+        
+        if status == 'completed':
+            response['concept_document'] = proposal.get('concept_document_v2')
+        elif status == 'failed':
+            response['error'] = proposal.get('concept_document_error')
+        
+        return response
+        
+    except Exception as e:
+        print(f"❌ Error getting concept document status: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/prompts/with-categories")

@@ -244,6 +244,34 @@ class ProposalService {
     const response = await apiClient.get(`/api/proposals/${proposalId}/concept-status`)
     return response.data
   }
+
+  async generateConceptDocument(
+    proposalId: string,
+    conceptEvaluation: any
+  ): Promise<{
+    status: string
+    message: string
+    concept_document?: any
+  }> {
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/generate-concept-document`,
+      conceptEvaluation
+    )
+    return response.data
+  }
+
+  async getConceptDocumentStatus(proposalId: string): Promise<{
+    status: string
+    concept_document?: any
+    error?: string
+    started_at?: string
+    completed_at?: string
+  }> {
+    const response = await apiClient.get(
+      `/api/proposals/${proposalId}/concept-document-status`
+    )
+    return response.data
+  }
 }
 
 export const proposalService = new ProposalService()

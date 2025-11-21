@@ -28,6 +28,12 @@ export function ProposalWriterPage() {
   const [rfpAnalysis, setRfpAnalysis] = useState<any>(null)
   const [conceptAnalysis, setConceptAnalysis] = useState<any>(null)
   const [analysisProgress, setAnalysisProgress] = useState<{ step: number; total: number; message: string } | null>(null)
+  const [conceptEvaluationData, setConceptEvaluationData] = useState<{
+    selectedSections: string[]
+    userComments: { [key: string]: string }
+  } | null>(null)
+  const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
+  const [conceptDocument, setConceptDocument] = useState<any>(null)
   const [formData, setFormData] = useState({
     uploadedFiles: {} as { [key: string]: File[] },
     textInputs: {} as { [key: string]: string },
@@ -51,7 +57,19 @@ export function ProposalWriterPage() {
     if (draft.proposalCode) setProposalCode(draft.proposalCode)
     if (draft.formData) setFormData(draft.formData)
     if (draft.rfpAnalysis) setRfpAnalysis(draft.rfpAnalysis)
-  }, [])
+    
+    // Load concept analysis from localStorage
+    if (proposalId) {
+      const savedConceptAnalysis = localStorage.getItem(`proposal_concept_analysis_${proposalId}`)
+      if (savedConceptAnalysis) {
+        try {
+          setConceptAnalysis(JSON.parse(savedConceptAnalysis))
+        } catch (e) {
+          console.error('Failed to parse saved concept analysis:', e)
+        }
+      }
+    }
+  }, [proposalId])
 
   // Save to localStorage whenever state changes
   useEffect(() => {
@@ -69,6 +87,13 @@ export function ProposalWriterPage() {
   useEffect(() => {
     if (rfpAnalysis) saveRfpAnalysis(rfpAnalysis)
   }, [rfpAnalysis, saveRfpAnalysis])
+  
+  // Save concept analysis to localStorage
+  useEffect(() => {
+    if (conceptAnalysis && proposalId) {
+      localStorage.setItem(`proposal_concept_analysis_${proposalId}`, JSON.stringify(conceptAnalysis))
+    }
+  }, [conceptAnalysis, proposalId])
 
   // Create a proposal when the component mounts (only if authenticated and no saved proposal)
   useEffect(() => {
@@ -362,12 +387,115 @@ export function ProposalWriterPage() {
     }
   }
 
+  const handleGenerateConceptDocument = async () => {
+    console.log('🟢 Starting concept document generation...')
+    
+    if (!proposalId || !conceptEvaluationData) {
+      alert('Please select sections and add comments before generating')
+      return
+    }
+    
+    setIsGeneratingDocument(true)
+    
+    try {
+      const { proposalService } = await import('../../services/proposalService')
+      
+      // Prepare concept evaluation
+      // Prepare complete concept evaluation with all data
+      const conceptEvaluation = {
+        // Include complete original analysis
+        fit_assessment: conceptAnalysis?.concept_analysis?.fit_assessment || conceptAnalysis?.fit_assessment,
+        strong_aspects: conceptAnalysis?.concept_analysis?.strong_aspects || conceptAnalysis?.strong_aspects,
+        sections_needing_elaboration: conceptAnalysis?.concept_analysis?.sections_needing_elaboration || conceptAnalysis?.sections_needing_elaboration,
+        strategic_verdict: conceptAnalysis?.concept_analysis?.strategic_verdict || conceptAnalysis?.strategic_verdict,
+        
+        // Add user selections and comments
+        selected_sections: conceptEvaluationData.selectedSections,
+        user_comments: conceptEvaluationData.userComments,
+        modified_at: new Date().toISOString()
+      }
+      
+      console.log('📤 Sending concept evaluation:', conceptEvaluation)
+      
+      // Call API
+      const result = await proposalService.generateConceptDocument(
+        proposalId,
+        conceptEvaluation
+      )
+      
+      if (result.status === 'completed') {
+        console.log('✅ Document generated successfully')
+        setConceptDocument(result.concept_document)
+        setIsGeneratingDocument(false)
+        proceedToNextStep()
+      } else {
+        // Poll for completion
+        await pollConceptDocumentStatus()
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Concept document generation failed:', error)
+      setIsGeneratingDocument(false)
+      alert(`Generation failed: ${error.message || 'Unknown error'}`)
+    }
+  }
+
+  const pollConceptDocumentStatus = async () => {
+    const { proposalService } = await import('../../services/proposalService')
+    
+    let attempts = 0
+    const maxAttempts = 60 // 3 minutes max
+    
+    const poll = async () => {
+      attempts++
+      
+      try {
+        const status = await proposalService.getConceptDocumentStatus(proposalId!)
+        
+        if (status.status === 'completed') {
+          setConceptDocument(status.concept_document)
+          setIsGeneratingDocument(false)
+          proceedToNextStep()
+        } else if (status.status === 'failed') {
+          setIsGeneratingDocument(false)
+          alert(`Generation failed: ${status.error}`)
+        } else if (attempts >= maxAttempts) {
+          setIsGeneratingDocument(false)
+          alert('Generation timeout. Please try again.')
+        } else {
+          setTimeout(poll, 3000)
+        }
+      } catch (error) {
+        setIsGeneratingDocument(false)
+        alert('Failed to check generation status')
+      }
+    }
+    
+    poll()
+  }
+
+  const handleConceptEvaluationChange = useCallback((data: {
+    selectedSections: string[]
+    userComments: { [key: string]: string }
+  }) => {
+    setConceptEvaluationData(data)
+  }, [])
+
   const renderCurrentStep = () => {
+    console.log('🎯 Rendering step:', currentStep, {
+      hasRfpAnalysis: !!rfpAnalysis,
+      hasConceptAnalysis: !!conceptAnalysis,
+      conceptAnalysisKeys: conceptAnalysis ? Object.keys(conceptAnalysis) : []
+    })
+    
     const stepProps = {
       formData,
       setFormData,
       proposalId,
       rfpAnalysis,
+      conceptAnalysis,
+      onConceptEvaluationChange: handleConceptEvaluationChange,
+      conceptDocument,
     }
 
     switch (currentStep) {
@@ -399,10 +527,11 @@ export function ProposalWriterPage() {
     <button
       key="next"
       className={`${styles.button} ${styles.buttonPrimary}`}
-      onClick={handleNextStep}
+      onClick={currentStep === 2 ? handleGenerateConceptDocument : handleNextStep}
       disabled={
         currentStep === 5 || 
-        isAnalyzingRFP || 
+        isAnalyzingRFP ||
+        isGeneratingDocument ||
         (currentStep === 1 && (
           !formData.uploadedFiles['rfp-document'] || 
           formData.uploadedFiles['rfp-document'].length === 0 ||
@@ -418,13 +547,23 @@ export function ProposalWriterPage() {
           : ''
       }
     >
-      {isAnalyzingRFP ? (
+      {isGeneratingDocument ? (
+        <>
+          <span className={styles.spinner}></span>
+          Generating Document...
+        </>
+      ) : isAnalyzingRFP ? (
         <>
           <span className={styles.spinner}></span>
           {analysisProgress ? `${analysisProgress.message} (${analysisProgress.step}/${analysisProgress.total})` : 'Analyzing...'}
         </>
       ) : currentStep === 5 ? (
         'Complete'
+      ) : currentStep === 2 ? (
+        <>
+          Generate Updated Concept Document and Continue
+          <ChevronRight size={16} />
+        </>
       ) : currentStep === 1 && rfpAnalysis && conceptAnalysis ? (
         <>
           Next: View Analysis
@@ -446,7 +585,14 @@ export function ProposalWriterPage() {
 
   return (
     <>
-      <AnalysisProgressModal isOpen={isAnalyzingRFP} progress={analysisProgress} />
+      <AnalysisProgressModal 
+        isOpen={isAnalyzingRFP || isGeneratingDocument} 
+        progress={
+          isGeneratingDocument 
+            ? { step: 1, total: 1, message: 'Generating Updated Concept Document...' }
+            : analysisProgress
+        } 
+      />
       <DraftConfirmationModal
         isOpen={showExitModal}
         proposalCode={proposalCode}

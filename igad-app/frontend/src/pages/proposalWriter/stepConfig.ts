@@ -19,4 +19,12 @@ export interface StepProps {
       textInputs: { [key: string]: string }
     }>
   >
+  proposalId?: string
+  rfpAnalysis?: any
+  conceptAnalysis?: any
+  onConceptEvaluationChange?: (data: {
+    selectedSections: string[]
+    userComments: { [key: string]: string }
+  }) => void
+  conceptDocument?: any
 }
