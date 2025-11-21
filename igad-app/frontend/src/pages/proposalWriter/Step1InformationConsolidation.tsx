@@ -600,8 +600,11 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         )}
       </div>
 
-      {/* Reference Proposals Section */}
-      <div className={styles.uploadSection}>
+      {/* Reference Proposals Section - TEMPORARILY DISABLED */}
+      <div className={`${styles.uploadSection} ${styles.disabledSection}`}>
+        <div className={styles.disabledBadge}>
+          <span>Coming Soon</span>
+        </div>
         <div className={styles.uploadSectionHeader}>
           <FileText className={styles.uploadSectionIcon} size={20} />
           <div className={styles.uploadSectionInfo}>
@@ -613,7 +616,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           </div>
         </div>
 
-        <div className={styles.uploadArea}>
+        <div className={`${styles.uploadArea} ${styles.uploadAreaDisabled}`}>
           <FileText className={styles.uploadAreaIcon} size={32} />
           <p className={styles.uploadAreaTitle}>Drop reference proposals here or click to upload</p>
           <p className={styles.uploadAreaDescription}>Multiple files supported</p>
@@ -624,28 +627,19 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             onChange={e => handleFileUpload('reference-proposals', e.target.files)}
             className={styles.hiddenInput}
             id="reference-proposals"
-            disabled={isUpdating}
+            disabled={true}
           />
-          <label htmlFor="reference-proposals" className={styles.uploadButtonSecondary}>
-            {isUpdating ? 'Saving...' : 'Choose Files'}
+          <label htmlFor="reference-proposals" className={`${styles.uploadButtonSecondary} ${styles.uploadButtonDisabled}`}>
+            Choose Files
           </label>
-
-          {/* Show uploaded files */}
-          {getUploadedFileCount('reference-proposals') > 0 && (
-            <div className={styles.fileList}>
-              {formData.uploadedFiles['reference-proposals']?.map((file, index) => (
-                <div key={index} className={styles.fileItem}>
-                  <FileText size={16} />
-                  {typeof file === 'string' ? file : file.name}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Existing Work Section */}
-      <div className={styles.uploadSection}>
+      {/* Existing Work Section - TEMPORARILY DISABLED */}
+      <div className={`${styles.uploadSection} ${styles.disabledSection}`}>
+        <div className={styles.disabledBadge}>
+          <span>Coming Soon</span>
+        </div>
         <div className={styles.uploadSectionHeader}>
           <FileText className={styles.uploadSectionIcon} size={20} />
           <div className={styles.uploadSectionInfo}>
@@ -658,11 +652,11 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         </div>
 
         <textarea
-          className={styles.textArea}
+          className={`${styles.textArea} ${styles.textAreaDisabled}`}
           placeholder="Describe your relevant experience, ongoing projects, previous work with similar donors, institutional strengths, partnerships, and any preliminary research or activities related to this call..."
           value={formData.textInputs['existing-work'] || ''}
           onChange={e => handleTextChange('existing-work', e.target.value)}
-          disabled={isUpdating}
+          disabled={true}
         />
 
         <div className={styles.textAreaFooter}>
@@ -682,7 +676,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             technical papers.
           </p>
 
-          <div className={styles.uploadAreaSmall}>
+          <div className={`${styles.uploadAreaSmall} ${styles.uploadAreaDisabled}`}>
             <FileText className={styles.uploadAreaIcon} size={24} />
             <p className={styles.uploadAreaTitle}>Drop supporting files here</p>
             <input
@@ -691,10 +685,10 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
               onChange={e => handleFileUpload('supporting-docs', e.target.files)}
               className={styles.hiddenInput}
               id="supporting-docs"
-              disabled={isUpdating}
+              disabled={true}
             />
-            <label htmlFor="supporting-docs" className={styles.uploadButtonSecondary}>
-              {isUpdating ? 'Saving...' : 'Add Files'}
+            <label htmlFor="supporting-docs" className={`${styles.uploadButtonSecondary} ${styles.uploadButtonDisabled}`}>
+              Add Files
             </label>
 
             {/* Show uploaded files */}
