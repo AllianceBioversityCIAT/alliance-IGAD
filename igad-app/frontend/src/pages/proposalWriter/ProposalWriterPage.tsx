@@ -6,9 +6,9 @@ import { DraftConfirmationModal } from './components/DraftConfirmationModal'
 import AnalysisProgressModal from '../../components/AnalysisProgressModal'
 import { Step1InformationConsolidation } from './Step1InformationConsolidation'
 import { Step2ContentGeneration } from './Step2ContentGeneration'
-import { Step3StructureValidation } from './Step3StructureValidation'
-import { Step4ReviewRefinement } from './Step4ReviewRefinement'
-import { Step5FinalExport } from './Step5FinalExport'
+import Step3StructureValidation from './Step3StructureValidation'
+import Step4ReviewRefinement from './Step4ReviewRefinement'
+import Step5FinalExport from './Step5FinalExport'
 import { useProposals } from '../../hooks/useProposal'
 import { useProposalDraft } from '../../hooks/useProposalDraft'
 import { authService } from '../../services/authService'
@@ -59,8 +59,8 @@ export function ProposalWriterPage() {
     if (draft.rfpAnalysis) setRfpAnalysis(draft.rfpAnalysis)
     
     // Load concept analysis from localStorage
-    if (proposalId) {
-      const savedConceptAnalysis = localStorage.getItem(`proposal_concept_analysis_${proposalId}`)
+    if (draft.proposalId) {
+      const savedConceptAnalysis = localStorage.getItem(`proposal_concept_analysis_${draft.proposalId}`)
       if (savedConceptAnalysis) {
         try {
           setConceptAnalysis(JSON.parse(savedConceptAnalysis))
@@ -69,7 +69,7 @@ export function ProposalWriterPage() {
         }
       }
     }
-  }, [proposalId])
+  }, [])
 
   // Save to localStorage whenever state changes
   useEffect(() => {
@@ -129,14 +129,48 @@ export function ProposalWriterPage() {
     return () => window.removeEventListener('rfp-deleted', handleRfpDeleted)
   }, [saveRfpAnalysis])
 
+  // Load concept document from proposal when available
+  useEffect(() => {
+    const loadConceptDocument = async () => {
+      if (proposalId && currentStep === 3 && !conceptDocument) {
+        try {
+          console.log('🔍 Loading concept document for proposalId:', proposalId)
+          const { proposalService } = await import('../../services/proposalService')
+          const response = await proposalService.getProposal(proposalId)
+          console.log('📡 API response:', response)
+          
+          // Handle both single proposal and array responses
+          const proposal = Array.isArray(response) 
+            ? response.find(p => p.id === proposalId) 
+            : response
+          
+          console.log('🎯 Selected proposal:', proposal?.id, proposal?.proposalCode)
+          
+          if (proposal?.concept_document_v2) {
+            console.log('✅ Found concept_document_v2, loading...')
+            setConceptDocument(proposal.concept_document_v2)
+          } else {
+            console.log('⚠️ No concept_document_v2 in proposal:', proposal?.id)
+          }
+        } catch (error) {
+          console.error('❌ Failed to load concept document:', error)
+        }
+      }
+    }
+    
+    loadConceptDocument()
+  }, [proposalId, currentStep, conceptDocument])
+
   useEffect(() => {
     if (stepId) {
       if (stepId.startsWith('step-')) {
         const step = parseInt(stepId.replace('step-', ''))
         if (step >= 1 && step <= 5) {
-          setCurrentStep(step)
-          // Scroll to top when changing steps
-          window.scrollTo({ top: 0, behavior: 'smooth' })
+          if (currentStep !== step) {
+            setCurrentStep(step)
+            // Scroll to top when changing steps
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }
         } else {
           navigate('/proposal-writer/step-1', { replace: true })
         }
@@ -146,7 +180,7 @@ export function ProposalWriterPage() {
     } else {
       navigate('/proposal-writer/step-1', { replace: true })
     }
-  }, [stepId, navigate])
+  }, [stepId, navigate, currentStep])
 
   // Block browser back/forward navigation
   useEffect(() => {
@@ -485,7 +519,9 @@ export function ProposalWriterPage() {
     console.log('🎯 Rendering step:', currentStep, {
       hasRfpAnalysis: !!rfpAnalysis,
       hasConceptAnalysis: !!conceptAnalysis,
-      conceptAnalysisKeys: conceptAnalysis ? Object.keys(conceptAnalysis) : []
+      conceptAnalysisKeys: conceptAnalysis ? Object.keys(conceptAnalysis) : [],
+      hasConceptDocument: !!conceptDocument,
+      conceptDocumentKeys: conceptDocument ? Object.keys(conceptDocument) : []
     })
     
     const stepProps = {

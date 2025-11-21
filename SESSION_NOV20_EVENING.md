@@ -308,11 +308,45 @@ AI genera documento con solo 2 secciones:
 
 ---
 
+## 🔧 TRABAJO ADICIONAL (23:14 - 23:20 EST)
+
+### 6. Step 3 No Carga concept_document_v2
+**Problema:** Step 3 muestra "No concept document available" aunque existe en backend  
+**Causa:** Backend GET `/api/proposals/{id}` retorna array de todos los proposals, no solo el solicitado
+
+**Diagnóstico:**
+- Frontend busca proposal por ID en array
+- localStorage tiene ID de proposal incorrecto (primera sesión)
+- Proposal con concept_document_v2 tiene ID diferente
+
+**Solución Implementada:**
+- ✅ Agregado manejo de array en frontend
+- ✅ Busca proposal correcto por ID: `response.find(p => p.id === proposalId)`
+- ✅ Agregado logging detallado para debugging
+
+**Archivos Modificados:**
+- `ProposalWriterPage.tsx` líneas 132-155: Enhanced logging y array handling
+
+**Logging Agregado:**
+```typescript
+console.log('🔍 Loading concept document for proposalId:', proposalId)
+console.log('📡 API response:', response)
+console.log('🎯 Selected proposal:', proposal?.id, proposal?.proposalCode)
+console.log('✅ Found concept_document_v2, loading...')
+```
+
+---
+
 ## 📝 PENDIENTE PARA MAÑANA
+
+### Crítico:
+- [ ] **FIX Backend:** GET `/api/proposals/{id}` debe retornar solo 1 proposal, no array
+- [ ] **Verificar localStorage:** Limpiar y usar proposal ID correcto
+- [ ] Test Step 3 carga concept_document_v2 correctamente
 
 ### Testing:
 - [ ] Deployment completo (backend + frontend)
-- [ ] Test end-to-end del flujo Step 2
+- [ ] Test end-to-end del flujo Step 2 → Step 3
 - [ ] Verificar documento generado tiene formato correcto
 - [ ] Validar que solo genera secciones seleccionadas
 - [ ] Test con diferentes combinaciones de secciones
@@ -370,9 +404,9 @@ aws logs tail /aws/lambda/igad-backend-testing-AnalysisWorkerFunction-UQrUNFZE14
 
 ---
 
-**Estado:** ✅ Código listo para deployment  
-**Próximo paso:** Deploy y testing end-to-end  
-**Hora de cierre:** 22:52 EST
+**Estado:** ✅ Código listo para deployment (con issue conocido en Step 3)  
+**Próximo paso:** Fix backend GET endpoint y test Step 3  
+**Hora de cierre:** 23:20 EST
 
 ---
 

@@ -1,26 +1,12 @@
-import { Eye } from 'lucide-react'
-import { StepProps } from './stepConfig'
-import styles from './proposalWriter.module.css'
+import React from 'react'
 
-export function Step4ReviewRefinement({
-  formData: _formData,
-  setFormData: _setFormData,
-}: StepProps) {
+const Step4ReviewRefinement: React.FC = () => {
   return (
-    <div className={styles.wizardContainer}>
-      <div className={styles.stepHeader}>
-        <h2 className={styles.stepTitle}>Review & Refinement</h2>
-        <p className={styles.stepDescription}>
-          Review the generated proposal and make final refinements.
-        </p>
-      </div>
-      <div className={styles.stepContent}>
-        <div className={styles.placeholderContent}>
-          <Eye size={64} />
-          <h3>Proposal Review</h3>
-          <p>This step will allow you to review and refine your proposal.</p>
-        </div>
-      </div>
+    <div style={{ padding: '32px', textAlign: 'center' }}>
+      <h2>Step 4: Review & Refinement</h2>
+      <p>Coming soon...</p>
     </div>
   )
 }
+
+export default Step4ReviewRefinement

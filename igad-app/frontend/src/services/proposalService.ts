@@ -56,7 +56,8 @@ class ProposalService {
 
   async getProposal(id: string): Promise<Proposal> {
     const response = await apiClient.get(`/api/proposals/${id}`)
-    return response.data.proposal
+    // Backend returns proposal directly, not wrapped in { proposal: ... }
+    return response.data
   }
 
   async updateProposal(id: string, updates: Partial<Proposal>): Promise<Proposal> {
