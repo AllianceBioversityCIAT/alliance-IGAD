@@ -5,6 +5,7 @@
   width: 100vw;
   height: 100vh;
   background: #ffffff;
+  overflow: hidden;
 }
 
 .leftColumn {
@@ -18,6 +19,7 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  overflow-y: auto;
 }
 
 .formContainer {
@@ -33,6 +35,7 @@
   width: 459px;
   height: 87px;
   max-width: 100%;
+  object-fit: contain;
 }
 
 .formContent {
@@ -52,7 +55,7 @@
 }
 
 .title {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   font-style: normal;
   font-weight: 700;
   font-size: 35.6px;
@@ -65,7 +68,7 @@
 }
 
 .subtitle {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   font-style: normal;
   font-weight: 400;
   font-size: 16.62px;
@@ -91,7 +94,7 @@
 }
 
 .label {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   font-style: normal;
   font-weight: 400;
   font-size: 20.775px;
@@ -104,11 +107,16 @@
   background: #ffffff;
   border: 1.18714px solid #d1d5db;
   border-radius: 7.12286px;
-  font-family: Inter;
+  font-family: Inter, sans-serif;
   font-size: 14px;
   color: #969696;
   width: 100%;
   box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #00a63e;
 }
 
 .passwordField {
@@ -129,11 +137,14 @@
   border: none;
   cursor: pointer;
   color: #6b7280;
+  font-size: 18px;
+  padding: 4px;
 }
 
 .errorText {
   color: #fb2c36;
   font-size: 12px;
+  margin-top: -8px;
 }
 
 .formOptions {
@@ -148,9 +159,10 @@
   display: flex;
   align-items: center;
   gap: 11.92px;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   font-size: 13.9106px;
   color: #0a0a0a;
+  cursor: pointer;
 }
 
 .checkbox {
@@ -159,13 +171,19 @@
   background: #f3f3f5;
   border: 1.18714px solid rgba(0, 0, 0, 0.1);
   border-radius: 3.56143px;
+  cursor: pointer;
 }
 
 .forgotPassword {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   font-size: 13.9106px;
   color: #00a63e;
   text-decoration: none;
+  transition: color 0.2s;
+}
+
+.forgotPassword:hover {
+  color: #008236;
 }
 
 .submitButton {
@@ -175,7 +193,7 @@
   border-radius: 9.49714px;
   border: none;
   color: #ffffff;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   font-size: 16.62px;
   cursor: pointer;
   display: flex;
@@ -183,10 +201,20 @@
   justify-content: center;
   gap: 11.87px;
   margin-top: 31.8px;
+  transition: background-color 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #008236;
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .supportText {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   font-size: 13.9106px;
   color: #4a5565;
   text-align: center;
@@ -195,18 +223,24 @@
 
 .supportLink {
   color: #00a63e;
+  text-decoration: none;
+}
+
+.supportLink:hover {
+  text-decoration: underline;
 }
 
 .rightColumn {
   width: 50%;
   height: 100vh;
   position: relative;
+  overflow: hidden;
 }
 
 .backgroundImage {
   width: 100%;
   height: 100%;
-  background-image: url(/fondologin.jpg);
+  background-image: url(/fondologin.png);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -222,33 +256,9 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  pointer-events: none;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .container {
-    flex-direction: column;
-  }
-  
-  .leftColumn,
-  .rightColumn {
-    width: 100%;
-  }
-  
-  .rightColumn {
-    height: 40vh;
-  }
-  
-  .formContainer {
-    width: 100%;
-    gap: 60px;
-  }
-  
-  .logo {
-    width: 100%;
-    height: auto;
-  }
-}
 .errorMessage {
   background-color: #fee;
   border: 1px solid #fcc;
@@ -257,4 +267,192 @@
   border-radius: 6px;
   margin-bottom: 16px;
   font-size: 14px;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .leftColumn {
+    width: 45%;
+    padding: 32px;
+  }
+  
+  .rightColumn {
+    width: 55%;
+  }
+  
+  .formContainer {
+    width: 400px;
+    gap: 48px;
+  }
+  
+  .logo {
+    width: 400px;
+    height: auto;
+  }
+  
+  .title {
+    font-size: 30px;
+    line-height: 38px;
+  }
+  
+  .subtitle {
+    font-size: 15px;
+    line-height: 26px;
+  }
+  
+  .label {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column-reverse;
+  }
+  
+  .leftColumn,
+  .rightColumn {
+    width: 100%;
+  }
+  
+  .leftColumn {
+    min-height: 60vh;
+    padding: 32px 24px;
+  }
+  
+  .rightColumn {
+    height: 40vh;
+    min-height: 250px;
+  }
+  
+  .formContainer {
+    width: 100%;
+    max-width: 460px;
+    gap: 40px;
+  }
+  
+  .logo {
+    width: 100%;
+    max-width: 350px;
+    height: auto;
+  }
+  
+  .title {
+    font-size: 28px;
+    line-height: 36px;
+  }
+  
+  .subtitle {
+    font-size: 14px;
+    line-height: 24px;
+  }
+  
+  .formContent {
+    gap: 24px;
+  }
+  
+  .label {
+    font-size: 16px;
+  }
+  
+  .input {
+    font-size: 16px;
+    padding: 14px;
+  }
+  
+  .formOptions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .backgroundImage {
+    background-position: center bottom;
+  }
+}
+
+@media (max-width: 480px) {
+  .leftColumn {
+    padding: 24px 16px;
+    min-height: 65vh;
+  }
+  
+  .rightColumn {
+    height: 35vh;
+    min-height: 200px;
+  }
+  
+  .formContainer {
+    gap: 32px;
+  }
+  
+  .logo {
+    max-width: 280px;
+  }
+  
+  .title {
+    font-size: 24px;
+    line-height: 32px;
+  }
+  
+  .subtitle {
+    font-size: 13px;
+    line-height: 22px;
+  }
+  
+  .formContent {
+    gap: 20px;
+  }
+  
+  .fieldGroup {
+    gap: 12px;
+  }
+  
+  .label {
+    font-size: 15px;
+  }
+  
+  .input {
+    font-size: 16px;
+    padding: 12px;
+  }
+  
+  .checkboxGroup {
+    font-size: 13px;
+  }
+  
+  .forgotPassword {
+    font-size: 13px;
+  }
+  
+  .submitButton {
+    height: 48px;
+    font-size: 15px;
+    margin-top: 24px;
+  }
+  
+  .supportText {
+    font-size: 12px;
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 375px) {
+  .leftColumn {
+    padding: 20px 12px;
+  }
+  
+  .logo {
+    max-width: 240px;
+  }
+  
+  .title {
+    font-size: 22px;
+    line-height: 28px;
+  }
+  
+  .subtitle {
+    font-size: 12px;
+    line-height: 20px;
+  }
 }
