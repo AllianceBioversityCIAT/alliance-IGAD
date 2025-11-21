@@ -8,586 +8,126 @@ export function HomePage() {
       {/* Hero Section */}
       <div className={styles.heroSection}>
         <div className={styles.heroContainer}>
-          {/* IGAD Logo */}
-          <div className={styles.logoContainer}>
-            <img src="/igad-logo.png" alt="IGAD Innovation Hub" className={styles.logo} />
+          {/* IGAD Logo and Tagline */}
+          <div className={styles.heroHeader}>
+            <img src="/igad-logo.png" alt="IGAD Innovation Hub" className={styles.heroLogo} />
+            <p className={styles.tagline}>PEACE, PROSPERITY AND REGIONAL INTEGRATION</p>
           </div>
 
-          {/* Mission Tagline */}
-          <p className={styles.tagline}>PEACE, PROSPERITY AND REGIONAL INTEGRATION</p>
+          {/* Main Content */}
+          <div className={styles.heroContent}>
+            {/* Main Heading */}
+            <h1 className={styles.title}>AI-Powered Agricultural Intelligence Hub</h1>
 
-          {/* Main Heading */}
-          <h1 className={styles.title}>AI-Powered Agricultural Intelligence Hub</h1>
-
-          {/* Subtitle */}
-          <p className={styles.subtitle}>
-            Empowering agricultural experts across the IGAD region with intelligent tools for policy
-            analysis, report generation, and strategic communication
-          </p>
+            {/* Subtitle */}
+            <p className={styles.subtitle}>
+              Empowering agricultural experts across the IGAD region with intelligent tools for policy
+              analysis, report generation, and strategic communication
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Tools Section */}
-      <div
-        style={{
-          padding: 'clamp(32px, 8vw, 64px) clamp(16px, 8vw, 63px)',
-          width: '100%',
-        }}
-      >
-        <div style={{ width: '100%', maxWidth: '1504px', margin: '0 auto' }}>
+      <div className={styles.toolsSection}>
+        <div className={styles.toolsContainer}>
           {/* Section Header */}
-          <div style={{ textAlign: 'center', marginBottom: 'clamp(32px, 8vw, 64px)' }}>
-            <h2
-              style={{
-                fontFamily: 'Arial',
-                fontWeight: '400',
-                fontSize: 'clamp(24px, 4vw, 30px)',
-                lineHeight: '1.2',
-                textAlign: 'center',
-                color: '#016630',
-                marginBottom: '16px',
-              }}
-            >
-              AI-Powered Tools & Services
-            </h2>
-            <p
-              style={{
-                width: '672px',
-                margin: '0 auto',
-                fontFamily: 'Arial',
-                fontWeight: '400',
-                fontSize: '18px',
-                lineHeight: '28px',
-                textAlign: 'center',
-                color: '#4A5565',
-              }}
-            >
-              Choose from our suite of specialized tools designed to enhance agricultural
-              productivity
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>AI-Powered Tools & Services</h2>
+            <p className={styles.sectionSubtitle}>
+              Choose from our suite of specialized tools designed for agricultural experts, policy makers, and development professionals.
             </p>
           </div>
 
           {/* Tools Grid */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: 'clamp(16px, 4vw, 32px)',
-              justifyContent: 'center',
-              width: '100%',
-              maxWidth: '1200px',
-              margin: '0 auto',
-            }}
-          >
+          <div className={styles.toolsGrid}>
             {/* 1. Proposal Writer - Available */}
-            <div
-              className={styles.toolCard}
-              style={{
-                position: 'relative',
-                width: '362px',
-                height: '324px',
-                background: '#FFFFFF',
-                border: '2px solid #B9F8CF',
-                borderRadius: '14px',
-                padding: '34px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  padding: '16px 16px 0px',
-                  width: '64px',
-                  height: '64px',
-                  background: '#DCFCE7',
-                  borderRadius: '14px',
-                  marginBottom: '24px',
-                }}
-              >
+            <div className={`${styles.toolCard} ${styles.toolCardAvailable}`}>
+              <span className={`${styles.badge} ${styles.badgeAvailable}`}>Available</span>
+              <div className={`${styles.iconContainer} ${styles.iconContainerAvailable}`}>
                 <Edit size={32} color="#008236" strokeWidth={2.67} />
               </div>
-              <h3
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '20px',
-                  lineHeight: '28px',
-                  color: '#101828',
-                  marginBottom: '12px',
-                }}
-              >
-                Proposal Writer
-              </h3>
-              <p
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '16px',
-                  lineHeight: '26px',
-                  color: '#4A5565',
-                  marginBottom: '24px',
-                }}
-              >
-                Create compelling funding proposals for agricultural projects
+              <h3 className={styles.toolTitle}>Proposal Writer</h3>
+              <p className={styles.toolDescription}>
+                Create compelling funding proposals for agricultural initiatives
               </p>
-              <Link
-                to="/proposal-writer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  width: '294px',
-                  height: '36px',
-                  background: '#00A63E',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  fontFamily: 'Arial',
-                  fontSize: '14px',
-                  color: '#FFFFFF',
-                }}
-              >
+              <Link to="/proposal-writer" className={`${styles.toolButton} ${styles.toolButtonAvailable}`}>
                 Launch Tool
-                <ArrowRight style={{ width: '16px', height: '16px' }} />
+                <ArrowRight size={16} />
               </Link>
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '18px',
-                  right: '18px',
-                  display: 'flex',
-                  padding: '4px 12px',
-                  background: '#DCFCE7',
-                  border: '1px solid #B9F8CF',
-                  borderRadius: '999px',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'Arial',
-                    fontSize: '12px',
-                    lineHeight: '16px',
-                    color: '#016630',
-                  }}
-                >
-                  Available
-                </span>
-              </div>
             </div>
 
             {/* 2. Newsletter Generator - Available */}
-            <div
-              className={styles.toolCard}
-              style={{
-                position: 'relative',
-                width: '362px',
-                height: '324px',
-                background: '#FFFFFF',
-                border: '2px solid #B9F8CF',
-                borderRadius: '14px',
-                padding: '34px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  padding: '16px 16px 0px',
-                  width: '64px',
-                  height: '64px',
-                  background: '#DCFCE7',
-                  borderRadius: '14px',
-                  marginBottom: '24px',
-                }}
-              >
+            <div className={`${styles.toolCard} ${styles.toolCardAvailable}`}>
+              <span className={`${styles.badge} ${styles.badgeAvailable}`}>Available</span>
+              <div className={`${styles.iconContainer} ${styles.iconContainerAvailable}`}>
                 <Mail size={32} color="#008236" strokeWidth={2.67} />
               </div>
-              <h3
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '20px',
-                  lineHeight: '28px',
-                  color: '#101828',
-                  marginBottom: '12px',
-                }}
-              >
-                Newsletter Generator
-              </h3>
-              <p
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '16px',
-                  lineHeight: '26px',
-                  color: '#4A5565',
-                  marginBottom: '24px',
-                }}
-              >
-                Create engaging newsletters on agricultural innovations and updates
+              <h3 className={styles.toolTitle}>Newsletter Generator</h3>
+              <p className={styles.toolDescription}>
+                Create engaging newsletters on agricultural innovations and policy updates
               </p>
-              <Link
-                to="/newsletter-generator"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  width: '294px',
-                  height: '36px',
-                  background: '#00A63E',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  fontFamily: 'Arial',
-                  fontSize: '14px',
-                  color: '#FFFFFF',
-                }}
-              >
+              <Link to="/newsletter-generator" className={`${styles.toolButton} ${styles.toolButtonAvailable}`}>
                 Launch Tool
-                <ArrowRight style={{ width: '16px', height: '16px' }} />
+                <ArrowRight size={16} />
               </Link>
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '18px',
-                  right: '18px',
-                  display: 'flex',
-                  padding: '4px 12px',
-                  background: '#DCFCE7',
-                  border: '1px solid #B9F8CF',
-                  borderRadius: '999px',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'Arial',
-                    fontSize: '12px',
-                    lineHeight: '16px',
-                    color: '#016630',
-                  }}
-                >
-                  Available
-                </span>
-              </div>
             </div>
 
             {/* 3. Report Generator - Coming Soon */}
-            <div
-              className={`${styles.toolCard} ${styles.toolCardDisabled}`}
-              style={{
-                position: 'relative',
-                width: '362px',
-                height: '324px',
-                background: '#FFFFFF',
-                border: '2px solid #E5E7EB',
-                borderRadius: '14px',
-                padding: '34px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  padding: '16px 16px 0px',
-                  width: '64px',
-                  height: '64px',
-                  background: '#F3F4F6',
-                  borderRadius: '14px',
-                  marginBottom: '24px',
-                }}
-              >
+            <div className={`${styles.toolCard} ${styles.toolCardDisabled}`}>
+              <span className={`${styles.badge} ${styles.badgeComingSoon}`}>Coming Soon</span>
+              <div className={`${styles.iconContainer} ${styles.iconContainerDisabled}`}>
                 <BarChart3 size={32} color="#6A7282" strokeWidth={2.67} />
               </div>
-              <h3
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '20px',
-                  lineHeight: '28px',
-                  color: '#101828',
-                  marginBottom: '12px',
-                }}
-              >
-                Report Generator
-              </h3>
-              <p
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '16px',
-                  lineHeight: '26px',
-                  color: '#4A5565',
-                  marginBottom: '24px',
-                }}
-              >
-                Generate comprehensive agricultural and policy reports
+              <h3 className={styles.toolTitle}>Report Generator</h3>
+              <p className={styles.toolDescription}>
+                Generate comprehensive agricultural and policy reports with AI assistance
               </p>
-              <button
-                style={{
-                  width: '294px',
-                  height: '36px',
-                  background: '#FFFFFF',
-                  opacity: '0.5',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
-                  fontFamily: 'Arial',
-                  fontSize: '14px',
-                  color: '#0A0A0A',
-                }}
-              >
+              <button className={`${styles.toolButton} ${styles.toolButtonDisabled}`}>
                 Coming Soon
               </button>
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '18px',
-                  right: '18px',
-                  display: 'flex',
-                  padding: '4px 12px',
-                  background: '#F3F4F6',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '999px',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'Arial',
-                    fontSize: '12px',
-                    lineHeight: '16px',
-                    color: '#4A5565',
-                  }}
-                >
-                  Coming Soon
-                </span>
-              </div>
             </div>
 
             {/* 4. Policy Analyzer - Coming Soon */}
-            <div
-              className={`${styles.toolCard} ${styles.toolCardDisabled}`}
-              style={{
-                position: 'relative',
-                width: '362px',
-                height: '324px',
-                background: '#FFFFFF',
-                border: '2px solid #E5E7EB',
-                borderRadius: '14px',
-                padding: '34px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  padding: '16px 16px 0px',
-                  width: '64px',
-                  height: '64px',
-                  background: '#F3F4F6',
-                  borderRadius: '14px',
-                  marginBottom: '24px',
-                }}
-              >
+            <div className={`${styles.toolCard} ${styles.toolCardDisabled}`}>
+              <span className={`${styles.badge} ${styles.badgeComingSoon}`}>Coming Soon</span>
+              <div className={`${styles.iconContainer} ${styles.iconContainerDisabled}`}>
                 <Search size={32} color="#6A7282" strokeWidth={2.67} />
               </div>
-              <h3
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '20px',
-                  lineHeight: '28px',
-                  color: '#101828',
-                  marginBottom: '12px',
-                }}
-              >
-                Policy Analyzer
-              </h3>
-              <p
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '16px',
-                  lineHeight: '26px',
-                  color: '#4A5565',
-                  marginBottom: '24px',
-                }}
-              >
+              <h3 className={styles.toolTitle}>Policy Analyzer</h3>
+              <p className={styles.toolDescription}>
                 Analyze and review regional policies for agricultural development
               </p>
-              <button
-                style={{
-                  width: '294px',
-                  height: '36px',
-                  background: '#FFFFFF',
-                  opacity: '0.5',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
-                  fontFamily: 'Arial',
-                  fontSize: '14px',
-                  color: '#0A0A0A',
-                }}
-              >
+              <button className={`${styles.toolButton} ${styles.toolButtonDisabled}`}>
                 Coming Soon
               </button>
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '18px',
-                  right: '18px',
-                  display: 'flex',
-                  padding: '4px 12px',
-                  background: '#F3F4F6',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '999px',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'Arial',
-                    fontSize: '12px',
-                    lineHeight: '16px',
-                    color: '#4A5565',
-                  }}
-                >
-                  Coming Soon
-                </span>
-              </div>
             </div>
 
             {/* 5. Agribusiness Hub - Coming Soon */}
-            <div
-              className={`${styles.toolCard} ${styles.toolCardDisabled}`}
-              style={{
-                position: 'relative',
-                width: '362px',
-                height: '324px',
-                background: '#FFFFFF',
-                border: '2px solid #E5E7EB',
-                borderRadius: '14px',
-                padding: '34px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  padding: '16px 16px 0px',
-                  width: '64px',
-                  height: '64px',
-                  background: '#F3F4F6',
-                  borderRadius: '14px',
-                  marginBottom: '24px',
-                }}
-              >
+            <div className={`${styles.toolCard} ${styles.toolCardDisabled}`}>
+              <span className={`${styles.badge} ${styles.badgeComingSoon}`}>Coming Soon</span>
+              <div className={`${styles.iconContainer} ${styles.iconContainerDisabled}`}>
                 <Briefcase size={32} color="#6A7282" strokeWidth={2.67} />
               </div>
-              <h3
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '20px',
-                  lineHeight: '28px',
-                  color: '#101828',
-                  marginBottom: '12px',
-                }}
-              >
-                Agribusiness Hub
-              </h3>
-              <p
-                style={{
-                  fontFamily: 'Arial',
-                  fontWeight: '400',
-                  fontSize: '16px',
-                  lineHeight: '26px',
-                  color: '#4A5565',
-                  marginBottom: '24px',
-                }}
-              >
-                Connect with agribusiness development opportunities
+              <h3 className={styles.toolTitle}>Agribusiness Hub</h3>
+              <p className={styles.toolDescription}>
+                Connect with agribusiness development opportunities across the region
               </p>
-              <button
-                style={{
-                  width: '294px',
-                  height: '36px',
-                  background: '#FFFFFF',
-                  opacity: '0.5',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
-                  fontFamily: 'Arial',
-                  fontSize: '14px',
-                  color: '#0A0A0A',
-                }}
-              >
+              <button className={`${styles.toolButton} ${styles.toolButtonDisabled}`}>
                 Coming Soon
               </button>
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '18px',
-                  right: '18px',
-                  display: 'flex',
-                  padding: '4px 12px',
-                  background: '#F3F4F6',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '999px',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'Arial',
-                    fontSize: '12px',
-                    lineHeight: '16px',
-                    color: '#4A5565',
-                  }}
-                >
-                  Coming Soon
-                </span>
-              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-          gap: '8px',
-          margin: '0',
-          background: '#016630',
-        }}
-      >
-        <p
-          style={{
-            fontFamily: 'Arial',
-            fontSize: '16px',
-            lineHeight: '24px',
-            textAlign: 'center',
-            color: '#DCFCE7',
-            margin: 0,
-          }}
-        >
-          © 2024 IGAD - Intergovernmental Authority on Development
+      <div className={styles.footer}>
+        <p className={styles.footerText}>
+          © 2025 IGAD - Intergovernmental Authority on Development
         </p>
-        <p
-          style={{
-            fontFamily: 'Arial',
-            fontSize: '14px',
-            lineHeight: '20px',
-            textAlign: 'center',
-            color: '#FFFFFF',
-            margin: 0,
-          }}
-        >
-          Advancing agricultural innovation and regional integration through technology
+        <p className={styles.footerSubtext}>
+          Advancing agricultural innovation and regional integration across East Africa
         </p>
       </div>
     </div>
