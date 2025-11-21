@@ -350,6 +350,81 @@ async def save_concept_text(
         raise HTTPException(status_code=500, detail=f"Failed to save concept text: {str(e)}")
 
 
+@router.get("")
+async def get_uploaded_documents(
+    proposal_id: str,
+    user=Depends(get_current_user)
+):
+    """Get list of all uploaded documents for a proposal"""
+    try:
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+        
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        proposal_code = proposal.get("proposalCode")
+        
+        # List documents from S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+        
+        if not bucket:
+            raise HTTPException(status_code=500, detail="S3 bucket not configured")
+        
+        # List documents in different folders
+        folders = {
+            'rfp_documents': f"{proposal_code}/documents/rfp/",
+            'concept_documents': f"{proposal_code}/documents/initial_concept/",
+            'reference_documents': f"{proposal_code}/documents/references/",
+            'supporting_documents': f"{proposal_code}/documents/supporting/"
+        }
+        
+        result = {
+            'rfp_documents': [],
+            'concept_documents': [],
+            'reference_documents': [],
+            'supporting_documents': []
+        }
+        
+        for doc_type, prefix in folders.items():
+            try:
+                response = s3_client.list_objects_v2(
+                    Bucket=bucket,
+                    Prefix=prefix
+                )
+                
+                if 'Contents' in response:
+                    for obj in response['Contents']:
+                        # Extract filename from key
+                        filename = obj['Key'].split('/')[-1]
+                        if filename:  # Skip if it's just the folder
+                            result[doc_type].append(filename)
+            except Exception as e:
+                print(f"Error listing {doc_type}: {str(e)}")
+                # Continue with other folders even if one fails
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Get documents error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to get documents: {str(e)}")
+
+
 @router.delete("/concept-text")
 async def delete_concept_text(
     proposal_id: str,

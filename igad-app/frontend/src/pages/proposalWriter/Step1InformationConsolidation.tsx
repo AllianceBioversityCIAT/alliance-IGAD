@@ -56,26 +56,70 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   // Load data from localStorage or proposal when component mounts
   useEffect(() => {
     if (proposalId) {
-      const storageKey = `proposal_draft_${proposalId}`
-      const savedData = localStorage.getItem(storageKey)
-      
-      if (savedData) {
-        // Load from localStorage if available
+      const loadProposalData = async () => {
+        const storageKey = `proposal_draft_${proposalId}`
+        const savedData = localStorage.getItem(storageKey)
+        
         try {
-          const parsed = JSON.parse(savedData)
-          setFormData(parsed)
-        } catch (e) {
-          console.error('Failed to parse saved proposal data:', e)
+          // First, load uploaded documents from backend
+          const { proposalService } = await import('../../services/proposalService')
+          const documents = await proposalService.getUploadedDocuments(proposalId)
+          
+          console.log('📄 Loaded documents from backend:', documents)
+          
+          // Build formData from backend documents
+          const backendFormData = {
+            uploadedFiles: {
+              'rfp-document': documents.rfp_documents || [],
+              'concept-document': documents.concept_documents || [],
+              'reference-proposals': documents.reference_documents || [],
+              'supporting-docs': documents.supporting_documents || [],
+            } as { [key: string]: string[] },
+            textInputs: {} as { [key: string]: string },
+          }
+          
+          if (savedData) {
+            // Merge with localStorage data (for text inputs)
+            try {
+              const parsed = JSON.parse(savedData)
+              backendFormData.textInputs = parsed.textInputs || {}
+              
+              // Use backend files, not localStorage files (they might be stale)
+              setFormData(backendFormData)
+            } catch (e) {
+              console.error('Failed to parse saved proposal data:', e)
+              setFormData(backendFormData)
+            }
+          } else if (proposal) {
+            // Otherwise load text inputs from proposal
+            backendFormData.textInputs = proposal.text_inputs || {}
+            setFormData(backendFormData)
+          } else {
+            setFormData(backendFormData)
+          }
+        } catch (error) {
+          console.error('Failed to load documents:', error)
+          
+          // Fallback to localStorage or proposal
+          if (savedData) {
+            try {
+              const parsed = JSON.parse(savedData)
+              setFormData(parsed)
+            } catch (e) {
+              console.error('Failed to parse saved proposal data:', e)
+            }
+          } else if (proposal) {
+            setFormData({
+              uploadedFiles: proposal.uploaded_files || {},
+              textInputs: proposal.text_inputs || {},
+            })
+          }
         }
-      } else if (proposal) {
-        // Otherwise load from proposal
-        setFormData({
-          uploadedFiles: proposal.uploaded_files || {},
-          textInputs: proposal.text_inputs || {},
-        })
       }
+      
+      loadProposalData()
     }
-  }, [proposalId, proposal, setFormData])
+  }, [proposalId, proposal])
 
   // Save to localStorage whenever formData changes
   useEffect(() => {

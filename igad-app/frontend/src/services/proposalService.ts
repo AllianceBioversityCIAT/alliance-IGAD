@@ -245,6 +245,16 @@ class ProposalService {
     const response = await apiClient.get(`/api/proposals/${proposalId}/concept-status`)
     return response.data
   }
+  
+  async getUploadedDocuments(proposalId: string): Promise<{
+    rfp_documents: string[]
+    concept_documents: string[]
+    reference_documents: string[]
+    supporting_documents: string[]
+  }> {
+    const response = await apiClient.get(`/api/proposals/${proposalId}/documents`)
+    return response.data
+  }
 
   async generateConceptDocument(
     proposalId: string,

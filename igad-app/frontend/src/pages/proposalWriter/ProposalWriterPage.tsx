@@ -68,6 +68,26 @@ export function ProposalWriterPage() {
           console.error('Failed to parse saved concept analysis:', e)
         }
       }
+      
+      // Load concept document from localStorage
+      const savedConceptDocument = localStorage.getItem(`proposal_concept_document_${draft.proposalId}`)
+      if (savedConceptDocument) {
+        try {
+          setConceptDocument(JSON.parse(savedConceptDocument))
+        } catch (e) {
+          console.error('Failed to parse saved concept document:', e)
+        }
+      }
+      
+      // Load concept evaluation data from localStorage
+      const savedConceptEvaluation = localStorage.getItem(`proposal_concept_evaluation_${draft.proposalId}`)
+      if (savedConceptEvaluation) {
+        try {
+          setConceptEvaluationData(JSON.parse(savedConceptEvaluation))
+        } catch (e) {
+          console.error('Failed to parse saved concept evaluation:', e)
+        }
+      }
     }
   }, [])
 
@@ -94,6 +114,41 @@ export function ProposalWriterPage() {
       localStorage.setItem(`proposal_concept_analysis_${proposalId}`, JSON.stringify(conceptAnalysis))
     }
   }, [conceptAnalysis, proposalId])
+  
+  // Save concept document to localStorage
+  useEffect(() => {
+    if (conceptDocument && proposalId) {
+      localStorage.setItem(`proposal_concept_document_${proposalId}`, JSON.stringify(conceptDocument))
+    }
+  }, [conceptDocument, proposalId])
+  
+  // Save concept evaluation data to localStorage
+  useEffect(() => {
+    if (conceptEvaluationData && proposalId) {
+      localStorage.setItem(`proposal_concept_evaluation_${proposalId}`, JSON.stringify(conceptEvaluationData))
+    }
+  }, [conceptEvaluationData, proposalId])
+  
+  // Detect RFP changes and invalidate analyses
+  useEffect(() => {
+    if (proposalId) {
+      // Listen for RFP deletion events
+      const handleRfpDeleted = () => {
+        console.log('🔄 RFP deleted - invalidating analyses')
+        setRfpAnalysis(null)
+        setConceptAnalysis(null)
+        setConceptDocument(null)
+        setConceptEvaluationData(null)
+        localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
+        localStorage.removeItem(`proposal_concept_analysis_${proposalId}`)
+        localStorage.removeItem(`proposal_concept_document_${proposalId}`)
+        localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
+      }
+      
+      window.addEventListener('rfp-deleted', handleRfpDeleted)
+      return () => window.removeEventListener('rfp-deleted', handleRfpDeleted)
+    }
+  }, [proposalId])
 
   // Create a proposal when the component mounts (only if authenticated and no saved proposal)
   useEffect(() => {
@@ -424,6 +479,13 @@ export function ProposalWriterPage() {
   const handleGenerateConceptDocument = async () => {
     console.log('🟢 Starting concept document generation...')
     
+    // If concept document already exists, just proceed to next step
+    if (conceptDocument) {
+      console.log('✅ Concept document already exists, proceeding to next step')
+      proceedToNextStep()
+      return
+    }
+    
     if (!proposalId || !conceptEvaluationData) {
       alert('Please select sections and add comments before generating')
       return
@@ -532,6 +594,7 @@ export function ProposalWriterPage() {
       conceptAnalysis,
       onConceptEvaluationChange: handleConceptEvaluationChange,
       conceptDocument,
+      conceptEvaluationData,
     }
 
     switch (currentStep) {
@@ -595,6 +658,11 @@ export function ProposalWriterPage() {
         </>
       ) : currentStep === 5 ? (
         'Complete'
+      ) : currentStep === 2 && conceptDocument ? (
+        <>
+          Continue to Structure Validation
+          <ChevronRight size={16} />
+        </>
       ) : currentStep === 2 ? (
         <>
           Generate Updated Concept Document and Continue
@@ -602,7 +670,7 @@ export function ProposalWriterPage() {
         </>
       ) : currentStep === 1 && rfpAnalysis && conceptAnalysis ? (
         <>
-          Next: View Analysis
+          Continue to Concept Review
           <ChevronRight size={16} />
         </>
       ) : currentStep === 1 ? (

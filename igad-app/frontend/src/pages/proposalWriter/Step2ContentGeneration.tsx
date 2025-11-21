@@ -13,6 +13,7 @@ interface SectionNeedingElaboration {
   section: string
   issue: string
   priority: 'Critical' | 'Recommended' | 'Optional'
+  suggestions?: string[]
 }
 
 interface ConceptAnalysis {
@@ -25,6 +26,10 @@ interface ConceptAnalysis {
 interface Step2Props extends StepProps {
   proposalId?: string
   conceptAnalysis?: ConceptAnalysis
+  conceptEvaluationData?: {
+    selectedSections: string[]
+    userComments: { [key: string]: string }
+  }
   onConceptEvaluationChange?: (data: {
     selectedSections: string[]
     userComments: { [key: string]: string }
@@ -45,15 +50,27 @@ const PRIORITY_COLORS = {
   'Optional': { bg: '#E0E7FF', border: '#C7D2FE', text: '#193CB8' }
 }
 
-export function Step2ContentGeneration({ conceptAnalysis: rawConceptAnalysis, onConceptEvaluationChange }: Step2Props) {
+export function Step2ContentGeneration({ 
+  conceptAnalysis: rawConceptAnalysis, 
+  conceptEvaluationData,
+  onConceptEvaluationChange 
+}: Step2Props) {
   // Unwrap concept_analysis if it comes wrapped from backend
   const conceptAnalysis = rawConceptAnalysis?.concept_analysis || rawConceptAnalysis
   
   console.log('🔍 Step 2 - Raw Concept Analysis:', rawConceptAnalysis)
   console.log('🔍 Step 2 - Unwrapped Concept Analysis:', conceptAnalysis)
+  console.log('🔍 Step 2 - Saved Evaluation Data:', conceptEvaluationData)
   
-  // Initialize selected sections (Critical checked by default)
+  // Initialize selected sections from saved data OR default to Critical
   const [selectedSections, setSelectedSections] = useState<string[]>(() => {
+    // First priority: load from saved evaluation data
+    if (conceptEvaluationData?.selectedSections) {
+      console.log('✅ Loading saved sections:', conceptEvaluationData.selectedSections)
+      return conceptEvaluationData.selectedSections
+    }
+    
+    // Fallback: Critical sections by default
     if (!conceptAnalysis?.sections_needing_elaboration) return []
     return conceptAnalysis.sections_needing_elaboration
       .filter(s => s.priority === 'Critical')
@@ -61,7 +78,10 @@ export function Step2ContentGeneration({ conceptAnalysis: rawConceptAnalysis, on
   })
   
   const [expandedSections, setExpandedSections] = useState<string[]>([])
-  const [userComments, setUserComments] = useState<{ [key: string]: string }>({})
+  const [userComments, setUserComments] = useState<{ [key: string]: string }>(() => {
+    // Load saved comments if available
+    return conceptEvaluationData?.userComments || {}
+  })
 
   // Notify parent of state changes
   useEffect(() => {
@@ -235,9 +255,17 @@ export function Step2ContentGeneration({ conceptAnalysis: rawConceptAnalysis, on
                         <div className={styles.suggestionsSection}>
                           <h4 className={styles.subsectionTitle}>Suggestions</h4>
                           <ul className={styles.suggestionsList}>
-                            <li>Start with the end (impact) and work backwards</li>
-                            <li>List key assumptions that must hold true</li>
-                            <li>Reference evidence for why your approach will work</li>
+                            {section.suggestions && section.suggestions.length > 0 ? (
+                              section.suggestions.map((suggestion, idx) => (
+                                <li key={idx}>{suggestion}</li>
+                              ))
+                            ) : (
+                              <>
+                                <li>Start with the end (impact) and work backwards</li>
+                                <li>List key assumptions that must hold true</li>
+                                <li>Reference evidence for why your approach will work</li>
+                              </>
+                            )}
                           </ul>
                         </div>
 
