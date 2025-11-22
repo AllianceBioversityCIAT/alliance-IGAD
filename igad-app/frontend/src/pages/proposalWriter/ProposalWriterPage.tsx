@@ -65,7 +65,16 @@ export function ProposalWriterPage() {
       const savedConceptAnalysis = localStorage.getItem(`proposal_concept_analysis_${draft.proposalId}`)
       if (savedConceptAnalysis) {
         try {
-          setConceptAnalysis(JSON.parse(savedConceptAnalysis))
+          let parsed = JSON.parse(savedConceptAnalysis)
+          
+          // Unwrap if nested (concept_analysis.concept_analysis)
+          let unwrapped = parsed?.concept_analysis || parsed
+          if (unwrapped?.concept_analysis) {
+            console.log('🔍 Initial load - Found nested concept_analysis, unwrapping...')
+            unwrapped = unwrapped.concept_analysis
+          }
+          
+          setConceptAnalysis(unwrapped)
         } catch (e) {
           console.error('Failed to parse saved concept analysis:', e)
         }
@@ -364,22 +373,35 @@ export function ProposalWriterPage() {
   }
 
   const handleNavigateAway = () => {
-    if (proposalId) {
+    console.log('🚨 handleNavigateAway called!')
+    console.log('   allowNavigation.current:', allowNavigation.current)
+    console.log('   proposalId:', proposalId)
+    
+    // Only show modal if navigation is not explicitly allowed
+    if (proposalId && !allowNavigation.current) {
+      console.log('   ➡️ Showing exit modal')
       setShowExitModal(true)
+    } else {
+      console.log('   ➡️ Navigation allowed, not showing modal')
     }
   }
 
   // Helper function to proceed to next step
   const proceedToNextStep = useCallback(() => {
+    console.log('⏭️ proceedToNextStep called - allowNavigation:', allowNavigation.current)
+    
     if (currentStep < 5) {
       const nextStep = currentStep + 1
       setCurrentStep(nextStep)
       navigate(`/proposal-writer/step-${nextStep}`)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+      
       // Reset allowNavigation after navigation completes
+      // Use longer delay to ensure navigation is fully processed
       setTimeout(() => {
+        console.log('🔒 Resetting allowNavigation to FALSE')
         allowNavigation.current = false
-      }, 100)
+      }, 500)  // Increased from 100ms to 500ms
     }
   }, [currentStep, navigate])
 
@@ -579,6 +601,9 @@ export function ProposalWriterPage() {
       if (unwrappedAnalysis?.concept_analysis) {
         console.log('🔍 Found nested concept_analysis, unwrapping again...')
         unwrappedAnalysis = unwrappedAnalysis.concept_analysis
+        
+        // Update the state with unwrapped version for Step 2
+        setConceptAnalysis(unwrappedAnalysis)
       }
       
       console.log('🔍 Unwrapped concept analysis:', unwrappedAnalysis)
@@ -753,11 +778,11 @@ export function ProposalWriterPage() {
   const handleDownloadConceptDocument = async () => {
     console.log('🔽 Downloading concept document...')
     
-    // Allow navigation to prevent modal
-    allowNavigation.current = true
-    
     try {
       let content = ''
+      
+      console.log('📄 conceptDocument type:', typeof conceptDocument)
+      console.log('📄 conceptDocument keys:', conceptDocument ? Object.keys(conceptDocument) : 'null')
       
       // Extract content from conceptDocument
       if (typeof conceptDocument === 'string') {
@@ -817,27 +842,38 @@ export function ProposalWriterPage() {
 </body>
 </html>`
       
+      console.log('📝 Content length:', content.length, 'characters')
+      console.log('📝 HTML length:', htmlContent.length, 'characters')
+      
       // Create blob and download
       const blob = new Blob([fullHtml], { type: 'text/html' })
+      console.log('📦 Blob created - size:', blob.size, 'bytes')
+      
       const url = window.URL.createObjectURL(blob)
+      console.log('🔗 Blob URL created:', url)
+      
       const a = document.createElement('a')
       a.href = url
       a.download = `concept-document-${proposalCode || 'draft'}.html`
+      
+      console.log('📥 Triggering download:', a.download)
+      console.log('   Href:', a.href)
+      
       document.body.appendChild(a)
       a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
+      
+      console.log('✅ Click triggered!')
+      
+      // Clean up after click
+      setTimeout(() => {
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      }, 100)
       
       console.log('✅ Download complete!')
-      
-      // Reset navigation flag
-      setTimeout(() => {
-        allowNavigation.current = false
-      }, 100)
     } catch (error) {
       console.error('❌ Download failed:', error)
       alert('Failed to download document')
-      allowNavigation.current = false
     }
   }
 
@@ -902,13 +938,16 @@ export function ProposalWriterPage() {
     <button
       key="next"
       className={`${styles.button} ${styles.buttonPrimary}`}
-      onClick={async () => {
+      onClick={async (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        
+        console.log('🔘 Next button clicked - Step:', currentStep)
+        
         if (currentStep === 2) {
           handleGenerateConceptDocument()
         } else if (currentStep === 3) {
-          // Download first, then navigate
-          await handleDownloadConceptDocument()
-          // allowNavigation is already set to true inside handleDownloadConceptDocument
+          console.log('📥 Step 3: Proceeding to next step')
           proceedToNextStep()
         } else {
           handleNextStep()
@@ -949,7 +988,7 @@ export function ProposalWriterPage() {
         'Finish process'
       ) : currentStep === 3 ? (
         <>
-          Next & Download
+          Next
           <ChevronRight size={16} />
         </>
       ) : currentStep === 2 && conceptDocument ? (

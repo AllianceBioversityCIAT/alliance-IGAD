@@ -55,8 +55,14 @@ export function Step2ContentGeneration({
   conceptEvaluationData,
   onConceptEvaluationChange 
 }: Step2Props) {
-  // Unwrap concept_analysis if it comes wrapped from backend
-  const conceptAnalysis = rawConceptAnalysis?.concept_analysis || rawConceptAnalysis
+  // Unwrap concept_analysis if it comes wrapped from backend (double unwrap)
+  let conceptAnalysis = rawConceptAnalysis?.concept_analysis || rawConceptAnalysis
+  
+  // Check for double nesting (concept_analysis.concept_analysis)
+  if (conceptAnalysis?.concept_analysis) {
+    console.log('🔍 Step 2 - Found nested concept_analysis, unwrapping again...')
+    conceptAnalysis = conceptAnalysis.concept_analysis
+  }
   
   console.log('🔍 Step 2 - Raw Concept Analysis:', rawConceptAnalysis)
   console.log('🔍 Step 2 - Unwrapped Concept Analysis:', conceptAnalysis)
