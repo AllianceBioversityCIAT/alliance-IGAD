@@ -283,6 +283,30 @@ class ProposalService {
     )
     return response.data
   }
+
+  async updateConceptEvaluation(
+    proposalId: string,
+    conceptEvaluation: any
+  ): Promise<{
+    status: string
+    message: string
+    concept_evaluation: any
+  }> {
+    const response = await apiClient.put(
+      `/api/proposals/${proposalId}/concept-evaluation`,
+      conceptEvaluation
+    )
+    return response.data
+  }
+
+  async getConceptEvaluation(proposalId: string): Promise<{
+    concept_evaluation: any
+  }> {
+    const response = await apiClient.get(
+      `/api/proposals/${proposalId}/concept-evaluation`
+    )
+    return response.data
+  }
 }
 
 export const proposalService = new ProposalService()

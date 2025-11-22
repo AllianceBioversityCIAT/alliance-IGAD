@@ -60,6 +60,11 @@ class PromptWithCategoriesRequest(BaseModel):
     categories: List[str]
 
 
+class ConceptEvaluationUpdate(BaseModel):
+    selected_sections: List[Dict[str, Any]]
+    user_comments: Optional[Dict[str, str]] = None
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
@@ -392,6 +397,110 @@ async def generate_ai_content(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+
+
+@router.put("/{proposal_id}/concept-evaluation")
+async def update_concept_evaluation(
+    proposal_id: str,
+    update: ConceptEvaluationUpdate,
+    user=Depends(get_current_user)
+):
+    """Update concept evaluation with user's section selections and comments"""
+    try:
+        # Verify proposal exists and user has access
+        if proposal_id.startswith("PROP-"):
+            pk = f"PROPOSAL#{proposal_id}"
+        else:
+            items = await db_client.query_items(
+                pk=f"USER#{user.get('user_id')}",
+                index_name="GSI1"
+            )
+            
+            proposal_item = None
+            for item in items:
+                if item.get("id") == proposal_id:
+                    proposal_item = item
+                    break
+            
+            if not proposal_item:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+            
+            pk = proposal_item["PK"]
+        
+        # Get existing proposal with concept_analysis
+        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        if proposal.get("user_id") != user.get("user_id"):
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get concept_analysis from proposal
+        concept_analysis = proposal.get("concept_analysis")
+        if not concept_analysis:
+            raise HTTPException(status_code=404, detail="Concept analysis not found. Complete Step 1 first.")
+        
+        print("=" * 80)
+        print("🔍 UPDATE CONCEPT EVALUATION - Starting")
+        print(f"📊 concept_analysis keys: {list(concept_analysis.keys())}")
+        print(f"📝 Received {len(update.selected_sections)} sections from frontend")
+        print("=" * 80)
+        
+        # Update the sections with user selections and comments
+        # Handle both nested and non-nested concept_analysis structures
+        if "concept_analysis" in concept_analysis:
+            # Nested structure (from DynamoDB)
+            inner_analysis = concept_analysis["concept_analysis"]
+        else:
+            inner_analysis = concept_analysis
+        
+        # Get sections_needing_elaboration (the correct field name)
+        sections = inner_analysis.get("sections_needing_elaboration", [])
+        
+        if sections:
+            # Create a map of section titles to user selections
+            user_selections = {s["title"]: s for s in update.selected_sections}
+            
+            # Update each section with user's selection and comments
+            for section in sections:
+                # Section title can be in "section" or "title" field
+                title = section.get("section", section.get("title", ""))
+                if title in user_selections:
+                    user_section = user_selections[title]
+                    section["selected"] = user_section.get("selected", True)
+                    
+                    # Add user comments if provided
+                    if update.user_comments and title in update.user_comments:
+                        section["user_comment"] = update.user_comments[title]
+            
+            print(f"✅ Updated {len(sections)} sections with user selections")
+            for section in sections:
+                title = section.get("section", section.get("title", "Unknown"))
+                selected = section.get("selected", False)
+                print(f"   • {title}: selected={selected}")
+            print("=" * 80)
+        
+        # Update concept_analysis back in the proposal METADATA record
+        updated_proposal = await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="SET concept_analysis = :analysis, updated_at = :updated",
+            expression_attribute_values={
+                ":analysis": concept_analysis,
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+        
+        return {
+            "status": "success",
+            "message": "Concept evaluation updated successfully",
+            "concept_evaluation": concept_analysis
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update concept evaluation: {str(e)}")
 
 
 @router.post("/{proposal_id}/improve")
@@ -835,6 +944,21 @@ async def generate_concept_document(
                 detail="Concept analysis not found. Complete Step 1 first."
             )
         
+        # 🔥 CRITICAL FIX: Build concept_evaluation from DynamoDB data (which has selected sections)
+        # The concept_evaluation param from frontend is just a trigger, not the source of truth
+        print("=" * 80)
+        print("🔍 Building concept_evaluation from DynamoDB...")
+        print(f"📊 concept_analysis keys: {list(concept_analysis.keys()) if isinstance(concept_analysis, dict) else 'NOT A DICT'}")
+        
+        # Use the concept_analysis from DynamoDB (which has user selections)
+        final_concept_evaluation = {
+            'concept_analysis': concept_analysis,
+            'status': 'completed'
+        }
+        
+        print(f"✅ Final concept_evaluation has {len(concept_analysis.get('sections_needing_elaboration', []))} sections")
+        print("=" * 80)
+        
         # Update status to processing
         await db_client.update_item(
             pk=proposal['PK'],
@@ -858,7 +982,7 @@ async def generate_concept_document(
             'analysis_type': 'concept_document',
             'proposal_id': proposal_code,  # Send proposal_code, not UUID
             'user_id': user_id,
-            'concept_evaluation': concept_evaluation
+            'concept_evaluation': final_concept_evaluation  # 🔥 Use DynamoDB data, not request param
         }
         
         print(f"📡 Invoking worker lambda for concept document generation: {proposal_id}")
@@ -922,6 +1046,55 @@ async def get_concept_document_status(
         
     except Exception as e:
         print(f"❌ Error getting concept document status: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{proposal_id}/concept-evaluation")
+async def get_concept_evaluation(
+    proposal_id: str,
+    user=Depends(get_current_user)
+):
+    """
+    Get the saved concept_evaluation from DynamoDB
+    """
+    try:
+        user_id = user.get('user_id')
+        print(f"📥 Getting concept evaluation for proposal: {proposal_id}")
+        
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user_id}",
+            index_name="GSI1"
+        )
+        
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+        
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+        
+        concept_evaluation = proposal.get('concept_evaluation')
+        
+        if not concept_evaluation:
+            # Fallback to concept_analysis if concept_evaluation doesn't exist yet
+            concept_evaluation = proposal.get('concept_analysis')
+        
+        if not concept_evaluation:
+            raise HTTPException(status_code=404, detail="No concept evaluation found")
+        
+        print(f"✅ Concept evaluation retrieved for {proposal_id}")
+        
+        return {
+            'concept_evaluation': concept_evaluation
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error getting concept evaluation: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

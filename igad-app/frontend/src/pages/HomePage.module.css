@@ -19,7 +19,7 @@
   min-height: 377px;
   background-image: url('/hero-background.png');
   background-size: cover;
-  background-position: center right;
+  background-position: center center;
   background-repeat: no-repeat;
   border-radius: 14px;
   overflow: hidden;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ProposalLayout } from './components/ProposalLayout'
@@ -38,6 +38,8 @@ export function ProposalWriterPage() {
     uploadedFiles: {} as { [key: string]: File[] },
     textInputs: {} as { [key: string]: string },
   })
+
+  const allowNavigation = useRef(false)
 
   const { createProposal, isCreating, deleteProposal, isDeleting } = useProposals()
   const { 
@@ -129,6 +131,31 @@ export function ProposalWriterPage() {
     }
   }, [conceptEvaluationData, proposalId])
   
+  // Calculate completed steps based on available data
+  useEffect(() => {
+    const completed: number[] = []
+    
+    // Step 1 is completed if we have RFP uploaded
+    if (formData.uploadedFiles['rfp-document']?.length > 0) {
+      completed.push(1)
+    }
+    
+    // Step 2 is completed if we have concept analysis
+    if (conceptAnalysis) {
+      completed.push(2)
+    }
+    
+    // Step 3 is completed if we have concept document
+    if (conceptDocument) {
+      completed.push(3)
+    }
+    
+    // Only update if different to avoid infinite loops
+    if (JSON.stringify(completed) !== JSON.stringify(completedSteps)) {
+      setCompletedSteps(completed)
+    }
+  }, [formData.uploadedFiles, conceptAnalysis, conceptDocument])
+  
   // Detect RFP changes and invalidate analyses
   useEffect(() => {
     if (proposalId) {
@@ -216,6 +243,29 @@ export function ProposalWriterPage() {
     loadConceptDocument()
   }, [proposalId, currentStep, conceptDocument])
 
+  // Load concept evaluation from DynamoDB when entering Step 3
+  useEffect(() => {
+    const loadConceptEvaluation = async () => {
+      if (proposalId && currentStep === 3) {
+        try {
+          console.log('🔍 Loading concept evaluation for Step 3:', proposalId)
+          const { proposalService } = await import('../../services/proposalService')
+          const response = await proposalService.getConceptEvaluation(proposalId)
+          
+          if (response?.concept_evaluation) {
+            console.log('✅ Loaded concept evaluation from DynamoDB')
+            setConceptAnalysis(response.concept_evaluation)
+          }
+        } catch (error) {
+          console.log('⚠️ No saved concept evaluation found, using localStorage')
+          // Fallback to localStorage is already handled
+        }
+      }
+    }
+    
+    loadConceptEvaluation()
+  }, [proposalId, currentStep])
+
   useEffect(() => {
     if (stepId) {
       if (stepId.startsWith('step-')) {
@@ -263,14 +313,19 @@ export function ProposalWriterPage() {
   // Block navigation when leaving proposal writer with a draft
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Only block if we actually have a proposal draft
       if (proposalId) {
+        console.log('⚠️ Blocking navigation - draft exists')
         e.preventDefault()
         e.returnValue = ''
       }
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
   }, [proposalId])
 
   const handleKeepDraft = () => {
@@ -317,11 +372,14 @@ export function ProposalWriterPage() {
   // Helper function to proceed to next step
   const proceedToNextStep = useCallback(() => {
     if (currentStep < 5) {
-      setCompletedSteps(prev => [...prev, currentStep])
       const nextStep = currentStep + 1
       setCurrentStep(nextStep)
       navigate(`/proposal-writer/step-${nextStep}`)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+      // Reset allowNavigation after navigation completes
+      setTimeout(() => {
+        allowNavigation.current = false
+      }, 100)
     }
   }, [currentStep, navigate])
 
@@ -425,6 +483,12 @@ export function ProposalWriterPage() {
       return
     }
     
+    // Step 3: Download document before proceeding
+    if (currentStep === 3 && conceptDocument) {
+      console.log('📥 Step 3: Downloading document before proceeding')
+      await handleDownloadConceptDocument()
+    }
+    
     // Normal navigation for other steps
     console.log('➡️ Normal navigation to next step')
     proceedToNextStep()
@@ -476,17 +540,23 @@ export function ProposalWriterPage() {
     }
   }
 
-  const handleGenerateConceptDocument = async () => {
+  const handleGenerateConceptDocument = async (overrideData?: {
+    selectedSections: string[]
+    userComments: { [key: string]: string }
+  }) => {
     console.log('🟢 Starting concept document generation...')
     
-    // If concept document already exists, just proceed to next step
-    if (conceptDocument) {
+    // Use override data if provided (from Step 3 regeneration), otherwise use conceptEvaluationData
+    const evaluationData = overrideData || conceptEvaluationData
+    
+    // If concept document already exists and no override, just proceed to next step
+    if (conceptDocument && !overrideData) {
       console.log('✅ Concept document already exists, proceeding to next step')
       proceedToNextStep()
       return
     }
     
-    if (!proposalId || !conceptEvaluationData) {
+    if (!proposalId || !evaluationData) {
       alert('Please select sections and add comments before generating')
       return
     }
@@ -497,23 +567,80 @@ export function ProposalWriterPage() {
       const { proposalService } = await import('../../services/proposalService')
       
       // Prepare concept evaluation
-      // Prepare complete concept evaluation with all data
+      // Unwrap conceptAnalysis if it comes wrapped from backend
+      const unwrappedAnalysis = conceptAnalysis?.concept_analysis || conceptAnalysis
+      
+      console.log('🔍 Unwrapped concept analysis:', unwrappedAnalysis)
+      
+      // Filter sections to include ONLY the ones user selected
+      const allSections = unwrappedAnalysis?.sections_needing_elaboration || []
+      const filteredSections = allSections
+        .filter(section => evaluationData.selectedSections.includes(section.section))
+        .map(section => ({
+          ...section,
+          selected: true, // Mark as selected
+          // Add user comment if provided
+          user_comment: evaluationData.userComments[section.section] || ''
+        }))
+      
+      // Mark all sections with selected flag
+      const allSectionsWithSelection = allSections.map(section => ({
+        ...section,
+        selected: evaluationData.selectedSections.includes(section.section),
+        user_comment: evaluationData.userComments[section.section] || ''
+      }))
+      
+      console.log(`📊 Total sections: ${allSections.length}, Selected: ${allSectionsWithSelection.filter(s => s.selected).length}`)
+      
       const conceptEvaluation = {
-        // Include complete original analysis
-        fit_assessment: conceptAnalysis?.concept_analysis?.fit_assessment || conceptAnalysis?.fit_assessment,
-        strong_aspects: conceptAnalysis?.concept_analysis?.strong_aspects || conceptAnalysis?.strong_aspects,
-        sections_needing_elaboration: conceptAnalysis?.concept_analysis?.sections_needing_elaboration || conceptAnalysis?.sections_needing_elaboration,
-        strategic_verdict: conceptAnalysis?.concept_analysis?.strategic_verdict || conceptAnalysis?.strategic_verdict,
-        
-        // Add user selections and comments
-        selected_sections: conceptEvaluationData.selectedSections,
-        user_comments: conceptEvaluationData.userComments,
-        modified_at: new Date().toISOString()
+        concept_analysis: {
+          // Include complete original analysis (already unwrapped)
+          fit_assessment: unwrappedAnalysis?.fit_assessment,
+          strong_aspects: unwrappedAnalysis?.strong_aspects,
+          // Include ALL sections with selected flags and comments
+          sections_needing_elaboration: allSectionsWithSelection,
+          strategic_verdict: unwrappedAnalysis?.strategic_verdict
+        },
+        status: 'completed'
       }
       
       console.log('📤 Sending concept evaluation:', conceptEvaluation)
       
-      // Call API
+      // Step 1: Save concept evaluation to DynamoDB
+      console.log('💾 Saving concept evaluation to DynamoDB...')
+      
+      // Prepare update payload in the format expected by the endpoint
+      const userComments: Record<string, string> = {};
+      allSectionsWithSelection.forEach(section => {
+        if (section.user_comment) {
+          userComments[section.section] = section.user_comment;
+        }
+      });
+      
+      const updatePayload = {
+        selected_sections: allSectionsWithSelection.map(section => ({
+          title: section.section,
+          selected: section.selected,
+          analysis: section.analysis,
+          alignment_level: section.alignment_level,
+          suggestions: section.suggestions
+        })),
+        user_comments: Object.keys(userComments).length > 0 ? userComments : undefined
+      };
+      
+      const updateResult = await proposalService.updateConceptEvaluation(proposalId, updatePayload)
+      console.log('✅ Concept evaluation saved to DynamoDB')
+      
+      // Update local state with saved concept evaluation
+      // Keep the existing structure, just update the sections
+      const updatedConceptAnalysis = {
+        concept_analysis: updateResult.concept_evaluation?.concept_analysis || updateResult.concept_evaluation,
+        status: 'completed'
+      }
+      console.log('📊 Updated conceptAnalysis:', updatedConceptAnalysis)
+      setConceptAnalysis(updatedConceptAnalysis)
+      
+      // Step 2: Generate concept document
       const result = await proposalService.generateConceptDocument(
         proposalId,
         conceptEvaluation
@@ -523,10 +650,13 @@ export function ProposalWriterPage() {
         console.log('✅ Document generated successfully')
         setConceptDocument(result.concept_document)
         setIsGeneratingDocument(false)
-        proceedToNextStep()
+        // Only proceed to next step if not regenerating from Step 3
+        if (!overrideData) {
+          proceedToNextStep()
+        }
       } else {
         // Poll for completion
-        await pollConceptDocumentStatus()
+        await pollConceptDocumentStatus(!!overrideData)
       }
       
     } catch (error: any) {
@@ -536,7 +666,7 @@ export function ProposalWriterPage() {
     }
   }
 
-  const pollConceptDocumentStatus = async () => {
+  const pollConceptDocumentStatus = async (isRegenerating = false) => {
     const { proposalService } = await import('../../services/proposalService')
     
     let attempts = 0
@@ -551,7 +681,10 @@ export function ProposalWriterPage() {
         if (status.status === 'completed') {
           setConceptDocument(status.concept_document)
           setIsGeneratingDocument(false)
-          proceedToNextStep()
+          // Only proceed to next step if not regenerating
+          if (!isRegenerating) {
+            proceedToNextStep()
+          }
         } else if (status.status === 'failed') {
           setIsGeneratingDocument(false)
           alert(`Generation failed: ${status.error}`)
@@ -576,6 +709,124 @@ export function ProposalWriterPage() {
   }) => {
     setConceptEvaluationData(data)
   }, [])
+
+  const parseMarkdownToHTML = (markdown: string): string => {
+    let formatted = markdown
+    
+    // Headers
+    formatted = formatted.replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    formatted = formatted.replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    formatted = formatted.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    
+    // Bold
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    
+    // Italic
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
+    
+    // Code
+    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
+    
+    // Lists
+    formatted = formatted.replace(/^\- (.*$)/gim, '<li>$1</li>')
+    formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    
+    // Line breaks
+    formatted = formatted.replace(/\n/g, '<br/>')
+    
+    return formatted
+  }
+
+  const handleDownloadConceptDocument = async () => {
+    console.log('🔽 Downloading concept document...')
+    
+    // Allow navigation to prevent modal
+    allowNavigation.current = true
+    
+    try {
+      let content = ''
+      
+      // Extract content from conceptDocument
+      if (typeof conceptDocument === 'string') {
+        content = conceptDocument
+      } else if (conceptDocument?.generated_concept_document) {
+        content = conceptDocument.generated_concept_document
+      } else if (conceptDocument?.content) {
+        content = conceptDocument.content
+      } else if (conceptDocument?.document) {
+        content = conceptDocument.document
+      } else if (conceptDocument?.proposal_outline) {
+        const outline = conceptDocument.proposal_outline
+        if (Array.isArray(outline)) {
+          content = outline.map(section => {
+            const title = section.section_title || ''
+            const purpose = section.purpose || ''
+            const wordCount = section.recommended_word_count || ''
+            const questions = Array.isArray(section.guiding_questions) 
+              ? section.guiding_questions.map(q => `- ${q}`).join('\n')
+              : ''
+            
+            return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
+          }).join('\n\n')
+        }
+      } else if (conceptDocument?.sections) {
+        content = Object.entries(conceptDocument.sections)
+          .map(([key, value]) => `## ${key}\n\n${value}`)
+          .join('\n\n')
+      } else {
+        content = 'No content available'
+      }
+      
+      // Convert markdown to HTML
+      const htmlContent = parseMarkdownToHTML(content)
+      
+      // Create a complete HTML document
+      const fullHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Concept Document</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 20px; }
+    h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+    h2 { color: #34495e; margin-top: 30px; }
+    h3 { color: #7f8c8d; }
+    p { margin: 10px 0; }
+    strong { color: #2c3e50; }
+    ul { margin: 10px 0; padding-left: 25px; }
+    li { margin: 5px 0; }
+    code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  ${htmlContent}
+</body>
+</html>`
+      
+      // Create blob and download
+      const blob = new Blob([fullHtml], { type: 'text/html' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `concept-document-${proposalCode || 'draft'}.html`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      
+      console.log('✅ Download complete!')
+      
+      // Reset navigation flag
+      setTimeout(() => {
+        allowNavigation.current = false
+      }, 100)
+    } catch (error) {
+      console.error('❌ Download failed:', error)
+      alert('Failed to download document')
+      allowNavigation.current = false
+    }
+  }
 
   const renderCurrentStep = () => {
     console.log('🎯 Rendering step:', currentStep, {
@@ -603,7 +854,19 @@ export function ProposalWriterPage() {
       case 2:
         return <Step2ContentGeneration {...stepProps} />
       case 3:
-        return <Step3StructureValidation {...stepProps} />
+        return <Step3StructureValidation 
+          {...stepProps} 
+          onNextStep={handleNextStep} 
+          onRegisterDownload={(fn) => {}} 
+          onRegenerateDocument={async (selectedSections, userComments) => {
+            // Use the same logic as handleGenerateConceptDocument
+            setIsGeneratingDocument(true)
+            await handleGenerateConceptDocument({
+              selectedSections,
+              userComments
+            })
+          }}
+        />
       case 4:
         return <Step4ReviewRefinement {...stepProps} />
       case 5:
@@ -626,7 +889,18 @@ export function ProposalWriterPage() {
     <button
       key="next"
       className={`${styles.button} ${styles.buttonPrimary}`}
-      onClick={currentStep === 2 ? handleGenerateConceptDocument : handleNextStep}
+      onClick={async () => {
+        if (currentStep === 2) {
+          handleGenerateConceptDocument()
+        } else if (currentStep === 3) {
+          // Download first, then navigate
+          await handleDownloadConceptDocument()
+          // allowNavigation is already set to true inside handleDownloadConceptDocument
+          proceedToNextStep()
+        } else {
+          handleNextStep()
+        }
+      }}
       disabled={
         currentStep === 5 || 
         isAnalyzingRFP ||
@@ -658,6 +932,13 @@ export function ProposalWriterPage() {
         </>
       ) : currentStep === 5 ? (
         'Complete'
+      ) : currentStep === 4 ? (
+        'Finish process'
+      ) : currentStep === 3 ? (
+        <>
+          Next & Download
+          <ChevronRight size={16} />
+        </>
       ) : currentStep === 2 && conceptDocument ? (
         <>
           Continue to Structure Validation

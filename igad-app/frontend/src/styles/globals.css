@@ -45,6 +45,28 @@
   --text-tertiary: #374151;
 }
 
+/* Global Styles */
+body {
+  margin: 0;
+  padding: 0;
+  background: #FFFFFF;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app-layout {
+  min-height: 100vh;
+  background: #FFFFFF;
+}
+
+.main-content {
+  background: #FFFFFF;
+  min-height: calc(100vh - 64px);
+}
+
 /* LOGIN PAGE STYLES - Matching Figma Design */
 .login-page {
   display: flex;
