@@ -473,6 +473,9 @@ async def update_concept_evaluation(
                     # Add user comments if provided
                     if update.user_comments and title in update.user_comments:
                         section["user_comment"] = update.user_comments[title]
+                else:
+                    # If section not in user_selections, mark as NOT selected
+                    section["selected"] = False
             
             print(f"✅ Updated {len(sections)} sections with user selections")
             for section in sections:
