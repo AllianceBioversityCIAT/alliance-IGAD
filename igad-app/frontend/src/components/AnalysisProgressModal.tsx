@@ -7,11 +7,20 @@ interface AnalysisProgressModalProps {
     step: number
     total: number
     message: string
+    description?: string  // Custom description
+    steps?: string[]      // Custom step labels
   } | null
 }
 
 const AnalysisProgressModal: React.FC<AnalysisProgressModalProps> = ({ isOpen, progress }) => {
   if (!isOpen) return null
+
+  // Default values for Step 1 (RFP Analysis)
+  const defaultDescription = 'Our AI is analyzing your RFP and initial concept to provide strategic insights. This may take 1-3 minutes.'
+  const defaultSteps = ['Analyzing RFP Document', 'Analyzing Initial Concept']
+  
+  const description = progress?.description || defaultDescription
+  const steps = progress?.steps || defaultSteps
 
   return (
     <div className={styles.overlay}>
@@ -23,8 +32,7 @@ const AnalysisProgressModal: React.FC<AnalysisProgressModalProps> = ({ isOpen, p
           {progress ? progress.message : 'Analyzing Your Proposal'}
         </h2>
         <p className={styles.description}>
-          Our AI is analyzing your RFP and initial concept to provide strategic insights.
-          This may take 1-3 minutes.
+          {description}
         </p>
         {progress && (
           <div className={styles.progressBar}>
@@ -32,14 +40,12 @@ const AnalysisProgressModal: React.FC<AnalysisProgressModalProps> = ({ isOpen, p
           </div>
         )}
         <div className={styles.steps}>
-          <div className={`${styles.step} ${progress && progress.step >= 1 ? styles.stepActive : ''}`}>
-            <div className={styles.stepIcon}>1</div>
-            <div className={styles.stepText}>Analyzing RFP Document</div>
-          </div>
-          <div className={`${styles.step} ${progress && progress.step >= 2 ? styles.stepActive : ''}`}>
-            <div className={styles.stepIcon}>2</div>
-            <div className={styles.stepText}>Analyzing Initial Concept</div>
-          </div>
+          {steps.map((stepText, index) => (
+            <div key={index} className={`${styles.step} ${progress && progress.step >= index + 1 ? styles.stepActive : ''}`}>
+              <div className={styles.stepIcon}>{index + 1}</div>
+              <div className={styles.stepText}>{stepText}</div>
+            </div>
+          ))}
         </div>
         <p className={styles.note}>
           {progress ? `Step ${progress.step} of ${progress.total}` : 'Please don\'t close this window'}

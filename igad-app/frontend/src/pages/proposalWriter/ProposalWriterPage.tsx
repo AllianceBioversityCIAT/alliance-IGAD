@@ -545,9 +545,14 @@ export function ProposalWriterPage() {
     userComments: { [key: string]: string }
   }) => {
     console.log('🟢 Starting concept document generation...')
+    console.log('📋 Override data:', overrideData)
+    console.log('📋 Concept evaluation data:', conceptEvaluationData)
     
     // Use override data if provided (from Step 3 regeneration), otherwise use conceptEvaluationData
     const evaluationData = overrideData || conceptEvaluationData
+    
+    console.log('📋 Final evaluation data to use:', evaluationData)
+    console.log(`   Selected sections (${evaluationData?.selectedSections?.length || 0}):`, evaluationData?.selectedSections)
     
     // If concept document already exists and no override, just proceed to next step
     if (conceptDocument && !overrideData) {
@@ -568,12 +573,20 @@ export function ProposalWriterPage() {
       
       // Prepare concept evaluation
       // Unwrap conceptAnalysis if it comes wrapped from backend
-      const unwrappedAnalysis = conceptAnalysis?.concept_analysis || conceptAnalysis
+      let unwrappedAnalysis = conceptAnalysis?.concept_analysis || conceptAnalysis
+      
+      // Check if there's another level of nesting (concept_analysis.concept_analysis)
+      if (unwrappedAnalysis?.concept_analysis) {
+        console.log('🔍 Found nested concept_analysis, unwrapping again...')
+        unwrappedAnalysis = unwrappedAnalysis.concept_analysis
+      }
       
       console.log('🔍 Unwrapped concept analysis:', unwrappedAnalysis)
       
       // Filter sections to include ONLY the ones user selected
       const allSections = unwrappedAnalysis?.sections_needing_elaboration || []
+      console.log(`📊 All sections from concept analysis: ${allSections.length}`)
+      console.log('📊 Section names:', allSections.map((s: any) => s.section))
       const filteredSections = allSections
         .filter(section => evaluationData.selectedSections.includes(section.section))
         .map(section => ({
@@ -974,7 +987,17 @@ export function ProposalWriterPage() {
         isOpen={isAnalyzingRFP || isGeneratingDocument} 
         progress={
           isGeneratingDocument 
-            ? { step: 1, total: 1, message: 'Generating Updated Concept Document...' }
+            ? { 
+                step: 1, 
+                total: 3, 
+                message: 'Generating Concept Document...',
+                description: 'Our AI is creating a structured proposal outline based on your selections. This may take 1-2 minutes.',
+                steps: [
+                  'Processing selected sections',
+                  'Generating proposal structure',
+                  'Creating guiding questions'
+                ]
+              }
             : analysisProgress
         } 
       />
