@@ -31,10 +31,10 @@ export function ProposalLayout({
     const handleNavClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       const link = target.closest('a[href]')
-      
+
       if (link && link instanceof HTMLAnchorElement) {
         const href = link.getAttribute('href')
-        
+
         // Check if navigating away from proposal writer
         if (href && !href.startsWith('/proposal-writer') && onNavigateAway) {
           e.preventDefault()

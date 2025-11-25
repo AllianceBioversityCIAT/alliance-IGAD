@@ -80,7 +80,12 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
         <label className={styles.label}>Category</label>
         <select
           value={filters.category || 'all'}
-          onChange={e => onChange({ ...filters, category: e.target.value === 'all' ? undefined : e.target.value })}
+          onChange={e =>
+            onChange({
+              ...filters,
+              category: e.target.value === 'all' ? undefined : e.target.value,
+            })
+          }
           className={styles.select}
         >
           <option value="all">All Categories</option>

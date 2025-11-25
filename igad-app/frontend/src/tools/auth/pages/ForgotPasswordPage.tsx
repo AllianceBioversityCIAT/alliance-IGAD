@@ -145,7 +145,7 @@ export function ForgotPasswordPage() {
                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                         message: 'Invalid email address',
                       },
-                      setValueAs: (value) => value.toLowerCase().trim(),
+                      setValueAs: value => value.toLowerCase().trim(),
                     })}
                     className={styles.input}
                     style={{ textTransform: 'lowercase' }}

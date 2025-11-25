@@ -6,7 +6,10 @@ interface ProposalSecondaryNavbarProps {
   isLoading?: boolean
 }
 
-export function ProposalSecondaryNavbar({ proposalCode, isLoading = false }: ProposalSecondaryNavbarProps) {
+export function ProposalSecondaryNavbar({
+  proposalCode,
+  isLoading = false,
+}: ProposalSecondaryNavbarProps) {
   const navigate = useNavigate()
   const location = useLocation()
 

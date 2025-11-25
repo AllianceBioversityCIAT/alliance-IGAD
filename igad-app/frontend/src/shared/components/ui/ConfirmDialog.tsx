@@ -58,8 +58,8 @@ export function ConfirmDialog({
           <button onClick={onCancel} className={styles.cancelButton} disabled={isLoading}>
             {cancelText}
           </button>
-          <button 
-            onClick={onConfirm} 
+          <button
+            onClick={onConfirm}
             className={`${styles.confirmButton} ${styles[type]}`}
             disabled={isLoading}
           >

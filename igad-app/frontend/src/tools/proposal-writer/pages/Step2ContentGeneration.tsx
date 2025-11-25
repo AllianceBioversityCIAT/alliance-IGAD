@@ -40,34 +40,38 @@ const ALIGNMENT_COLORS = {
   'Very strong alignment': { bg: '#DCFCE7', border: '#B9F8CF', text: '#016630' },
   'Strong alignment': { bg: '#DCFCE7', border: '#B9F8CF', text: '#016630' },
   'Moderate alignment': { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
-  'Partial alignment with potential for improvement': { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
-  'Weak alignment': { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' }
+  'Partial alignment with potential for improvement': {
+    bg: '#FEF3C7',
+    border: '#FDE68A',
+    text: '#92400E',
+  },
+  'Weak alignment': { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' },
 }
 
 const PRIORITY_COLORS = {
-  'Critical': { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' },
-  'Recommended': { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
-  'Optional': { bg: '#E0E7FF', border: '#C7D2FE', text: '#193CB8' }
+  Critical: { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' },
+  Recommended: { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
+  Optional: { bg: '#E0E7FF', border: '#C7D2FE', text: '#193CB8' },
 }
 
-export function Step2ContentGeneration({ 
-  conceptAnalysis: rawConceptAnalysis, 
+export function Step2ContentGeneration({
+  conceptAnalysis: rawConceptAnalysis,
   conceptEvaluationData,
-  onConceptEvaluationChange 
+  onConceptEvaluationChange,
 }: Step2Props) {
   // Unwrap concept_analysis if it comes wrapped from backend (double unwrap)
   let conceptAnalysis = rawConceptAnalysis?.concept_analysis || rawConceptAnalysis
-  
+
   // Check for double nesting (concept_analysis.concept_analysis)
   if (conceptAnalysis?.concept_analysis) {
     console.log('🔍 Step 2 - Found nested concept_analysis, unwrapping again...')
     conceptAnalysis = conceptAnalysis.concept_analysis
   }
-  
+
   console.log('🔍 Step 2 - Raw Concept Analysis:', rawConceptAnalysis)
   console.log('🔍 Step 2 - Unwrapped Concept Analysis:', conceptAnalysis)
   console.log('🔍 Step 2 - Saved Evaluation Data:', conceptEvaluationData)
-  
+
   // Initialize selected sections from saved data OR default to Critical
   const [selectedSections, setSelectedSections] = useState<string[]>(() => {
     // First priority: load from saved evaluation data
@@ -75,14 +79,16 @@ export function Step2ContentGeneration({
       console.log('✅ Loading saved sections:', conceptEvaluationData.selectedSections)
       return conceptEvaluationData.selectedSections
     }
-    
+
     // Fallback: Critical sections by default
-    if (!conceptAnalysis?.sections_needing_elaboration) return []
+    if (!conceptAnalysis?.sections_needing_elaboration) {
+      return []
+    }
     return conceptAnalysis.sections_needing_elaboration
       .filter(s => s.priority === 'Critical')
       .map(s => s.section)
   })
-  
+
   const [expandedSections, setExpandedSections] = useState<string[]>([])
   const [userComments, setUserComments] = useState<{ [key: string]: string }>(() => {
     // Load saved comments if available
@@ -94,7 +100,7 @@ export function Step2ContentGeneration({
     if (onConceptEvaluationChange) {
       onConceptEvaluationChange({
         selectedSections,
-        userComments
+        userComments,
       })
     }
   }, [selectedSections, userComments, onConceptEvaluationChange])
@@ -115,21 +121,18 @@ export function Step2ContentGeneration({
     )
   }
 
-  const { fit_assessment, strong_aspects, sections_needing_elaboration, strategic_verdict } = conceptAnalysis
+  const { fit_assessment, strong_aspects, sections_needing_elaboration, strategic_verdict } =
+    conceptAnalysis
 
   const toggleSection = (sectionName: string) => {
     setSelectedSections(prev =>
-      prev.includes(sectionName)
-        ? prev.filter(s => s !== sectionName)
-        : [...prev, sectionName]
+      prev.includes(sectionName) ? prev.filter(s => s !== sectionName) : [...prev, sectionName]
     )
   }
 
   const toggleExpansion = (sectionName: string) => {
     setExpandedSections(prev =>
-      prev.includes(sectionName)
-        ? prev.filter(s => s !== sectionName)
-        : [...prev, sectionName]
+      prev.includes(sectionName) ? prev.filter(s => s !== sectionName) : [...prev, sectionName]
     )
   }
 
@@ -137,7 +140,9 @@ export function Step2ContentGeneration({
     setUserComments(prev => ({ ...prev, [sectionName]: comment }))
   }
 
-  const alignmentColor = ALIGNMENT_COLORS[fit_assessment.alignment_level as keyof typeof ALIGNMENT_COLORS] || ALIGNMENT_COLORS['Moderate alignment']
+  const alignmentColor =
+    ALIGNMENT_COLORS[fit_assessment.alignment_level as keyof typeof ALIGNMENT_COLORS] ||
+    ALIGNMENT_COLORS['Moderate alignment']
 
   return (
     <div className={styles.mainContent}>
@@ -157,7 +162,9 @@ export function Step2ContentGeneration({
               <Target className={styles.sectionIcon} size={24} />
               <div>
                 <h2 className={styles.sectionTitle}>Fit Assessment</h2>
-                <p className={styles.sectionSubtitle}>Overall alignment with donor priorities and RFP requirements</p>
+                <p className={styles.sectionSubtitle}>
+                  Overall alignment with donor priorities and RFP requirements
+                </p>
               </div>
             </div>
             <span
@@ -165,7 +172,7 @@ export function Step2ContentGeneration({
               style={{
                 backgroundColor: alignmentColor.bg,
                 border: `1px solid ${alignmentColor.border}`,
-                color: alignmentColor.text
+                color: alignmentColor.text,
               }}
             >
               {fit_assessment.alignment_level}
@@ -182,7 +189,9 @@ export function Step2ContentGeneration({
             <CheckCircle className={styles.sectionIcon} size={24} />
             <div>
               <h2 className={styles.sectionTitle}>Strong Aspects of Your Proposal</h2>
-              <p className={styles.sectionSubtitle}>Key strengths identified in your initial concept</p>
+              <p className={styles.sectionSubtitle}>
+                Key strengths identified in your initial concept
+              </p>
             </div>
           </div>
           <div className={styles.strongAspectsList}>
@@ -203,7 +212,10 @@ export function Step2ContentGeneration({
               <div>
                 <h2 className={styles.sectionTitle}>Sections Needing Elaboration</h2>
                 <p className={styles.sectionSubtitle}>
-                  Select the sections you'd like to include in the updated concept document. Selected sections will be automatically generated and included in your updated concept document in the next step. Comments will provide additional context to guide AI generation.
+                  Select the sections you'd like to include in the updated concept document.
+                  Selected sections will be automatically generated and included in your updated
+                  concept document in the next step. Comments will provide additional context to
+                  guide AI generation.
                 </p>
               </div>
             </div>
@@ -235,7 +247,7 @@ export function Step2ContentGeneration({
                             style={{
                               backgroundColor: priorityColor.bg,
                               border: `1px solid ${priorityColor.border}`,
-                              color: priorityColor.text
+                              color: priorityColor.text,
                             }}
                           >
                             {section.priority}
@@ -281,7 +293,7 @@ export function Step2ContentGeneration({
                             className={styles.commentTextarea}
                             placeholder="Add specific guidance, data points, or context for this section..."
                             value={userComments[section.section] || ''}
-                            onChange={(e) => handleCommentChange(section.section, e.target.value)}
+                            onChange={e => handleCommentChange(section.section, e.target.value)}
                           />
                         </div>
                       </div>

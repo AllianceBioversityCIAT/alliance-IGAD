@@ -35,18 +35,18 @@ export function PromptEditorPage() {
     isOpen: false,
     title: '',
     message: '',
-    details: undefined
+    details: undefined,
   })
-  
+
   // Refs for textareas
   const systemPromptRef = useRef<HTMLTextAreaElement>(null)
   const userPromptRef = useRef<HTMLTextAreaElement>(null)
-  
+
   // Extract URL parameters for auto-population
   const searchParams = new URLSearchParams(location.search)
   const fromRoute = searchParams.get('from')
   const urlSection = searchParams.get('section') as ProposalSection
-  
+
   // Auto-populate initial form data from URL parameters
   const getInitialFormData = () => {
     const baseData = {
@@ -61,7 +61,7 @@ export function PromptEditorPage() {
       output_format: 'Clear and structured response',
       tone: 'Professional and informative',
       few_shot: [],
-      context: {}
+      context: {},
     }
 
     // If coming from a specific route, auto-populate fields
@@ -69,12 +69,12 @@ export function PromptEditorPage() {
       // Extract sub-section from route (e.g., "/proposal-writer/step-1" -> "step-1")
       const routeParts = fromRoute.split('/')
       const subSection = routeParts[routeParts.length - 1] // Get last part
-      
+
       return {
         ...baseData,
         section: urlSection,
         sub_section: subSection,
-        route: fromRoute
+        route: fromRoute,
       }
     }
 
@@ -93,32 +93,35 @@ export function PromptEditorPage() {
     try {
       setIsLoading(true)
       const token = tokenManager.getAccessToken()
-      
+
       if (!token) {
         showError('Authentication required', 'Please log in again.')
         navigate('/login')
         return
       }
-      
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         }
-      })
-      
+      )
+
       if (response.status === 401) {
         showError('Session expired', 'Please log in again.')
         navigate('/login')
         return
       }
-      
+
       if (response.status === 403) {
         showError('Access denied', 'You need admin permissions to access this resource.')
         navigate('/admin/prompt-manager')
         return
       }
-      
+
       if (response.ok) {
         const data = await response.json()
         setPrompt(data)
@@ -134,7 +137,7 @@ export function PromptEditorPage() {
           output_format: data.output_format || 'Clear and structured response',
           tone: data.tone || 'Professional and informative',
           few_shot: data.few_shot || [],
-          context: data.context || {}
+          context: data.context || {},
         })
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Failed to load prompt' }))
@@ -160,7 +163,7 @@ export function PromptEditorPage() {
       navigate('/admin/prompt-manager')
     } catch (error: any) {
       console.error('Save error:', error)
-      
+
       // Parse error message for better UX
       let title = 'Failed to Save Prompt'
       let message = 'An unexpected error occurred while saving your prompt.'
@@ -170,7 +173,8 @@ export function PromptEditorPage() {
       if (error.message?.includes('Duplicate active prompt')) {
         title = 'Duplicate Prompt Detected'
         message = 'A prompt with the same configuration already exists and is currently active.'
-        details = 'Please check if there\'s already an active prompt for this section, route, subsection, and categories combination. You can either deactivate the existing prompt or modify your current prompt\'s configuration.'
+        details =
+          "Please check if there's already an active prompt for this section, route, subsection, and categories combination. You can either deactivate the existing prompt or modify your current prompt's configuration."
       } else if (error.message?.includes('validation')) {
         title = 'Validation Error'
         message = 'Please check your input and try again.'
@@ -185,7 +189,7 @@ export function PromptEditorPage() {
         isOpen: true,
         title,
         message,
-        details
+        details,
       })
     }
   }
@@ -198,35 +202,35 @@ export function PromptEditorPage() {
     // Extract both single {variable} and double {{variable}} patterns
     const singleBraces = text.match(/\{([^{}]+)\}/g) || []
     const doubleBraces = text.match(/\{\{([^{}]+)\}\}/g) || []
-    
+
     const singleVars = singleBraces.map(match => match.slice(1, -1))
     const doubleVars = doubleBraces.map(match => match.slice(2, -2))
-    
+
     return [...new Set([...singleVars, ...doubleVars])]
   }
 
   const getPreviewText = (text: string) => {
     let result = text
-    
+
     // Handle category variables (double braces)
     if (formData.categories.length > 0) {
       // Handle individual category variables using actual category names
-      formData.categories.forEach((category) => {
+      formData.categories.forEach(category => {
         const variableName = category.toLowerCase().replace(/\s+/g, '_')
         const variablePattern = new RegExp(`\\{\\{${variableName}\\}\\}`, 'g')
         result = result.replace(variablePattern, `[${category}]`)
       })
-      
+
       // Handle legacy category_1, category_2 format for backward compatibility
       formData.categories.forEach((category, index) => {
         const variablePattern = new RegExp(`\\{\\{category_${index + 1}\\}\\}`, 'g')
         result = result.replace(variablePattern, `[${category}]`)
       })
-      
+
       // Handle all categories variable
       result = result.replace(/\{\{categories\}\}/g, `[${formData.categories.join(', ')}]`)
     }
-    
+
     // Handle regular variables (single braces)
     const variables = result.match(/\{([^{}]+)\}/g) || []
     variables.forEach(variable => {
@@ -234,7 +238,7 @@ export function PromptEditorPage() {
       const exampleValue = `[${varName.replace(/_/g, ' ').toUpperCase()}]`
       result = result.replace(new RegExp(`\\{${varName}\\}`, 'g'), exampleValue)
     })
-    
+
     return result
   }
 
@@ -256,15 +260,15 @@ export function PromptEditorPage() {
     const outputContent = formData.output_format
 
     let markdownContent = ''
-    
+
     if (systemContent) {
       markdownContent += `# System Role\n\n${systemContent}\n\n`
     }
-    
+
     if (userContent) {
       markdownContent += `# User Instructions\n\n${userContent}\n\n`
     }
-    
+
     if (outputContent) {
       markdownContent += `# Expected Output Format\n\n${outputContent}\n\n`
     }
@@ -284,7 +288,7 @@ export function PromptEditorPage() {
       name: 'Blank Template',
       system_prompt: '',
       user_prompt_template: '',
-      output_format: ''
+      output_format: '',
     },
     sprint_planner: {
       name: 'Sprint Planning Assistant',
@@ -334,7 +338,7 @@ Please provide a comprehensive sprint plan including goals, user stories, tasks,
 - **Week 2**: [Milestones]
 
 ## Risks & Mitigation
-- [Risk]: [Mitigation strategy]`
+- [Risk]: [Mitigation strategy]`,
     },
     technical_writer: {
       name: 'Technical Documentation Writer',
@@ -391,8 +395,8 @@ Please provide detailed documentation that covers all essential aspects.`,
 [Practical examples with code]
 
 ## Troubleshooting
-[Common issues and solutions]`
-    }
+[Common issues and solutions]`,
+    },
   }
 
   // Inject template into form
@@ -403,7 +407,7 @@ Please provide detailed documentation that covers all essential aspects.`,
         ...formData,
         system_prompt: template.system_prompt,
         user_prompt_template: template.user_prompt_template,
-        output_format: template.output_format
+        output_format: template.output_format,
       })
       setShowTemplateSelector(false)
     }
@@ -411,14 +415,14 @@ Please provide detailed documentation that covers all essential aspects.`,
 
   const allVariables = [
     ...extractVariables(formData.system_prompt),
-    ...extractVariables(formData.user_prompt_template)
+    ...extractVariables(formData.user_prompt_template),
   ].filter((v, i, arr) => arr.indexOf(v) === i)
 
   const handleAddCustomCategory = () => {
     if (customCategory.trim() && !formData.categories.includes(customCategory.trim())) {
       setFormData({
         ...formData,
-        categories: [...formData.categories, customCategory.trim()]
+        categories: [...formData.categories, customCategory.trim()],
       })
       setCustomCategory('')
       setShowCustomCategoryInput(false)
@@ -428,11 +432,14 @@ Please provide detailed documentation that covers all essential aspects.`,
   const handleRemoveCategory = (categoryToRemove: string) => {
     setFormData({
       ...formData,
-      categories: formData.categories.filter(c => c !== categoryToRemove)
+      categories: formData.categories.filter(c => c !== categoryToRemove),
     })
   }
 
-  const insertCategoryVariable = (field: 'system_prompt' | 'user_prompt_template', variable: string) => {
+  const insertCategoryVariable = (
+    field: 'system_prompt' | 'user_prompt_template',
+    variable: string
+  ) => {
     const textarea = field === 'system_prompt' ? systemPromptRef.current : userPromptRef.current
     if (textarea) {
       const start = textarea.selectionStart
@@ -440,10 +447,10 @@ Please provide detailed documentation that covers all essential aspects.`,
       const scrollTop = textarea.scrollTop
       const currentValue = formData[field]
       const newValue = currentValue.substring(0, start) + variable + currentValue.substring(end)
-      
+
       // Update form data
       setFormData({ ...formData, [field]: newValue })
-      
+
       // Restore cursor and scroll position after React re-render
       setTimeout(() => {
         if (textarea) {
@@ -462,457 +469,490 @@ Please provide detailed documentation that covers all essential aspects.`,
         <PromptEditorSkeleton />
       ) : (
         <div className={styles.container}>
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <button onClick={handleCancel} className={styles.backButton}>
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className={styles.title}>
-              {isEdit ? 'Edit Prompt' : 'Create New Prompt'}
-            </h1>
-            <div className={styles.breadcrumb}>
-              <span onClick={() => navigate('/admin/prompt-manager')} className={styles.breadcrumbLink}>
-                Prompt Manager
-              </span>
-              <span className={styles.breadcrumbSeparator}>/</span>
-              <span>{isEdit ? 'Edit' : 'Create'}</span>
+          {/* Header */}
+          <div className={styles.header}>
+            <div className={styles.headerLeft}>
+              <button onClick={handleCancel} className={styles.backButton}>
+                <ArrowLeft size={20} />
+              </button>
+              <div>
+                <h1 className={styles.title}>{isEdit ? 'Edit Prompt' : 'Create New Prompt'}</h1>
+                <div className={styles.breadcrumb}>
+                  <span
+                    onClick={() => navigate('/admin/prompt-manager')}
+                    className={styles.breadcrumbLink}
+                  >
+                    Prompt Manager
+                  </span>
+                  <span className={styles.breadcrumbSeparator}>/</span>
+                  <span>{isEdit ? 'Edit' : 'Create'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.headerActions}>
+              {isEdit && (
+                <button
+                  onClick={() => setShowHistory(!showHistory)}
+                  className={`${styles.actionButton} ${showHistory ? styles.active : ''}`}
+                >
+                  <History size={16} />
+                  History
+                </button>
+              )}
+
+              <button onClick={handleCancel} className={styles.cancelButton}>
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSave}
+                disabled={isCreating || isUpdating}
+                className={styles.saveButton}
+              >
+                <Save size={16} />
+                {isCreating || isUpdating ? 'Saving...' : 'Save'}
+              </button>
             </div>
           </div>
-        </div>
 
-        <div className={styles.headerActions}>
-          {isEdit && (
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className={`${styles.actionButton} ${showHistory ? styles.active : ''}`}
-            >
-              <History size={16} />
-              History
-            </button>
-          )}
+          {/* Main Content */}
+          <div className={styles.content}>
+            <div className={styles.editorSection}>
+              {/* Template Selector - Only for new prompts */}
+              {showTemplateSelector && (
+                <div className={styles.formSection}>
+                  <h3 className={styles.sectionTitle}>Start with a Template</h3>
+                  <p className={styles.templateDescription}>
+                    Choose a template to get started quickly, or select "Blank Template" to start
+                    from scratch.
+                  </p>
+                  <div className={styles.templateGrid}>
+                    {Object.entries(promptTemplates).map(([key, template]) => (
+                      <button
+                        key={key}
+                        onClick={() => injectTemplate(key)}
+                        className={styles.templateCard}
+                      >
+                        <h4>{template.name}</h4>
+                        <p>
+                          {key === 'blank'
+                            ? 'Start with empty fields'
+                            : key === 'sprint_planner'
+                              ? 'Create detailed sprint plans and user stories'
+                              : 'Generate comprehensive technical documentation'}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          <button onClick={handleCancel} className={styles.cancelButton}>
-            Cancel
-          </button>
+              {/* Basic Info */}
+              <div className={styles.formSection}>
+                <h3 className={styles.sectionTitle}>Basic Information</h3>
+                <div className={styles.formGrid}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Name *</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={e => setFormData({ ...formData, name: e.target.value })}
+                      className={styles.input}
+                      placeholder="Enter prompt name"
+                    />
+                  </div>
 
-          <button
-            onClick={handleSave}
-            disabled={isCreating || isUpdating}
-            className={styles.saveButton}
-          >
-            <Save size={16} />
-            {isCreating || isUpdating ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-      </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Section *</label>
+                    <select
+                      value={formData.section}
+                      onChange={e =>
+                        setFormData({ ...formData, section: e.target.value as ProposalSection })
+                      }
+                      className={styles.select}
+                    >
+                      {Object.entries(SECTION_LABELS).map(([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-      {/* Main Content */}
-      <div className={styles.content}>
-        <div className={styles.editorSection}>
-          {/* Template Selector - Only for new prompts */}
-          {showTemplateSelector && (
-            <div className={styles.formSection}>
-              <h3 className={styles.sectionTitle}>Start with a Template</h3>
-              <p className={styles.templateDescription}>
-                Choose a template to get started quickly, or select "Blank Template" to start from scratch.
-              </p>
-              <div className={styles.templateGrid}>
-                {Object.entries(promptTemplates).map(([key, template]) => (
-                  <button
-                    key={key}
-                    onClick={() => injectTemplate(key)}
-                    className={styles.templateCard}
-                  >
-                    <h4>{template.name}</h4>
-                    <p>{key === 'blank' ? 'Start with empty fields' : 
-                       key === 'sprint_planner' ? 'Create detailed sprint plans and user stories' :
-                       'Generate comprehensive technical documentation'}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Sub-section</label>
+                    <input
+                      type="text"
+                      value={formData.sub_section}
+                      onChange={e => setFormData({ ...formData, sub_section: e.target.value })}
+                      className={styles.input}
+                      placeholder="e.g., step-1, step-2"
+                    />
+                    <small className={styles.fieldHint}>
+                      Organize prompts within sections (e.g., "step-1", "step-2")
+                    </small>
+                  </div>
 
-          {/* Basic Info */}
-          <div className={styles.formSection}>
-            <h3 className={styles.sectionTitle}>Basic Information</h3>
-            <div className={styles.formGrid}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={styles.input}
-                  placeholder="Enter prompt name"
-                />
-              </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Route</label>
+                    <input
+                      type="text"
+                      value={formData.route}
+                      onChange={e => setFormData({ ...formData, route: e.target.value })}
+                      className={styles.input}
+                      placeholder="Optional route identifier"
+                    />
+                  </div>
+                </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Section *</label>
-                <select
-                  value={formData.section}
-                  onChange={(e) => setFormData({ ...formData, section: e.target.value as ProposalSection })}
-                  className={styles.select}
-                >
-                  {Object.entries(SECTION_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
-                </select>
-              </div>
+                {/* Categories Section */}
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Categories</label>
+                  <div className={styles.categoriesContainer}>
+                    {/* Selected Categories */}
+                    {formData.categories.length > 0 && (
+                      <div className={styles.selectedCategories}>
+                        {formData.categories.map(category => (
+                          <span key={category} className={styles.selectedCategory}>
+                            {category}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCategory(category)}
+                              className={styles.removeCategoryButton}
+                            >
+                              <X size={14} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Sub-section</label>
-                <input
-                  type="text"
-                  value={formData.sub_section}
-                  onChange={(e) => setFormData({ ...formData, sub_section: e.target.value })}
-                  className={styles.input}
-                  placeholder="e.g., step-1, step-2"
-                />
-                <small className={styles.fieldHint}>
-                  Organize prompts within sections (e.g., "step-1", "step-2")
-                </small>
-              </div>
+                    {/* Predefined Categories */}
+                    <div className={styles.categoriesGrid}>
+                      {PROMPT_CATEGORIES.map(category => (
+                        <label key={category} className={styles.categoryCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={formData.categories.includes(category)}
+                            onChange={e => {
+                              if (e.target.checked) {
+                                setFormData({
+                                  ...formData,
+                                  categories: [...formData.categories, category],
+                                })
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  categories: formData.categories.filter(c => c !== category),
+                                })
+                              }
+                            }}
+                          />
+                          <span>{category}</span>
+                        </label>
+                      ))}
+                    </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Route</label>
-                <input
-                  type="text"
-                  value={formData.route}
-                  onChange={(e) => setFormData({ ...formData, route: e.target.value })}
-                  className={styles.input}
-                  placeholder="Optional route identifier"
-                />
-              </div>
-            </div>
-
-            {/* Categories Section */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Categories</label>
-              <div className={styles.categoriesContainer}>
-                {/* Selected Categories */}
-                {formData.categories.length > 0 && (
-                  <div className={styles.selectedCategories}>
-                    {formData.categories.map((category) => (
-                      <span key={category} className={styles.selectedCategory}>
-                        {category}
+                    {/* Custom Category Input */}
+                    {showCustomCategoryInput ? (
+                      <div className={styles.customCategoryInput}>
+                        <input
+                          type="text"
+                          value={customCategory}
+                          onChange={e => setCustomCategory(e.target.value)}
+                          placeholder="Enter custom category name"
+                          className={styles.input}
+                          onKeyPress={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              handleAddCustomCategory()
+                            }
+                          }}
+                        />
                         <button
                           type="button"
-                          onClick={() => handleRemoveCategory(category)}
-                          className={styles.removeCategoryButton}
+                          onClick={handleAddCustomCategory}
+                          className={styles.addCategoryButton}
+                          disabled={!customCategory.trim()}
                         >
-                          <X size={14} />
+                          <Check size={16} />
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCustomCategoryInput(false)
+                            setCustomCategory('')
+                          }}
+                          className={styles.cancelCategoryButton}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomCategoryInput(true)}
+                        className={styles.addCustomCategoryButton}
+                      >
+                        <Plus size={16} />
+                        Add Custom Category
+                      </button>
+                    )}
+
+                    <small className={styles.fieldHint}>
+                      Select categories where this prompt can be used. Categories can be injected as
+                      variables using {`{{category_1}}`}, {`{{category_2}}`}, or {`{{categories}}`}.
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              {/* Prompts */}
+              <div className={styles.formSection}>
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>System Role *</h3>
+                  {formData.categories.length > 0 && (
+                    <div className={styles.categoryInjectors}>
+                      <span className={styles.injectorLabel}>Insert:</span>
+                      {formData.categories.map((category, index) => (
+                        <button
+                          key={category}
+                          type="button"
+                          onClick={() =>
+                            insertCategoryVariable(
+                              'system_prompt',
+                              `{{${category.toLowerCase().replace(/\s+/g, '_')}}}`
+                            )
+                          }
+                          className={styles.injectorButton}
+                          title={`Insert: ${category}`}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => insertCategoryVariable('system_prompt', '{{categories}}')}
+                        className={styles.injectorButton}
+                        title={`Insert all: ${formData.categories.join(', ')}`}
+                      >
+                        All Categories
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <textarea
+                  ref={systemPromptRef}
+                  name="system_prompt"
+                  value={formData.system_prompt}
+                  onChange={e => setFormData({ ...formData, system_prompt: e.target.value })}
+                  className={styles.textareaLarge}
+                  rows={10}
+                  placeholder="Define the AI's role, personality, and behavior. Example: You are an expert proposal writer with 15 years of experience in international development projects..."
+                />
+              </div>
+
+              <div className={styles.formSection}>
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>User Instructions *</h3>
+                  {formData.categories.length > 0 && (
+                    <div className={styles.categoryInjectors}>
+                      <span className={styles.injectorLabel}>Insert:</span>
+                      {formData.categories.map((category, index) => (
+                        <button
+                          key={category}
+                          type="button"
+                          onClick={() =>
+                            insertCategoryVariable(
+                              'user_prompt_template',
+                              `{{${category.toLowerCase().replace(/\s+/g, '_')}}}`
+                            )
+                          }
+                          className={styles.injectorButton}
+                          title={`Insert: ${category}`}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          insertCategoryVariable('user_prompt_template', '{{categories}}')
+                        }
+                        className={styles.injectorButton}
+                        title={`Insert all: ${formData.categories.join(', ')}`}
+                      >
+                        All Categories
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <textarea
+                  ref={userPromptRef}
+                  name="user_prompt_template"
+                  value={formData.user_prompt_template}
+                  onChange={e => setFormData({ ...formData, user_prompt_template: e.target.value })}
+                  className={styles.textareaLarge}
+                  rows={10}
+                  placeholder="Instructions for the user's request with variables like {project_name}, {budget}, {timeline}. Example: Create a comprehensive proposal for {project_name} with a budget of {budget}..."
+                />
+              </div>
+
+              <div className={styles.formSection}>
+                <h3 className={styles.sectionTitle}>Expected Output Format</h3>
+                <textarea
+                  value={formData.output_format}
+                  onChange={e => setFormData({ ...formData, output_format: e.target.value })}
+                  className={styles.textareaLarge}
+                  rows={6}
+                  placeholder="Describe the expected output structure, format, and style. Example: Provide a structured response with: 1. Executive Summary, 2. Technical Approach, 3. Budget Breakdown..."
+                />
+              </div>
+
+              {/* Variables */}
+              {allVariables.length > 0 && (
+                <div className={styles.formSection}>
+                  <h3 className={styles.sectionTitle}>Detected Variables</h3>
+                  <div className={styles.variablesList}>
+                    {allVariables.map(variable => (
+                      <span key={variable} className={styles.variable}>
+                        {`{${variable}}`}
                       </span>
                     ))}
                   </div>
-                )}
-
-                {/* Predefined Categories */}
-                <div className={styles.categoriesGrid}>
-                  {PROMPT_CATEGORIES.map((category) => (
-                    <label key={category} className={styles.categoryCheckbox}>
-                      <input
-                        type="checkbox"
-                        checked={formData.categories.includes(category)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({
-                              ...formData,
-                              categories: [...formData.categories, category]
-                            })
-                          } else {
-                            setFormData({
-                              ...formData,
-                              categories: formData.categories.filter(c => c !== category)
-                            })
-                          }
-                        }}
-                      />
-                      <span>{category}</span>
-                    </label>
-                  ))}
+                  <small className={styles.fieldHint}>
+                    <strong>Note:</strong> Category variables ({'{{category_1}}'},{' '}
+                    {'{{category_2}}'}, {'{{categories}}'}) will be replaced with actual category
+                    names when the prompt is retrieved from the backend.
+                  </small>
                 </div>
+              )}
+            </div>
 
-                {/* Custom Category Input */}
-                {showCustomCategoryInput ? (
-                  <div className={styles.customCategoryInput}>
-                    <input
-                      type="text"
-                      value={customCategory}
-                      onChange={(e) => setCustomCategory(e.target.value)}
-                      placeholder="Enter custom category name"
-                      className={styles.input}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          handleAddCustomCategory()
-                        }
-                      }}
-                    />
+            {/* Preview Panel - Always visible */}
+            <div className={styles.previewSection}>
+              <div className={styles.previewSectionHeader}>
+                <h3 className={styles.sectionTitle}>
+                  <FileText size={16} />
+                  Live Preview
+                </h3>
+                <button
+                  onClick={copyAllAsMarkdown}
+                  className={styles.copyAllButton}
+                  title="Copy entire preview as Markdown"
+                >
+                  {copiedSection === 'all' ? <Check size={16} /> : <Copy size={16} />}
+                  Copy All MD
+                </button>
+              </div>
+
+              <div className={styles.previewContent}>
+                <div className={styles.previewBlock}>
+                  <div className={styles.previewHeader}>
+                    <h4>System Role</h4>
                     <button
-                      type="button"
-                      onClick={handleAddCustomCategory}
-                      className={styles.addCategoryButton}
-                      disabled={!customCategory.trim()}
+                      onClick={() =>
+                        copyToClipboard(getPreviewText(formData.system_prompt), 'system')
+                      }
+                      className={styles.copyButton}
+                      title="Copy to clipboard"
                     >
-                      <Check size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowCustomCategoryInput(false)
-                        setCustomCategory('')
-                      }}
-                      className={styles.cancelCategoryButton}
-                    >
-                      <X size={16} />
+                      {copiedSection === 'system' ? <Check size={16} /> : <Copy size={16} />}
                     </button>
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomCategoryInput(true)}
-                    className={styles.addCustomCategoryButton}
-                  >
-                    <Plus size={16} />
-                    Add Custom Category
-                  </button>
+                  <div className={styles.markdownContent}>
+                    <ReactMarkdown>
+                      {getPreviewText(formData.system_prompt) || '*No content yet*'}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+
+                <div className={styles.previewBlock}>
+                  <div className={styles.previewHeader}>
+                    <h4>User Instructions</h4>
+                    <button
+                      onClick={() =>
+                        copyToClipboard(getPreviewText(formData.user_prompt_template), 'user')
+                      }
+                      className={styles.copyButton}
+                      title="Copy to clipboard"
+                    >
+                      {copiedSection === 'user' ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                  <div className={styles.markdownContent}>
+                    <ReactMarkdown>
+                      {getPreviewText(formData.user_prompt_template) || '*No content yet*'}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+
+                {formData.output_format && (
+                  <div className={styles.previewBlock}>
+                    <div className={styles.previewHeader}>
+                      <h4>Expected Output Format</h4>
+                      <button
+                        onClick={() => copyToClipboard(formData.output_format, 'output')}
+                        className={styles.copyButton}
+                        title="Copy to clipboard"
+                      >
+                        {copiedSection === 'output' ? <Check size={16} /> : <Copy size={16} />}
+                      </button>
+                    </div>
+                    <div className={styles.markdownContent}>
+                      <ReactMarkdown>{formData.output_format}</ReactMarkdown>
+                    </div>
+                  </div>
                 )}
-
-                <small className={styles.fieldHint}>
-                  Select categories where this prompt can be used. Categories can be injected as variables using {`{{category_1}}`}, {`{{category_2}}`}, or {`{{categories}}`}.
-                </small>
               </div>
             </div>
           </div>
 
-          {/* Prompts */}
-          <div className={styles.formSection}>
-            <div className={styles.sectionHeader}>
-              <h3 className={styles.sectionTitle}>System Role *</h3>
-              {formData.categories.length > 0 && (
-                <div className={styles.categoryInjectors}>
-                  <span className={styles.injectorLabel}>Insert:</span>
-                  {formData.categories.map((category, index) => (
-                    <button
-                      key={category}
-                      type="button"
-                      onClick={() => insertCategoryVariable('system_prompt', `{{${category.toLowerCase().replace(/\s+/g, '_')}}}`)}
-                      className={styles.injectorButton}
-                      title={`Insert: ${category}`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => insertCategoryVariable('system_prompt', '{{categories}}')}
-                    className={styles.injectorButton}
-                    title={`Insert all: ${formData.categories.join(', ')}`}
-                  >
-                    All Categories
+          {/* History Modal */}
+          {showHistory && (
+            <div className={styles.historyOverlay} onClick={() => setShowHistory(false)}>
+              <div className={styles.historyModal} onClick={e => e.stopPropagation()}>
+                <div className={styles.historyHeader}>
+                  <h3>Prompt History</h3>
+                  <button onClick={() => setShowHistory(false)} className={styles.closeButton}>
+                    <X size={20} />
                   </button>
                 </div>
-              )}
-            </div>
-            <textarea
-              ref={systemPromptRef}
-              name="system_prompt"
-              value={formData.system_prompt}
-              onChange={(e) => setFormData({ ...formData, system_prompt: e.target.value })}
-              className={styles.textareaLarge}
-              rows={10}
-              placeholder="Define the AI's role, personality, and behavior. Example: You are an expert proposal writer with 15 years of experience in international development projects..."
-            />
-          </div>
-
-          <div className={styles.formSection}>
-            <div className={styles.sectionHeader}>
-              <h3 className={styles.sectionTitle}>User Instructions *</h3>
-              {formData.categories.length > 0 && (
-                <div className={styles.categoryInjectors}>
-                  <span className={styles.injectorLabel}>Insert:</span>
-                  {formData.categories.map((category, index) => (
-                    <button
-                      key={category}
-                      type="button"
-                      onClick={() => insertCategoryVariable('user_prompt_template', `{{${category.toLowerCase().replace(/\s+/g, '_')}}}`)}
-                      className={styles.injectorButton}
-                      title={`Insert: ${category}`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => insertCategoryVariable('user_prompt_template', '{{categories}}')}
-                    className={styles.injectorButton}
-                    title={`Insert all: ${formData.categories.join(', ')}`}
-                  >
-                    All Categories
-                  </button>
+                <div className={styles.historyContent}>
+                  <div className={styles.historyItem}>
+                    <div className={styles.historyItemHeader}>
+                      <span className={styles.historyDate}>Current Version</span>
+                      <span className={styles.historyStatus}>Active</span>
+                    </div>
+                    <div className={styles.historyItemContent}>
+                      <p>
+                        <strong>Name:</strong> {formData.name || 'Untitled'}
+                      </p>
+                      <p>
+                        <strong>Section:</strong> {formData.section}
+                      </p>
+                      <p>
+                        <strong>Last Modified:</strong> Just now
+                      </p>
+                    </div>
+                  </div>
+                  <div className={styles.historyPlaceholder}>
+                    <p>Previous versions will appear here once the prompt is saved and modified.</p>
+                  </div>
                 </div>
-              )}
-            </div>
-            <textarea
-              ref={userPromptRef}
-              name="user_prompt_template"
-              value={formData.user_prompt_template}
-              onChange={(e) => setFormData({ ...formData, user_prompt_template: e.target.value })}
-              className={styles.textareaLarge}
-              rows={10}
-              placeholder="Instructions for the user's request with variables like {project_name}, {budget}, {timeline}. Example: Create a comprehensive proposal for {project_name} with a budget of {budget}..."
-            />
-          </div>
-
-          <div className={styles.formSection}>
-            <h3 className={styles.sectionTitle}>Expected Output Format</h3>
-            <textarea
-              value={formData.output_format}
-              onChange={(e) => setFormData({ ...formData, output_format: e.target.value })}
-              className={styles.textareaLarge}
-              rows={6}
-              placeholder="Describe the expected output structure, format, and style. Example: Provide a structured response with: 1. Executive Summary, 2. Technical Approach, 3. Budget Breakdown..."
-            />
-          </div>
-
-          {/* Variables */}
-          {allVariables.length > 0 && (
-            <div className={styles.formSection}>
-              <h3 className={styles.sectionTitle}>Detected Variables</h3>
-              <div className={styles.variablesList}>
-                {allVariables.map(variable => (
-                  <span key={variable} className={styles.variable}>
-                    {`{${variable}}`}
-                  </span>
-                ))}
               </div>
-              <small className={styles.fieldHint}>
-                <strong>Note:</strong> Category variables ({'{{category_1}}'}, {'{{category_2}}'}, {'{{categories}}'}) will be replaced with actual category names when the prompt is retrieved from the backend.
-              </small>
             </div>
           )}
+
+          <ErrorModal
+            isOpen={errorModal.isOpen}
+            onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+            title={errorModal.title}
+            message={errorModal.message}
+            details={errorModal.details}
+          />
         </div>
-
-        {/* Preview Panel - Always visible */}
-        <div className={styles.previewSection}>
-          <div className={styles.previewSectionHeader}>
-            <h3 className={styles.sectionTitle}>
-              <FileText size={16} />
-              Live Preview
-            </h3>
-            <button 
-              onClick={copyAllAsMarkdown}
-              className={styles.copyAllButton}
-              title="Copy entire preview as Markdown"
-            >
-              {copiedSection === 'all' ? <Check size={16} /> : <Copy size={16} />}
-              Copy All MD
-            </button>
-          </div>
-          
-          <div className={styles.previewContent}>
-            <div className={styles.previewBlock}>
-              <div className={styles.previewHeader}>
-                <h4>System Role</h4>
-                <button 
-                  onClick={() => copyToClipboard(getPreviewText(formData.system_prompt), 'system')}
-                  className={styles.copyButton}
-                  title="Copy to clipboard"
-                >
-                  {copiedSection === 'system' ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-              </div>
-              <div className={styles.markdownContent}>
-                <ReactMarkdown>
-                  {getPreviewText(formData.system_prompt) || '*No content yet*'}
-                </ReactMarkdown>
-              </div>
-            </div>
-
-            <div className={styles.previewBlock}>
-              <div className={styles.previewHeader}>
-                <h4>User Instructions</h4>
-                <button 
-                  onClick={() => copyToClipboard(getPreviewText(formData.user_prompt_template), 'user')}
-                  className={styles.copyButton}
-                  title="Copy to clipboard"
-                >
-                  {copiedSection === 'user' ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-              </div>
-              <div className={styles.markdownContent}>
-                <ReactMarkdown>
-                  {getPreviewText(formData.user_prompt_template) || '*No content yet*'}
-                </ReactMarkdown>
-              </div>
-            </div>
-
-            {formData.output_format && (
-              <div className={styles.previewBlock}>
-                <div className={styles.previewHeader}>
-                  <h4>Expected Output Format</h4>
-                  <button 
-                    onClick={() => copyToClipboard(formData.output_format, 'output')}
-                    className={styles.copyButton}
-                    title="Copy to clipboard"
-                  >
-                    {copiedSection === 'output' ? <Check size={16} /> : <Copy size={16} />}
-                  </button>
-                </div>
-                <div className={styles.markdownContent}>
-                  <ReactMarkdown>
-                    {formData.output_format}
-                  </ReactMarkdown>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* History Modal */}
-      {showHistory && (
-        <div className={styles.historyOverlay} onClick={() => setShowHistory(false)}>
-          <div className={styles.historyModal} onClick={e => e.stopPropagation()}>
-            <div className={styles.historyHeader}>
-              <h3>Prompt History</h3>
-              <button onClick={() => setShowHistory(false)} className={styles.closeButton}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className={styles.historyContent}>
-              <div className={styles.historyItem}>
-                <div className={styles.historyItemHeader}>
-                  <span className={styles.historyDate}>Current Version</span>
-                  <span className={styles.historyStatus}>Active</span>
-                </div>
-                <div className={styles.historyItemContent}>
-                  <p><strong>Name:</strong> {formData.name || 'Untitled'}</p>
-                  <p><strong>Section:</strong> {formData.section}</p>
-                  <p><strong>Last Modified:</strong> Just now</p>
-                </div>
-              </div>
-              <div className={styles.historyPlaceholder}>
-                <p>Previous versions will appear here once the prompt is saved and modified.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <ErrorModal
-        isOpen={errorModal.isOpen}
-        onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
-        title={errorModal.title}
-        message={errorModal.message}
-        details={errorModal.details}
-      />
-    </div>
       )}
     </>
   )

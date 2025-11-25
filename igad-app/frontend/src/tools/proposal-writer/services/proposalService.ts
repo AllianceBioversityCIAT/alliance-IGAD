@@ -119,9 +119,7 @@ class ProposalService {
     const uploadedFiles: Record<string, string[]> = {}
     if (formData.uploadedFiles) {
       for (const [key, files] of Object.entries(formData.uploadedFiles)) {
-        uploadedFiles[key] = files.map(file => 
-          typeof file === 'string' ? file : file.name
-        )
+        uploadedFiles[key] = files.map(file => (typeof file === 'string' ? file : file.name))
       }
     }
 
@@ -152,7 +150,10 @@ class ProposalService {
     return response.data
   }
 
-  async deleteDocument(proposalId: string, filename: string): Promise<{
+  async deleteDocument(
+    proposalId: string,
+    filename: string
+  ): Promise<{
     success: boolean
     message: string
   }> {
@@ -161,7 +162,10 @@ class ProposalService {
   }
 
   // Concept file operations
-  async uploadConceptFile(proposalId: string, file: File): Promise<{
+  async uploadConceptFile(
+    proposalId: string,
+    file: File
+  ): Promise<{
     success: boolean
     filename: string
     document_key: string
@@ -169,35 +173,38 @@ class ProposalService {
   }> {
     const formData = new FormData()
     formData.append('file', file)
-    
+
     const response = await apiClient.post(
       `/api/proposals/${proposalId}/documents/upload-concept-file`,
       formData,
       {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          'Content-Type': 'multipart/form-data',
+        },
       }
     )
     return response.data
   }
 
   // Concept text operations
-  async saveConceptText(proposalId: string, text: string): Promise<{
+  async saveConceptText(
+    proposalId: string,
+    text: string
+  ): Promise<{
     success: boolean
     message: string
     text_length: number
   }> {
     const formData = new FormData()
     formData.append('concept_text', text)
-    
+
     const response = await apiClient.post(
       `/api/proposals/${proposalId}/documents/save-concept-text`,
       formData,
       {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          'Content-Type': 'multipart/form-data',
+        },
       }
     )
     return response.data
@@ -207,13 +214,14 @@ class ProposalService {
     success: boolean
     message: string
   }> {
-    const response = await apiClient.delete(
-      `/api/proposals/${proposalId}/documents/concept-text`
-    )
+    const response = await apiClient.delete(`/api/proposals/${proposalId}/documents/concept-text`)
     return response.data
   }
 
-  async deleteConceptFile(proposalId: string, filename: string): Promise<{
+  async deleteConceptFile(
+    proposalId: string,
+    filename: string
+  ): Promise<{
     success: boolean
     message: string
   }> {
@@ -245,7 +253,7 @@ class ProposalService {
     const response = await apiClient.get(`/api/proposals/${proposalId}/concept-status`)
     return response.data
   }
-  
+
   async getUploadedDocuments(proposalId: string): Promise<{
     rfp_documents: string[]
     concept_documents: string[]
@@ -278,9 +286,7 @@ class ProposalService {
     started_at?: string
     completed_at?: string
   }> {
-    const response = await apiClient.get(
-      `/api/proposals/${proposalId}/concept-document-status`
-    )
+    const response = await apiClient.get(`/api/proposals/${proposalId}/concept-document-status`)
     return response.data
   }
 
@@ -302,9 +308,7 @@ class ProposalService {
   async getConceptEvaluation(proposalId: string): Promise<{
     concept_evaluation: any
   }> {
-    const response = await apiClient.get(
-      `/api/proposals/${proposalId}/concept-evaluation`
-    )
+    const response = await apiClient.get(`/api/proposals/${proposalId}/concept-evaluation`)
     return response.data
   }
 }

@@ -39,8 +39,12 @@ export function useProposalDraft() {
     let rfpAnalysis = null
 
     try {
-      if (formDataStr) formData = JSON.parse(formDataStr)
-      if (rfpAnalysisStr) rfpAnalysis = JSON.parse(rfpAnalysisStr)
+      if (formDataStr) {
+        formData = JSON.parse(formDataStr)
+      }
+      if (rfpAnalysisStr) {
+        rfpAnalysis = JSON.parse(rfpAnalysisStr)
+      }
     } catch (e) {
       console.error('Failed to parse draft data', e)
     }

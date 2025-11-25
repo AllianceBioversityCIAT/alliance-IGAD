@@ -33,11 +33,14 @@ function HistoryContent({ promptId }: { promptId: string }) {
   const fetchHistory = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}/history`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}/history`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      )
       if (response.ok) {
         const data = await response.json()
         setHistory(data)
@@ -465,10 +468,12 @@ export function PromptEditorDrawer({
             <input
               type="text"
               value={formData.tone}
-              onChange={e => setFormData(prev => ({ 
-                ...prev, 
-                tone: e.target.value
-              }))}
+              onChange={e =>
+                setFormData(prev => ({
+                  ...prev,
+                  tone: e.target.value,
+                }))
+              }
               className={styles.input}
               placeholder="Professional and informative"
               maxLength={500}
@@ -483,10 +488,12 @@ export function PromptEditorDrawer({
             <input
               type="text"
               value={formData.output_format}
-              onChange={e => setFormData(prev => ({ 
-                ...prev, 
-                output_format: e.target.value
-              }))}
+              onChange={e =>
+                setFormData(prev => ({
+                  ...prev,
+                  output_format: e.target.value,
+                }))
+              }
               className={styles.input}
               placeholder="Clear and structured response"
               maxLength={500}

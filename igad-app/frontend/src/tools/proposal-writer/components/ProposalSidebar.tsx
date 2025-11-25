@@ -11,7 +11,7 @@ export function ProposalSidebar({ currentStep, completedSteps }: ProposalSidebar
   // Calculate progress percentage based on completed steps
   const totalSteps = stepConfig.length
   const progressPercentage = Math.round((completedSteps.length / totalSteps) * 100)
-  
+
   return (
     <div className={styles.sidebar}>
       <div className={styles.sidebarContent}>
@@ -24,7 +24,9 @@ export function ProposalSidebar({ currentStep, completedSteps }: ProposalSidebar
           <div className={styles.progressBar}>
             <div className={styles.progressFill} style={{ width: `${progressPercentage}%` }} />
           </div>
-          <p className={styles.progressText}>Step {currentStep} of {totalSteps}</p>
+          <p className={styles.progressText}>
+            Step {currentStep} of {totalSteps}
+          </p>
         </div>
 
         {/* Steps List */}

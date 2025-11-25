@@ -21,14 +21,14 @@ function Step1Skeleton() {
         <div className={`${styles.skeleton} ${styles.skeletonInput}`}></div>
         <div className={`${styles.skeleton} ${styles.skeletonButton}`}></div>
       </div>
-      
+
       <div className={styles.skeletonCard}>
         <div className={`${styles.skeleton} ${styles.skeletonTitle}`}></div>
         <div className={`${styles.skeleton} ${styles.skeletonText}`}></div>
         <div className={`${styles.skeleton} ${styles.skeletonInput}`}></div>
         <div className={`${styles.skeleton} ${styles.skeletonInput}`}></div>
       </div>
-      
+
       <div className={styles.skeletonCard}>
         <div className={`${styles.skeleton} ${styles.skeletonTitle}`}></div>
         <div className={`${styles.skeleton} ${styles.skeletonText}`}></div>
@@ -38,14 +38,19 @@ function Step1Skeleton() {
   )
 }
 
-export function Step1InformationConsolidation({ formData, setFormData, proposalId, rfpAnalysis }: Step1Props) {
+export function Step1InformationConsolidation({
+  formData,
+  setFormData,
+  proposalId,
+  rfpAnalysis,
+}: Step1Props) {
   const { proposal, updateFormData, isUpdating, isLoading } = useProposal(proposalId)
   const [isUploadingRFP, setIsUploadingRFP] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const [uploadError, setUploadError] = useState<string>('')
   const [errorDetails, setErrorDetails] = useState<string>('')
   const [showManualInput, setShowManualInput] = useState(false)
-  
+
   // Concept states
   const [isUploadingConcept, setIsUploadingConcept] = useState(false)
   const [isSavingConceptText, setIsSavingConceptText] = useState(false)
@@ -59,14 +64,16 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
       const loadProposalData = async () => {
         const storageKey = `proposal_draft_${proposalId}`
         const savedData = localStorage.getItem(storageKey)
-        
+
         try {
           // First, load uploaded documents from backend
-          const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+          const { proposalService } = await import(
+            '@/tools/proposal-writer/services/proposalService'
+          )
           const documents = await proposalService.getUploadedDocuments(proposalId)
-          
+
           console.log('📄 Loaded documents from backend:', documents)
-          
+
           // Build formData from backend documents
           const backendFormData = {
             uploadedFiles: {
@@ -77,13 +84,13 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             } as { [key: string]: string[] },
             textInputs: {} as { [key: string]: string },
           }
-          
+
           if (savedData) {
             // Merge with localStorage data (for text inputs)
             try {
               const parsed = JSON.parse(savedData)
               backendFormData.textInputs = parsed.textInputs || {}
-              
+
               // Use backend files, not localStorage files (they might be stale)
               setFormData(backendFormData)
             } catch (e) {
@@ -99,7 +106,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           }
         } catch (error) {
           console.error('Failed to load documents:', error)
-          
+
           // Fallback to localStorage or proposal
           if (savedData) {
             try {
@@ -116,7 +123,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           }
         }
       }
-      
+
       loadProposalData()
     }
   }, [proposalId, proposal])
@@ -145,10 +152,10 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           // Create FormData for file upload
           const uploadFormData = new FormData()
           uploadFormData.append('file', file)
-          
+
           console.log('Uploading document to:', `/api/proposals/${proposalId}/documents/upload`)
           console.log('File:', file.name, 'Size:', file.size)
-          
+
           // Upload document - this will process and create vectors
           const response = await apiClient.post(
             `/api/proposals/${proposalId}/documents/upload`,
@@ -159,9 +166,9 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
               },
             }
           )
-          
+
           console.log('Document uploaded and vectorized:', response.data)
-          
+
           // Only update state after successful upload
           const updatedFiles = {
             ...formData.uploadedFiles,
@@ -178,14 +185,14 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             uploadedFiles: updatedFiles,
             textInputs: formData.textInputs,
           })
-          
+
           // Clear any previous errors
           setUploadError('')
-          
         } catch (error: any) {
           console.error('Failed to upload document:', error)
-          
-          const errorMessage = error.response?.data?.detail || error.message || 'Upload failed. Please try again.'
+
+          const errorMessage =
+            error.response?.data?.detail || error.message || 'Upload failed. Please try again.'
           setUploadError(errorMessage)
         } finally {
           setIsUploadingRFP(false)
@@ -218,15 +225,17 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   }
 
   const handleManualTextSubmit = async (text: string) => {
-    if (!proposalId) return
-    
+    if (!proposalId) {
+      return
+    }
+
     setIsUploadingRFP(true)
     setShowManualInput(false)
-    
+
     try {
       const formData = new FormData()
       formData.append('rfp_text', text)
-      
+
       const response = await apiClient.post(
         `/api/proposals/${proposalId}/documents/upload-text`,
         formData,
@@ -236,13 +245,12 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           },
         }
       )
-      
+
       console.log('Manual text processed:', response.data)
-      
+
       setUploadResult(response.data)
       setShowSuccess(true)
       setShowError(false)
-      
     } catch (error: any) {
       console.error('Failed to process manual text:', error)
       const errorMessage = error.response?.data?.detail || error.message || 'Unknown error'
@@ -283,28 +291,28 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
 
   const hasRequiredFiles = () => {
     const hasRFP = getUploadedFileCount('rfp-document') > 0
-    const hasConcept = 
+    const hasConcept =
       (formData.textInputs['initial-concept'] || '').length >= 100 ||
       getUploadedFileCount('concept-document') > 0
-    
+
     return hasRFP && hasConcept
   }
 
   const handleDeleteFile = async (section: string, fileIndex: number) => {
     const updatedFiles = { ...formData.uploadedFiles }
     const fileName = updatedFiles[section][fileIndex]
-    
+
     console.log('🗑️ DELETE FILE:', {
       section,
       fileIndex,
       fileName,
       proposalId,
-      allFiles: formData.uploadedFiles
+      allFiles: formData.uploadedFiles,
     })
-    
+
     // Remove from local state first for immediate UI feedback
     updatedFiles[section].splice(fileIndex, 1)
-    
+
     setFormData(prev => ({
       ...prev,
       uploadedFiles: updatedFiles,
@@ -315,24 +323,24 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
       try {
         // Import proposalService dynamically
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-        
+
         console.log('📡 Calling deleteDocument API:', {
           proposalId,
-          fileName
+          fileName,
         })
-        
+
         // Delete from S3
         const deleteResult = await proposalService.deleteDocument(proposalId, fileName)
-        
+
         console.log('✅ Delete API response:', deleteResult)
-        
+
         // Update DynamoDB metadata
         await updateFormData({
           uploadedFiles: updatedFiles,
         })
-        
+
         console.log(`✅ Deleted file from S3 and DynamoDB: ${fileName}`)
-        
+
         // If deleting RFP document, also clear the analysis
         if (section === 'rfp-document' && window.location.pathname.includes('proposal-writer')) {
           // Clear rfpAnalysis from parent component
@@ -346,7 +354,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         console.error('❌ Error details:', {
           message: error.message,
           response: error.response?.data,
-          status: error.response?.status
+          status: error.response?.status,
         })
         // Optionally: revert the local state change if backend deletion failed
         setUploadError('Failed to delete file from server')
@@ -357,21 +365,23 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   // Concept handlers
   const handleSaveConceptText = async () => {
     const text = formData.textInputs['initial-concept'] || ''
-    
+
     if (text.length < 100) {
       setConceptUploadError('Concept text must be at least 100 characters')
       return
     }
-    
-    if (!proposalId) return
-    
+
+    if (!proposalId) {
+      return
+    }
+
     setIsSavingConceptText(true)
     setConceptUploadError('')
-    
+
     try {
       const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
       await proposalService.saveConceptText(proposalId, text)
-      
+
       setConceptTextSaved(true)
       setIsEditingConceptText(false)
       console.log('✅ Concept text saved successfully')
@@ -389,18 +399,22 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   }
 
   const handleDeleteConceptText = async () => {
-    if (!confirm('Delete saved concept text?')) return
-    if (!proposalId) return
-    
+    if (!confirm('Delete saved concept text?')) {
+      return
+    }
+    if (!proposalId) {
+      return
+    }
+
     try {
       const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
       await proposalService.deleteConceptText(proposalId)
-      
+
       setFormData(prev => ({
         ...prev,
-        textInputs: { ...prev.textInputs, 'initial-concept': '' }
+        textInputs: { ...prev.textInputs, 'initial-concept': '' },
       }))
-      
+
       setConceptTextSaved(false)
       setIsEditingConceptText(false)
       console.log('✅ Concept text deleted')
@@ -411,26 +425,30 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   }
 
   const handleConceptFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return
-    if (!proposalId) return
-    
+    if (!files || files.length === 0) {
+      return
+    }
+    if (!proposalId) {
+      return
+    }
+
     const file = files[0]
     setIsUploadingConcept(true)
     setConceptUploadError('')
-    
+
     try {
       const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
       await proposalService.uploadConceptFile(proposalId, file)
-      
+
       // Update local state
       setFormData(prev => ({
         ...prev,
         uploadedFiles: {
           ...prev.uploadedFiles,
-          'concept-document': [file.name]
-        }
+          'concept-document': [file.name],
+        },
       }))
-      
+
       console.log('✅ Concept file uploaded successfully')
     } catch (error: any) {
       console.error('❌ Failed to upload concept file:', error)
@@ -441,21 +459,25 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
   }
 
   const handleDeleteConceptFile = async (filename: string) => {
-    if (!confirm(`Delete ${filename}?`)) return
-    if (!proposalId) return
-    
+    if (!confirm(`Delete ${filename}?`)) {
+      return
+    }
+    if (!proposalId) {
+      return
+    }
+
     try {
       const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
       await proposalService.deleteConceptFile(proposalId, filename)
-      
+
       setFormData(prev => ({
         ...prev,
         uploadedFiles: {
           ...prev.uploadedFiles,
-          'concept-document': []
-        }
+          'concept-document': [],
+        },
       }))
-      
+
       console.log('✅ Concept file deleted')
     } catch (error: any) {
       console.error('❌ Failed to delete concept file:', error)
@@ -468,7 +490,10 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
     return (
       <div className={styles.mainContent}>
         <div className={styles.stepHeader}>
-          <div className={styles.skeleton} style={{ height: '40px', width: '60%', marginBottom: '16px' }}></div>
+          <div
+            className={styles.skeleton}
+            style={{ height: '40px', width: '60%', marginBottom: '16px' }}
+          ></div>
           <div className={styles.skeleton} style={{ height: '20px', width: '80%' }}></div>
         </div>
         <div className={styles.skeleton} style={{ height: '150px', marginTop: '24px' }}></div>
@@ -499,7 +524,11 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
           </div>
           <div className={styles.progressCardStats}>
             <span className={styles.progressCount}>
-              {hasRequiredFiles() ? '2/2' : (getUploadedFileCount('rfp-document') > 0 ? '1/2' : '0/2')}
+              {hasRequiredFiles()
+                ? '2/2'
+                : getUploadedFileCount('rfp-document') > 0
+                  ? '1/2'
+                  : '0/2'}
             </span>
             <span className={styles.progressLabel}>required sections complete</span>
           </div>
@@ -507,7 +536,13 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
         <div className={styles.progressCardBar}>
           <div
             className={styles.progressCardFill}
-            style={{ width: hasRequiredFiles() ? '100%' : (getUploadedFileCount('rfp-document') > 0 ? '50%' : '1%') }}
+            style={{
+              width: hasRequiredFiles()
+                ? '100%'
+                : getUploadedFileCount('rfp-document') > 0
+                  ? '50%'
+                  : '1%',
+            }}
           />
         </div>
       </div>
@@ -593,14 +628,20 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
                   <FileText className={styles.uploadedFileIcon} size={24} />
                   <div className={styles.uploadedFileCheck}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="8" r="8" fill="#10b981"/>
-                      <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="8" cy="8" r="8" fill="#10b981" />
+                      <path
+                        d="M5 8l2 2 4-4"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </div>
                 </div>
                 <div>
                   <p className={styles.uploadedFileName}>
-                    {typeof formData.uploadedFiles['rfp-document']?.[0] === 'string' 
+                    {typeof formData.uploadedFiles['rfp-document']?.[0] === 'string'
                       ? formData.uploadedFiles['rfp-document'][0]
                       : formData.uploadedFiles['rfp-document']?.[0]?.name || 'Document'}
                   </p>
@@ -615,7 +656,12 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
                 title="Delete and upload a different file"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M6 8v8m4-8v8m4-8v8M4 6h12M9 4h2a1 1 0 011 1v1H8V5a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path
+                    d="M6 8v8m4-8v8m4-8v8M4 6h12M9 4h2a1 1 0 011 1v1H8V5a1 1 0 011-1z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
             </div>
@@ -642,7 +688,7 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             </div>
           </div>
         )}
-        
+
         {/* Upload Error Message */}
         {uploadError && (
           <div className={styles.errorMessage}>
@@ -681,7 +727,10 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
             id="reference-proposals"
             disabled={true}
           />
-          <label htmlFor="reference-proposals" className={`${styles.uploadButtonSecondary} ${styles.uploadButtonDisabled}`}>
+          <label
+            htmlFor="reference-proposals"
+            className={`${styles.uploadButtonSecondary} ${styles.uploadButtonDisabled}`}
+          >
             Choose Files
           </label>
         </div>
@@ -739,7 +788,10 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
               id="supporting-docs"
               disabled={true}
             />
-            <label htmlFor="supporting-docs" className={`${styles.uploadButtonSecondary} ${styles.uploadButtonDisabled}`}>
+            <label
+              htmlFor="supporting-docs"
+              className={`${styles.uploadButtonSecondary} ${styles.uploadButtonDisabled}`}
+            >
               Add Files
             </label>
 
@@ -788,12 +840,14 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
               {(formData.textInputs['initial-concept'] || '').length} characters
             </span>
           </div>
-          
+
           <div className={styles.textAreaActions}>
             {!conceptTextSaved ? (
               <button
                 onClick={handleSaveConceptText}
-                disabled={isSavingConceptText || (formData.textInputs['initial-concept'] || '').length < 100}
+                disabled={
+                  isSavingConceptText || (formData.textInputs['initial-concept'] || '').length < 100
+                }
                 className={styles.saveButton}
               >
                 {isSavingConceptText ? 'Saving...' : 'Save Text'}
@@ -861,14 +915,20 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
                     <FileText className={styles.uploadedFileIcon} size={24} />
                     <div className={styles.uploadedFileCheck}>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="8" r="8" fill="#10b981"/>
-                        <path d="M5 8l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <circle cx="8" cy="8" r="8" fill="#10b981" />
+                        <path
+                          d="M5 8l2 2 4-4"
+                          stroke="white"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     </div>
                   </div>
                   <div>
                     <p className={styles.uploadedFileName}>
-                      {typeof formData.uploadedFiles['concept-document']?.[0] === 'string' 
+                      {typeof formData.uploadedFiles['concept-document']?.[0] === 'string'
                         ? formData.uploadedFiles['concept-document'][0]
                         : formData.uploadedFiles['concept-document']?.[0]?.name || 'Document'}
                     </p>
@@ -878,12 +938,19 @@ export function Step1InformationConsolidation({ formData, setFormData, proposalI
                   </div>
                 </div>
                 <button
-                  onClick={() => handleDeleteConceptFile(formData.uploadedFiles['concept-document'][0])}
+                  onClick={() =>
+                    handleDeleteConceptFile(formData.uploadedFiles['concept-document'][0])
+                  }
                   className={styles.deleteFileButton}
                   title="Delete and upload a different file"
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M6 8v8m4-8v8m4-8v8M4 6h12M9 4h2a1 1 0 011 1v1H8V5a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path
+                      d="M6 8v8m4-8v8m4-8v8M4 6h12M9 4h2a1 1 0 011 1v1H8V5a1 1 0 011-1z"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </button>
               </div>

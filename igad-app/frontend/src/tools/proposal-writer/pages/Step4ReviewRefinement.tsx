@@ -7,7 +7,11 @@ const Step4ReviewRefinement: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false)
 
   const handleFileSelect = (file: File) => {
-    const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    const validTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ]
     const maxSize = 20 * 1024 * 1024 // 20MB
 
     if (!validTypes.includes(file.type)) {
@@ -27,7 +31,7 @@ const Step4ReviewRefinement: React.FC = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-    
+
     const files = e.dataTransfer.files
     if (files.length > 0) {
       handleFileSelect(files[0])
@@ -64,11 +68,12 @@ const Step4ReviewRefinement: React.FC = () => {
         <div className={styles.cardHeader}>
           <h3 className={styles.cardTitle}>Upload Your Draft Proposal</h3>
           <p className={styles.cardSubtitle}>
-            In case you made adjustments to the downloaded Concept Document, please upload the new version here to take it into consideration.
+            In case you made adjustments to the downloaded Concept Document, please upload the new
+            version here to take it into consideration.
           </p>
         </div>
 
-        <div 
+        <div
           className={`${styles.dropZone} ${isDragging ? styles.dropZoneDragging : ''} ${selectedFile ? styles.dropZoneHasFile : ''}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -78,15 +83,15 @@ const Step4ReviewRefinement: React.FC = () => {
             <div className={styles.fileInfo}>
               <FileText size={48} color="#00A63E" />
               <p className={styles.fileName}>{selectedFile.name}</p>
-              <p className={styles.fileSize}>
-                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-              <button 
+              <p className={styles.fileSize}>{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+              <button
                 className={styles.changeFileButton}
                 onClick={() => {
                   setSelectedFile(null)
                   const input = document.getElementById('file-input') as HTMLInputElement
-                  if (input) input.value = ''
+                  if (input) {
+                    input.value = ''
+                  }
                 }}
               >
                 Change File

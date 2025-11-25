@@ -18,7 +18,7 @@ class TokenManager {
   init(): void {
     // Setup automatic refresh on app start
     this.setupAutoRefresh()
-    
+
     // Check if token needs immediate refresh
     const token = this.getAccessToken()
     if (token && this.isTokenExpiringSoon(token)) {
@@ -33,9 +33,12 @@ class TokenManager {
     }
 
     // Set up refresh every 23 hours (tokens last 24 hours)
-    this.refreshTimer = setInterval(() => {
-      this.refreshTokens()
-    }, 23 * 60 * 60 * 1000) // 23 hours
+    this.refreshTimer = setInterval(
+      () => {
+        this.refreshTokens()
+      },
+      23 * 60 * 60 * 1000
+    ) // 23 hours
   }
 
   async refreshTokens(): Promise<boolean> {
@@ -69,7 +72,7 @@ class TokenManager {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ refresh_token: refreshToken })
+        body: JSON.stringify({ refresh_token: refreshToken }),
       })
 
       if (!response.ok) {
@@ -79,7 +82,7 @@ class TokenManager {
       }
 
       const tokenData: TokenData = await response.json()
-      
+
       // Update stored tokens
       this.setAccessToken(tokenData.access_token)
       if (tokenData.refresh_token) {
@@ -88,7 +91,6 @@ class TokenManager {
 
       console.log('Tokens refreshed successfully')
       return true
-
     } catch (error) {
       console.error('Token refresh error:', error)
       this.handleRefreshFailure()
@@ -149,7 +151,7 @@ class TokenManager {
     localStorage.removeItem('refresh_token')
     sessionStorage.removeItem('access_token')
     sessionStorage.removeItem('refresh_token')
-    
+
     // Clear refresh timer
     if (this.refreshTimer) {
       clearInterval(this.refreshTimer)
@@ -163,7 +165,7 @@ class TokenManager {
       const expirationTime = payload.exp * 1000
       const currentTime = Date.now()
       const timeUntilExpiry = expirationTime - currentTime
-      
+
       // Refresh if expires in less than 1 hour
       return timeUntilExpiry < 60 * 60 * 1000
     } catch (error) {
@@ -174,8 +176,10 @@ class TokenManager {
 
   isAuthenticated(): boolean {
     const token = this.getAccessToken()
-    if (!token) return false
-    
+    if (!token) {
+      return false
+    }
+
     // Check if token is expired
     try {
       const payload = JSON.parse(atob(token.split('.')[1]))

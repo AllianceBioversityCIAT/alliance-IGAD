@@ -1,0 +1,1008 @@
+app/__init__.py:1:1: D104 Missing docstring in public package
+app/database/client.py:1:1: D205 1 blank line required between summary line and description
+app/database/client.py:1:1: D400 First line should end with a period
+app/database/client.py:10:1: I100 Import statements are in the wrong order. 'from aws_lambda_powertools import Logger' should be before 'import boto3' and in a different group.
+app/database/client.py:10:1: I201 Missing newline between import groups. 'from aws_lambda_powertools import Logger' is identified as Third Party and 'import boto3' is identified as Third Party.
+app/database/client.py:11:1: I201 Missing newline between import groups. 'from boto3.dynamodb.conditions import Key' is identified as Third Party and 'from aws_lambda_powertools import Logger' is identified as Third Party.
+app/database/client.py:12:1: I201 Missing newline between import groups. 'from botocore.exceptions import ClientError' is identified as Third Party and 'from boto3.dynamodb.conditions import Key' is identified as Third Party.
+app/database/client.py:18:1: D400 First line should end with a period
+app/database/client.py:20:1: D107 Missing docstring in __init__
+app/database/client.py:31:1: D400 First line should end with a period
+app/database/client.py:47:1: D400 First line should end with a period
+app/database/client.py:66:1: D400 First line should end with a period
+app/database/client.py:75:1: D400 First line should end with a period
+app/database/client.py:92:1: D400 First line should end with a period
+app/database/client.py:111:1: D400 First line should end with a period
+app/database/client.py:129:1: D400 First line should end with a period
+app/database/client.py:138:1: W293 blank line contains whitespace
+app/database/client.py:161:1: D400 First line should end with a period
+app/database/client.py:172:1: D400 First line should end with a period
+app/database/client.py:185:1: D400 First line should end with a period
+app/database/client.py:188:1: W293 blank line contains whitespace
+app/database/client.py:191:1: W293 blank line contains whitespace
+app/database/client.py:194:1: W293 blank line contains whitespace
+app/database/client.py:197:1: W293 blank line contains whitespace
+app/database/client.py:203:1: W293 blank line contains whitespace
+app/handlers/admin_prompts.py:1:1: D100 Missing docstring in public module
+app/handlers/admin_prompts.py:7:1: I100 Import statements are in the wrong order. 'from app.shared.schemas.prompt_model import Comment, CommentCreate, Prompt, PromptCreate, PromptHistory, PromptListResponse, PromptPreviewRequest, PromptPreviewResponse, PromptUpdate, ProposalSection' should be before 'from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer' and in a different group.
+app/handlers/admin_prompts.py:19:1: I100 Import statements are in the wrong order. 'from app.shared.ai.bedrock_service import BedrockService' should be before 'from app.shared.schemas.prompt_model import Comment, CommentCreate, Prompt, PromptCreate, PromptHistory, PromptListResponse, PromptPreviewRequest, PromptPreviewResponse, PromptUpdate, ProposalSection'
+app/handlers/admin_prompts.py:33:49: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:35:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:37:1: W293 blank line contains whitespace
+app/handlers/admin_prompts.py:39:1: W293 blank line contains whitespace
+app/handlers/admin_prompts.py:45:1: W293 blank line contains whitespace
+app/handlers/admin_prompts.py:57:42: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:58:26: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:59:29: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:60:28: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:61:33: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:62:18: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:63:19: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:64:26: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:66:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:88:30: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:91:26: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:93:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:124:53: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:126:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:145:26: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:147:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:170:30: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:173:26: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:175:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:195:26: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:197:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:212:23: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:214:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:242:42: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:244:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:270:26: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:272:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:290:42: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:292:1: D400 First line should end with a period
+app/handlers/admin_prompts.py:306:42: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/handlers/admin_prompts.py:308:1: D400 First line should end with a period
+app/main.py:8:1: I201 Missing newline between import groups. 'from fastapi import FastAPI' is identified as Third Party and 'from dotenv import load_dotenv' is identified as Third Party.
+app/main.py:16:1: I100 Import statements are in the wrong order. 'from .shared.health import routes' should be before 'from .tools.auth import routes'
+app/main.py:18:1: I100 Import statements are in the wrong order. 'from .shared.documents import routes' should be before 'from .tools.admin.prompts_manager import routes'
+app/middleware/auth_middleware.py:1:1: D100 Missing docstring in public module
+app/middleware/auth_middleware.py:6:1: I101 Imported names are in the wrong order. Should be ExpiredSignatureError, JWTError
+app/middleware/auth_middleware.py:7:1: I100 Import statements are in the wrong order. 'from fastapi import HTTPException, status' should be before 'from jose.exceptions import JWTError, ExpiredSignatureError' and in a different group.
+app/middleware/auth_middleware.py:7:1: I201 Missing newline between import groups. 'from fastapi import HTTPException, status' is identified as Third Party and 'from jose.exceptions import JWTError, ExpiredSignatureError' is identified as Third Party.
+app/middleware/auth_middleware.py:19:1: D101 Missing docstring in public class
+app/middleware/auth_middleware.py:20:1: D107 Missing docstring in __init__
+app/middleware/auth_middleware.py:24:1: D400 First line should end with a period
+app/middleware/auth_middleware.py:30:13: F401 'boto3' imported but unused
+app/middleware/auth_middleware.py:64:5: C901 'AuthMiddleware.verify_token' is too complex (15)
+app/middleware/auth_middleware.py:65:1: D400 First line should end with a period
+app/middleware/auth_middleware.py:97:21: F401 'boto3' imported but unused
+app/middleware/auth_middleware.py:173:1: D400 First line should end with a period
+app/middleware/error_middleware.py:1:1: D200 One-line docstring should fit on one line with quotes
+app/middleware/error_middleware.py:1:1: D400 First line should end with a period
+app/middleware/error_middleware.py:6:1: I201 Missing newline between import groups. 'from fastapi import HTTPException, Request' is identified as Third Party and 'from aws_lambda_powertools import Logger' is identified as Third Party.
+app/middleware/error_middleware.py:8:1: I201 Missing newline between import groups. 'from starlette.middleware.base import BaseHTTPMiddleware' is identified as Third Party and 'from fastapi.responses import JSONResponse' is identified as Third Party.
+app/middleware/error_middleware.py:13:1: D101 Missing docstring in public class
+app/middleware/error_middleware.py:14:1: D102 Missing docstring in public method
+app/shared/__init__.py:1:1: D400 First line should end with a period
+app/shared/ai/__init__.py:1:1: D104 Missing docstring in public package
+app/shared/ai/bedrock_service.py:1:1: D100 Missing docstring in public module
+app/shared/ai/bedrock_service.py:13:1: D101 Missing docstring in public class
+app/shared/ai/bedrock_service.py:14:1: D107 Missing docstring in __init__
+app/shared/ai/bedrock_service.py:24:1: D400 First line should end with a period
+app/shared/ai/bedrock_service.py:37:1: D400 First line should end with a period
+app/shared/ai/bedrock_service.py:43:1: D400 First line should end with a period
+app/shared/ai/bedrock_service.py:113:1: D400 First line should end with a period
+app/shared/ai/bedrock_service.py:126:1: W293 blank line contains whitespace
+app/shared/ai/bedrock_service.py:134:1: D205 1 blank line required between summary line and description
+app/shared/ai/bedrock_service.py:134:1: D400 First line should end with a period
+app/shared/ai/bedrock_service.py:134:1: D401 First line should be in imperative mood; try rephrasing
+app/shared/ai/bedrock_service.py:140:1: W293 blank line contains whitespace
+app/shared/ai/bedrock_service.py:148:1: W293 blank line contains whitespace
+app/shared/ai/bedrock_service.py:155:1: W293 blank line contains whitespace
+app/shared/ai/bedrock_service.py:157:1: W293 blank line contains whitespace
+app/shared/ai/bedrock_service.py:162:1: W293 blank line contains whitespace
+app/shared/aws/__init__.py:1:1: D104 Missing docstring in public package
+app/shared/database/__init__.py:1:1: D104 Missing docstring in public package
+app/shared/documents/__init__.py:1:1: D104 Missing docstring in public package
+app/shared/documents/routes.py:1:1: D205 1 blank line required between summary line and description
+app/shared/documents/routes.py:1:1: D400 First line should end with a period
+app/shared/documents/routes.py:6:1: I101 Imported names are in the wrong order. Should be APIRouter, Depends, File, Form, HTTPException, UploadFile
+app/shared/documents/routes.py:8:1: I100 Import statements are in the wrong order. 'from datetime import datetime' should be before 'from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer' and in a different group.
+app/shared/documents/routes.py:8:1: I201 Missing newline between import groups. 'from datetime import datetime' is identified as Stdlib and 'from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer' is identified as Third Party.
+app/shared/documents/routes.py:10:1: I100 Import statements are in the wrong order. 'import os' should be before 'from io import BytesIO'
+app/shared/documents/routes.py:13:1: I100 Import statements are in the wrong order. 'from app.database.client import db_client' should be before 'from app.middleware.auth_middleware import AuthMiddleware'
+app/shared/documents/routes.py:22:49: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:24:1: D400 First line should end with a period
+app/shared/documents/routes.py:29:1: C901 'upload_document' is too complex (13)
+app/shared/documents/routes.py:31:24: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:32:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:34:1: D205 1 blank line required between summary line and description
+app/shared/documents/routes.py:34:1: D400 First line should end with a period
+app/shared/documents/routes.py:42:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:46:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:49:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:52:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:56:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:62:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:68:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:71:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:73:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:78:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:81:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:83:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:95:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:100:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:112:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:120:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:134:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:136:1: D400 First line should end with a period
+app/shared/documents/routes.py:138:15: F541 f-string is missing placeholders
+app/shared/documents/routes.py:142:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:148:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:150:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:156:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:160:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:163:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:168:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:172:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:180:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:182:15: F541 f-string is missing placeholders
+app/shared/documents/routes.py:192:15: F541 f-string is missing placeholders
+app/shared/documents/routes.py:193:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:194:15: F541 f-string is missing placeholders
+app/shared/documents/routes.py:195:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:200:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:211:1: C901 'upload_concept_file' is too complex (11)
+app/shared/documents/routes.py:213:24: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:214:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:216:1: D400 First line should end with a period
+app/shared/documents/routes.py:222:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:226:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:229:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:232:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:238:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:244:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:247:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:249:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:254:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:257:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:259:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:271:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:279:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:292:25: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:293:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:295:1: D400 First line should end with a period
+app/shared/documents/routes.py:299:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:305:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:311:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:314:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:316:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:321:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:324:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:326:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:337:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:343:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:354:1: C901 'get_uploaded_documents' is too complex (14)
+app/shared/documents/routes.py:356:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:358:1: D400 First line should end with a period
+app/shared/documents/routes.py:365:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:371:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:374:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:376:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:381:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:384:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:392:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:399:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:406:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:416:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:418:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:431:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:433:1: D400 First line should end with a period
+app/shared/documents/routes.py:440:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:446:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:449:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:451:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:456:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:458:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:464:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:469:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:480:1: C901 'delete_concept_file' is too complex (22)
+app/shared/documents/routes.py:483:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:485:1: D400 First line should end with a period
+app/shared/documents/routes.py:486:5: B025 Exception `Exception` has been caught multiple times. Only the first except will be considered and all other except catches can be safely removed.
+app/shared/documents/routes.py:486:5: B025 Exception `HTTPException` has been caught multiple times. Only the first except will be considered and all other except catches can be safely removed.
+app/shared/documents/routes.py:492:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:498:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:501:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:503:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:508:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:510:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:516:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:521:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:532:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:533:34: F821 undefined name 'file_size'
+app/shared/documents/routes.py:534:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:535:12: F821 undefined name 'file_size'
+app/shared/documents/routes.py:537:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:538:12: F821 undefined name 'file_size'
+app/shared/documents/routes.py:540:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:542:16: F821 undefined name 'file_bytes'
+app/shared/documents/routes.py:543:83: F821 undefined name 'file_bytes'
+app/shared/documents/routes.py:545:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:546:57: F821 undefined name 'file_bytes'
+app/shared/documents/routes.py:547:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:557:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:563:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:566:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:569:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:574:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:577:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:579:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:584:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:587:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:588:47: F821 undefined name 'file'
+app/shared/documents/routes.py:589:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:590:15: F541 f-string is missing placeholders
+app/shared/documents/routes.py:593:26: F821 undefined name 'file_size'
+app/shared/documents/routes.py:594:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:597:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:601:26: F821 undefined name 'file_bytes'
+app/shared/documents/routes.py:604:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:606:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:610:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:611:15: F541 f-string is missing placeholders
+app/shared/documents/routes.py:613:35: F821 undefined name 'file_size'
+app/shared/documents/routes.py:614:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:615:29: F821 undefined name 'file_size'
+app/shared/documents/routes.py:616:82: F821 undefined name 'file_size'
+app/shared/documents/routes.py:619:89: F821 undefined name 'file_size'
+app/shared/documents/routes.py:621:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:623:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:628:24: F821 undefined name 'file'
+app/shared/documents/routes.py:631:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:639:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:641:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:645:25: F821 undefined name 'file'
+app/shared/documents/routes.py:647:21: F821 undefined name 'file_size'
+app/shared/documents/routes.py:650:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:655:15: F541 f-string is missing placeholders
+app/shared/documents/routes.py:662:1: C901 'upload_rfp_text' is too complex (11)
+app/shared/documents/routes.py:664:21: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:665:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:667:1: D200 One-line docstring should fit on one line with quotes
+app/shared/documents/routes.py:667:1: D400 First line should end with a period
+app/shared/documents/routes.py:680:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:686:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:689:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:692:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:694:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:697:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:700:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:704:33: W291 trailing whitespace
+app/shared/documents/routes.py:707:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:709:23: F821 undefined name 'DocumentService'
+app/shared/documents/routes.py:716:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:724:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:732:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:739:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:750:1: C901 'list_documents' is too complex (13)
+app/shared/documents/routes.py:752:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:754:1: D400 First line should end with a period
+app/shared/documents/routes.py:761:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:767:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:770:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:772:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:777:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:780:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:786:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:791:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:795:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:802:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:805:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:808:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:816:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:818:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:831:18: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:832:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/shared/documents/routes.py:834:1: D205 1 blank line required between summary line and description
+app/shared/documents/routes.py:834:1: D400 First line should end with a period
+app/shared/documents/routes.py:847:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:853:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:856:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:858:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:860:23: F821 undefined name 'DocumentService'
+app/shared/documents/routes.py:866:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:872:1: W293 blank line contains whitespace
+app/shared/documents/routes.py:878:1: W293 blank line contains whitespace
+app/shared/health/__init__.py:1:1: D104 Missing docstring in public package
+app/shared/health/routes.py:1:1: D200 One-line docstring should fit on one line with quotes
+app/shared/health/routes.py:1:1: D400 First line should end with a period
+app/shared/health/routes.py:11:1: D103 Missing docstring in public function
+app/shared/health/routes.py:16:1: D103 Missing docstring in public function
+app/shared/schemas/__init__.py:1:1: D104 Missing docstring in public package
+app/shared/schemas/prompt_model.py:1:1: D100 Missing docstring in public module
+app/shared/schemas/prompt_model.py:8:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:27:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:32:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:39:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:54:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:58:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:74:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:89:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:95:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:102:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:109:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:114:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:127:1: D101 Missing docstring in public class
+app/shared/schemas/prompt_model.py:139:1: D101 Missing docstring in public class
+app/shared/utils/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/__init__.py:1:1: D400 First line should end with a period
+app/tools/admin/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/admin/prompts_manager/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/admin/prompts_manager/routes.py:1:1: D200 One-line docstring should fit on one line with quotes
+app/tools/admin/prompts_manager/routes.py:1:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/routes.py:6:1: I201 Missing newline between import groups. 'from fastapi import APIRouter, HTTPException, Query' is identified as Third Party and 'from typing import List, Optional' is identified as Stdlib.
+app/tools/admin/prompts_manager/routes.py:8:1: I100 Import statements are in the wrong order. 'from app.shared.schemas.prompt_model import ProposalSection' should be before 'from fastapi import APIRouter, HTTPException, Query' and in a different group.
+app/tools/admin/prompts_manager/routes.py:16:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/routes.py:50:39: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/prompts_manager/routes.py:52:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/routes.py:55:1: W293 blank line contains whitespace
+app/tools/admin/prompts_manager/routes.py:60:1: W293 blank line contains whitespace
+app/tools/admin/prompts_manager/routes.py:85:1: W293 blank line contains whitespace
+app/tools/admin/prompts_manager/service.py:1:1: D100 Missing docstring in public module
+app/tools/admin/prompts_manager/service.py:6:1: F401 'boto3' imported but unused
+app/tools/admin/prompts_manager/service.py:9:1: I100 Import statements are in the wrong order. 'from app.shared.schemas.prompt_model import Comment, CommentCreate, Prompt, PromptChange, PromptCreate, PromptHistory, PromptListResponse, PromptUpdate, ProposalSection' should be before 'from boto3.dynamodb.conditions import Attr, Key' and in a different group.
+app/tools/admin/prompts_manager/service.py:25:1: D101 Missing docstring in public class
+app/tools/admin/prompts_manager/service.py:26:1: D107 Missing docstring in __init__
+app/tools/admin/prompts_manager/service.py:34:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:38:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:42:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:82:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:109:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:116:33: W291 trailing whitespace
+app/tools/admin/prompts_manager/service.py:117:37: W291 trailing whitespace
+app/tools/admin/prompts_manager/service.py:160:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:189:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:252:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:286:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:344:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:367:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:425:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:445:1: W293 blank line contains whitespace
+app/tools/admin/prompts_manager/service.py:470:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:554:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:608:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:666:1: D400 First line should end with a period
+app/tools/admin/prompts_manager/service.py:691:1: D205 1 blank line required between summary line and description
+app/tools/admin/prompts_manager/service.py:698:1: W293 blank line contains whitespace
+app/tools/admin/prompts_manager/service.py:700:1: W293 blank line contains whitespace
+app/tools/admin/prompts_manager/service.py:705:1: W293 blank line contains whitespace
+app/tools/admin/prompts_manager/service.py:709:1: W293 blank line contains whitespace
+app/tools/admin/prompts_manager/service.py:713:1: D200 One-line docstring should fit on one line with quotes
+app/tools/admin/prompts_manager/service.py:719:1: W293 blank line contains whitespace
+app/tools/admin/prompts_manager/service.py:724:1: W293 blank line contains whitespace
+app/tools/admin/settings/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/admin/settings/routes.py:7:1: I201 Missing newline between import groups. 'from fastapi import APIRouter, Depends, HTTPException' is identified as Third Party and 'from dotenv import load_dotenv' is identified as Third Party.
+app/tools/admin/settings/routes.py:9:1: I201 Missing newline between import groups. 'from pydantic import BaseModel' is identified as Third Party and 'from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer' is identified as Third Party.
+app/tools/admin/settings/routes.py:11:1: I100 Import statements are in the wrong order. 'from app.utils.aws_session import get_aws_session' should be before 'from pydantic import BaseModel' and in a different group.
+app/tools/admin/settings/routes.py:12:1: I100 Import statements are in the wrong order. 'from app.middleware.auth_middleware import AuthMiddleware' should be before 'from app.utils.aws_session import get_aws_session'
+app/tools/admin/settings/routes.py:30:69: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:31:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:40:1: D101 Missing docstring in public class
+app/tools/admin/settings/routes.py:47:1: D101 Missing docstring in public class
+app/tools/admin/settings/routes.py:53:33: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:54:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:63:57: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:64:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:68:1: W293 blank line contains whitespace
+app/tools/admin/settings/routes.py:70:9: F401 'boto3' imported but unused
+app/tools/admin/settings/routes.py:129:46: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:130:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:140:54: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:142:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:153:49: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:154:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:163:49: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:164:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:173:50: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:174:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:183:57: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:184:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:195:34: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:196:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:206:48: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:208:1: D400 First line should end with a period
+app/tools/admin/settings/routes.py:220:48: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/admin/settings/routes.py:222:1: D400 First line should end with a period
+app/tools/agribusiness_hub/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/auth/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/auth/routes.py:1:1: D200 One-line docstring should fit on one line with quotes
+app/tools/auth/routes.py:1:1: D400 First line should end with a period
+app/tools/auth/routes.py:10:1: I201 Missing newline between import groups. 'from pydantic import BaseModel' is identified as Third Party and 'from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer' is identified as Third Party.
+app/tools/auth/routes.py:12:1: I100 Import statements are in the wrong order. 'from app.middleware.auth_middleware import AuthMiddleware' should be before 'from pydantic import BaseModel' and in a different group.
+app/tools/auth/routes.py:22:1: D101 Missing docstring in public class
+app/tools/auth/routes.py:27:1: D101 Missing docstring in public class
+app/tools/auth/routes.py:41:1: D400 First line should end with a period
+app/tools/auth/routes.py:43:1: W293 blank line contains whitespace
+app/tools/auth/routes.py:53:9: F401 'boto3' imported but unused
+app/tools/auth/routes.py:132:1: D101 Missing docstring in public class
+app/tools/auth/routes.py:138:1: D400 First line should end with a period
+app/tools/auth/routes.py:140:9: F401 'boto3' imported but unused
+app/tools/auth/routes.py:169:30: W291 trailing whitespace
+app/tools/auth/routes.py:200:1: D400 First line should end with a period
+app/tools/auth/routes.py:204:1: D101 Missing docstring in public class
+app/tools/auth/routes.py:208:1: D101 Missing docstring in public class
+app/tools/auth/routes.py:215:1: C901 'forgot_password' is too complex (11)
+app/tools/auth/routes.py:216:1: D400 First line should end with a period
+app/tools/auth/routes.py:218:9: F401 'boto3' imported but unused
+app/tools/auth/routes.py:247:9: F841 local variable 'reset_html' is assigned to but never used
+app/tools/auth/routes.py:322:1: D400 First line should end with a period
+app/tools/auth/routes.py:324:9: F401 'boto3' imported but unused
+app/tools/auth/routes.py:362:1: D101 Missing docstring in public class
+app/tools/auth/routes.py:370:1: D400 First line should end with a period
+app/tools/auth/routes.py:372:9: F401 'boto3' imported but unused
+app/tools/auth/routes.py:441:1: D101 Missing docstring in public class
+app/tools/auth/routes.py:449:49: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/auth/routes.py:460:49: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/auth/routes.py:462:1: D400 First line should end with a period
+app/tools/auth/service.py:1:1: D100 Missing docstring in public module
+app/tools/auth/service.py:3:1: F401 'boto3' imported but unused
+app/tools/auth/service.py:4:1: I201 Missing newline between import groups. 'from botocore.exceptions import ClientError' is identified as Third Party and 'import boto3' is identified as Third Party.
+app/tools/auth/service.py:5:1: I100 Import statements are in the wrong order. 'from app.utils.aws_session import get_aws_session' should be before 'from botocore.exceptions import ClientError' and in a different group.
+app/tools/auth/service.py:5:1: I201 Missing newline between import groups. 'from app.utils.aws_session import get_aws_session' is identified as Third Party and 'from botocore.exceptions import ClientError' is identified as Third Party.
+app/tools/auth/service.py:8:1: D101 Missing docstring in public class
+app/tools/auth/service.py:9:1: D107 Missing docstring in __init__
+app/tools/auth/service.py:24:1: D400 First line should end with a period
+app/tools/auth/service.py:78:1: D400 First line should end with a period
+app/tools/auth/service.py:121:1: W293 blank line contains whitespace
+app/tools/auth/service.py:201:1: D400 First line should end with a period
+app/tools/auth/service.py:223:1: D400 First line should end with a period
+app/tools/auth/service.py:239:1: D400 First line should end with a period
+app/tools/auth/service.py:255:1: D400 First line should end with a period
+app/tools/auth/service.py:273:1: D400 First line should end with a period
+app/tools/auth/service.py:292:1: D400 First line should end with a period
+app/tools/auth/service.py:328:1: D400 First line should end with a period
+app/tools/auth/service.py:344:1: D400 First line should end with a period
+app/tools/auth/service.py:362:1: D400 First line should end with a period
+app/tools/auth/service.py:403:1: D400 First line should end with a period
+app/tools/auth/service.py:419:1: D400 First line should end with a period
+app/tools/newsletter_generator/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/policy_analyzer/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/proposal_writer/__init__.py:1:1: D400 First line should end with a period
+app/tools/proposal_writer/concept_evaluation/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/proposal_writer/concept_evaluation/config.py:1:1: D400 First line should end with a period
+app/tools/proposal_writer/concept_evaluation/service.py:1:1: D200 One-line docstring should fit on one line with quotes
+app/tools/proposal_writer/concept_evaluation/service.py:1:1: D400 First line should end with a period
+app/tools/proposal_writer/concept_evaluation/service.py:8:1: I201 Missing newline between import groups. 'import boto3' is identified as Third Party and 'from typing import Any, Dict' is identified as Stdlib.
+app/tools/proposal_writer/concept_evaluation/service.py:10:1: I100 Import statements are in the wrong order. 'from PyPDF2 import PdfReader' should be before 'from boto3.dynamodb.conditions import Attr' and in a different group.
+app/tools/proposal_writer/concept_evaluation/service.py:10:1: I201 Missing newline between import groups. 'from PyPDF2 import PdfReader' is identified as Third Party and 'from boto3.dynamodb.conditions import Attr' is identified as Third Party.
+app/tools/proposal_writer/concept_evaluation/service.py:11:1: I100 Import statements are in the wrong order. 'from io import BytesIO' should be before 'from PyPDF2 import PdfReader' and in a different group.
+app/tools/proposal_writer/concept_evaluation/service.py:11:1: I201 Missing newline between import groups. 'from io import BytesIO' is identified as Stdlib and 'from PyPDF2 import PdfReader' is identified as Third Party.
+app/tools/proposal_writer/concept_evaluation/service.py:17:1: D101 Missing docstring in public class
+app/tools/proposal_writer/concept_evaluation/service.py:18:1: D107 Missing docstring in __init__
+app/tools/proposal_writer/concept_evaluation/service.py:24:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:27:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:28:5: C901 'SimpleConceptAnalyzer.analyze_concept' is too complex (15)
+app/tools/proposal_writer/concept_evaluation/service.py:29:1: D400 First line should end with a period
+app/tools/proposal_writer/concept_evaluation/service.py:37:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:40:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:44:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:48:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:50:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:60:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:65:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:74:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:82:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:85:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:87:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:91:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:94:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:96:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:104:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:110:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:113:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:118:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:125:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:128:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:132:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:134:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:139:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:145:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:147:1: D400 First line should end with a period
+app/tools/proposal_writer/concept_evaluation/service.py:151:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:159:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:162:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:164:1: D400 First line should end with a period
+app/tools/proposal_writer/concept_evaluation/service.py:174:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:176:1: D400 First line should end with a period
+app/tools/proposal_writer/concept_evaluation/service.py:180:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:182:34: E251 unexpected spaces around keyword / parameter equals
+app/tools/proposal_writer/concept_evaluation/service.py:183:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/concept_evaluation/service.py:184:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/concept_evaluation/service.py:185:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/concept_evaluation/service.py:186:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/concept_evaluation/service.py:188:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:190:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:194:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:197:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:201:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:202:19: F541 f-string is missing placeholders
+app/tools/proposal_writer/concept_evaluation/service.py:206:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:212:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:216:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:218:1: D400 First line should end with a period
+app/tools/proposal_writer/concept_evaluation/service.py:221:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:223:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:243:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:245:1: W293 blank line contains whitespace
+app/tools/proposal_writer/concept_evaluation/service.py:249:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/proposal_writer/document_generation/config.py:1:1: D400 First line should end with a period
+app/tools/proposal_writer/document_generation/service.py:1:1: D205 1 blank line required between summary line and description
+app/tools/proposal_writer/document_generation/service.py:1:1: D400 First line should end with a period
+app/tools/proposal_writer/document_generation/service.py:8:1: I101 Imported names are in the wrong order. Should be Any, Dict
+app/tools/proposal_writer/document_generation/service.py:9:1: I201 Missing newline between import groups. 'import boto3' is identified as Third Party and 'from typing import Dict, Any' is identified as Stdlib.
+app/tools/proposal_writer/document_generation/service.py:12:1: I100 Import statements are in the wrong order. 'from app.shared.ai.bedrock_service import BedrockService' should be before 'from boto3.dynamodb.conditions import Attr' and in a different group.
+app/tools/proposal_writer/document_generation/service.py:19:1: D400 First line should end with a period
+app/tools/proposal_writer/document_generation/service.py:20:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:21:1: D107 Missing docstring in __init__
+app/tools/proposal_writer/document_generation/service.py:25:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:32:1: D400 First line should end with a period
+app/tools/proposal_writer/document_generation/service.py:34:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:39:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:52:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:54:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:58:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:61:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:63:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:67:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:70:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:75:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:77:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:91:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:93:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:102:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:111:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:114:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:117:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:121:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:123:1: D400 First line should end with a period
+app/tools/proposal_writer/document_generation/service.py:127:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:129:34: E251 unexpected spaces around keyword / parameter equals
+app/tools/proposal_writer/document_generation/service.py:130:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/document_generation/service.py:131:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/document_generation/service.py:132:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/document_generation/service.py:133:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/document_generation/service.py:135:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:137:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:141:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:144:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:150:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:154:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:160:1: D202 No blank lines allowed after function docstring
+app/tools/proposal_writer/document_generation/service.py:160:1: D400 First line should end with a period
+app/tools/proposal_writer/document_generation/service.py:161:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:166:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:169:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:174:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:180:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:182:1: D400 First line should end with a period
+app/tools/proposal_writer/document_generation/service.py:190:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:192:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:198:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:204:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:206:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:211:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:217:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:222:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:229:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:231:1: D400 First line should end with a period
+app/tools/proposal_writer/document_generation/service.py:233:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:237:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:239:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:241:1: D400 First line should end with a period
+app/tools/proposal_writer/document_generation/service.py:243:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:250:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:256:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:259:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:265:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:267:1: D400 First line should end with a period
+app/tools/proposal_writer/document_generation/service.py:271:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:280:1: W293 blank line contains whitespace
+app/tools/proposal_writer/document_generation/service.py:283:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/proposal_writer/rfp_analysis/config.py:1:1: D400 First line should end with a period
+app/tools/proposal_writer/rfp_analysis/service.py:1:1: D200 One-line docstring should fit on one line with quotes
+app/tools/proposal_writer/rfp_analysis/service.py:1:1: D400 First line should end with a period
+app/tools/proposal_writer/rfp_analysis/service.py:8:1: I201 Missing newline between import groups. 'import boto3' is identified as Third Party and 'from typing import Any, Dict, Optional' is identified as Stdlib.
+app/tools/proposal_writer/rfp_analysis/service.py:10:1: I100 Import statements are in the wrong order. 'from PyPDF2 import PdfReader' should be before 'from boto3.dynamodb.conditions import Attr' and in a different group.
+app/tools/proposal_writer/rfp_analysis/service.py:10:1: I201 Missing newline between import groups. 'from PyPDF2 import PdfReader' is identified as Third Party and 'from boto3.dynamodb.conditions import Attr' is identified as Third Party.
+app/tools/proposal_writer/rfp_analysis/service.py:11:1: I100 Import statements are in the wrong order. 'from io import BytesIO' should be before 'from PyPDF2 import PdfReader' and in a different group.
+app/tools/proposal_writer/rfp_analysis/service.py:11:1: I201 Missing newline between import groups. 'from io import BytesIO' is identified as Stdlib and 'from PyPDF2 import PdfReader' is identified as Third Party.
+app/tools/proposal_writer/rfp_analysis/service.py:17:1: D101 Missing docstring in public class
+app/tools/proposal_writer/rfp_analysis/service.py:18:1: D107 Missing docstring in __init__
+app/tools/proposal_writer/rfp_analysis/service.py:25:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:29:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:30:5: C901 'SimpleRFPAnalyzer.analyze_rfp' is too complex (14)
+app/tools/proposal_writer/rfp_analysis/service.py:31:1: D400 First line should end with a period
+app/tools/proposal_writer/rfp_analysis/service.py:39:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:42:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:46:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:49:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:53:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:59:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:62:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:69:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:72:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:77:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:81:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:84:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:86:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:90:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:99:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:102:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:109:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:114:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:121:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:127:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:134:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:136:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:141:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:148:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:151:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:155:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:157:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:162:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:168:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:170:1: D400 First line should end with a period
+app/tools/proposal_writer/rfp_analysis/service.py:180:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:182:1: D400 First line should end with a period
+app/tools/proposal_writer/rfp_analysis/service.py:183:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:190:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:193:34: E251 unexpected spaces around keyword / parameter equals
+app/tools/proposal_writer/rfp_analysis/service.py:194:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/rfp_analysis/service.py:195:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/rfp_analysis/service.py:196:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/rfp_analysis/service.py:197:21: E131 continuation line unaligned for hanging indent
+app/tools/proposal_writer/rfp_analysis/service.py:199:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:201:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:205:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:208:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:213:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:214:19: F541 f-string is missing placeholders
+app/tools/proposal_writer/rfp_analysis/service.py:218:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:224:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:228:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:230:1: D400 First line should end with a period
+app/tools/proposal_writer/rfp_analysis/service.py:230:1: D401 First line should be in imperative mood; try rephrasing
+app/tools/proposal_writer/rfp_analysis/service.py:252:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:254:1: D400 First line should end with a period
+app/tools/proposal_writer/rfp_analysis/service.py:254:1: D401 First line should be in imperative mood; try rephrasing
+app/tools/proposal_writer/rfp_analysis/service.py:260:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:262:1: D400 First line should end with a period
+app/tools/proposal_writer/rfp_analysis/service.py:266:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:269:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:289:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:291:1: W293 blank line contains whitespace
+app/tools/proposal_writer/rfp_analysis/service.py:296:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1:1: D200 One-line docstring should fit on one line with quotes
+app/tools/proposal_writer/routes.py:1:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:8:1: I201 Missing newline between import groups. 'import boto3' is identified as Third Party and 'import uuid' is identified as Stdlib.
+app/tools/proposal_writer/routes.py:9:1: I100 Import statements are in the wrong order. 'from datetime import datetime' should be before 'import boto3' and in a different group.
+app/tools/proposal_writer/routes.py:9:1: I201 Missing newline between import groups. 'from datetime import datetime' is identified as Stdlib and 'import boto3' is identified as Third Party.
+app/tools/proposal_writer/routes.py:14:1: I201 Missing newline between import groups. 'from pydantic import BaseModel' is identified as Third Party and 'from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer' is identified as Third Party.
+app/tools/proposal_writer/routes.py:16:1: I100 Import statements are in the wrong order. 'from app.middleware.auth_middleware import AuthMiddleware' should be before 'from pydantic import BaseModel' and in a different group.
+app/tools/proposal_writer/routes.py:19:1: F401 'app.tools.proposal_writer.rfp_analysis.service.SimpleRFPAnalyzer' imported but unused
+app/tools/proposal_writer/routes.py:20:1: I100 Import statements are in the wrong order. 'from app.tools.proposal_writer.document_generation.service import concept_generator' should be before 'from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer'
+app/tools/proposal_writer/routes.py:20:1: F401 'app.tools.proposal_writer.document_generation.service.concept_generator' imported but unused
+app/tools/proposal_writer/routes.py:21:1: I100 Import statements are in the wrong order. 'from app.database.client import db_client' should be before 'from app.tools.proposal_writer.document_generation.service import concept_generator'
+app/tools/proposal_writer/routes.py:32:1: D101 Missing docstring in public class
+app/tools/proposal_writer/routes.py:38:1: D101 Missing docstring in public class
+app/tools/proposal_writer/routes.py:47:1: D101 Missing docstring in public class
+app/tools/proposal_writer/routes.py:52:1: D101 Missing docstring in public class
+app/tools/proposal_writer/routes.py:57:1: D101 Missing docstring in public class
+app/tools/proposal_writer/routes.py:62:1: D101 Missing docstring in public class
+app/tools/proposal_writer/routes.py:68:49: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:70:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:75:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:83:58: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:84:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:92:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:99:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:102:73: W291 trailing whitespace
+app/tools/proposal_writer/routes.py:103:32: E128 continuation line under-indented for visual indent
+app/tools/proposal_writer/routes.py:108:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:112:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:114:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:137:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:139:67: W291 trailing whitespace
+app/tools/proposal_writer/routes.py:140:28: E128 continuation line under-indented for visual indent
+app/tools/proposal_writer/routes.py:141:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:148:30: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:149:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:157:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:161:54: W291 trailing whitespace
+app/tools/proposal_writer/routes.py:162:24: E128 continuation line under-indented for visual indent
+app/tools/proposal_writer/routes.py:164:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:171:47: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:172:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:183:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:190:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:193:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:195:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:198:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:201:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:205:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:207:63: W291 trailing whitespace
+app/tools/proposal_writer/routes.py:208:28: E128 continuation line under-indented for visual indent
+app/tools/proposal_writer/routes.py:209:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:218:1: C901 'update_proposal' is too complex (12)
+app/tools/proposal_writer/routes.py:219:61: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:221:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:232:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:238:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:241:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:243:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:246:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:249:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:252:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:256:63: W291 trailing whitespace
+app/tools/proposal_writer/routes.py:257:20: E128 continuation line under-indented for visual indent
+app/tools/proposal_writer/routes.py:258:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:262:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:269:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:274:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:276:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:284:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:286:71: W291 trailing whitespace
+app/tools/proposal_writer/routes.py:287:28: E128 continuation line under-indented for visual indent
+app/tools/proposal_writer/routes.py:288:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:297:50: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:298:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:309:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:315:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:318:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:320:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:323:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:326:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:329:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:331:9: F841 local variable 'proposal_code' is assigned to but never used
+app/tools/proposal_writer/routes.py:332:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:342:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:345:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:355:56: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:357:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:367:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:373:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:376:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:378:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:380:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:383:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:403:1: C901 'update_concept_evaluation' is too complex (17)
+app/tools/proposal_writer/routes.py:406:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:408:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:418:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:424:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:427:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:429:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:432:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:435:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:438:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:443:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:449:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:457:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:460:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:464:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:472:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:479:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:486:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:488:9: F841 local variable 'updated_proposal' is assigned to but never used
+app/tools/proposal_writer/routes.py:497:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:511:55: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:513:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:523:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:529:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:532:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:534:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:536:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:539:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:559:1: C901 'analyze_rfp' is too complex (14)
+app/tools/proposal_writer/routes.py:559:46: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:560:1: D205 1 blank line required between summary line and description
+app/tools/proposal_writer/routes.py:560:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:574:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:580:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:583:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:586:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:588:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:591:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:594:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:603:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:612:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:623:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:628:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:631:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:636:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:638:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:648:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:649:15: F541 f-string is missing placeholders
+app/tools/proposal_writer/routes.py:650:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:656:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:662:15: F541 f-string is missing placeholders
+app/tools/proposal_writer/routes.py:671:1: C901 'get_analysis_status' is too complex (13)
+app/tools/proposal_writer/routes.py:671:54: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:672:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:682:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:688:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:691:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:693:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:695:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:698:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:701:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:703:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:724:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:732:1: C901 'analyze_concept' is too complex (14)
+app/tools/proposal_writer/routes.py:732:50: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:733:1: D205 1 blank line required between summary line and description
+app/tools/proposal_writer/routes.py:733:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:747:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:753:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:756:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:759:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:761:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:764:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:767:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:771:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:780:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:789:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:800:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:803:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:807:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:816:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:817:15: F541 f-string is missing placeholders
+app/tools/proposal_writer/routes.py:818:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:824:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:830:15: F541 f-string is missing placeholders
+app/tools/proposal_writer/routes.py:839:1: C901 'get_concept_status' is too complex (13)
+app/tools/proposal_writer/routes.py:839:53: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:840:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:850:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:856:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:859:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:861:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:863:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:866:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:869:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:871:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:892:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:903:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:905:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:907:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:913:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:919:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:925:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:931:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:934:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:942:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:949:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:955:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:961:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:964:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:975:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:978:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:983:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:990:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:992:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:998:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1000:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1006:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1017:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:1019:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:1025:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1031:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1034:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1036:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1042:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1047:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1049:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1058:10: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:1060:1: D200 One-line docstring should fit on one line with quotes
+app/tools/proposal_writer/routes.py:1060:1: D400 First line should end with a period
+app/tools/proposal_writer/routes.py:1066:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1072:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1078:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1081:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1083:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1087:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1090:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1092:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1096:1: W293 blank line contains whitespace
+app/tools/proposal_writer/routes.py:1106:48: B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+app/tools/proposal_writer/routes.py:1108:1: D400 First line should end with a period
+app/tools/proposal_writer/workflow/__init__.py:1:1: D104 Missing docstring in public package
+app/tools/proposal_writer/workflow/worker.py:1:1: D205 1 blank line required between summary line and description
+app/tools/proposal_writer/workflow/worker.py:1:1: D400 First line should end with a period
+app/tools/proposal_writer/workflow/worker.py:11:1: I100 Import statements are in the wrong order. 'from app.tools.proposal_writer.concept_evaluation.service import SimpleConceptAnalyzer' should be before 'from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer'
+app/tools/proposal_writer/workflow/worker.py:13:1: I100 Import statements are in the wrong order. 'from app.database.client import db_client' should be before 'from app.tools.proposal_writer.document_generation.service import concept_generator'
+app/tools/proposal_writer/workflow/worker.py:18:1: C901 'handler' is too complex (16)
+app/tools/proposal_writer/workflow/worker.py:18:1: E302 expected 2 blank lines, found 1
+app/tools/proposal_writer/workflow/worker.py:21:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:32:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:36:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:39:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:42:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:54:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:59:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:62:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:80:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:82:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:89:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:92:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:96:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:107:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:112:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:115:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:133:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:135:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:142:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:145:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:149:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:154:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:165:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:169:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:175:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:177:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:197:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:199:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:202:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:206:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:216:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:220:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:226:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:230:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:265:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:283:1: W293 blank line contains whitespace
+app/tools/proposal_writer/workflow/worker.py:287:1: W293 blank line contains whitespace
+app/tools/report_generator/__init__.py:1:1: D104 Missing docstring in public package
+app/utils/aws_session.py:3:1: I201 Missing newline between import groups. 'import boto3' is identified as Third Party and 'import os' is identified as Stdlib.
+app/utils/aws_session.py:9:1: W293 blank line contains whitespace
+app/utils/bedrock_client.py:1:1: D100 Missing docstring in public module
+app/utils/bedrock_client.py:7:1: I100 Import statements are in the wrong order. 'from app.utils.aws_session import get_aws_session' should be before 'from botocore.exceptions import ClientError' and in a different group.
+app/utils/bedrock_client.py:7:1: I201 Missing newline between import groups. 'from app.utils.aws_session import get_aws_session' is identified as Third Party and 'from botocore.exceptions import ClientError' is identified as Third Party.
+app/utils/bedrock_client.py:12:1: D101 Missing docstring in public class
+app/utils/bedrock_client.py:13:1: D107 Missing docstring in __init__
+app/utils/bedrock_client.py:25:1: D400 First line should end with a period
+app/utils/bedrock_client.py:75:1: D202 No blank lines allowed after function docstring
+app/utils/bedrock_client.py:75:1: D400 First line should end with a period
+app/utils/bedrock_client.py:119:1: D202 No blank lines allowed after function docstring
+app/utils/bedrock_client.py:119:1: D400 First line should end with a period
+app/utils/bedrock_client.py:151:1: D202 No blank lines allowed after function docstring
+app/utils/bedrock_client.py:151:1: D400 First line should end with a period
+69    B008 Do not perform function calls in argument defaults.  The call is performed only once at function definition time. All calls to your function will reuse the result of that definition-time function call.  If this is intended, assign the function call to a module-level variable and use that variable as a default value.
+2     B025 Exception `Exception` has been caught multiple times. Only the first except will be considered and all other except catches can be safely removed.
+17    C901 'AuthMiddleware.verify_token' is too complex (15)
+7     D100 Missing docstring in public module
+37    D101 Missing docstring in public class
+1     D102 Missing docstring in public method
+2     D103 Missing docstring in public function
+20    D104 Missing docstring in public package
+9     D107 Missing docstring in __init__
+10    D200 One-line docstring should fit on one line with quotes
+4     D202 No blank lines allowed after function docstring
+10    D205 1 blank line required between summary line and description
+150   D400 First line should end with a period
+3     D401 First line should be in imperative mood; try rephrasing
+6     E128 continuation line under-indented for visual indent
+12    E131 continuation line unaligned for hanging indent
+3     E251 unexpected spaces around keyword / parameter equals
+1     E302 expected 2 blank lines, found 1
+12    F401 'boto3' imported but unused
+13    F541 f-string is missing placeholders
+18    F821 undefined name 'file_size'
+3     F841 local variable 'reset_html' is assigned to but never used
+27    I100 Import statements are in the wrong order. 'from aws_lambda_powertools import Logger' should be before 'import boto3' and in a different group.
+3     I101 Imported names are in the wrong order. Should be ExpiredSignatureError, JWTError
+26    I201 Missing newline between import groups. 'from aws_lambda_powertools import Logger' is identified as Third Party and 'import boto3' is identified as Third Party.
+10    W291 trailing whitespace
+505   W293 blank line contains whitespace
+980

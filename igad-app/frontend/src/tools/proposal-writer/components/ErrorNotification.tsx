@@ -16,7 +16,9 @@ export function ErrorNotification({
   message,
   error,
 }: ErrorNotificationProps) {
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className={styles.overlay} onClick={onClose}>

@@ -24,7 +24,7 @@ export function Navigation() {
         padding: '8px',
       }}
     >
-      {[1, 2, 3].map((item) => (
+      {[1, 2, 3].map(item => (
         <div
           key={item}
           style={{
@@ -276,117 +276,117 @@ export function Navigation() {
                   >
                     {/* Admin-only links */}
                     {isAdmin && (
-                    <>
-                      {/* Settings */}
-                      <Link
-                        to="/admin/settings"
-                        style={{
-                          padding: '12px 16px',
-                          background:
-                            location.pathname === '/admin/settings' ? '#DCFCE7' : 'transparent',
-                          border: 'none',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          fontFamily: 'Arial',
-                          color: location.pathname === '/admin/settings' ? '#016630' : '#374151',
-                          width: '100%',
-                          borderBottom: '1px solid #F3F4F6',
-                          textDecoration: 'none',
-                          display: 'block',
-                          fontWeight: location.pathname === '/admin/settings' ? '600' : 'normal',
-                        }}
-                        onClick={() => setShowSettingsDropdown(false)}
-                      >
-                        Settings
-                      </Link>
+                      <>
+                        {/* Settings */}
+                        <Link
+                          to="/admin/settings"
+                          style={{
+                            padding: '12px 16px',
+                            background:
+                              location.pathname === '/admin/settings' ? '#DCFCE7' : 'transparent',
+                            border: 'none',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontFamily: 'Arial',
+                            color: location.pathname === '/admin/settings' ? '#016630' : '#374151',
+                            width: '100%',
+                            borderBottom: '1px solid #F3F4F6',
+                            textDecoration: 'none',
+                            display: 'block',
+                            fontWeight: location.pathname === '/admin/settings' ? '600' : 'normal',
+                          }}
+                          onClick={() => setShowSettingsDropdown(false)}
+                        >
+                          Settings
+                        </Link>
 
-                      {/* Prompt Manager */}
-                      <Link
-                        to="/admin/prompt-manager"
-                        style={{
-                          padding: '12px 16px',
-                          background:
-                            location.pathname === '/admin/prompt-manager'
-                              ? '#DCFCE7'
-                              : 'transparent',
-                          border: 'none',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          fontFamily: 'Arial',
-                          color:
-                            location.pathname === '/admin/prompt-manager' ? '#016630' : '#374151',
-                          width: '100%',
-                          textDecoration: 'none',
-                          display: 'block',
-                          fontWeight:
-                            location.pathname === '/admin/prompt-manager' ? '600' : 'normal',
-                        }}
-                        onClick={() => setShowSettingsDropdown(false)}
-                      >
-                        Prompt Manager
-                      </Link>
-                    </>
-                  )}
+                        {/* Prompt Manager */}
+                        <Link
+                          to="/admin/prompt-manager"
+                          style={{
+                            padding: '12px 16px',
+                            background:
+                              location.pathname === '/admin/prompt-manager'
+                                ? '#DCFCE7'
+                                : 'transparent',
+                            border: 'none',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontFamily: 'Arial',
+                            color:
+                              location.pathname === '/admin/prompt-manager' ? '#016630' : '#374151',
+                            width: '100%',
+                            textDecoration: 'none',
+                            display: 'block',
+                            fontWeight:
+                              location.pathname === '/admin/prompt-manager' ? '600' : 'normal',
+                          }}
+                          onClick={() => setShowSettingsDropdown(false)}
+                        >
+                          Prompt Manager
+                        </Link>
+                      </>
+                    )}
 
-                  {/* API Configuration */}
-                  <button
-                    style={{
-                      padding: '12px 16px',
-                      background: 'transparent',
-                      border: 'none',
-                      textAlign: 'left',
-                      cursor: 'not-allowed',
-                      fontSize: '14px',
-                      fontFamily: 'Arial',
-                      color: '#374151',
-                      width: '100%',
-                      opacity: 0.5,
-                    }}
-                    disabled
-                  >
-                    API Configuration
-                  </button>
+                    {/* API Configuration */}
+                    <button
+                      style={{
+                        padding: '12px 16px',
+                        background: 'transparent',
+                        border: 'none',
+                        textAlign: 'left',
+                        cursor: 'not-allowed',
+                        fontSize: '14px',
+                        fontFamily: 'Arial',
+                        color: '#374151',
+                        width: '100%',
+                        opacity: 0.5,
+                      }}
+                      disabled
+                    >
+                      API Configuration
+                    </button>
 
-                  {/* Language */}
-                  <button
-                    style={{
-                      padding: '12px 16px',
-                      background: 'transparent',
-                      border: 'none',
-                      textAlign: 'left',
-                      cursor: 'not-allowed',
-                      fontSize: '14px',
-                      fontFamily: 'Arial',
-                      color: '#374151',
-                      width: '100%',
-                      borderBottom: '1px solid #F3F4F6',
-                      opacity: 0.5,
-                    }}
-                    disabled
-                  >
-                    Language
-                  </button>
+                    {/* Language */}
+                    <button
+                      style={{
+                        padding: '12px 16px',
+                        background: 'transparent',
+                        border: 'none',
+                        textAlign: 'left',
+                        cursor: 'not-allowed',
+                        fontSize: '14px',
+                        fontFamily: 'Arial',
+                        color: '#374151',
+                        width: '100%',
+                        borderBottom: '1px solid #F3F4F6',
+                        opacity: 0.5,
+                      }}
+                      disabled
+                    >
+                      Language
+                    </button>
 
-                  {/* Help & Support */}
-                  <button
-                    style={{
-                      padding: '12px 16px',
-                      background: 'transparent',
-                      border: 'none',
-                      textAlign: 'left',
-                      cursor: 'not-allowed',
-                      fontSize: '14px',
-                      fontFamily: 'Arial',
-                      color: '#374151',
-                      width: '100%',
-                      opacity: 0.5,
-                    }}
-                    disabled
-                  >
-                    Help & Support
-                  </button>
+                    {/* Help & Support */}
+                    <button
+                      style={{
+                        padding: '12px 16px',
+                        background: 'transparent',
+                        border: 'none',
+                        textAlign: 'left',
+                        cursor: 'not-allowed',
+                        fontSize: '14px',
+                        fontFamily: 'Arial',
+                        color: '#374151',
+                        width: '100%',
+                        opacity: 0.5,
+                      }}
+                      disabled
+                    >
+                      Help & Support
+                    </button>
                   </div>
                 )}
               </div>

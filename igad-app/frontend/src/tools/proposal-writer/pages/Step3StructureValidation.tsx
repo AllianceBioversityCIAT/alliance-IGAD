@@ -7,7 +7,10 @@ interface Step3Props {
   conceptDocument: any | null
   conceptAnalysis?: any
   proposalId?: string
-  onRegenerateDocument?: (selectedSections: string[], userComments: { [key: string]: string }) => void
+  onRegenerateDocument?: (
+    selectedSections: string[],
+    userComments: { [key: string]: string }
+  ) => void
   onEditSections?: () => void
   onNextStep?: () => void
 }
@@ -20,18 +23,18 @@ interface SectionNeedingElaboration {
 }
 
 const PRIORITY_COLORS = {
-  'Critical': { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' },
-  'Recommended': { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
-  'Optional': { bg: '#E0E7FF', border: '#C7D2FE', text: '#193CB8' }
+  Critical: { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' },
+  Recommended: { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
+  Optional: { bg: '#E0E7FF', border: '#C7D2FE', text: '#193CB8' },
 }
 
-const Step3StructureValidation: React.FC<Step3Props> = ({ 
+const Step3StructureValidation: React.FC<Step3Props> = ({
   conceptDocument,
   conceptAnalysis,
   proposalId,
   onRegenerateDocument,
   onEditSections,
-  onNextStep
+  onNextStep,
 }) => {
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedSections, setSelectedSections] = useState<string[]>([])
@@ -46,17 +49,19 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
   // Calculate number of selected sections
   // Handle multiple levels of nesting
   let unwrappedAnalysis = conceptAnalysis?.concept_analysis || conceptAnalysis
-  
+
   // Check if there's another level of nesting (concept_analysis.concept_analysis)
   if (unwrappedAnalysis?.concept_analysis) {
     unwrappedAnalysis = unwrappedAnalysis.concept_analysis
   }
-  
+
   const sectionsNeedingElaboration = unwrappedAnalysis?.sections_needing_elaboration || []
   const selectedCount = sectionsNeedingElaboration.filter((s: any) => s.selected === true).length
   const totalSections = conceptDocument?.proposal_outline?.length || selectedCount || 0
-  
-  console.log(`📊 Step3 - Selected sections: ${selectedCount} of ${sectionsNeedingElaboration.length} total`)
+
+  console.log(
+    `📊 Step3 - Selected sections: ${selectedCount} of ${sectionsNeedingElaboration.length} total`
+  )
   console.log(`📊 Step3 - Document has ${totalSections} sections in outline`)
 
   if (!conceptDocument) {
@@ -71,11 +76,11 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
   // Parse the concept document content
   const renderConceptDocument = () => {
     let content = ''
-    
+
     // Log the structure for debugging
     console.log('conceptDocument structure:', conceptDocument)
     console.log('conceptDocument type:', typeof conceptDocument)
-    
+
     // Try to extract the actual content from various possible structures
     if (typeof conceptDocument === 'string') {
       content = conceptDocument
@@ -89,16 +94,18 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
       // Handle proposal_outline structure - convert sections to markdown
       const outline = conceptDocument.proposal_outline
       if (Array.isArray(outline)) {
-        content = outline.map(section => {
-          const title = section.section_title || ''
-          const purpose = section.purpose || ''
-          const wordCount = section.recommended_word_count || ''
-          const questions = Array.isArray(section.guiding_questions) 
-            ? section.guiding_questions.map(q => `- ${q}`).join('\n')
-            : ''
-          
-          return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
-        }).join('\n\n')
+        content = outline
+          .map(section => {
+            const title = section.section_title || ''
+            const purpose = section.purpose || ''
+            const wordCount = section.recommended_word_count || ''
+            const questions = Array.isArray(section.guiding_questions)
+              ? section.guiding_questions.map(q => `- ${q}`).join('\n')
+              : ''
+
+            return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
+          })
+          .join('\n\n')
       }
     } else if (conceptDocument?.sections) {
       // Build content from sections
@@ -109,12 +116,10 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
       // Last resort: stringify the object
       content = JSON.stringify(conceptDocument, null, 2)
     }
-    
+
     return (
       <div className={styles.documentContent}>
-        <div className={styles.markdownContent}>
-          {parseMarkdownToReact(content)}
-        </div>
+        <div className={styles.markdownContent}>{parseMarkdownToReact(content)}</div>
       </div>
     )
   }
@@ -143,9 +148,10 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
         const text = currentParagraph.join(' ')
         if (text.trim()) {
           elements.push(
-            <p key={`p-${elements.length}`} 
-               className={styles.markdownParagraph}
-               dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }} 
+            <p
+              key={`p-${elements.length}`}
+              className={styles.markdownParagraph}
+              dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
             />
           )
         }
@@ -206,69 +212,72 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
 
   const formatInlineMarkdown = (text: string): string => {
     let formatted = text
-    
+
     // Bold
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    
+
     // Italic
     formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
-    
+
     // Code
     formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
-    
+
     return formatted
   }
 
-  const handleDownloadDocument = useCallback(async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-    
-    console.log('🔽 Download button clicked!')
-    setIsDownloading(true)
-    
-    // Use setTimeout to ensure the click event completes before download starts
-    setTimeout(() => {
-      try {
-        let content = ''
-        
-        // Extract content from the same structure used in renderConceptDocument
-        if (typeof conceptDocument === 'string') {
-          content = conceptDocument
-        } else if (conceptDocument?.generated_concept_document) {
-          content = conceptDocument.generated_concept_document
-        } else if (conceptDocument?.content) {
-          content = conceptDocument.content
-        } else if (conceptDocument?.document) {
-          content = conceptDocument.document
-        } else if (conceptDocument?.proposal_outline) {
-          const outline = conceptDocument.proposal_outline
-          if (Array.isArray(outline)) {
-            content = outline.map(section => {
-              const title = section.section_title || ''
-              const purpose = section.purpose || ''
-              const wordCount = section.recommended_word_count || ''
-              const questions = Array.isArray(section.guiding_questions) 
-                ? section.guiding_questions.map(q => `- ${q}`).join('\n')
-                : ''
-              
-              return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
-            }).join('\n\n')
+  const handleDownloadDocument = useCallback(
+    async (e?: React.MouseEvent) => {
+      if (e) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+
+      console.log('🔽 Download button clicked!')
+      setIsDownloading(true)
+
+      // Use setTimeout to ensure the click event completes before download starts
+      setTimeout(() => {
+        try {
+          let content = ''
+
+          // Extract content from the same structure used in renderConceptDocument
+          if (typeof conceptDocument === 'string') {
+            content = conceptDocument
+          } else if (conceptDocument?.generated_concept_document) {
+            content = conceptDocument.generated_concept_document
+          } else if (conceptDocument?.content) {
+            content = conceptDocument.content
+          } else if (conceptDocument?.document) {
+            content = conceptDocument.document
+          } else if (conceptDocument?.proposal_outline) {
+            const outline = conceptDocument.proposal_outline
+            if (Array.isArray(outline)) {
+              content = outline
+                .map(section => {
+                  const title = section.section_title || ''
+                  const purpose = section.purpose || ''
+                  const wordCount = section.recommended_word_count || ''
+                  const questions = Array.isArray(section.guiding_questions)
+                    ? section.guiding_questions.map(q => `- ${q}`).join('\n')
+                    : ''
+
+                  return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
+                })
+                .join('\n\n')
+            }
+          } else if (conceptDocument?.sections) {
+            content = Object.entries(conceptDocument.sections)
+              .map(([key, value]) => `## ${key}\n\n${value}`)
+              .join('\n\n')
+          } else {
+            content = 'No content available'
           }
-        } else if (conceptDocument?.sections) {
-          content = Object.entries(conceptDocument.sections)
-            .map(([key, value]) => `## ${key}\n\n${value}`)
-            .join('\n\n')
-        } else {
-          content = 'No content available'
-        }
-        
-        // Convert markdown to HTML
-        const htmlContent = parseMarkdownToHTML(content)
-        
-        // Create a complete HTML document
-        const fullHtml = `
+
+          // Convert markdown to HTML
+          const htmlContent = parseMarkdownToHTML(content)
+
+          // Create a complete HTML document
+          const fullHtml = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -289,75 +298,72 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
 </body>
 </html>
         `
-        
-        // Create blob and download
-        const blob = new Blob([fullHtml], { type: 'application/msword' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `concept-document-${new Date().toISOString().slice(0,10)}.doc`
-        a.click()
-        URL.revokeObjectURL(url)
-        
-        console.log('✅ Download complete!')
-        setIsDownloading(false)
-      } catch (error) {
-        console.error('❌ Error generating document:', error)
-        alert('Error generating document. Please try again.')
-        setIsDownloading(false)
-      }
-    }, 100)
-  }, [conceptDocument])
 
+          // Create blob and download
+          const blob = new Blob([fullHtml], { type: 'application/msword' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `concept-document-${new Date().toISOString().slice(0, 10)}.doc`
+          a.click()
+          URL.revokeObjectURL(url)
 
+          console.log('✅ Download complete!')
+          setIsDownloading(false)
+        } catch (error) {
+          console.error('❌ Error generating document:', error)
+          alert('Error generating document. Please try again.')
+          setIsDownloading(false)
+        }
+      }, 100)
+    },
+    [conceptDocument]
+  )
 
   const parseMarkdownToHTML = (markdown: string): string => {
     let html = markdown
-    
+
     // Headers
     html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>')
     html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>')
     html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    
+
     // Bold
     html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-    
+
     // Italic
     html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>')
-    
+
     // Lists
     html = html.replace(/^\* (.*$)/gim, '<li>$1</li>')
     html = html.replace(/^- (.*$)/gim, '<li>$1</li>')
-    
+
     // Wrap consecutive list items
     html = html.replace(/(<li>.*<\/li>\n?)+/gim, '<ul>$&</ul>')
-    
+
     // Paragraphs
-    html = html.split('\n\n').map(para => {
-      if (!para.match(/^<[h|u|l]/)) {
-        return `<p>${para}</p>`
-      }
-      return para
-    }).join('\n')
-    
+    html = html
+      .split('\n\n')
+      .map(para => {
+        if (!para.match(/^<[h|u|l]/)) {
+          return `<p>${para}</p>`
+        }
+        return para
+      })
+      .join('\n')
+
     return html
   }
 
-
-
   const toggleSectionSelection = (section: string) => {
     setSelectedSections(prev =>
-      prev.includes(section)
-        ? prev.filter(s => s !== section)
-        : [...prev, section]
+      prev.includes(section) ? prev.filter(s => s !== section) : [...prev, section]
     )
   }
 
   const toggleSectionExpansion = (section: string) => {
     setExpandedSections(prev =>
-      prev.includes(section)
-        ? prev.filter(s => s !== section)
-        : [...prev, section]
+      prev.includes(section) ? prev.filter(s => s !== section) : [...prev, section]
     )
   }
 
@@ -366,43 +372,43 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
     if (showEditModal) {
       console.log('📂 Opening Edit Sections modal...')
       console.log('📋 Full conceptAnalysis:', JSON.stringify(conceptAnalysis, null, 2))
-      
+
       // Load from conceptAnalysis if available (from DynamoDB)
       // Handle multiple levels of nesting
       let analysis = conceptAnalysis?.concept_analysis || conceptAnalysis
-      
+
       // Check if there's another level of nesting (concept_analysis.concept_analysis)
       if (analysis?.concept_analysis) {
         console.log('🔍 Found nested concept_analysis, unwrapping...')
         analysis = analysis.concept_analysis
       }
-      
+
       const sections = analysis?.sections_needing_elaboration || []
-      
+
       console.log('📊 Unwrapped analysis:', JSON.stringify(analysis, null, 2))
       console.log(`📊 Found ${sections.length} sections in concept analysis`)
-      
+
       // Check if sections have the 'selected' flag
       const hasSelectedFlags = sections.some((s: any) => 'selected' in s)
-      
+
       console.log(`🔍 Has selected flags: ${hasSelectedFlags}`)
-      
+
       if (hasSelectedFlags) {
         // Load saved selections from DynamoDB
         const savedSelections = sections
           .filter((s: any) => s.selected === true)
           .map((s: any) => s.section)
-        
+
         const savedComments = sections.reduce((acc: any, s: any) => {
           if (s.user_comment) {
             acc[s.section] = s.user_comment
           }
           return acc
         }, {})
-        
+
         console.log('✅ Loading saved selections from DynamoDB:', savedSelections)
         console.log('✅ Loading saved comments from DynamoDB:', savedComments)
-        
+
         setSelectedSections(savedSelections)
         setUserComments(savedComments)
       } else {
@@ -411,7 +417,7 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
         const criticalSections = sections
           .filter((s: SectionNeedingElaboration) => s.priority === 'Critical')
           .map((s: SectionNeedingElaboration) => s.section)
-        
+
         console.log('📌 Critical sections:', criticalSections)
         setSelectedSections(criticalSections)
       }
@@ -461,14 +467,12 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
             <div>
               <h3 className={styles.documentTitle}>Generated Concept Document</h3>
               <p className={styles.documentSubtitle}>
-                {totalSections} section{totalSections !== 1 ? 's' : ''} included • Ready for review and refinement
+                {totalSections} section{totalSections !== 1 ? 's' : ''} included • Ready for review
+                and refinement
               </p>
             </div>
           </div>
-          <button 
-            className={styles.editSectionsButton}
-            onClick={() => setShowEditModal(true)}
-          >
+          <button className={styles.editSectionsButton} onClick={() => setShowEditModal(true)}>
             <Sparkles size={16} />
             Edit Sections
           </button>
@@ -477,7 +481,7 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
         {renderConceptDocument()}
 
         <div className={styles.buttonGroup}>
-          <button 
+          <button
             className={styles.downloadButton}
             onClick={handleDownloadDocument}
             disabled={isDownloading}
@@ -500,7 +504,7 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
       {/* Edit Sections Modal */}
       {showEditModal && (
         <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <div>
                 <h2 className={styles.modalTitle}>
@@ -511,10 +515,7 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
                   Select which sections to include and add comments to guide content generation
                 </p>
               </div>
-              <button 
-                className={styles.modalCloseButton}
-                onClick={() => setShowEditModal(false)}
-              >
+              <button className={styles.modalCloseButton} onClick={() => setShowEditModal(false)}>
                 <X size={20} />
               </button>
             </div>
@@ -528,7 +529,8 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
                 {sectionsNeedingElaboration.map((section: any, index: number) => {
                   const isSelected = selectedSections.includes(section.section)
                   const isExpanded = expandedSections.includes(section.section)
-                  const priorityColor = PRIORITY_COLORS[section.priority as keyof typeof PRIORITY_COLORS]
+                  const priorityColor =
+                    PRIORITY_COLORS[section.priority as keyof typeof PRIORITY_COLORS]
 
                   return (
                     <div key={index} className={styles.sectionItem}>
@@ -542,12 +544,12 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
                           />
                           <div className={styles.sectionInfo}>
                             <h4 className={styles.sectionName}>{section.section}</h4>
-                            <span 
+                            <span
                               className={styles.priorityBadge}
                               style={{
                                 backgroundColor: priorityColor.bg,
                                 border: `1px solid ${priorityColor.border}`,
-                                color: priorityColor.text
+                                color: priorityColor.text,
                               }}
                             >
                               {section.priority}
@@ -565,7 +567,7 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
                       {isExpanded && (
                         <div className={styles.sectionDetails}>
                           <p className={styles.sectionIssue}>{section.issue}</p>
-                          
+
                           {section.suggestions && section.suggestions.length > 0 && (
                             <div className={styles.suggestionsBox}>
                               <h5>Suggestions:</h5>
@@ -581,10 +583,12 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
                             className={styles.commentBox}
                             placeholder="Add your comments for this section..."
                             value={userComments[section.section] || ''}
-                            onChange={(e) => setUserComments({
-                              ...userComments,
-                              [section.section]: e.target.value
-                            })}
+                            onChange={e =>
+                              setUserComments({
+                                ...userComments,
+                                [section.section]: e.target.value,
+                              })
+                            }
                           />
                         </div>
                       )}
@@ -593,7 +597,7 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
                 })}
               </div>
 
-              <button 
+              <button
                 className={styles.regenerateButton}
                 onClick={handleRegenerateDocument}
                 disabled={isRegenerating || selectedSections.length === 0}

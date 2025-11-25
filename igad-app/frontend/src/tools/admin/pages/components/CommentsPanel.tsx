@@ -33,11 +33,14 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
 
   const fetchComments = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}/comments`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}/comments`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      )
       if (response.ok) {
         const data = await response.json()
         setComments(data)
@@ -53,17 +56,20 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
 
     setIsLoading(true)
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          content: newComment,
-          ...(replyTo && { parent_id: replyTo }),
-        }),
-      })
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            content: newComment,
+            ...(replyTo && { parent_id: replyTo }),
+          }),
+        }
+      )
 
       if (response.ok) {
         setNewComment('')

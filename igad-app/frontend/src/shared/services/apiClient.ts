@@ -39,7 +39,7 @@ apiClient.interceptors.response.use(
       try {
         // Attempt to refresh token
         const newToken = await tokenManager.handleTokenRefreshOnDemand()
-        
+
         if (newToken) {
           // Update the authorization header and retry the request
           originalRequest.headers.Authorization = `Bearer ${newToken}`

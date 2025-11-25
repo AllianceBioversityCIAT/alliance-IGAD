@@ -102,12 +102,12 @@ export function PromptManagerPage() {
     const currentParams = new URLSearchParams(window.location.search)
     const fromRoute = currentParams.get('from')
     const section = currentParams.get('section')
-    
+
     let createUrl = '/admin/prompt-manager/create'
     if (fromRoute && section) {
       createUrl += `?from=${encodeURIComponent(fromRoute)}&section=${encodeURIComponent(section)}`
     }
-    
+
     navigate(createUrl)
   }
 
@@ -175,9 +175,10 @@ export function PromptManagerPage() {
         `"${prompt?.name}" is now ${prompt?.is_active ? 'inactive' : 'active'}.`
       )
     } catch (error: any) {
-      const errorMessage = typeof error.response?.data?.detail === 'string' 
-        ? error.response.data.detail 
-        : error.message || 'Please try again.'
+      const errorMessage =
+        typeof error.response?.data?.detail === 'string'
+          ? error.response.data.detail
+          : error.message || 'Please try again.'
       if (errorMessage.includes('already active')) {
         showError(
           'Cannot activate prompt',
@@ -247,7 +248,10 @@ export function PromptManagerPage() {
                   )}
                 </div>
               </div>
-              <button onClick={() => navigate(contextData.fromRoute!)} className={styles.backButton}>
+              <button
+                onClick={() => navigate(contextData.fromRoute!)}
+                className={styles.backButton}
+              >
                 <ArrowLeft size={16} />
                 Back to{' '}
                 {contextData.fromRoute?.includes('proposal-writer') ? 'Proposal Writer' : 'Source'}
@@ -307,47 +311,47 @@ export function PromptManagerPage() {
       <div className={styles.content}>
         <div className={styles.contentWrapper}>
           {viewMode === 'table' ? (
-          <PromptListTable
-            prompts={prompts}
-            isLoading={isLoading}
-            onEdit={handleEditPrompt}
-            onPublish={handlePublishPrompt}
-            onDelete={handleDeletePrompt}
-            onClone={handleClonePrompt}
-            onToggleActive={handleToggleActive}
-            onComments={id => setCommentsPromptId(id)}
-            onTemplate={handleTemplateView}
-          />
-        ) : (
-          <PromptCardsView
-            prompts={prompts}
-            onEdit={handleEditPrompt}
-            onDelete={handleDeletePrompt}
-            onClone={handleClonePrompt}
-            onToggleActive={handleToggleActive}
-            onPreview={id => {}}
-            onTemplate={handleTemplateView}
-          />
-        )}
+            <PromptListTable
+              prompts={prompts}
+              isLoading={isLoading}
+              onEdit={handleEditPrompt}
+              onPublish={handlePublishPrompt}
+              onDelete={handleDeletePrompt}
+              onClone={handleClonePrompt}
+              onToggleActive={handleToggleActive}
+              onComments={id => setCommentsPromptId(id)}
+              onTemplate={handleTemplateView}
+            />
+          ) : (
+            <PromptCardsView
+              prompts={prompts}
+              onEdit={handleEditPrompt}
+              onDelete={handleDeletePrompt}
+              onClone={handleClonePrompt}
+              onToggleActive={handleToggleActive}
+              onPreview={id => {}}
+              onTemplate={handleTemplateView}
+            />
+          )}
 
-        {/* Pagination */}
-        {(hasMore || currentPage > 0) && (
-          <div className={styles.pagination}>
-            <button
-              onClick={prevPage}
-              disabled={currentPage === 0}
-              className={styles.paginationButton}
-            >
-              Previous
-            </button>
+          {/* Pagination */}
+          {(hasMore || currentPage > 0) && (
+            <div className={styles.pagination}>
+              <button
+                onClick={prevPage}
+                disabled={currentPage === 0}
+                className={styles.paginationButton}
+              >
+                Previous
+              </button>
 
-            <span className={styles.paginationInfo}>Page {currentPage + 1}</span>
+              <span className={styles.paginationInfo}>Page {currentPage + 1}</span>
 
-            <button onClick={nextPage} disabled={!hasMore} className={styles.paginationButton}>
-              Next
-            </button>
-          </div>
-        )}
+              <button onClick={nextPage} disabled={!hasMore} className={styles.paginationButton}>
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -21,8 +21,8 @@ export function HomePage() {
 
             {/* Subtitle */}
             <p className={styles.subtitle}>
-              Empowering agricultural experts across the IGAD region with intelligent tools for policy
-              analysis, report generation, and strategic communication
+              Empowering agricultural experts across the IGAD region with intelligent tools for
+              policy analysis, report generation, and strategic communication
             </p>
           </div>
         </div>
@@ -35,7 +35,8 @@ export function HomePage() {
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>AI-Powered Tools & Services</h2>
             <p className={styles.sectionSubtitle}>
-              Choose from our suite of specialized tools designed for agricultural experts, policy makers, and development professionals.
+              Choose from our suite of specialized tools designed for agricultural experts, policy
+              makers, and development professionals.
             </p>
           </div>
 
@@ -51,7 +52,10 @@ export function HomePage() {
               <p className={styles.toolDescription}>
                 Create compelling funding proposals for agricultural initiatives
               </p>
-              <Link to="/proposal-writer" className={`${styles.toolButton} ${styles.toolButtonAvailable}`}>
+              <Link
+                to="/proposal-writer"
+                className={`${styles.toolButton} ${styles.toolButtonAvailable}`}
+              >
                 Launch Tool
                 <ArrowRight size={16} />
               </Link>
@@ -67,7 +71,10 @@ export function HomePage() {
               <p className={styles.toolDescription}>
                 Create engaging newsletters on agricultural innovations and policy updates
               </p>
-              <Link to="/newsletter-generator" className={`${styles.toolButton} ${styles.toolButtonAvailable}`}>
+              <Link
+                to="/newsletter-generator"
+                className={`${styles.toolButton} ${styles.toolButtonAvailable}`}
+              >
                 Launch Tool
                 <ArrowRight size={16} />
               </Link>

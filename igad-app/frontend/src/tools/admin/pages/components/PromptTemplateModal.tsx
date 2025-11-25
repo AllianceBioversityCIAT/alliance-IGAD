@@ -13,7 +13,9 @@ interface PromptTemplateModalProps {
 export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateModalProps) {
   const [copiedSection, setCopiedSection] = useState<string | null>(null)
 
-  if (!isOpen || !prompt) return null
+  if (!isOpen || !prompt) {
+    return null
+  }
 
   // Extract variables from prompt templates
   const extractVariables = (text: string): string[] => {
@@ -80,7 +82,7 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
           <div className={styles.promptSection}>
             <div className={styles.sectionHeader}>
               <h3 className={styles.sectionTitle}>System Prompt Template</h3>
-              <button 
+              <button
                 onClick={() => copyToClipboard(getTemplateView(prompt.system_prompt), 'system')}
                 className={styles.copyButton}
                 title="Copy to clipboard"
@@ -98,8 +100,10 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
           <div className={styles.promptSection}>
             <div className={styles.sectionHeader}>
               <h3 className={styles.sectionTitle}>User Prompt Template</h3>
-              <button 
-                onClick={() => copyToClipboard(getTemplateView(prompt.user_prompt_template), 'user')}
+              <button
+                onClick={() =>
+                  copyToClipboard(getTemplateView(prompt.user_prompt_template), 'user')
+                }
                 className={styles.copyButton}
                 title="Copy to clipboard"
               >
@@ -117,7 +121,7 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
             <div className={styles.promptSection}>
               <div className={styles.sectionHeader}>
                 <h3 className={styles.sectionTitle}>Expected Output Format</h3>
-                <button 
+                <button
                   onClick={() => copyToClipboard(prompt.output_format, 'output')}
                   className={styles.copyButton}
                   title="Copy to clipboard"

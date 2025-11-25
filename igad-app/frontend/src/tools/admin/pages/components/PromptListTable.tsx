@@ -1,11 +1,4 @@
-import {
-  Edit,
-  Trash2,
-  Copy,
-  Power,
-  PowerOff,
-  FileText,
-} from 'lucide-react'
+import { Edit, Trash2, Copy, Power, PowerOff, FileText } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '@/types/prompt'
 import styles from './PromptListTable.module.css'
 
@@ -28,7 +21,6 @@ export function PromptListTable({
   onToggleActive,
   onTemplate,
 }: PromptListTableProps) {
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -83,10 +75,19 @@ export function PromptListTable({
               <tr key={index} className={styles.tableRow}>
                 <td className={styles.tableCell}>
                   <div className={styles.nameCell}>
-                    <div className={styles.skeleton} style={{ width: '180px', height: '16px', marginBottom: '8px' }}></div>
+                    <div
+                      className={styles.skeleton}
+                      style={{ width: '180px', height: '16px', marginBottom: '8px' }}
+                    ></div>
                     <div className={styles.tags}>
-                      <div className={styles.skeleton} style={{ width: '60px', height: '20px', borderRadius: '10px' }}></div>
-                      <div className={styles.skeleton} style={{ width: '50px', height: '20px', borderRadius: '10px' }}></div>
+                      <div
+                        className={styles.skeleton}
+                        style={{ width: '60px', height: '20px', borderRadius: '10px' }}
+                      ></div>
+                      <div
+                        className={styles.skeleton}
+                        style={{ width: '50px', height: '20px', borderRadius: '10px' }}
+                      ></div>
                     </div>
                   </div>
                 </td>
@@ -100,25 +101,52 @@ export function PromptListTable({
                   <div className={styles.skeleton} style={{ width: '100px', height: '16px' }}></div>
                 </td>
                 <td className={styles.tableCell}>
-                  <div className={styles.skeleton} style={{ width: '140px', height: '16px', borderRadius: '4px' }}></div>
+                  <div
+                    className={styles.skeleton}
+                    style={{ width: '140px', height: '16px', borderRadius: '4px' }}
+                  ></div>
                 </td>
                 <td className={styles.tableCell}>
-                  <div className={styles.skeleton} style={{ width: '60px', height: '24px', borderRadius: '12px' }}></div>
+                  <div
+                    className={styles.skeleton}
+                    style={{ width: '60px', height: '24px', borderRadius: '12px' }}
+                  ></div>
                 </td>
                 <td className={styles.tableCell}>
                   <div className={styles.dateCell}>
-                    <div className={styles.skeleton} style={{ width: '100px', height: '14px', marginBottom: '4px' }}></div>
-                    <div className={styles.skeleton} style={{ width: '80px', height: '12px' }}></div>
+                    <div
+                      className={styles.skeleton}
+                      style={{ width: '100px', height: '14px', marginBottom: '4px' }}
+                    ></div>
+                    <div
+                      className={styles.skeleton}
+                      style={{ width: '80px', height: '12px' }}
+                    ></div>
                   </div>
                 </td>
                 <td className={styles.tableCell}>
                   <div className={styles.actionsCell}>
                     <div className={styles.primaryActions}>
-                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
-                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
-                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
-                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
-                      <div className={styles.skeleton} style={{ width: '32px', height: '32px', borderRadius: '6px' }}></div>
+                      <div
+                        className={styles.skeleton}
+                        style={{ width: '32px', height: '32px', borderRadius: '6px' }}
+                      ></div>
+                      <div
+                        className={styles.skeleton}
+                        style={{ width: '32px', height: '32px', borderRadius: '6px' }}
+                      ></div>
+                      <div
+                        className={styles.skeleton}
+                        style={{ width: '32px', height: '32px', borderRadius: '6px' }}
+                      ></div>
+                      <div
+                        className={styles.skeleton}
+                        style={{ width: '32px', height: '32px', borderRadius: '6px' }}
+                      ></div>
+                      <div
+                        className={styles.skeleton}
+                        style={{ width: '32px', height: '32px', borderRadius: '6px' }}
+                      ></div>
                     </div>
                   </div>
                 </td>

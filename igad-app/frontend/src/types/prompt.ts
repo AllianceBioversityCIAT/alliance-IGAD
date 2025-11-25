@@ -61,7 +61,7 @@ export const PROMPT_CATEGORIES = [
   'Monitoring & Evaluation',
 ] as const
 
-export type PromptCategory = typeof PROMPT_CATEGORIES[number]
+export type PromptCategory = (typeof PROMPT_CATEGORIES)[number]
 
 export interface PromptContext {
   persona?: string

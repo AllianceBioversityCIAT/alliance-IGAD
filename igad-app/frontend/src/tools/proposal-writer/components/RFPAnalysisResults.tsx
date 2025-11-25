@@ -1,50 +1,46 @@
-import React from 'react';
-import { CheckCircle, Calendar, DollarSign, FileText, MapPin, Target, Users } from 'lucide-react';
+import React from 'react'
+import { CheckCircle, Calendar, DollarSign, FileText, MapPin, Target, Users } from 'lucide-react'
 
 interface RFPAnalysisSummary {
-  title: string;
-  donor: string;
-  deadline: string;
-  budget_range: string;
-  key_focus: string;
+  title: string
+  donor: string
+  deadline: string
+  budget_range: string
+  key_focus: string
 }
 
 interface RFPAnalysisExtractedData {
-  geographic_scope: string[];
-  target_beneficiaries: string;
-  deliverables: string[];
-  mandatory_requirements: string[];
-  evaluation_criteria: string;
+  geographic_scope: string[]
+  target_beneficiaries: string
+  deliverables: string[]
+  mandatory_requirements: string[]
+  evaluation_criteria: string
 }
 
 interface RFPAnalysis {
-  summary: RFPAnalysisSummary;
-  extracted_data: RFPAnalysisExtractedData;
+  summary: RFPAnalysisSummary
+  extracted_data: RFPAnalysisExtractedData
 }
 
 interface RFPAnalysisResultsProps {
-  analysis: RFPAnalysis;
+  analysis: RFPAnalysis
 }
 
 const RFPAnalysisResults: React.FC<RFPAnalysisResultsProps> = ({ analysis }) => {
-  const { summary, extracted_data } = analysis;
+  const { summary, extracted_data } = analysis
 
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
       <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
         <CheckCircle className="w-6 h-6 text-green-600" />
-        <h3 className="text-xl font-semibold text-gray-900">
-          RFP Analysis Complete
-        </h3>
+        <h3 className="text-xl font-semibold text-gray-900">RFP Analysis Complete</h3>
       </div>
 
       {/* Summary Section */}
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 space-y-4">
-        <h4 className="font-semibold text-gray-900 text-lg mb-4">
-          📋 Summary
-        </h4>
-        
+        <h4 className="font-semibold text-gray-900 text-lg mb-4">📋 Summary</h4>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-start gap-3">
             <FileText className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -152,7 +148,7 @@ const RFPAnalysisResults: React.FC<RFPAnalysisResultsProps> = ({ analysis }) => 
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default RFPAnalysisResults;
+export default RFPAnalysisResults

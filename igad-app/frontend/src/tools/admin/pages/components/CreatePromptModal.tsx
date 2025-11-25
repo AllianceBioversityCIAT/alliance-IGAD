@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react'
-import { X, Wand2, FileText, Settings, ArrowRight, ArrowLeft, Check, Tag, History, Lightbulb } from 'lucide-react'
+import {
+  X,
+  Wand2,
+  FileText,
+  Settings,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Tag,
+  History,
+  Lightbulb,
+} from 'lucide-react'
 import { ProposalSection, SECTION_LABELS } from '@/types/prompt'
 import styles from './CreatePromptModal.module.css'
 
@@ -24,8 +35,10 @@ const STEP_TITLES = {
 }
 
 const SECTION_DESCRIPTIONS = {
-  [ProposalSection.PROPOSAL_WRITER]: 'AI-powered proposal writing assistant for comprehensive project proposals',
-  [ProposalSection.NEWSLETTER_GENERATOR]: 'Generate engaging newsletters and communication materials',
+  [ProposalSection.PROPOSAL_WRITER]:
+    'AI-powered proposal writing assistant for comprehensive project proposals',
+  [ProposalSection.NEWSLETTER_GENERATOR]:
+    'Generate engaging newsletters and communication materials',
   [ProposalSection.EXECUTIVE_SUMMARY]:
     'Create compelling executive summaries that capture key project highlights',
   [ProposalSection.PROJECT_DESCRIPTION]:
@@ -40,8 +53,10 @@ const SECTION_DESCRIPTIONS = {
   [ProposalSection.PROBLEM_STATEMENT]: 'Define and articulate the core problem being addressed',
   [ProposalSection.OBJECTIVES]: 'Establish clear, measurable project objectives',
   [ProposalSection.THEORY_OF_CHANGE]: 'Develop logical frameworks and theory of change models',
-  [ProposalSection.LITERATURE_REVIEW]: 'Conduct comprehensive literature reviews and research analysis',
-  [ProposalSection.RISK_ASSESSMENT]: 'Identify and analyze potential project risks and mitigation strategies',
+  [ProposalSection.LITERATURE_REVIEW]:
+    'Conduct comprehensive literature reviews and research analysis',
+  [ProposalSection.RISK_ASSESSMENT]:
+    'Identify and analyze potential project risks and mitigation strategies',
   [ProposalSection.MONITORING_EVALUATION]: 'Design monitoring and evaluation frameworks',
   [ProposalSection.APPENDICES]: 'Generate supporting documentation and appendices',
 }
@@ -145,10 +160,13 @@ export function CreatePromptModal({
   const handleLoadExample = () => {
     setFormData(prev => ({
       ...prev,
-      system_prompt: 'You are an expert proposal writer specializing in development projects. You create clear, compelling, and professional content that follows international standards and best practices. Your writing is concise, well-structured, and tailored to the specific requirements of each section.',
-      user_prompt_template: 'Create a comprehensive {{section_type}} for a {{project_type}} project in {{region}} with a budget of {{budget}}. The project focuses on {{focus_area}} and targets {{target_population}}.\n\nKey requirements:\n- Duration: {{duration}}\n- Main objectives: {{objectives}}\n- Expected outcomes: {{outcomes}}\n\nPlease ensure the content is professional, evidence-based, and follows international development standards.',
+      system_prompt:
+        'You are an expert proposal writer specializing in development projects. You create clear, compelling, and professional content that follows international standards and best practices. Your writing is concise, well-structured, and tailored to the specific requirements of each section.',
+      user_prompt_template:
+        'Create a comprehensive {{section_type}} for a {{project_type}} project in {{region}} with a budget of {{budget}}. The project focuses on {{focus_area}} and targets {{target_population}}.\n\nKey requirements:\n- Duration: {{duration}}\n- Main objectives: {{objectives}}\n- Expected outcomes: {{outcomes}}\n\nPlease ensure the content is professional, evidence-based, and follows international development standards.',
       tone: 'Professional, authoritative, and engaging',
-      output_format: 'Well-structured document with clear headings, bullet points where appropriate, and logical flow. Include specific examples and quantifiable metrics when possible.'
+      output_format:
+        'Well-structured document with clear headings, bullet points where appropriate, and logical flow. Include specific examples and quantifiable metrics when possible.',
     }))
   }
 
@@ -196,7 +214,11 @@ export function CreatePromptModal({
           </div>
           <div className={styles.headerActions}>
             {onHistory && mode === 'edit' && (
-              <button onClick={onHistory} className={styles.historyButton} title="View change history">
+              <button
+                onClick={onHistory}
+                className={styles.historyButton}
+                title="View change history"
+              >
                 <History size={18} />
               </button>
             )}
@@ -335,11 +357,7 @@ export function CreatePromptModal({
               </div>
 
               <div className={styles.exampleSection}>
-                <button
-                  type="button"
-                  onClick={handleLoadExample}
-                  className={styles.exampleButton}
-                >
+                <button type="button" onClick={handleLoadExample} className={styles.exampleButton}>
                   <Lightbulb size={16} />
                   Load Example Template
                 </button>
@@ -381,10 +399,12 @@ export function CreatePromptModal({
                 <input
                   type="text"
                   value={formData.tone}
-                  onChange={e => setFormData(prev => ({ 
-                    ...prev, 
-                    tone: e.target.value
-                  }))}
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      tone: e.target.value,
+                    }))
+                  }
                   className={styles.input}
                   placeholder="Professional and informative"
                   maxLength={500}
@@ -398,10 +418,12 @@ export function CreatePromptModal({
                 <label className={styles.label}>Output Format</label>
                 <textarea
                   value={formData.output_format}
-                  onChange={e => setFormData(prev => ({ 
-                    ...prev, 
-                    output_format: e.target.value
-                  }))}
+                  onChange={e =>
+                    setFormData(prev => ({
+                      ...prev,
+                      output_format: e.target.value,
+                    }))
+                  }
                   className={styles.textarea}
                   rows={3}
                   placeholder="Specify the desired format for the AI's output (optional)..."

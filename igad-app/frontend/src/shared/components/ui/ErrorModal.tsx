@@ -10,11 +10,13 @@ interface ErrorModalProps {
 }
 
 export function ErrorModal({ isOpen, onClose, title, message, details }: ErrorModalProps) {
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.iconTitle}>
             <AlertCircle className={styles.icon} />
@@ -24,7 +26,7 @@ export function ErrorModal({ isOpen, onClose, title, message, details }: ErrorMo
             <X size={20} />
           </button>
         </div>
-        
+
         <div className={styles.content}>
           <p className={styles.message}>{message}</p>
           {details && (
@@ -34,7 +36,7 @@ export function ErrorModal({ isOpen, onClose, title, message, details }: ErrorMo
             </div>
           )}
         </div>
-        
+
         <div className={styles.footer}>
           <button onClick={onClose} className={styles.okButton}>
             OK

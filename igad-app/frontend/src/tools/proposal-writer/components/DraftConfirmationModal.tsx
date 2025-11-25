@@ -16,7 +16,9 @@ export function DraftConfirmationModal({
   onDeleteDraft,
   isDeleting = false,
 }: DraftConfirmationModalProps) {
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className={styles.overlay}>
@@ -53,18 +55,10 @@ export function DraftConfirmationModal({
 
         {/* Actions */}
         <div className={styles.actions}>
-          <button
-            className={styles.buttonSecondary}
-            onClick={onDeleteDraft}
-            disabled={isDeleting}
-          >
+          <button className={styles.buttonSecondary} onClick={onDeleteDraft} disabled={isDeleting}>
             {isDeleting ? 'Deleting...' : 'Delete Draft'}
           </button>
-          <button
-            className={styles.buttonPrimary}
-            onClick={onKeepDraft}
-            disabled={isDeleting}
-          >
+          <button className={styles.buttonPrimary} onClick={onKeepDraft} disabled={isDeleting}>
             Keep Draft & Continue
           </button>
         </div>

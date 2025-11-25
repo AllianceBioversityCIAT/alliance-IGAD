@@ -40,11 +40,14 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
   const fetchHistory = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}/history`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}/history`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      )
       if (response.ok) {
         const data = await response.json()
         setHistory(data)
