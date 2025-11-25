@@ -11,7 +11,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from .handlers.admin_prompts import router as admin_prompts_router
 from .middleware.auth_middleware import AuthMiddleware
 from .middleware.error_middleware import ErrorMiddleware
-from .routers import admin, auth, health, prompts, proposals, documents
+from .tools.admin.settings import routes as admin_routes
+from .tools.auth import routes as auth_routes
+from .shared.health import routes as health_routes
+from .tools.admin.prompts_manager import routes as prompts_routes
+from .shared.documents import routes as documents_routes
+from .tools.proposal_writer import routes as proposal_writer_routes
 
 # Load environment variables
 load_dotenv()
@@ -39,12 +44,12 @@ app.add_middleware(
 app.add_middleware(ErrorMiddleware)
 
 # Include routers
-app.include_router(health.router)
-app.include_router(auth.router)
-app.include_router(proposals.router)
-app.include_router(documents.router)
-app.include_router(admin.router)
-app.include_router(prompts.router)
+app.include_router(health_routes.router)
+app.include_router(auth_routes.router)
+app.include_router(proposal_writer_routes.router)
+app.include_router(documents_routes.router)
+app.include_router(admin_routes.router)
+app.include_router(prompts_routes.router)
 app.include_router(admin_prompts_router)
 
 # Initialize services

@@ -1,22 +1,21 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import { ToastProvider } from '@/components/ui/ToastContainer'
-import { LoginPage } from '@/pages/LoginPage'
-import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
-import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
+import { ToastProvider } from '@/shared/components/ui/ToastContainer'
+import { LoginPage } from '@/tools/auth/pages/LoginPage'
+import { ForgotPasswordPage } from '@/tools/auth/pages/ForgotPasswordPage'
+import { ChangePasswordPage } from '@/tools/auth/pages/ChangePasswordPage'
 import { HomePage } from '@/pages/HomePage'
 import { DashboardPage } from '@/pages/DashboardPage'
-import { ProposalWriterPage } from '@/pages/proposalWriter/ProposalWriterPage'
-import { NewsletterGeneratorPage } from '@/pages/NewsletterGeneratorPage'
-import { PromptManagerPage } from '@/pages/admin/PromptManagerPage'
-import { PromptEditorPage } from '@/pages/admin/PromptEditorPage'
-import { SettingsPage } from '@/pages/admin/SettingsPage'
+import { ProposalWriterPage } from '@/tools/proposal-writer/pages/ProposalWriterPage'
+import { NewsletterGeneratorPage } from '@/tools/newsletter-generator/pages/NewsletterGeneratorPage'
+import { PromptManagerPage } from '@/tools/admin/pages/PromptManagerPage'
+import { PromptEditorPage } from '@/tools/admin/pages/PromptEditorPage'
+import { SettingsPage } from '@/tools/admin/pages/SettingsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
-import { Layout } from '@/components/layout/Layout'
-import { ProtectedRoute } from '@/components/ProtectedRoute'
-import { AdminRoute } from '@/components/AdminRoute'
-import { PublicRoute } from '@/components/PublicRoute'
-import CognitoTest from '@/components/CognitoTest'
+import { Layout } from '@/shared/components/Layout'
+import { ProtectedRoute } from '@/shared/components/ProtectedRoute'
+import { AdminRoute } from '@/shared/components/AdminRoute'
+import { PublicRoute } from '@/shared/components/PublicRoute'
 import '@/styles/globals.css'
 
 const queryClient = new QueryClient({
@@ -51,7 +50,6 @@ function App() {
               }
             />
             <Route path="/change-password" element={<ChangePasswordPage />} />
-            <Route path="/test-cognito" element={<CognitoTest />} />
             <Route
               path="/"
               element={

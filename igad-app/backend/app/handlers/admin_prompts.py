@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.models.prompt_model import (
+from app.shared.schemas.prompt_model import (
     Comment,
     CommentCreate,
     Prompt,
@@ -16,8 +16,8 @@ from app.models.prompt_model import (
     PromptUpdate,
     ProposalSection,
 )
-from app.services.bedrock_service import BedrockService
-from app.services.prompt_service import PromptService
+from app.shared.ai.bedrock_service import BedrockService
+from app.tools.admin.prompts_manager.service import PromptService
 
 logger = logging.getLogger(__name__)
 

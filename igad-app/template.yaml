@@ -152,7 +152,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: /Users/jcadavid/Desktop/DEV/Desarrollos/alliance-IGAD/igad-app/backend/dist
-      Handler: app.workers.analysis_worker.handler
+      Handler: app.tools.proposal_writer.workflow.worker.handler
       Runtime: python3.9
       MemorySize: 1024
       Timeout: 900  # 15 minutes for long-running analysis

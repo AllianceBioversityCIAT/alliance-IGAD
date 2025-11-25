@@ -1,5 +1,5 @@
-import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import { Card } from '@/shared/components/ui/Card'
+import { Button } from '@/shared/components/ui/Button'
 import { FileText, Mail, Users, TrendingUp, Filter } from 'lucide-react'
 
 const metrics = [
