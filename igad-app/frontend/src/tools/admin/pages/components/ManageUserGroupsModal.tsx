@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Shield, Users } from 'lucide-react'
+import { X, Shield, Users, Loader2 } from 'lucide-react'
 import { userService, CognitoUser } from '@/tools/admin/services/userService'
 import styles from './ManageUserGroupsModal.module.css'
 
@@ -19,6 +19,7 @@ export function ManageUserGroupsModal({
   const [user, setUser] = useState<CognitoUser | null>(null)
   const [groups, setGroups] = useState<Array<{ name: string; description: string }>>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [togglingGroup, setTogglingGroup] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -58,6 +59,9 @@ export function ManageUserGroupsModal({
       return
     }
 
+    setTogglingGroup(groupName)
+    setError(null)
+
     try {
       const result = isInGroup
         ? await userService.removeUserFromGroup(username, groupName)
@@ -71,6 +75,8 @@ export function ManageUserGroupsModal({
       }
     } catch (error: any) {
       setError(error.response?.data?.detail || 'Failed to update group membership')
+    } finally {
+      setTogglingGroup(null)
     }
   }
 
@@ -81,6 +87,16 @@ export function ManageUserGroupsModal({
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
+        {/* Loading Overlay */}
+        {togglingGroup && (
+          <div className={styles.loadingOverlay}>
+            <div className={styles.loadingContent}>
+              <Loader2 size={48} className={styles.spinnerLarge} />
+              <p>Updating group...</p>
+            </div>
+          </div>
+        )}
+        
         <div className={styles.header}>
           <h2 className={styles.title}>
             <Users size={20} />
@@ -115,9 +131,16 @@ export function ManageUserGroupsModal({
                       <button
                         onClick={() => handleToggleGroup(group.name, isInGroup)}
                         className={`${styles.groupToggle} ${isInGroup ? styles.groupActive : ''}`}
-                        disabled={isLoading}
+                        disabled={togglingGroup === group.name}
                       >
-                        {isInGroup ? 'Remove' : 'Add'}
+                        {togglingGroup === group.name ? (
+                          <>
+                            <Loader2 size={14} className={styles.spinner} />
+                            {isInGroup ? 'Removing...' : 'Adding...'}
+                          </>
+                        ) : (
+                          isInGroup ? 'Remove' : 'Add'
+                        )}
                       </button>
                     </div>
                   )

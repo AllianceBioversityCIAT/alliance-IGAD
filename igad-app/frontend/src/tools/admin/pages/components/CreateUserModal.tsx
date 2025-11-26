@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Mail, Key, Send } from 'lucide-react'
+import { X, Mail, Key, Send, Loader2 } from 'lucide-react'
 import { userService } from '@/tools/admin/services/userService'
 import styles from './CreateUserModal.module.css'
 
@@ -84,6 +84,16 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className={styles.loadingOverlay}>
+            <div className={styles.loadingContent}>
+              <Loader2 size={48} className={styles.spinnerLarge} />
+              <p>Creating user...</p>
+            </div>
+          </div>
+        )}
+        
         <div className={styles.header}>
           <h2 className={styles.title}>Create New User</h2>
           <button onClick={onClose} className={styles.closeButton}>
@@ -102,7 +112,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
             <input
               type="email"
               value={formData.email}
-              onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              onChange={e => setFormData(prev => ({ ...prev, email: e.target.value.toLowerCase() }))}
               className={styles.input}
               placeholder="Enter email address"
               required
@@ -158,7 +168,14 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
               Cancel
             </button>
             <button type="submit" className={styles.createButton} disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create User'}
+              {isLoading ? (
+                <>
+                  <Loader2 size={16} className={styles.spinner} />
+                  Creating...
+                </>
+              ) : (
+                'Create User'
+              )}
             </button>
           </div>
         </form>

@@ -50,6 +50,8 @@ export function UserManagement() {
     onConfirm: () => {},
   })
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deletingUsername, setDeletingUsername] = useState<string | null>(null)
+  const [loadingStates, setLoadingStates] = useState<Record<string, string>>({}) // Track loading per user/action
 
   const { showSuccess, showError } = useToast()
 
@@ -98,16 +100,23 @@ export function UserManagement() {
       message: `Are you sure you want to delete user "${email}"? This action cannot be undone.`,
       onConfirm: async () => {
         setIsDeleting(true)
+        setDeletingUsername(username)
         try {
           const result = await userService.deleteUser(username)
           if (result.success) {
             showSuccess('User deleted', `User ${email} has been successfully deleted`)
-            await fetchUsers()
+            // Wait for animation before removing from list
+            setTimeout(async () => {
+              await fetchUsers()
+              setDeletingUsername(null)
+            }, 300)
           } else {
             showError('Delete failed', result.message || 'Failed to delete user')
+            setDeletingUsername(null)
           }
         } catch (error) {
           showError('Delete failed', 'An unexpected error occurred')
+          setDeletingUsername(null)
         } finally {
           setIsDeleting(false)
           setConfirmDialog(prev => ({ ...prev, isOpen: false }))
@@ -117,6 +126,9 @@ export function UserManagement() {
   }
 
   const handleToggleUser = async (username: string, enabled: boolean, email: string) => {
+    const actionKey = `toggle-${username}`
+    setLoadingStates(prev => ({ ...prev, [actionKey]: 'toggling' }))
+    
     try {
       const result = enabled
         ? await userService.disableUser(username)
@@ -133,6 +145,12 @@ export function UserManagement() {
       }
     } catch (error) {
       showError('Update failed', 'An unexpected error occurred')
+    } finally {
+      setLoadingStates(prev => {
+        const newState = { ...prev }
+        delete newState[actionKey]
+        return newState
+      })
     }
   }
 
@@ -390,32 +408,54 @@ export function UserManagement() {
                         onClick={() => handleEditUser(user.username)}
                         className={styles.actionButton}
                         title="Edit user"
+                        disabled={!!loadingStates[`edit-${user.username}`]}
                       >
-                        <Edit size={14} />
+                        {loadingStates[`edit-${user.username}`] ? (
+                          <Spinner size="sm" />
+                        ) : (
+                          <Edit size={14} />
+                        )}
                       </button>
 
                       <button
                         onClick={() => handleManageGroups(user.username)}
                         className={styles.actionButton}
                         title="Manage groups"
+                        disabled={!!loadingStates[`groups-${user.username}`]}
                       >
-                        <Settings size={14} />
+                        {loadingStates[`groups-${user.username}`] ? (
+                          <Spinner size="sm" />
+                        ) : (
+                          <Settings size={14} />
+                        )}
                       </button>
 
                       <button
                         onClick={() => handleToggleUser(user.username, user.enabled, user.email)}
                         className={`${styles.actionButton} ${!user.enabled ? styles.enableButton : styles.disableButton}`}
                         title={user.enabled ? 'Disable user' : 'Enable user'}
+                        disabled={!!loadingStates[`toggle-${user.username}`]}
                       >
-                        {user.enabled ? <ShieldCheck size={14} /> : <Shield size={14} />}
+                        {loadingStates[`toggle-${user.username}`] ? (
+                          <Spinner size="sm" />
+                        ) : user.enabled ? (
+                          <ShieldCheck size={14} />
+                        ) : (
+                          <Shield size={14} />
+                        )}
                       </button>
 
                       <button
                         onClick={() => handleDeleteUser(user.username, user.email)}
                         className={`${styles.actionButton} ${styles.deleteButton}`}
                         title="Delete user"
+                        disabled={!!loadingStates[`delete-${user.username}`]}
                       >
-                        <Trash2 size={14} />
+                        {loadingStates[`delete-${user.username}`] ? (
+                          <Spinner size="sm" />
+                        ) : (
+                          <Trash2 size={14} />
+                        )}
                       </button>
                     </div>
                   </td>

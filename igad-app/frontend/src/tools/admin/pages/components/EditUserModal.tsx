@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, User, Mail, Key, Shield } from 'lucide-react'
+import { X, User, Mail, Key, Shield, Loader2 } from 'lucide-react'
 import { userService, CognitoUser } from '@/tools/admin/services/userService'
 import styles from './EditUserModal.module.css'
 
@@ -19,6 +19,8 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
   })
   const [resetPassword, setResetPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [togglingGroup, setTogglingGroup] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
       return
     }
 
-    setIsLoading(true)
+    setIsSaving(true)
     setError(null)
 
     try {
@@ -87,7 +89,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
     } catch (error: any) {
       setError(error.response?.data?.detail || 'Failed to update user')
     } finally {
-      setIsLoading(false)
+      setIsSaving(false)
     }
   }
 
@@ -122,6 +124,9 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
       return
     }
 
+    setTogglingGroup(groupName)
+    setError(null)
+
     try {
       const result = isInGroup
         ? await userService.removeUserFromGroup(username, groupName)
@@ -134,6 +139,8 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
       }
     } catch (error: any) {
       setError(error.response?.data?.detail || 'Failed to update group membership')
+    } finally {
+      setTogglingGroup(null)
     }
   }
 
@@ -153,6 +160,15 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
+        {/* Loading Overlay */}
+        {isSaving && (
+          <div className={styles.loadingOverlay}>
+            <div className={styles.loadingContent}>
+              <Loader2 size={48} className={styles.spinnerLarge} />
+              <p>Updating user...</p>
+            </div>
+          </div>
+        )}
         <div className={styles.header}>
           <h2 className={styles.title}>Edit User: {user?.email}</h2>
           <button onClick={onClose} className={styles.closeButton}>
@@ -189,7 +205,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={e => setFormData(prev => ({ ...prev, email: e.target.value.toLowerCase() }))}
                     className={styles.input}
                     required
                   />
@@ -210,8 +226,15 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
                   </label>
                 </div>
 
-                <button type="submit" className={styles.updateButton} disabled={isLoading}>
-                  {isLoading ? 'Updating...' : 'Update User'}
+                <button type="submit" className={styles.updateButton} disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 size={16} className={styles.spinner} />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update User'
+                  )}
                 </button>
               </form>
 
@@ -267,9 +290,16 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
                         <button
                           onClick={() => handleToggleGroup(group.name, isInGroup)}
                           className={`${styles.groupToggle} ${isInGroup ? styles.groupActive : ''}`}
-                          disabled={isLoading}
+                          disabled={togglingGroup === group.name}
                         >
-                          {isInGroup ? 'Remove' : 'Add'}
+                          {togglingGroup === group.name ? (
+                            <>
+                              <Loader2 size={14} className={styles.spinner} />
+                              {isInGroup ? 'Removing...' : 'Adding...'}
+                            </>
+                          ) : (
+                            isInGroup ? 'Remove' : 'Add'
+                          )}
                         </button>
                       </div>
                     )
