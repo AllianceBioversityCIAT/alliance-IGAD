@@ -46,7 +46,7 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     email: Optional[str] = None
-    user_attributes: Optional[Dict[str, str]] = None
+    attributes: Optional[Dict[str, str]] = None
 
 
 @router.get("/users")
@@ -142,7 +142,7 @@ async def update_user(
     """Update user attributes"""
     try:
         result = cognito_user_service.update_user(
-            username=username, user_attributes=user_data.user_attributes or {}
+            username=username, attributes=user_data.attributes or {}
         )
         return result
     except Exception as e:

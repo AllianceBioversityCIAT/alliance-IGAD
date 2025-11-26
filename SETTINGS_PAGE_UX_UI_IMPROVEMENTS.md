@@ -472,3 +472,18 @@ Add subtle animation when action completes:
 
 **Last Updated:** November 26, 2025  
 **Status:** All Phases Complete! 🎉
+
+---
+
+## 🐛 Bug Fixes
+
+### Backend API Fix - Update User
+**Date:** November 26, 2025  
+**Issue:** `update_user() got an unexpected keyword argument 'user_attributes'`  
+**Root Cause:** Parameter mismatch between route handler and service method  
+**Files Fixed:**
+- `igad-app/backend/app/tools/admin/settings/routes.py`
+  - Line 49: Changed `user_attributes` to `attributes` in UserUpdate model
+  - Line 145: Changed `user_attributes=` to `attributes=` in update_user call
+
+**Impact:** Edit User functionality now works correctly ✅
