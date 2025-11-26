@@ -349,7 +349,10 @@ export function UserManagement() {
               </tr>
             ) : (
               filteredUsers.map(user => (
-                <tr key={user.username} className={styles.tableRow}>
+                <tr 
+                  key={user.username} 
+                  className={`${styles.tableRow} ${deletingUsername === user.username ? styles.rowDeleting : ''}`}
+                >
                   <td className={styles.tableCell}>
                     <div className={styles.userInfo}>
                       <div className={styles.userDetails}>
