@@ -16,7 +16,7 @@
   width: calc(100% - 100px);
   max-width: 1562px;
   margin: 50px auto 0;
-  min-height: 377px;
+  min-height: 340px;
   background-image: url('/hero-background.png');
   background-size: cover;
   background-position: center center;
@@ -68,11 +68,11 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  padding: 36px 53px;
+  padding: 32px 53px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 377px;
+  min-height: 340px;
 }
 
 @media (max-width: 1024px) {
@@ -238,7 +238,7 @@
 
 /* Tools Section */
 .toolsSection {
-  padding: 64px 50px;
+  padding: 48px 50px;
   width: 100%;
   flex: 1;
 }
@@ -268,7 +268,7 @@
 }
 
 .sectionHeader {
-  margin-bottom: 43px;
+  margin-bottom: 32px;
 }
 
 @media (max-width: 768px) {
@@ -324,14 +324,25 @@
 .toolsGrid {
   display: flex;
   flex-wrap: wrap;
-  gap: 29px;
+  gap: 24px;
   align-items: flex-start;
   align-content: flex-start;
 }
 
 @media (max-width: 1280px) {
   .toolsGrid {
-    gap: 24px;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .toolCard {
+    width: calc(50% - 10px);
+    min-width: 280px;
+  }
+  
+  .toolsGrid {
+    gap: 20px;
   }
 }
 
@@ -351,11 +362,11 @@
 .toolCard {
   position: relative;
   width: 368px;
-  height: 329.48px;
+  height: 310px;
   background: #ffffff;
   border: 2.03385px solid #ebedf0;
   border-radius: 14.237px;
-  padding: 34.58px 34.57px;
+  padding: 28px 32px;
   box-sizing: border-box;
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   display: flex;
@@ -622,5 +633,234 @@
   .footerSubtext {
     font-size: 12px;
     line-height: 16px;
+  }
+}
+
+/* Height-based media queries for laptops with small screens */
+
+@media (max-height: 750px) {
+  .heroSection {
+    min-height: 260px;
+    margin: 28px auto 0;
+  }
+  
+  .heroContainer {
+    min-height: 260px;
+    padding: 26px 40px;
+  }
+  
+  .toolsSection {
+    padding: 36px 40px;
+  }
+  
+  .sectionHeader {
+    margin-bottom: 22px;
+  }
+  
+  .toolCard {
+    height: 270px;
+    padding: 22px 26px;
+  }
+}
+
+@media (max-height: 700px) {
+  .heroSection {
+    min-height: 240px;
+    margin: 24px auto 0;
+  }
+  
+  .heroContainer {
+    min-height: 240px;
+    padding: 22px 36px;
+  }
+  
+  .toolsSection {
+    padding: 32px 40px;
+  }
+  
+  .sectionHeader {
+    margin-bottom: 18px;
+  }
+  
+  .sectionTitle {
+    font-size: 26px;
+    margin-bottom: 4px;
+  }
+  
+  .sectionSubtitle {
+    font-size: 16px;
+    line-height: 24px;
+  }
+  
+  .toolCard {
+    height: 250px;
+    padding: 20px 24px;
+  }
+  
+  .toolTitle {
+    font-size: 19px;
+    margin-bottom: 7px;
+  }
+  
+  .toolDescription {
+    font-size: 14px;
+    line-height: 19px;
+  }
+}
+
+@media (max-height: 650px) {
+  .heroSection {
+    min-height: 200px;
+    margin: 20px auto 0;
+  }
+  
+  .heroContainer {
+    min-height: 200px;
+    padding: 16px 32px;
+  }
+  
+  .heroHeader {
+    margin-bottom: 10px;
+  }
+  
+  .heroLogo {
+    height: 30px;
+  }
+  
+  .tagline {
+    font-size: 8px;
+  }
+  
+  .title {
+    font-size: 30px;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  
+  .subtitle {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  .toolsSection {
+    padding: 24px 36px;
+  }
+  
+  .sectionHeader {
+    margin-bottom: 16px;
+  }
+  
+  .sectionTitle {
+    font-size: 22px;
+    margin-bottom: 2px;
+  }
+  
+  .sectionSubtitle {
+    font-size: 14px;
+    line-height: 20px;
+  }
+  
+  .toolCard {
+    height: 220px;
+    padding: 16px 20px;
+  }
+  
+  .iconContainer {
+    width: 48px;
+    height: 48px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .toolTitle {
+    font-size: 17px;
+    margin-bottom: 5px;
+  }
+  
+  .toolDescription {
+    font-size: 12px;
+    line-height: 17px;
+  }
+  
+  .launchButton {
+    padding: 8px 18px;
+    font-size: 13px;
+  }
+}
+
+/* Width + Height combined media queries */
+
+@media (min-width: 1201px) and (max-width: 1400px) {
+  .toolCard {
+    width: calc(33.333% - 16px);
+    height: 280px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1200px) {
+  .toolCard {
+    width: calc(33.333% - 16px);
+    height: 270px;
+    padding: 22px 26px;
+  }
+  
+  .toolsSection {
+    padding: 40px 40px;
+  }
+}
+
+/* Critical: 1280x665 and similar small laptop screens */
+@media (max-width: 1400px) and (max-height: 700px) {
+  .heroSection {
+    min-height: 220px;
+    margin: 24px auto 0;
+  }
+  
+  .heroContainer {
+    min-height: 220px;
+    padding: 18px 36px;
+  }
+  
+  .toolsSection {
+    padding: 24px 36px;
+  }
+  
+  .toolCard {
+    width: calc(33.333% - 16px);
+    height: 230px;
+    padding: 18px 22px;
+  }
+  
+  .sectionHeader {
+    margin-bottom: 18px;
+  }
+  
+  .iconContainer {
+    width: 52px;
+    height: 52px;
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+  
+  .toolTitle {
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+  
+  .toolDescription {
+    font-size: 13px;
+    line-height: 18px;
+  }
+}
+
+/* Large screens: 4 cards per row */
+@media (min-width: 1600px) {
+  .toolCard {
+    width: calc(25% - 18px);
+    height: 310px;
+  }
+  
+  .toolsGrid {
+    gap: 24px;
   }
 }

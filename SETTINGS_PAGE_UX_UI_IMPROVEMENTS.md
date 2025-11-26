@@ -487,3 +487,60 @@ Add subtle animation when action completes:
   - Line 145: Changed `user_attributes=` to `attributes=` in update_user call
 
 **Impact:** Edit User functionality now works correctly ✅
+
+---
+
+## 🛡️ Security Rule - Self-Deletion Prevention
+
+### User Cannot Delete Their Own Account
+**Date:** November 26, 2025  
+**Component:** `UserManagement.tsx`  
+**Reason:** Prevent accidental account lockout and maintain system integrity
+
+#### Implementation:
+
+**Frontend Protection:**
+- `UserManagement.tsx` now uses `useAuth()` hook to get current logged-in user
+- Compares current user email with target user email
+- **Delete button is disabled** if user tries to delete themselves
+- **Tooltip shows:** "Cannot delete yourself" instead of "Delete user"
+- **Error toast appears** if user somehow tries to delete themselves:
+  - Title: "Cannot delete yourself"
+  - Message: "You cannot delete your own user account. Please ask another administrator to do this."
+
+#### Code Changes:
+```typescript
+// Import useAuth hook
+import { useAuth } from '@/shared/hooks/useAuth'
+
+// Get current user
+const { user: currentUser } = useAuth()
+
+// Prevent self-deletion
+if (currentUser?.email === email) {
+  showError(
+    'Cannot delete yourself',
+    'You cannot delete your own user account. Please ask another administrator to do this.'
+  )
+  return
+}
+
+// Disable delete button for current user
+disabled={
+  !!loadingStates[`delete-${user.username}`] ||
+  currentUser?.email === user.email
+}
+```
+
+#### Benefits:
+✅ Prevents accidental self-deletion  
+✅ Maintains at least one admin in the system  
+✅ Clear visual feedback (disabled button)  
+✅ Helpful error message if attempted  
+✅ Professional UX pattern (similar to other admin systems)
+
+#### Backend Protection (Recommended):
+Consider also adding server-side validation in:
+- `igad-app/backend/app/tools/admin/settings/routes.py`
+- Check if authenticated user is deleting themselves
+- Return 403 Forbidden if true

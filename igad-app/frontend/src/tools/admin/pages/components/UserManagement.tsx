@@ -22,6 +22,7 @@ import { ManageUserGroupsModal } from './ManageUserGroupsModal'
 import { useToast } from '@/shared/components/ui/ToastContainer'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { Spinner } from '@/shared/components/ui/Spinner'
+import { useAuth } from '@/shared/hooks/useAuth'
 import styles from './UserManagement.module.css'
 
 interface UserFilters {
@@ -54,6 +55,7 @@ export function UserManagement() {
   const [loadingStates, setLoadingStates] = useState<Record<string, string>>({}) // Track loading per user/action
 
   const { showSuccess, showError } = useToast()
+  const { user: currentUser } = useAuth() // Get current logged-in user
 
   useEffect(() => {
     // Only fetch users when the component is visible and ready
@@ -94,6 +96,15 @@ export function UserManagement() {
   }
 
   const handleDeleteUser = async (username: string, email: string) => {
+    // Prevent user from deleting themselves
+    if (currentUser?.email === email) {
+      showError(
+        'Cannot delete yourself',
+        'You cannot delete your own user account. Please ask another administrator to do this.'
+      )
+      return
+    }
+
     setConfirmDialog({
       isOpen: true,
       title: 'Delete User',
@@ -451,8 +462,15 @@ export function UserManagement() {
                       <button
                         onClick={() => handleDeleteUser(user.username, user.email)}
                         className={`${styles.actionButton} ${styles.deleteButton}`}
-                        title="Delete user"
-                        disabled={!!loadingStates[`delete-${user.username}`]}
+                        title={
+                          currentUser?.email === user.email
+                            ? 'Cannot delete yourself'
+                            : 'Delete user'
+                        }
+                        disabled={
+                          !!loadingStates[`delete-${user.username}`] ||
+                          currentUser?.email === user.email
+                        }
                       >
                         {loadingStates[`delete-${user.username}`] ? (
                           <Spinner size="sm" />

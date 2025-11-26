@@ -19,6 +19,19 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
+  // Check if user is already authenticated (from another tab)
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (authService.isAuthenticated()) {
+        // User is already logged in, redirect to home
+        const from = (location.state as any)?.from?.pathname || '/'
+        navigate(from, { replace: true })
+      }
+    }
+    
+    checkAuth()
+  }, [navigate, location])
+
   // Check for success message from password change
   useEffect(() => {
     if (location.state?.message) {

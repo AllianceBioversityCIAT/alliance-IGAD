@@ -21,13 +21,14 @@
   background-position: center;
   background-repeat: no-repeat;
   overflow-y: auto;
+  max-height: 100vh;
 }
 
 .formContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 60px;
+  gap: 40px;
   width: 100%;
   max-width: 460px;
   padding: 0 20px;
@@ -44,7 +45,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 31.8px;
+  gap: 24px;
   width: 100%;
 }
 
@@ -52,7 +53,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 11.87px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -84,14 +85,14 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16.62px;
+  gap: 12px;
   width: 100%;
 }
 
 .fieldGroup {
   display: flex;
   flex-direction: column;
-  gap: 16.62px;
+  gap: 10px;
   width: 100%;
 }
 
@@ -154,7 +155,7 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-top: 21.37px;
+  margin-top: 12px;
 }
 
 .checkboxGroup {
@@ -202,7 +203,7 @@
   align-items: center;
   justify-content: center;
   gap: 11.87px;
-  margin-top: 31.8px;
+  margin-top: 20px;
   transition: background-color 0.2s;
 }
 
@@ -220,7 +221,7 @@
   font-size: 13.9106px;
   color: #4a5565;
   text-align: center;
-  margin: 31.8px 0 0 0;
+  margin: 20px 0 0 0;
 }
 
 .supportLink {
@@ -276,25 +277,33 @@
 
 /* Large tablets and small laptops (1200px - 1600px) */
 @media (max-width: 1600px) {
+  .leftColumn {
+    padding: 28px 20px;
+  }
+  
   .formContainer {
-    max-width: 420px;
-    gap: 48px;
+    max-width: 400px;
+    gap: 36px;
   }
   
   .logo {
     width: 100%;
-    max-width: 400px;
+    max-width: 360px;
     height: auto;
   }
   
   .title {
-    font-size: 32px;
-    line-height: 40px;
+    font-size: 30px;
+    line-height: 38px;
   }
   
   .subtitle {
-    font-size: 15px;
-    line-height: 28px;
+    font-size: 14px;
+    line-height: 26px;
+  }
+  
+  .formContent {
+    gap: 20px;
   }
 }
 
@@ -306,35 +315,53 @@
   }
   
   .leftColumn {
-    padding: 32px 16px;
+    padding: 24px 16px;
     max-height: 100vh;
   }
   
   .formContainer {
-    max-width: 380px;
-    gap: 32px;
+    max-width: 360px;
+    gap: 24px;
   }
   
   .logo {
-    max-width: 320px;
+    max-width: 300px;
   }
   
   .title {
-    font-size: 28px;
-    line-height: 36px;
+    font-size: 26px;
+    line-height: 32px;
   }
   
   .subtitle {
-    font-size: 14px;
-    line-height: 24px;
+    font-size: 13px;
+    line-height: 22px;
   }
   
   .label {
-    font-size: 17px;
+    font-size: 16px;
   }
   
   .formContent {
-    gap: 20px;
+    gap: 16px;
+  }
+  
+  .fieldGroup {
+    gap: 10px;
+  }
+  
+  .input {
+    padding: 10px 12px;
+  }
+  
+  .submitButton {
+    height: 40px;
+    margin-top: 16px;
+  }
+  
+  .supportText {
+    margin-top: 16px;
+    font-size: 12px;
   }
   
   .rightColumn {
@@ -348,57 +375,72 @@
   }
   
   .leftColumn {
-    padding: 20px 16px;
+    padding: 16px 12px;
     max-height: 100vh;
   }
   
   .formContainer {
     max-width: 340px;
-    gap: 24px;
+    gap: 20px;
   }
   
   .logo {
-    max-width: 280px;
+    max-width: 260px;
   }
   
   .title {
-    font-size: 26px;
-    line-height: 34px;
+    font-size: 24px;
+    line-height: 30px;
   }
   
   .subtitle {
-    font-size: 13px;
-    line-height: 22px;
+    font-size: 12px;
+    line-height: 20px;
   }
   
   .label {
-    font-size: 16px;
+    font-size: 15px;
   }
   
   .formContent {
-    gap: 18px;
+    gap: 14px;
   }
   
   .fieldGroup {
-    gap: 10px;
+    gap: 8px;
   }
   
   .form {
-    gap: 10px;
+    gap: 8px;
+  }
+  
+  .input {
+    padding: 10px 12px;
+    font-size: 14px;
   }
   
   .formOptions {
-    margin-top: 8px;
+    margin-top: 6px;
+    font-size: 12px;
+  }
+  
+  .checkboxGroup {
+    font-size: 12px;
+  }
+  
+  .forgotPassword {
+    font-size: 12px;
   }
   
   .submitButton {
-    margin-top: 16px;
-    height: 40px;
+    margin-top: 14px;
+    height: 38px;
+    font-size: 14px;
   }
   
   .supportText {
-    margin-top: 16px;
-    font-size: 12px;
+    margin-top: 14px;
+    font-size: 11px;
   }
 }
 
@@ -552,5 +594,194 @@
   .subtitle {
     font-size: 12px;
     line-height: 20px;
+  }
+}
+
+/* Height-based media queries for small height screens */
+@media (max-height: 750px) {
+  .leftColumn {
+    padding: 20px 16px;
+  }
+  
+  .formContainer {
+    gap: 28px;
+  }
+  
+  .logo {
+    max-width: 280px;
+  }
+  
+  .title {
+    font-size: 26px;
+    line-height: 32px;
+  }
+  
+  .subtitle {
+    font-size: 13px;
+    line-height: 20px;
+  }
+  
+  .formContent {
+    gap: 18px;
+  }
+  
+  .formHeader {
+    gap: 6px;
+  }
+  
+  .submitButton {
+    margin-top: 16px;
+    height: 40px;
+  }
+  
+  .supportText {
+    margin-top: 16px;
+    font-size: 12px;
+  }
+}
+
+@media (max-height: 700px) {
+  .leftColumn {
+    padding: 16px 12px;
+  }
+  
+  .formContainer {
+    gap: 20px;
+  }
+  
+  .logo {
+    max-width: 240px;
+  }
+  
+  .title {
+    font-size: 24px;
+    line-height: 28px;
+  }
+  
+  .subtitle {
+    font-size: 12px;
+    line-height: 18px;
+  }
+  
+  .formContent {
+    gap: 14px;
+  }
+  
+  .formHeader {
+    gap: 4px;
+  }
+  
+  .fieldGroup {
+    gap: 8px;
+  }
+  
+  .form {
+    gap: 8px;
+  }
+  
+  .label {
+    font-size: 16px;
+  }
+  
+  .input {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  .formOptions {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  
+  .checkboxGroup {
+    font-size: 12px;
+  }
+  
+  .forgotPassword {
+    font-size: 12px;
+  }
+  
+  .submitButton {
+    margin-top: 12px;
+    height: 38px;
+    font-size: 14px;
+  }
+  
+  .supportText {
+    margin-top: 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-height: 650px) {
+  .leftColumn {
+    padding: 12px 10px;
+  }
+  
+  .formContainer {
+    gap: 16px;
+  }
+  
+  .logo {
+    max-width: 200px;
+  }
+  
+  .title {
+    font-size: 22px;
+    line-height: 26px;
+  }
+  
+  .subtitle {
+    font-size: 11px;
+    line-height: 16px;
+  }
+  
+  .formContent {
+    gap: 12px;
+  }
+  
+  .formHeader {
+    gap: 3px;
+  }
+  
+  .fieldGroup {
+    gap: 6px;
+  }
+  
+  .form {
+    gap: 6px;
+  }
+  
+  .label {
+    font-size: 14px;
+  }
+  
+  .input {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  
+  .formOptions {
+    margin-top: 6px;
+    font-size: 11px;
+  }
+  
+  .checkboxGroup {
+    font-size: 11px;
+  }
+  
+  .forgotPassword {
+    font-size: 11px;
+  }
+  
+  .submitButton {
+    margin-top: 10px;
+    height: 36px;
+    font-size: 13px;
+  }
+  
+  .supportText {
+    margin-top: 10px;
+    font-size: 10px;
   }
 }
