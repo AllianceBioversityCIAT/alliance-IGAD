@@ -49,6 +49,11 @@ export function ProposalWriterPage() {
   const { saveProposalId, saveProposalCode, saveFormData, saveRfpAnalysis, loadDraft, clearDraft } =
     useProposalDraft()
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentStep])
+
   // Load from localStorage on mount
   useEffect(() => {
     const draft = loadDraft()

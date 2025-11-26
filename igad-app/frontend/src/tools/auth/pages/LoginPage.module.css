@@ -2,10 +2,9 @@
 
 .container {
   display: flex;
-  width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
   background: #ffffff;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .leftColumn {
@@ -13,8 +12,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 50%;
-  padding: 40px;
+  flex: 1;
+  min-width: 0;
+  padding: 40px 20px;
   background-image: url(/textura.png);
   background-size: cover;
   background-position: center;
@@ -27,8 +27,9 @@
   flex-direction: column;
   align-items: center;
   gap: 60px;
-  width: 460px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 460px;
+  padding: 0 20px;
 }
 
 .logo {
@@ -231,7 +232,8 @@
 }
 
 .rightColumn {
-  width: 50%;
+  flex: 1;
+  min-width: 0;
   height: 100vh;
   position: relative;
   overflow: hidden;
@@ -270,24 +272,44 @@
 }
 
 /* Responsive Styles */
-@media (max-width: 1024px) {
-  .leftColumn {
-    width: 45%;
-    padding: 32px;
-  }
-  
-  .rightColumn {
-    width: 55%;
-  }
-  
+
+/* Large tablets and small laptops (1200px - 1600px) */
+@media (max-width: 1600px) {
   .formContainer {
-    width: 400px;
+    max-width: 420px;
     gap: 48px;
   }
   
   .logo {
-    width: 400px;
+    width: 100%;
+    max-width: 400px;
     height: auto;
+  }
+  
+  .title {
+    font-size: 32px;
+    line-height: 40px;
+  }
+  
+  .subtitle {
+    font-size: 15px;
+    line-height: 28px;
+  }
+}
+
+/* Medium laptops (1024px - 1200px) */
+@media (max-width: 1200px) {
+  .leftColumn {
+    padding: 32px 16px;
+  }
+  
+  .formContainer {
+    max-width: 380px;
+    gap: 40px;
+  }
+  
+  .logo {
+    max-width: 350px;
   }
   
   .title {
@@ -296,12 +318,69 @@
   }
   
   .subtitle {
-    font-size: 15px;
+    font-size: 14px;
     line-height: 26px;
   }
   
   .label {
     font-size: 18px;
+  }
+  
+  .formContent {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .leftColumn {
+    padding: 24px 20px;
+  }
+  
+  .formContainer {
+    max-width: 360px;
+    gap: 32px;
+  }
+  
+  .logo {
+    max-width: 320px;
+  }
+  
+  .title {
+    font-size: 28px;
+    line-height: 36px;
+  }
+  
+  .subtitle {
+    font-size: 14px;
+    line-height: 24px;
+  }
+  
+  .label {
+    font-size: 17px;
+  }
+  
+  .formContent {
+    gap: 20px;
+  }
+  
+  .fieldGroup {
+    gap: 12px;
+  }
+  
+  .form {
+    gap: 12px;
+  }
+  
+  .formOptions {
+    margin-top: 12px;
+  }
+  
+  .submitButton {
+    margin-top: 20px;
+  }
+  
+  .supportText {
+    margin-top: 20px;
   }
 }
 
@@ -312,6 +391,7 @@
   
   .leftColumn,
   .rightColumn {
+    flex: none;
     width: 100%;
   }
   
