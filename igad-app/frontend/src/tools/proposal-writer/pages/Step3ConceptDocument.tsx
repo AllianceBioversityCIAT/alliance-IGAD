@@ -453,9 +453,9 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
   return (
     <div className={styles.mainContent}>
       <div className={styles.stepHeader}>
-        <h1 className={styles.stepMainTitle}>Step 3: Structure & Workplan</h1>
+        <h1 className={styles.stepMainTitle}>Step 3: Updated Concept Document</h1>
         <p className={styles.stepMainDescription}>
-          Generate comprehensive checklist and customized proposal template based on RFP
+          Review and download your enhanced concept document with elaborated sections
         </p>
       </div>
 
