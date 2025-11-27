@@ -1209,11 +1209,11 @@ export function ProposalWriterPage() {
                 total: 3,
                 message: 'Generating Concept Document...',
                 description:
-                  'Our AI is creating a structured proposal outline based on your selections. This may take 1-2 minutes.',
+                  'Our AI is creating an enhanced concept document based on your selected sections. This may take 1-2 minutes.',
                 steps: [
                   'Processing selected sections',
-                  'Generating proposal structure',
-                  'Creating guiding questions',
+                  'Elaborating concept content',
+                  'Finalizing concept document',
                 ],
               }
             : analysisProgress
