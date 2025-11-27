@@ -6,9 +6,10 @@ import { DraftConfirmationModal } from '../components/DraftConfirmationModal'
 import AnalysisProgressModal from '@/tools/proposal-writer/components/AnalysisProgressModal'
 import { Step1InformationConsolidation } from './Step1InformationConsolidation'
 import { Step2ContentGeneration } from './Step2ContentGeneration'
-import Step3StructureValidation from './Step3StructureValidation'
-import Step4ReviewRefinement from './Step4ReviewRefinement'
-import Step5FinalExport from './Step5FinalExport'
+import Step3ConceptDocument from './Step3ConceptDocument'
+import Step4StructureWorkplan from './Step4StructureWorkplan'
+import Step5ReviewRefinement from './Step5ReviewRefinement'
+import Step6FinalExport from './Step6FinalExport'
 import { useProposals } from '@/tools/proposal-writer/hooks/useProposal'
 import { useProposalDraft } from '@/tools/proposal-writer/hooks/useProposalDraft'
 import { authService } from '@/shared/services/authService'
@@ -38,6 +39,11 @@ export function ProposalWriterPage() {
   } | null>(null)
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
   const [conceptDocument, setConceptDocument] = useState<any>(null)
+  const [proposalTemplate, setProposalTemplate] = useState<any>(null)
+  const [structureSelectionData, setStructureSelectionData] = useState<{
+    selectedSections: string[]
+    userComments: { [key: string]: string }
+  } | null>(null)
   const [formData, setFormData] = useState({
     uploadedFiles: {} as { [key: string]: File[] },
     textInputs: {} as { [key: string]: string },
@@ -191,11 +197,16 @@ export function ProposalWriterPage() {
       completed.push(3)
     }
 
+    // Step 4 is completed if we have proposal template
+    if (proposalTemplate) {
+      completed.push(4)
+    }
+
     // Only update if different to avoid infinite loops
     if (JSON.stringify(completed) !== JSON.stringify(completedSteps)) {
       setCompletedSteps(completed)
     }
-  }, [formData.uploadedFiles, conceptAnalysis, conceptDocument])
+  }, [formData.uploadedFiles, conceptAnalysis, conceptDocument, proposalTemplate])
 
   // Detect RFP changes and invalidate analyses
   useEffect(() => {
@@ -207,10 +218,14 @@ export function ProposalWriterPage() {
         setConceptAnalysis(null)
         setConceptDocument(null)
         setConceptEvaluationData(null)
+        setProposalTemplate(null)
+        setStructureSelectionData(null)
         localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
         localStorage.removeItem(`proposal_concept_analysis_${proposalId}`)
         localStorage.removeItem(`proposal_concept_document_${proposalId}`)
         localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
+        localStorage.removeItem(`proposal_template_${proposalId}`)
+        localStorage.removeItem(`proposal_structure_selection_${proposalId}`)
       }
 
       window.addEventListener('rfp-deleted', handleRfpDeleted)
@@ -278,13 +293,43 @@ export function ProposalWriterPage() {
             console.log('⚠️ No concept_document_v2 in proposal:', proposal?.id)
           }
         } catch (error) {
-          console.error('❌ Failed to load concept document:', error)
+          console.error('❌ Error loading concept document:', error)
         }
       }
     }
 
     loadConceptDocument()
   }, [proposalId, currentStep, conceptDocument])
+
+  // Load proposal template when on Step 4
+  useEffect(() => {
+    const loadProposalTemplate = async () => {
+      if (proposalId && currentStep === 4 && !proposalTemplate) {
+        try {
+          console.log('🔍 Loading proposal template for proposalId:', proposalId)
+          
+          // First check localStorage
+          const cachedTemplate = localStorage.getItem(`proposal_template_${proposalId}`)
+          if (cachedTemplate) {
+            console.log('✅ Found cached template in localStorage')
+            setProposalTemplate(JSON.parse(cachedTemplate))
+            return
+          }
+
+          // TODO: Load from backend when API is ready
+          // const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+          // const response = await proposalService.getProposal(proposalId)
+          // if (response?.proposal_template) {
+          //   setProposalTemplate(response.proposal_template)
+          // }
+        } catch (error) {
+          console.error('❌ Error loading proposal template:', error)
+        }
+      }
+    }
+
+    loadProposalTemplate()
+  }, [proposalId, currentStep, proposalTemplate])
 
   // Load concept evaluation from DynamoDB when entering Step 3
   useEffect(() => {
@@ -442,6 +487,65 @@ export function ProposalWriterPage() {
       }, 500) // Increased from 100ms to 500ms
     }
   }, [currentStep, navigate])
+
+  const handleGenerateTemplate = async (
+    selectedSections: string[],
+    userComments: { [key: string]: string }
+  ) => {
+    console.log('🟢 Starting proposal template generation...')
+    console.log('📋 Selected sections:', selectedSections)
+    console.log('📋 User comments:', userComments)
+
+    if (!proposalId || selectedSections.length === 0) {
+      alert('Please select at least one section before generating template')
+      return
+    }
+
+    setIsGeneratingDocument(true)
+
+    try {
+      // Save structure selection data
+      setStructureSelectionData({ selectedSections, userComments })
+
+      // TODO: Call API to generate proposal template
+      // For now, simulate template generation
+      console.log('🔄 Generating proposal template...')
+      
+      // Placeholder: In real implementation, call proposalService.generateProposalTemplate
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      const mockTemplate = {
+        sections: selectedSections.map(section => ({
+          title: section,
+          content: `Content for ${section}`,
+          userComment: userComments[section] || ''
+        })),
+        generatedAt: new Date().toISOString()
+      }
+
+      setProposalTemplate(mockTemplate)
+      setIsGeneratingDocument(false)
+      
+      // Save to localStorage
+      if (proposalId) {
+        localStorage.setItem(
+          `proposal_template_${proposalId}`,
+          JSON.stringify(mockTemplate)
+        )
+        localStorage.setItem(
+          `proposal_structure_selection_${proposalId}`,
+          JSON.stringify({ selectedSections, userComments })
+        )
+      }
+
+      console.log('✅ Template generated successfully')
+      proceedToNextStep()
+    } catch (error: any) {
+      console.error('❌ Template generation failed:', error)
+      setIsGeneratingDocument(false)
+      alert(`Generation failed: ${error.message || 'Unknown error'}`)
+    }
+  }
 
   const handleNextStep = async () => {
     console.log('🔵 handleNextStep called - Current step:', currentStep)
@@ -951,7 +1055,7 @@ export function ProposalWriterPage() {
         return <Step2ContentGeneration {...stepProps} />
       case 3:
         return (
-          <Step3StructureValidation
+          <Step3ConceptDocument
             {...stepProps}
             onNextStep={handleNextStep}
             onRegisterDownload={fn => {}}
@@ -966,9 +1070,16 @@ export function ProposalWriterPage() {
           />
         )
       case 4:
-        return <Step4ReviewRefinement {...stepProps} />
+        return (
+          <Step4StructureWorkplan
+            {...stepProps}
+            onGenerateTemplate={handleGenerateTemplate}
+          />
+        )
       case 5:
-        return <Step5FinalExport {...stepProps} />
+        return <Step5ReviewRefinement {...stepProps} />
+      case 6:
+        return <Step6FinalExport {...stepProps} />
       default:
         return <Step1InformationConsolidation {...stepProps} />
     }
@@ -998,12 +1109,19 @@ export function ProposalWriterPage() {
         } else if (currentStep === 3) {
           console.log('📥 Step 3: Proceeding to next step')
           proceedToNextStep()
+        } else if (currentStep === 4) {
+          console.log('📥 Step 4: User should use Generate Template button')
+          // Template generation is handled by the Step4 component button
+          // This button only proceeds to next step if template already exists
+          if (proposalTemplate) {
+            proceedToNextStep()
+          }
         } else {
           handleNextStep()
         }
       }}
       disabled={
-        currentStep === 5 ||
+        currentStep === 6 ||
         isAnalyzingRFP ||
         isGeneratingDocument ||
         (currentStep === 1 &&
@@ -1033,23 +1151,33 @@ export function ProposalWriterPage() {
             ? `${analysisProgress.message} (${analysisProgress.step}/${analysisProgress.total})`
             : 'Analyzing...'}
         </>
-      ) : currentStep === 5 ? (
+      ) : currentStep === 6 ? (
         'Complete'
-      ) : currentStep === 4 ? (
+      ) : currentStep === 5 ? (
         'Finish process'
+      ) : currentStep === 4 && proposalTemplate ? (
+        <>
+          Continue to Review
+          <ChevronRight size={16} />
+        </>
+      ) : currentStep === 4 ? (
+        <>
+          Generate Template
+          <ChevronRight size={16} />
+        </>
       ) : currentStep === 3 ? (
         <>
-          Next
+          Continue to Structure & Workplan
           <ChevronRight size={16} />
         </>
       ) : currentStep === 2 && conceptDocument ? (
         <>
-          Continue to Structure Validation
+          Continue to Concept Document
           <ChevronRight size={16} />
         </>
       ) : currentStep === 2 ? (
         <>
-          Generate Updated Concept Document and Continue
+          Generate Updated Concept
           <ChevronRight size={16} />
         </>
       ) : currentStep === 1 && rfpAnalysis && conceptAnalysis ? (

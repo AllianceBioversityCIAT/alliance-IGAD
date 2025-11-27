@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { FileText, Download, Sparkles, X, Check, ChevronDown, ChevronUp } from 'lucide-react'
-import styles from './step3.module.css'
+import styles from './step3-concept.module.css'
 import step2Styles from './step2.module.css'
 
 interface Step3Props {
@@ -28,7 +28,7 @@ const PRIORITY_COLORS = {
   Optional: { bg: '#E0E7FF', border: '#C7D2FE', text: '#193CB8' },
 }
 
-const Step3StructureValidation: React.FC<Step3Props> = ({
+const Step3ConceptDocument: React.FC<Step3Props> = ({
   conceptDocument,
   conceptAnalysis,
   proposalId,
@@ -619,4 +619,4 @@ const Step3StructureValidation: React.FC<Step3Props> = ({
   )
 }
 
-export default Step3StructureValidation
+export default Step3ConceptDocument

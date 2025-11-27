@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { Upload, FileText } from 'lucide-react'
-import styles from './step4.module.css'
+import styles from './step5.module.css'
 
-const Step4ReviewRefinement: React.FC = () => {
+const Step5ReviewRefinement: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -120,4 +120,4 @@ const Step4ReviewRefinement: React.FC = () => {
   )
 }
 
-export default Step4ReviewRefinement
+export default Step5ReviewRefinement

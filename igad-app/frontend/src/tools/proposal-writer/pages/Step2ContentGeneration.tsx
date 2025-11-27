@@ -28,11 +28,9 @@ interface Step2Props extends StepProps {
   conceptAnalysis?: ConceptAnalysis
   conceptEvaluationData?: {
     selectedSections: string[]
-    userComments: { [key: string]: string }
   }
   onConceptEvaluationChange?: (data: {
     selectedSections: string[]
-    userComments: { [key: string]: string }
   }) => void
 }
 
@@ -90,20 +88,15 @@ export function Step2ContentGeneration({
   })
 
   const [expandedSections, setExpandedSections] = useState<string[]>([])
-  const [userComments, setUserComments] = useState<{ [key: string]: string }>(() => {
-    // Load saved comments if available
-    return conceptEvaluationData?.userComments || {}
-  })
 
   // Notify parent of state changes
   useEffect(() => {
     if (onConceptEvaluationChange) {
       onConceptEvaluationChange({
         selectedSections,
-        userComments,
       })
     }
-  }, [selectedSections, userComments, onConceptEvaluationChange])
+  }, [selectedSections, onConceptEvaluationChange])
 
   if (!conceptAnalysis || !conceptAnalysis.fit_assessment) {
     return (
@@ -134,10 +127,6 @@ export function Step2ContentGeneration({
     setExpandedSections(prev =>
       prev.includes(sectionName) ? prev.filter(s => s !== sectionName) : [...prev, sectionName]
     )
-  }
-
-  const handleCommentChange = (sectionName: string, comment: string) => {
-    setUserComments(prev => ({ ...prev, [sectionName]: comment }))
   }
 
   const alignmentColor =
@@ -214,8 +203,7 @@ export function Step2ContentGeneration({
                 <p className={styles.sectionSubtitle}>
                   Select the sections you'd like to include in the updated concept document.
                   Selected sections will be automatically generated and included in your updated
-                  concept document in the next step. Comments will provide additional context to
-                  guide AI generation.
+                  concept document in the next step.
                 </p>
               </div>
             </div>
@@ -285,16 +273,6 @@ export function Step2ContentGeneration({
                               </>
                             )}
                           </ul>
-                        </div>
-
-                        <div className={styles.commentsSection}>
-                          <h4 className={styles.subsectionTitle}>Your comments for this section</h4>
-                          <textarea
-                            className={styles.commentTextarea}
-                            placeholder="Add specific guidance, data points, or context for this section..."
-                            value={userComments[section.section] || ''}
-                            onChange={e => handleCommentChange(section.section, e.target.value)}
-                          />
                         </div>
                       </div>
                     )}
