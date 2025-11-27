@@ -35,7 +35,6 @@ export function ProposalWriterPage() {
   } | null>(null)
   const [conceptEvaluationData, setConceptEvaluationData] = useState<{
     selectedSections: string[]
-    userComments: { [key: string]: string }
   } | null>(null)
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
   const [conceptDocument, setConceptDocument] = useState<any>(null)
@@ -705,7 +704,7 @@ export function ProposalWriterPage() {
 
   const handleGenerateConceptDocument = async (overrideData?: {
     selectedSections: string[]
-    userComments: { [key: string]: string }
+    userComments?: { [key: string]: string }
   }) => {
     console.log('🟢 Starting concept document generation...')
     console.log('📋 Override data:', overrideData)
@@ -728,7 +727,7 @@ export function ProposalWriterPage() {
     }
 
     if (!proposalId || !evaluationData) {
-      alert('Please select sections and add comments before generating')
+      alert('Please select sections before generating')
       return
     }
 
@@ -764,15 +763,15 @@ export function ProposalWriterPage() {
         .map(section => ({
           ...section,
           selected: true, // Mark as selected
-          // Add user comment if provided
-          user_comment: evaluationData.userComments[section.section] || '',
+          // Add user comment if provided (only from Step 3 regeneration)
+          user_comment: overrideData?.userComments?.[section.section] || '',
         }))
 
       // Mark all sections with selected flag
       const allSectionsWithSelection = allSections.map(section => ({
         ...section,
         selected: evaluationData.selectedSections.includes(section.section),
-        user_comment: evaluationData.userComments[section.section] || '',
+        user_comment: overrideData?.userComments?.[section.section] || '',
       }))
 
       console.log(
@@ -888,7 +887,7 @@ export function ProposalWriterPage() {
   }
 
   const handleConceptEvaluationChange = useCallback(
-    (data: { selectedSections: string[]; userComments: { [key: string]: string } }) => {
+    (data: { selectedSections: string[] }) => {
       setConceptEvaluationData(data)
     },
     []
