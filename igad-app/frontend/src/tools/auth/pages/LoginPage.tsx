@@ -18,6 +18,7 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true) // Add loading state for auth check
 
   // Check if user is already authenticated (from another tab)
   useEffect(() => {
@@ -26,6 +27,9 @@ export function LoginPage() {
         // User is already logged in, redirect to home
         const from = (location.state as any)?.from?.pathname || '/'
         navigate(from, { replace: true })
+      } else {
+        // Not authenticated, show login form
+        setIsCheckingAuth(false)
       }
     }
     
@@ -96,9 +100,28 @@ export function LoginPage() {
 
   return (
     <div className={styles.container}>
-      {/* Left Column - Form */}
-      <div className={styles.leftColumn}>
-        <div className={styles.formContainer}>
+      {/* Show loading spinner while checking authentication */}
+      {isCheckingAuth ? (
+        <div className={styles.leftColumn}>
+          <div className={styles.formContainer}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              minHeight: '400px',
+              gap: '16px'
+            }}>
+              <Spinner size="lg" />
+              <p style={{ color: '#4a5565', fontSize: '14px' }}>Checking authentication...</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Left Column - Form */}
+          <div className={styles.leftColumn}>
+            <div className={styles.formContainer}>
           {/* IGAD Logo */}
           <div>
             <img src="/logologin.png" alt="IGAD Innovation Hub" className={styles.logo} />
@@ -216,10 +239,14 @@ export function LoginPage() {
       </div>
 
       {/* Right Column - Background Image */}
-      <div className={styles.rightColumn}>
-        <div className={styles.backgroundImage}></div>
-        <div className={styles.overlay}></div>
-      </div>
+      {!isCheckingAuth && (
+        <div className={styles.rightColumn}>
+          <div className={styles.backgroundImage}></div>
+          <div className={styles.overlay}></div>
+        </div>
+      )}
+      </>
+      )}
     </div>
   )
 }
