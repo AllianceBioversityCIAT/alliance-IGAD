@@ -58,7 +58,7 @@ export function ProposalLayout({
             <div className={styles.navButtonLeft}>
               {navigationButtons && React.Children.toArray(navigationButtons)[0]}
             </div>
-            <div className={styles.stepIndicator}>Step {currentStep} of 5</div>
+            <div className={styles.stepIndicator}>Step {currentStep} of 6</div>
             <div className={styles.navButtonRight}>
               {navigationButtons && React.Children.toArray(navigationButtons)[1]}
             </div>

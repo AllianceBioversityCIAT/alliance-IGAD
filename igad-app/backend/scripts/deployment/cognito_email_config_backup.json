@@ -3,19 +3,19 @@
   "profile": "IBD-DEV",
   "templates": {
     "welcome_email": {
-      "subject": "Welcome to IGAD Innovation Hub - Account Created",
+      "subject": "Bienvenido al IGAD Innovation Hub - Cuenta Creada",
       "configured": true
     },
     "email_verification": {
-      "subject": "IGAD Innovation Hub - Verify Your Email",
+      "subject": "IGAD Innovation Hub - Verifica tu Email",
       "configured": true
     },
     "password_reset": {
-      "subject": "IGAD Innovation Hub - Password Reset",
+      "subject": "IGAD Innovation Hub - Restablecimiento de Contrase\u00f1a",
       "configured": "prepared"
     },
     "mfa_setup": {
-      "subject": "IGAD Innovation Hub - MFA Setup",
+      "subject": "IGAD Innovation Hub - Configuraci\u00f3n MFA",
       "configured": "prepared"
     }
   },

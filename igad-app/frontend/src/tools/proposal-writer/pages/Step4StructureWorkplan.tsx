@@ -315,6 +315,31 @@ export function Step4StructureWorkplan({
             </div>
           </div>
         </div>
+
+        {/* Generate Template Section */}
+        <div className={step2Styles.card}>
+          <div className={step2Styles.sectionHeader}>
+            <Layers className={step2Styles.sectionIcon} size={20} />
+            <div>
+              <h3 className={step2Styles.sectionTitle}>Generate Proposal Template</h3>
+              <p className={step2Styles.sectionSubtitle}>
+                Create a customized Word template with instructions and suggested content based on your RFP
+              </p>
+            </div>
+          </div>
+          <button
+            className={styles.generateButton}
+            onClick={() => {
+              if (onGenerateTemplate) {
+                onGenerateTemplate(selectedSections, userComments)
+              }
+            }}
+            disabled={selectedSections.length === 0}
+          >
+            <Layers size={16} />
+            Generate Template
+          </button>
+        </div>
       </div>
     </div>
   )

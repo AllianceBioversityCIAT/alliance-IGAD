@@ -58,7 +58,7 @@ const Step5ReviewRefinement: React.FC = () => {
   return (
     <div className={styles.mainContent}>
       <div className={styles.stepHeader}>
-        <h1 className={styles.stepMainTitle}>Step 4: Proposal Review</h1>
+        <h1 className={styles.stepMainTitle}>Step 5: Review & Refinement</h1>
         <p className={styles.stepMainDescription}>
           Upload your draft for AI feedback, download with edits, and iterate until ready
         </p>

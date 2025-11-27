@@ -2,23 +2,22 @@
 /* Inherits most styles from step2.module.css */
 
 .mainContent {
-  padding: 0;
-  max-width: 1400px;
-  margin: 0 auto;
+  flex: 1;
+  padding: 32px 40px;
+  overflow-y: auto;
+  background: #FFFFFF;
 }
 
 .stepHeader {
-  padding: 32px 40px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #ffffff;
+  margin-bottom: 32px;
 }
 
 .stepMainTitle {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 600;
   color: #111827;
   margin: 0 0 8px 0;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
 .stepMainDescription {
@@ -26,4 +25,41 @@
   color: #6b7280;
   margin: 0;
   line-height: 1.5;
+}
+
+/* Generate Template Button */
+.generateButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #9810FA 0%, #7C0DD1 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(152, 16, 250, 0.3);
+}
+
+.generateButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7C0DD1 0%, #6609B0 100%);
+  box-shadow: 0 4px 12px rgba(152, 16, 250, 0.4);
+  transform: translateY(-1px);
+}
+
+.generateButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(152, 16, 250, 0.3);
+}
+
+.generateButton:disabled {
+  background: #E5E7EB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+  box-shadow: none;
 }

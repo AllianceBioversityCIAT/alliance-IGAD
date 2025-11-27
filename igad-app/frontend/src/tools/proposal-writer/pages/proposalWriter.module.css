@@ -117,10 +117,10 @@
   background: #FFFFFF;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 14px;
-  padding: 33px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 56px;
+  gap: 32px;
 }
 
 /* Progress Header */
@@ -176,7 +176,7 @@
 .stepsList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .sidebarStep {
@@ -193,13 +193,13 @@
 }
 
 .stepCircle {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   transition: all 0.3s ease;
 }
@@ -222,7 +222,7 @@
 
 .stepLine {
   width: 2px;
-  height: 24px;
+  height: 16px;
   margin-top: 0;
   transition: background-color 0.3s ease;
 }
@@ -237,12 +237,12 @@
 
 .stepContent {
   flex: 1;
-  padding-top: 8px;
+  padding-top: 6px;
 }
 
 .sidebarStepTitle {
-  font-size: 16px;
-  line-height: 26px;
+  font-size: 15px;
+  line-height: 22px;
   display: block;
 }
 
@@ -275,30 +275,26 @@
 
 .mainContent {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  padding: 32px 40px;
+  overflow-y: auto;
 }
 
 /* Step Header */
 .stepHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
   margin-bottom: 32px;
 }
 
 .stepMainTitle {
-  font-size: 24px;
-  font-weight: 400;
-  color: #0A0A0A;
-  margin: 0;
-  line-height: 32px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
 }
 
 .stepMainDescription {
   font-size: 16px;
-  color: #717182;
+  color: #6b7280;
   margin: 0;
   line-height: 24px;
 }
@@ -312,6 +308,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 24px;
 }
 
 .progressCardHeader {
@@ -383,6 +380,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  margin-bottom: 24px;
 }
 
 .nextStepsTitle {
@@ -432,6 +430,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  margin-bottom: 24px;
 }
 
 .uploadSectionHeader {

@@ -30,14 +30,19 @@ def configure_welcome_email(cognito_client, user_pool_id):
 </div>
 <p style="color: {COLORS['text']};">For security, you will need to change your password on first login.</p>
 <p style="text-align: center; margin-top: 30px;">
-<a href="http://localhost:3000/login" style="background-color: {COLORS['primary']}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Login</a>
+<a href="https://test-igad-hub.alliance.cgiar.org/login" style="background-color: {COLORS['primary']}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Login to Platform</a>
 </p>"""
     try:
+        # Get current config first
+        response = cognito_client.describe_user_pool(UserPoolId=user_pool_id)
+        current_config = response['UserPool'].get('AdminCreateUserConfig', {})
+        
+        # Update with new template
         cognito_client.update_user_pool(
             UserPoolId=user_pool_id,
             AdminCreateUserConfig={
-                "AllowAdminCreateUserOnly": False,
-                "UnusedAccountValidityDays": 7,
+                "AllowAdminCreateUserOnly": current_config.get('AllowAdminCreateUserOnly', False),
+                "UnusedAccountValidityDays": current_config.get('UnusedAccountValidityDays', 7),
                 "InviteMessageTemplate": {
                     "EmailMessage": create_base_template(content),
                     "EmailSubject": "Welcome to IGAD Innovation Hub - Account Created",
@@ -48,6 +53,7 @@ def configure_welcome_email(cognito_client, user_pool_id):
         return True
     except ClientError as e:
         print(f"❌ Welcome email error: {e}")
+        print(f"   Details: {str(e)}")
         return False
 
 
@@ -59,6 +65,9 @@ def configure_verification_email(cognito_client, user_pool_id):
 <p style="color: {COLORS['text']};">This code expires in 24 hours for security.</p>
 <p style="color: #666; font-size: 14px;">If you didn't request this verification, you can ignore this message.</p>"""
     try:
+        # Get current config first
+        response = cognito_client.describe_user_pool(UserPoolId=user_pool_id)
+        
         cognito_client.update_user_pool(
             UserPoolId=user_pool_id,
             VerificationMessageTemplate={
@@ -70,6 +79,7 @@ def configure_verification_email(cognito_client, user_pool_id):
         return True
     except ClientError as e:
         print(f"❌ Verification email error: {e}")
+        print(f"   Details: {str(e)}")
         return False
 
 

@@ -1109,12 +1109,8 @@ export function ProposalWriterPage() {
           console.log('📥 Step 3: Proceeding to next step')
           proceedToNextStep()
         } else if (currentStep === 4) {
-          console.log('📥 Step 4: User should use Generate Template button')
-          // Template generation is handled by the Step4 component button
-          // This button only proceeds to next step if template already exists
-          if (proposalTemplate) {
-            proceedToNextStep()
-          }
+          console.log('📥 Step 4: Proceeding to next step')
+          proceedToNextStep()
         } else {
           handleNextStep()
         }
@@ -1154,14 +1150,9 @@ export function ProposalWriterPage() {
         'Complete'
       ) : currentStep === 5 ? (
         'Finish process'
-      ) : currentStep === 4 && proposalTemplate ? (
-        <>
-          Continue to Review
-          <ChevronRight size={16} />
-        </>
       ) : currentStep === 4 ? (
         <>
-          Generate Template
+          Next
           <ChevronRight size={16} />
         </>
       ) : currentStep === 3 ? (
