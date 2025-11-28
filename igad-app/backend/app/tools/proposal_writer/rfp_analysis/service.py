@@ -126,7 +126,7 @@ class SimpleRFPAnalyzer:
                 user_template = self.get_default_user_template()
                 
                 # 4. Inject RFP text (limit to 10k chars for speed)
-                max_chars = 10000
+                max_chars = 50000
                 truncated_text = rfp_text[:max_chars]
                 if len(rfp_text) > max_chars:
                     print(f"⚠️ RFP text truncated from {len(rfp_text)} to {max_chars} chars")
@@ -142,7 +142,7 @@ class SimpleRFPAnalyzer:
                 ai_response = self.bedrock.invoke_claude(
                     system_prompt=system_prompt,
                     user_prompt=user_prompt,
-                    max_tokens=4000,
+                    max_tokens=5000,
                     temperature=0.5
                 )
             

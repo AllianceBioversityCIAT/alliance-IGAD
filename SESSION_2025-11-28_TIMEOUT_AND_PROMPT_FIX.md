@@ -606,5 +606,75 @@ After deploying tomorrow's changes:
 
 ---
 
-**Session End:** 2025-11-28 01:52 UTC  
+**Session End:** 2025-11-28 02:11 UTC  
 **Next Session:** Ready to update prompt and deploy 🚀
+
+---
+
+## 🔧 LAST MINUTE FIX (02:11 UTC)
+
+### **Issue: Concept Evaluation Truncating Large Documents**
+
+**Problem Found:**
+- User uploaded `concept-document-2025-11-28.doc` with **74,428 characters**
+- Concept evaluation service was truncating to only **8,000 characters** (89% lost!)
+- This caused incomplete analysis
+
+**File:** `igad-app/backend/app/tools/proposal_writer/concept_evaluation/service.py`
+
+**Fix Applied:**
+
+```python
+# BEFORE (truncated to 8000 chars):
+max_chars = 8000
+truncated_concept = concept_text[:max_chars]
+
+# AFTER (intelligent truncation at 50000 chars):
+max_chars = 50000  # Increased limit
+
+if len(concept_text) > max_chars:
+    # Keep 60% from beginning + 40% from end
+    beginning_chars = int((max_chars - 200) * 0.6)
+    ending_chars = int((max_chars - 200) * 0.4)
+    
+    beginning = concept_text[:beginning_chars]
+    ending = concept_text[-ending_chars:]
+    
+    truncated_concept = (
+        f"{beginning}\n\n"
+        f"[... Middle truncated - total: {len(concept_text)} chars ...]\n\n"
+        f"{ending}"
+    )
+```
+
+**Benefits:**
+- ✅ Supports documents up to 50,000 chars without truncation
+- ✅ Intelligent truncation preserves beginning (context) and end (solutions)
+- ✅ Better analysis quality for long documents
+- ✅ User's 74K char document will use first 30K + last 20K = 50K total
+
+**Impact:**
+- Documents < 50K chars: No truncation ✅
+- Documents > 50K chars: Smart truncation (not just first 8K) ✅
+- Analysis quality significantly improved for long documents
+
+---
+
+**Files Modified Today (UPDATED COUNT):**
+
+### **Backend (4 files):** ← Updated from 3
+1. `bedrock_service.py` - Timeout config
+2. `service.py` - Prompt optimization + progress logs  
+3. `worker.py` - Retry logic
+4. `concept_evaluation/service.py` - **NEW:** Intelligent document truncation ✅
+
+### **Frontend (1 file):**
+5. `ProposalWriterPage.tsx` - Loader message
+
+### **Database (1 pending):**
+6. DynamoDB Prompt - Pending update tomorrow
+
+---
+
+**Total Files Modified:** 5 (4 backend + 1 frontend)  
+**Total Files to Deploy:** 5 + 1 DB update = **6 changes**

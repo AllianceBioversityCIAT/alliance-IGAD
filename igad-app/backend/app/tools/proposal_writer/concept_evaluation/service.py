@@ -95,12 +95,31 @@ class SimpleConceptAnalyzer:
             print("✅ Using DynamoDB prompt")
             
             # 4. Prepare prompts with context
-            # Truncate concept text if too long
-            max_chars = 8000
-            truncated_concept = concept_text[:max_chars]
+            # Handle long concept documents intelligently
+            max_chars = 100000  # Increased from 8000 to 100000
+            
             if len(concept_text) > max_chars:
-                print(f"⚠️ Concept text truncated from {len(concept_text)} to {max_chars} chars")
-                truncated_concept += "\n\n[... Text truncated for analysis ...]"
+                print(f"⚠️ Concept text is long ({len(concept_text)} chars), using intelligent truncation...")
+                
+                # Strategy: Keep beginning (context) and end (conclusion)
+                # This preserves both problem statement and proposed solutions
+                chars_to_keep = max_chars - 200  # Reserve 200 chars for truncation notice
+                beginning_chars = int(chars_to_keep * 0.6)  # 60% from beginning
+                ending_chars = int(chars_to_keep * 0.4)     # 40% from end
+                
+                beginning = concept_text[:beginning_chars]
+                ending = concept_text[-ending_chars:]
+                
+                truncated_concept = (
+                    f"{beginning}\n\n"
+                    f"[... Middle section truncated - total document: {len(concept_text)} characters ...]\n\n"
+                    f"{ending}"
+                )
+                
+                print(f"📏 Kept {beginning_chars} chars from beginning + {ending_chars} chars from end = {len(truncated_concept)} total")
+            else:
+                truncated_concept = concept_text
+                print(f"📄 Concept text within limit: {len(concept_text)} characters")
             
             # Inject rfp_analysis and concept_text into user prompt
             user_prompt = prompt_parts['user_prompt']
@@ -119,7 +138,7 @@ class SimpleConceptAnalyzer:
             ai_response = self.bedrock.invoke_claude(
                 system_prompt=prompt_parts['system_prompt'],
                 user_prompt=final_user_prompt,
-                max_tokens=4000,
+                max_tokens=15000,
                 temperature=0.5
             )
             

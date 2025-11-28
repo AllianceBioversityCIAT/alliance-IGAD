@@ -107,7 +107,7 @@ class ConceptDocumentGenerator:
             response = self.bedrock.invoke_claude(
                 system_prompt=prompt_parts['system_prompt'],
                 user_prompt=final_prompt,
-                max_tokens=8000,
+                max_tokens=12000,
                 temperature=0.7
             )
             
