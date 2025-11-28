@@ -12,13 +12,31 @@ logger = logging.getLogger(__name__)
 
 class BedrockService:
     def __init__(self):
+        from botocore.config import Config
+        
         session = get_aws_session()
-        self.bedrock = session.client("bedrock-runtime", region_name="us-east-1")
+        
+        # Configure timeout for long-running AI operations
+        # Increased from default 60s to 600s (10 minutes) for concept document generation
+        config = Config(
+            read_timeout=600,  # 10 minutes for reading response
+            connect_timeout=60,  # 1 minute for initial connection
+            retries={'max_attempts': 3}  # Retry up to 3 times
+        )
+        
+        self.bedrock = session.client(
+            "bedrock-runtime",
+            region_name="us-east-1",
+            config=config
+        )
+        
         # Use cross-region inference profile for Claude 3.7 Sonnet (Claude Sonnet 4)
         # This supports on-demand throughput
         self.model_id = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
         self.max_tokens = 4000
         self.temperature = 0.7
+        
+        logger.info(f"✅ BedrockService initialized with {config.read_timeout}s read timeout")
 
     def _substitute_variables(self, template: str, variables: Dict[str, str]) -> str:
         """Substitute variables in template using {{variable}} format"""

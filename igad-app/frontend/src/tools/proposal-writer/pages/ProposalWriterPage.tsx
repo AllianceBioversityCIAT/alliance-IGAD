@@ -1198,13 +1198,13 @@ export function ProposalWriterPage() {
             ? {
                 step: 1,
                 total: 3,
-                message: 'Generating Concept Document...',
+                message: 'Generating Enhanced Concept Document...',
                 description:
-                  'Our AI is creating an enhanced concept document based on your selected sections. This may take 1-2 minutes.',
+                  'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
                 steps: [
-                  'Processing selected sections',
-                  'Elaborating concept content',
-                  'Finalizing concept document',
+                  'Analyzing RFP requirements and selected sections',
+                  'Generating detailed narrative content with examples',
+                  'Finalizing and validating concept document',
                 ],
               }
             : analysisProgress

@@ -57,7 +57,46 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
 
   const sectionsNeedingElaboration = unwrappedAnalysis?.sections_needing_elaboration || []
   const selectedCount = sectionsNeedingElaboration.filter((s: any) => s.selected === true).length
-  const totalSections = conceptDocument?.proposal_outline?.length || selectedCount || 0
+  // Calculate number of sections from the actual document
+  const getDocumentSectionCount = () => {
+    if (!conceptDocument) return 0
+
+    // NEW FORMAT: Check generated_concept_document and sections
+    if (conceptDocument?.generated_concept_document) {
+      // If sections object exists, use its count (more accurate)
+      if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
+        const count = Object.keys(conceptDocument.sections).length
+        console.log(`📊 Using sections count from NEW format: ${count}`)
+        return count
+      }
+      // Otherwise, count ## headers in markdown
+      const headerMatches = conceptDocument.generated_concept_document.match(/^##\s+/gm)
+      const count = headerMatches ? headerMatches.length : 0
+      console.log(`📊 Counting headers in generated_concept_document: ${count}`)
+      return count
+    }
+
+    // OLD FORMAT: proposal_outline
+    if (conceptDocument?.proposal_outline && Array.isArray(conceptDocument.proposal_outline)) {
+      const count = conceptDocument.proposal_outline.length
+      console.log(`📊 Using proposal_outline count: ${count}`)
+      return count
+    }
+
+    // FALLBACK: sections object
+    if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
+      const count = Object.keys(conceptDocument.sections).length
+      console.log(`📊 Using sections object count: ${count}`)
+      return count
+    }
+
+    // From selected sections
+    const count = selectedCount || 0
+    console.log(`📊 Using selected sections count (fallback): ${count}`)
+    return count
+  }
+
+  const totalSections = getDocumentSectionCount()
 
   console.log(
     `📊 Step3 - Selected sections: ${selectedCount} of ${sectionsNeedingElaboration.length} total`
@@ -78,19 +117,44 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
     let content = ''
 
     // Log the structure for debugging
-    console.log('conceptDocument structure:', conceptDocument)
-    console.log('conceptDocument type:', typeof conceptDocument)
+    console.log('📄 Step3 - renderConceptDocument called')
+    console.log('📦 conceptDocument structure:', conceptDocument)
+    console.log('📦 conceptDocument type:', typeof conceptDocument)
+
+    if (conceptDocument && typeof conceptDocument === 'object') {
+      console.log('📦 conceptDocument keys:', Object.keys(conceptDocument))
+    }
 
     // Try to extract the actual content from various possible structures
+    // Priority order: generated_concept_document > content > document > proposal_outline > sections
+
     if (typeof conceptDocument === 'string') {
+      console.log('✅ Using conceptDocument as string')
       content = conceptDocument
     } else if (conceptDocument?.generated_concept_document) {
+      console.log('✅ Using generated_concept_document field (NEW FORMAT)')
+      console.log('📝 Content length:', conceptDocument.generated_concept_document.length)
+      console.log(
+        '📝 First 500 chars:',
+        conceptDocument.generated_concept_document.substring(0, 500)
+      )
+      console.log('📝 Has newlines:', conceptDocument.generated_concept_document.includes('\n'))
+
+      // Check if sections are also available for enhanced display
+      if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
+        const sectionCount = Object.keys(conceptDocument.sections).length
+        console.log(`📊 Also found ${sectionCount} sections in sections object`)
+      }
+
       content = conceptDocument.generated_concept_document
     } else if (conceptDocument?.content) {
+      console.log('✅ Using content field')
       content = conceptDocument.content
     } else if (conceptDocument?.document) {
+      console.log('✅ Using document field')
       content = conceptDocument.document
     } else if (conceptDocument?.proposal_outline) {
+      console.log('✅ Using proposal_outline structure')
       // Handle proposal_outline structure - convert sections to markdown
       const outline = conceptDocument.proposal_outline
       if (Array.isArray(outline)) {
@@ -107,15 +171,20 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
           })
           .join('\n\n')
       }
-    } else if (conceptDocument?.sections) {
+    } else if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
+      console.log('✅ Using sections object (fallback)')
+      console.log('📊 Number of sections:', Object.keys(conceptDocument.sections).length)
       // Build content from sections
       content = Object.entries(conceptDocument.sections)
         .map(([key, value]) => `## ${key}\n\n${value}`)
         .join('\n\n')
     } else {
+      console.warn('⚠️ Unknown conceptDocument structure, using JSON stringify')
       // Last resort: stringify the object
       content = JSON.stringify(conceptDocument, null, 2)
     }
+
+    console.log('📝 Final content length:', content.length, 'characters')
 
     return (
       <div className={styles.documentContent}>
@@ -125,6 +194,11 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
   }
 
   const parseMarkdownToReact = (markdown: string) => {
+    console.log('🎨 parseMarkdownToReact called')
+    console.log('📝 Markdown length:', markdown.length)
+    console.log('📝 First 200 chars:', markdown.substring(0, 200))
+    console.log('📝 Number of lines:', markdown.split('\n').length)
+
     const lines = markdown.split('\n')
     const elements: JSX.Element[] = []
     let currentList: string[] = []
@@ -207,6 +281,10 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
     flushList()
     flushParagraph()
 
+    console.log('📊 parseMarkdownToReact result:')
+    console.log('   - Total elements created:', elements.length)
+    console.log('   - Element types:', elements.map(e => e.type).join(', '))
+
     return elements
   }
 
@@ -233,6 +311,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
       }
 
       console.log('🔽 Download button clicked!')
+      console.log('📦 conceptDocument for download:', conceptDocument)
       setIsDownloading(true)
 
       // Use setTimeout to ensure the click event completes before download starts
@@ -241,15 +320,27 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
           let content = ''
 
           // Extract content from the same structure used in renderConceptDocument
+          // Priority: generated_concept_document > content > document > proposal_outline > sections
           if (typeof conceptDocument === 'string') {
+            console.log('✅ Download: Using string content')
             content = conceptDocument
           } else if (conceptDocument?.generated_concept_document) {
+            console.log('✅ Download: Using generated_concept_document (NEW FORMAT)')
             content = conceptDocument.generated_concept_document
+
+            // Optionally add section metadata if available
+            if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
+              const sectionCount = Object.keys(conceptDocument.sections).length
+              console.log(`📊 Download: Document has ${sectionCount} sections`)
+            }
           } else if (conceptDocument?.content) {
+            console.log('✅ Download: Using content field')
             content = conceptDocument.content
           } else if (conceptDocument?.document) {
+            console.log('✅ Download: Using document field')
             content = conceptDocument.document
           } else if (conceptDocument?.proposal_outline) {
+            console.log('✅ Download: Using proposal_outline')
             const outline = conceptDocument.proposal_outline
             if (Array.isArray(outline)) {
               content = outline
@@ -265,13 +356,17 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                 })
                 .join('\n\n')
             }
-          } else if (conceptDocument?.sections) {
+          } else if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
+            console.log('✅ Download: Using sections object')
             content = Object.entries(conceptDocument.sections)
               .map(([key, value]) => `## ${key}\n\n${value}`)
               .join('\n\n')
           } else {
+            console.warn('⚠️ Download: No valid content format found')
             content = 'No content available'
           }
+
+          console.log(`📝 Download: Final content length: ${content.length} characters`)
 
           // Convert markdown to HTML
           const htmlContent = parseMarkdownToHTML(content)
@@ -469,6 +564,26 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
               <p className={styles.documentSubtitle}>
                 {totalSections} section{totalSections !== 1 ? 's' : ''} included • Ready for review
                 and refinement
+                {conceptDocument?.generated_concept_document && conceptDocument?.sections && (
+                  <>
+                    <br />
+                    <span
+                      style={{
+                        marginTop: '4px',
+                        display: 'inline-block',
+                        padding: '2px 8px',
+                        background: '#DCFCE7',
+                        color: '#166534',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Enhanced Format
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>

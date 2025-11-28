@@ -152,6 +152,13 @@ def handler(event, context):
             if not concept_evaluation:
                 raise Exception("Concept evaluation not provided")
             
+            # Get proposal outline from proposal (generated in Step 2)
+            proposal_outline = proposal.get("proposal_outline")
+            if proposal_outline:
+                logger.info("✅ Found proposal_outline in proposal data")
+            else:
+                logger.warning("⚠️ No proposal_outline found - will attempt to load from DynamoDB")
+            
             # Update status to processing
             db_client.update_item_sync(
                 pk=f"PROPOSAL#{proposal_id}",
@@ -163,17 +170,73 @@ def handler(event, context):
                 }
             )
             
-            # Generate document
-            logger.info("🔍 Starting concept document generation...")
+            # Generate document with retry logic
+            logger.info("🔍 Starting concept document generation with retry logic...")
             proposal_code = proposal.get("proposalCode", proposal_id)
             
-            generated_document = concept_generator.generate_document(
-                proposal_code=proposal_code,
-                rfp_analysis=rfp_analysis,
-                concept_evaluation=concept_evaluation
-            )
+            # Retry configuration
+            max_retries = 3
+            retry_delay = 30  # seconds
+            generated_document = None
             
-            logger.info("✅ Concept document generated successfully")
+            for attempt in range(1, max_retries + 1):
+                try:
+                    logger.info(f"=" * 80)
+                    logger.info(f"📝 ATTEMPT {attempt}/{max_retries}")
+                    logger.info(f"=" * 80)
+                    
+                    # Log progress
+                    logger.info("📊 Step 1/3: Preparing context and enriching sections...")
+                    start_time = datetime.utcnow()
+                    
+                    generated_document = concept_generator.generate_document(
+                        proposal_code=proposal_code,
+                        rfp_analysis=rfp_analysis,
+                        concept_evaluation=concept_evaluation,
+                        proposal_outline=proposal_outline
+                    )
+                    
+                    # Calculate processing time
+                    end_time = datetime.utcnow()
+                    processing_time = (end_time - start_time).total_seconds()
+                    
+                    logger.info(f"✅ Concept document generated successfully in {processing_time:.1f} seconds")
+                    break  # Success, exit retry loop
+                    
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.error(f"❌ Attempt {attempt}/{max_retries} failed: {error_msg}")
+                    
+                    # Check if it's a timeout error
+                    is_timeout = "timeout" in error_msg.lower() or "timed out" in error_msg.lower()
+                    
+                    if attempt < max_retries:
+                        # Calculate exponential backoff delay
+                        backoff_delay = retry_delay * (2 ** (attempt - 1))  # 30s, 60s, 120s
+                        logger.warning(f"⏳ Retrying in {backoff_delay} seconds (exponential backoff)...")
+                        
+                        # Update status with retry info
+                        db_client.update_item_sync(
+                            pk=f"PROPOSAL#{proposal_id}",
+                            sk="METADATA",
+                            update_expression="SET concept_document_status = :status, last_error = :error",
+                            expression_attribute_values={
+                                ":status": f"retrying_attempt_{attempt}",
+                                ":error": f"Attempt {attempt} failed: {error_msg[:200]}"
+                            }
+                        )
+                        
+                        import time
+                        time.sleep(backoff_delay)
+                    else:
+                        # All retries exhausted
+                        logger.error(f"❌ All {max_retries} attempts failed")
+                        raise  # Re-raise the last exception
+            
+            if not generated_document:
+                raise Exception("Failed to generate document after all retries")
+            
+            logger.info("💾 Saving concept document to DynamoDB...")
             
             # Save to DynamoDB
             db_client.update_item_sync(
