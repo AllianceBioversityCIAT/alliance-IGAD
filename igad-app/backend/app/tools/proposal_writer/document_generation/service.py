@@ -108,7 +108,7 @@ class ConceptDocumentGenerator:
                 system_prompt=prompt_parts['system_prompt'],
                 user_prompt=final_prompt,
                 max_tokens=12000,
-                temperature=0.7
+                temperature=0.5
             )
             
             bedrock_end = datetime.utcnow()
