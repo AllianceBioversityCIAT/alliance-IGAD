@@ -11,6 +11,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr
 
 from app.shared.ai.bedrock_service import BedrockService
+from app.tools.proposal_writer.document_generation.config import DOCUMENT_GENERATION_SETTINGS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  # Asegurar que INFO logs se muestren
@@ -108,7 +109,8 @@ class ConceptDocumentGenerator:
                 system_prompt=prompt_parts['system_prompt'],
                 user_prompt=final_prompt,
                 max_tokens=12000,
-                temperature=0.5
+                temperature=0.5,
+                model_id=DOCUMENT_GENERATION_SETTINGS['model']
             )
             
             bedrock_end = datetime.utcnow()

@@ -146,38 +146,51 @@ class BedrockService:
         self,
         system_prompt: str,
         user_prompt: str,
-        max_tokens: int = 4000,
-        temperature: float = 0.7
+        max_tokens: int = None,
+        temperature: float = None,
+        model_id: str = None
     ) -> str:
         """
         Simple Claude invocation for analysis tasks
         Returns the raw text response
+
+        Args:
+            system_prompt: System prompt for Claude
+            user_prompt: User prompt for Claude
+            max_tokens: Maximum tokens in response (defaults to instance max_tokens)
+            temperature: Temperature for response (defaults to instance temperature)
+            model_id: Model ID to use (defaults to instance model_id)
         """
         try:
+            # Use provided values or fall back to instance defaults
+            actual_max_tokens = max_tokens if max_tokens is not None else self.max_tokens
+            actual_temperature = temperature if temperature is not None else self.temperature
+            actual_model_id = model_id if model_id is not None else self.model_id
+
             messages = [{"role": "user", "content": user_prompt}]
-            
+
             body = {
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": max_tokens,
-                "temperature": temperature,
+                "max_tokens": actual_max_tokens,
+                "temperature": actual_temperature,
                 "system": system_prompt,
                 "messages": messages,
             }
-            
+
             response = self.bedrock.invoke_model(
-                modelId=self.model_id,
+                modelId=actual_model_id,
                 body=json.dumps(body),
                 contentType="application/json",
                 accept="application/json",
             )
-            
+
             response_body = json.loads(response["body"].read())
-            
+
             if "content" in response_body and response_body["content"]:
                 return response_body["content"][0]["text"]
             else:
                 return ""
-                
+
         except Exception as e:
             logger.error(f"Error invoking Claude: {e}")
             raise

@@ -12,6 +12,7 @@ from io import BytesIO
 
 from app.database.client import db_client
 from app.shared.ai.bedrock_service import BedrockService
+from app.tools.proposal_writer.concept_evaluation.config import CONCEPT_EVALUATION_SETTINGS
 
 
 class SimpleConceptAnalyzer:
@@ -139,7 +140,8 @@ class SimpleConceptAnalyzer:
                 system_prompt=prompt_parts['system_prompt'],
                 user_prompt=final_user_prompt,
                 max_tokens=15000,
-                temperature=0.5
+                temperature=0.5,
+                model_id=CONCEPT_EVALUATION_SETTINGS['model']
             )
             
             elapsed = time.time() - start_time

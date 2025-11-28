@@ -12,6 +12,7 @@ from io import BytesIO
 
 from app.database.client import db_client
 from app.shared.ai.bedrock_service import BedrockService
+from app.tools.proposal_writer.rfp_analysis.config import RFP_ANALYSIS_SETTINGS
 
 
 class SimpleRFPAnalyzer:
@@ -116,7 +117,8 @@ class SimpleRFPAnalyzer:
                     system_prompt=prompt_parts['system_prompt'],
                     user_prompt=final_user_prompt,
                     max_tokens=4000,
-                    temperature=0.5
+                    temperature=0.5,
+                    model_id=RFP_ANALYSIS_SETTINGS['model']
                 )
                 
             else:
@@ -143,7 +145,8 @@ class SimpleRFPAnalyzer:
                     system_prompt=system_prompt,
                     user_prompt=user_prompt,
                     max_tokens=5000,
-                    temperature=0.5
+                    temperature=0.5,
+                    model_id=RFP_ANALYSIS_SETTINGS['model']
                 )
             
             elapsed = time.time() - start_time
