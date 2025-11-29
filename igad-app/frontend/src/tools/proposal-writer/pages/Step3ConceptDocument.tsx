@@ -399,12 +399,14 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
 </html>
         `
 
-          // Create blob and download
-          const blob = new Blob([fullHtml], { type: 'application/msword' })
+          // Create blob and download as DOCX format
+          const blob = new Blob([fullHtml], {
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          })
           const url = URL.createObjectURL(blob)
           const a = document.createElement('a')
           a.href = url
-          a.download = `concept-document-${new Date().toISOString().slice(0, 10)}.doc`
+          a.download = `concept-document-${new Date().toISOString().slice(0, 10)}.docx`
           a.click()
           URL.revokeObjectURL(url)
 
