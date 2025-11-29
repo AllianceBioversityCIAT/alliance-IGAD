@@ -1,3 +1,6 @@
+// ============================================================================
+// IMPORTS
+// ============================================================================
 import { useEffect, useState } from 'react'
 import { FileText, AlertTriangle } from 'lucide-react'
 import { useProposal } from '@/tools/proposal-writer/hooks/useProposal'
@@ -6,11 +9,29 @@ import styles from './proposalWriter.module.css'
 import { apiClient } from '@/shared/services/apiClient'
 import ManualRFPInput from '@/tools/proposal-writer/components/ManualRFPInput'
 
+// ============================================================================
+// TYPES
+// ============================================================================
+
+/**
+ * Props for Step 1: Information Consolidation component
+ * Extends base StepProps with proposal-specific data
+ */
 interface Step1Props extends StepProps {
+  /** Unique identifier for the proposal */
   proposalId?: string
-  rfpAnalysis?: any
+  /** RFP analysis data from AI processing */
+  rfpAnalysis?: Record<string, unknown>
 }
 
+// ============================================================================
+// SKELETON COMPONENT
+// ============================================================================
+
+/**
+ * Loading skeleton displayed while data is being fetched
+ * Provides visual feedback during initial load
+ */
 function Step1Skeleton() {
   return (
     <div className={styles.stepContent}>
@@ -38,97 +59,141 @@ function Step1Skeleton() {
   )
 }
 
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+/**
+ * Step 1: Information Consolidation
+ *
+ * Handles collection of all necessary proposal inputs:
+ * - RFP documents (required)
+ * - Initial concept text or document (required)
+ * - Reference proposals (coming soon)
+ * - Supporting documents (coming soon)
+ *
+ * Features:
+ * - File upload with S3 storage
+ * - Real-time text input with auto-save
+ * - Progress tracking
+ * - Document management (delete/replace)
+ */
 export function Step1InformationConsolidation({
   formData,
   setFormData,
   proposalId,
   rfpAnalysis,
 }: Step1Props) {
+  // ============================================================================
+  // STATE - Hooks
+  // ============================================================================
+
   const { proposal, updateFormData, isUpdating, isLoading } = useProposal(proposalId)
+
+  // ============================================================================
+  // STATE - RFP Upload
+  // ============================================================================
+
+  /** Loading state for RFP document upload */
   const [isUploadingRFP, setIsUploadingRFP] = useState(false)
-  const [uploadSuccess, setUploadSuccess] = useState(false)
+  /** Error message for RFP upload failures */
   const [uploadError, setUploadError] = useState<string>('')
-  const [errorDetails, setErrorDetails] = useState<string>('')
+  /** Toggle for manual RFP text input modal */
   const [showManualInput, setShowManualInput] = useState(false)
 
-  // Concept states
+  // ============================================================================
+  // STATE - Concept Document
+  // ============================================================================
+
+  /** Loading state for concept file upload */
   const [isUploadingConcept, setIsUploadingConcept] = useState(false)
+  /** Loading state for concept text save operation */
   const [isSavingConceptText, setIsSavingConceptText] = useState(false)
+  /** Whether concept text has been saved to backend */
   const [conceptTextSaved, setConceptTextSaved] = useState(false)
+  /** Whether user is currently editing concept text */
   const [isEditingConceptText, setIsEditingConceptText] = useState(false)
+  /** Error message for concept-related operations */
   const [conceptUploadError, setConceptUploadError] = useState('')
 
-  // Load data from localStorage or proposal when component mounts
+  // ============================================================================
+  // EFFECTS - Data Loading
+  // ============================================================================
+
+  /**
+   * Load proposal data on component mount
+   * Priority: Backend documents > localStorage text inputs > proposal defaults
+   *
+   * This ensures we always have the most up-to-date file list from S3
+   * while preserving any unsaved text inputs from localStorage
+   */
   useEffect(() => {
-    if (proposalId) {
-      const loadProposalData = async () => {
-        const storageKey = `proposal_draft_${proposalId}`
-        const savedData = localStorage.getItem(storageKey)
+    if (!proposalId) {
+      return
+    }
 
-        try {
-          // First, load uploaded documents from backend
-          const { proposalService } = await import(
-            '@/tools/proposal-writer/services/proposalService'
-          )
-          const documents = await proposalService.getUploadedDocuments(proposalId)
+    const loadProposalData = async () => {
+      const storageKey = `proposal_draft_${proposalId}`
+      const savedData = localStorage.getItem(storageKey)
 
-          console.log('📄 Loaded documents from backend:', documents)
+      try {
+        // Load uploaded documents from backend (source of truth)
+        const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+        const documents = await proposalService.getUploadedDocuments(proposalId)
 
-          // Build formData from backend documents
-          const backendFormData = {
-            uploadedFiles: {
-              'rfp-document': documents.rfp_documents || [],
-              'concept-document': documents.concept_documents || [],
-              'reference-proposals': documents.reference_documents || [],
-              'supporting-docs': documents.supporting_documents || [],
-            } as { [key: string]: string[] },
-            textInputs: {} as { [key: string]: string },
+        // Build formData from backend documents
+        const backendFormData = {
+          uploadedFiles: {
+            'rfp-document': documents.rfp_documents || [],
+            'concept-document': documents.concept_documents || [],
+            'reference-proposals': documents.reference_documents || [],
+            'supporting-docs': documents.supporting_documents || [],
+          },
+          textInputs: {} as { [key: string]: string },
+        }
+
+        // Merge with localStorage data (for text inputs only)
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData)
+            backendFormData.textInputs = parsed.textInputs || {}
+          } catch {
+            // Silent fail - use empty text inputs
           }
+        } else if (proposal) {
+          // Load text inputs from proposal if no localStorage data
+          backendFormData.textInputs = proposal.text_inputs || {}
+        }
 
-          if (savedData) {
-            // Merge with localStorage data (for text inputs)
-            try {
-              const parsed = JSON.parse(savedData)
-              backendFormData.textInputs = parsed.textInputs || {}
-
-              // Use backend files, not localStorage files (they might be stale)
-              setFormData(backendFormData)
-            } catch (e) {
-              console.error('Failed to parse saved proposal data:', e)
-              setFormData(backendFormData)
-            }
-          } else if (proposal) {
-            // Otherwise load text inputs from proposal
-            backendFormData.textInputs = proposal.text_inputs || {}
-            setFormData(backendFormData)
-          } else {
-            setFormData(backendFormData)
-          }
-        } catch (error) {
-          console.error('Failed to load documents:', error)
-
-          // Fallback to localStorage or proposal
-          if (savedData) {
-            try {
-              const parsed = JSON.parse(savedData)
-              setFormData(parsed)
-            } catch (e) {
-              console.error('Failed to parse saved proposal data:', e)
-            }
-          } else if (proposal) {
-            setFormData({
-              uploadedFiles: proposal.uploaded_files || {},
-              textInputs: proposal.text_inputs || {},
-            })
+        setFormData(backendFormData)
+      } catch {
+        // Fallback to localStorage or proposal on error
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData)
+            setFormData(parsed)
+            return
+          } catch {
+            // Silent fail - use empty state
           }
         }
+
+        if (proposal) {
+          setFormData({
+            uploadedFiles: proposal.uploaded_files || {},
+            textInputs: proposal.text_inputs || {},
+          })
+        }
       }
-
-      loadProposalData()
     }
-  }, [proposalId, proposal])
 
-  // Save to localStorage whenever formData changes
+    loadProposalData()
+  }, [proposalId, proposal, setFormData])
+
+  /**
+   * Auto-save formData to localStorage on changes
+   * Provides draft persistence across page refreshes
+   */
   useEffect(() => {
     if (proposalId && (formData.uploadedFiles || formData.textInputs)) {
       const storageKey = `proposal_draft_${proposalId}`
@@ -136,94 +201,96 @@ export function Step1InformationConsolidation({
     }
   }, [formData, proposalId])
 
-  // Show skeleton while loading (after all hooks)
-  if (isLoading) {
-    return <Step1Skeleton />
-  }
+  // ============================================================================
+  // HANDLERS - RFP Document
+  // ============================================================================
 
+  /**
+   * Handle file upload for RFP document
+   * Uploads to S3 and triggers vectorization for AI analysis
+   *
+   * @param section - Document section identifier
+   * @param files - FileList from input element
+   */
   const handleFileUpload = async (section: string, files: FileList | null) => {
-    if (files && files.length > 0) {
-      const file = files[0] // Take first file
+    if (!files || files.length === 0) {
+      return
+    }
 
-      // Upload to S3 and create vectors if we have a proposal ID
-      if (proposalId && section === 'rfp-document') {
-        setIsUploadingRFP(true)
-        try {
-          // Create FormData for file upload
-          const uploadFormData = new FormData()
-          uploadFormData.append('file', file)
+    const file = files[0]
 
-          console.log('Uploading document to:', `/api/proposals/${proposalId}/documents/upload`)
-          console.log('File:', file.name, 'Size:', file.size)
+    // RFP documents require special processing (S3 + vectorization)
+    if (proposalId && section === 'rfp-document') {
+      setIsUploadingRFP(true)
+      setUploadError('')
 
-          // Upload document - this will process and create vectors
-          const response = await apiClient.post(
-            `/api/proposals/${proposalId}/documents/upload`,
-            uploadFormData,
-            {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-              },
-            }
-          )
+      try {
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', file)
 
-          console.log('Document uploaded and vectorized:', response.data)
+        // Upload and process document
+        await apiClient.post(`/api/proposals/${proposalId}/documents/upload`, uploadFormData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
 
-          // Only update state after successful upload
-          const updatedFiles = {
-            ...formData.uploadedFiles,
-            [section]: [file.name],
-          }
-
-          setFormData(prev => ({
-            ...prev,
-            uploadedFiles: updatedFiles,
-          }))
-
-          // Update proposal metadata with filename
-          await updateFormData({
-            uploadedFiles: updatedFiles,
-            textInputs: formData.textInputs,
-          })
-
-          // Clear any previous errors
-          setUploadError('')
-        } catch (error: any) {
-          console.error('Failed to upload document:', error)
-
-          const errorMessage =
-            error.response?.data?.detail || error.message || 'Upload failed. Please try again.'
-          setUploadError(errorMessage)
-        } finally {
-          setIsUploadingRFP(false)
-        }
-      } else {
-        // For non-RFP sections, update immediately (old behavior)
+        // Update local state after successful upload
         const updatedFiles = {
           ...formData.uploadedFiles,
           [section]: [file.name],
         }
 
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
           ...prev,
           uploadedFiles: updatedFiles,
         }))
 
-        // Update proposal metadata with filename
-        if (proposalId) {
-          try {
-            await updateFormData({
-              uploadedFiles: updatedFiles,
-              textInputs: formData.textInputs,
-            })
-          } catch (error) {
-            console.error('Failed to save form data:', error)
-          }
+        // Persist to backend
+        await updateFormData({
+          uploadedFiles: updatedFiles,
+          textInputs: formData.textInputs,
+        })
+      } catch (error: unknown) {
+        const errorMsg =
+          (error as Record<string, unknown>)?.response?.data?.detail ||
+          (error as Error)?.message ||
+          'Upload failed. Please try again.'
+        setUploadError(String(errorMsg))
+      } finally {
+        setIsUploadingRFP(false)
+      }
+    } else {
+      // Other sections: simple metadata update (no S3 upload yet)
+      const updatedFiles = {
+        ...formData.uploadedFiles,
+        [section]: [file.name],
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        uploadedFiles: updatedFiles,
+      }))
+
+      if (proposalId) {
+        try {
+          await updateFormData({
+            uploadedFiles: updatedFiles,
+            textInputs: formData.textInputs,
+          })
+        } catch (error) {
+          // Silent fail - localStorage will preserve the change
         }
       }
     }
   }
 
+  /**
+   * Handle manual RFP text submission
+   * Alternative to file upload - processes pasted RFP text
+   *
+   * @param text - RFP text content
+   */
   const handleManualTextSubmit = async (text: string) => {
     if (!proposalId) {
       return
@@ -231,138 +298,150 @@ export function Step1InformationConsolidation({
 
     setIsUploadingRFP(true)
     setShowManualInput(false)
+    setUploadError('')
 
     try {
-      const formData = new FormData()
-      formData.append('rfp_text', text)
+      const formDataPayload = new FormData()
+      formDataPayload.append('rfp_text', text)
 
-      const response = await apiClient.post(
-        `/api/proposals/${proposalId}/documents/upload-text`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      )
-
-      console.log('Manual text processed:', response.data)
-
-      setUploadResult(response.data)
-      setShowSuccess(true)
-      setShowError(false)
-    } catch (error: any) {
-      console.error('Failed to process manual text:', error)
-      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error'
-      setErrorDetails(errorMessage)
-      setShowError(true)
+      await apiClient.post(`/api/proposals/${proposalId}/documents/upload-text`, formDataPayload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+    } catch (error: Record<string, unknown>) {
+      const errorMessage =
+        (error?.response as Record<string, unknown>)?.data?.detail ||
+        (error as Error)?.message ||
+        'Unknown error'
+      setUploadError(String(errorMessage))
     } finally {
       setIsUploadingRFP(false)
     }
   }
 
-  const handleTextChange = async (section: string, value: string) => {
-    const updatedInputs = {
-      ...formData.textInputs,
-      [section]: value,
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      textInputs: updatedInputs,
-    }))
-
-    // Save to backend if we have a proposal ID (debounced)
-    if (proposalId) {
-      try {
-        await updateFormData({
-          uploadedFiles: formData.uploadedFiles,
-          textInputs: updatedInputs,
-        })
-      } catch (error) {
-        console.error('Failed to update form data:', error)
-      }
-    }
-  }
-
-  const getUploadedFileCount = (section: string) => {
-    return formData.uploadedFiles[section]?.length || 0
-  }
-
-  const hasRequiredFiles = () => {
-    const hasRFP = getUploadedFileCount('rfp-document') > 0
-    const hasConcept =
-      (formData.textInputs['initial-concept'] || '').length >= 100 ||
-      getUploadedFileCount('concept-document') > 0
-
-    return hasRFP && hasConcept
-  }
-
+  /**
+   * Delete uploaded RFP document
+   * Removes from S3, DynamoDB, and local state
+   * Also clears cached RFP analysis
+   *
+   * @param section - Document section identifier
+   * @param fileIndex - Index of file in the section array
+   */
   const handleDeleteFile = async (section: string, fileIndex: number) => {
     const updatedFiles = { ...formData.uploadedFiles }
     const fileName = updatedFiles[section][fileIndex]
 
-    console.log('🗑️ DELETE FILE:', {
-      section,
-      fileIndex,
-      fileName,
-      proposalId,
-      allFiles: formData.uploadedFiles,
-    })
-
-    // Remove from local state first for immediate UI feedback
+    // Optimistic UI update
     updatedFiles[section].splice(fileIndex, 1)
-
     setFormData(prev => ({
       ...prev,
       uploadedFiles: updatedFiles,
     }))
 
-    // Delete from backend (S3 + DynamoDB) if we have a proposal ID
-    if (proposalId) {
-      try {
-        // Import proposalService dynamically
-        const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+    if (!proposalId) {
+      return
+    }
 
-        console.log('📡 Calling deleteDocument API:', {
-          proposalId,
-          fileName,
-        })
+    try {
+      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
 
-        // Delete from S3
-        const deleteResult = await proposalService.deleteDocument(proposalId, fileName)
+      // Delete from S3 and vectors
+      await proposalService.deleteDocument(proposalId, fileName)
 
-        console.log('✅ Delete API response:', deleteResult)
+      // Update DynamoDB metadata
+      await updateFormData({
+        uploadedFiles: updatedFiles,
+      })
 
-        // Update DynamoDB metadata
-        await updateFormData({
-          uploadedFiles: updatedFiles,
-        })
-
-        console.log(`✅ Deleted file from S3 and DynamoDB: ${fileName}`)
-
-        // If deleting RFP document, also clear the analysis
-        if (section === 'rfp-document' && window.location.pathname.includes('proposal-writer')) {
-          // Clear rfpAnalysis from parent component
-          // This will be handled by the parent ProposalWriterPage
-          localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
-          window.dispatchEvent(new CustomEvent('rfp-deleted'))
-          console.log('🧹 Cleared RFP analysis from localStorage')
-        }
-      } catch (error: any) {
-        console.error('❌ Failed to delete file from backend:', error)
-        console.error('❌ Error details:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-        })
-        // Optionally: revert the local state change if backend deletion failed
-        setUploadError('Failed to delete file from server')
+      // Clear RFP analysis cache if deleting RFP document
+      if (section === 'rfp-document') {
+        localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
+        window.dispatchEvent(new CustomEvent('rfp-deleted'))
       }
+    } catch (error: Record<string, unknown>) {
+      setUploadError('Failed to delete file from server')
     }
   }
 
-  // Concept handlers
+  // ============================================================================
+  // HANDLERS - Concept Document (File)
+  // ============================================================================
+
+  /**
+   * Upload concept document file
+   * Alternative to text input for concept section
+   *
+   * @param files - FileList from input element
+   */
+  const handleConceptFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !proposalId) {
+      return
+    }
+
+    const file = files[0]
+    setIsUploadingConcept(true)
+    setConceptUploadError('')
+
+    try {
+      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+      await proposalService.uploadConceptFile(proposalId, file)
+
+      // Update local state
+      setFormData(prev => ({
+        ...prev,
+        uploadedFiles: {
+          ...prev.uploadedFiles,
+          'concept-document': [file.name],
+        },
+      }))
+    } catch (error: Record<string, unknown>) {
+      const errorMsg =
+        (error?.response as Record<string, unknown>)?.data?.detail ||
+        'Failed to upload concept file'
+      setConceptUploadError(String(errorMsg))
+    } finally {
+      setIsUploadingConcept(false)
+    }
+  }
+
+  /**
+   * Delete concept document file
+   *
+   * @param filename - Name of file to delete
+   */
+  const handleDeleteConceptFile = async (filename: string) => {
+    if (!confirm(`Delete ${filename}?`) || !proposalId) {
+      return
+    }
+
+    try {
+      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+      await proposalService.deleteConceptFile(proposalId, filename)
+
+      setFormData(prev => ({
+        ...prev,
+        uploadedFiles: {
+          ...prev.uploadedFiles,
+          'concept-document': [],
+        },
+      }))
+    } catch (error: Record<string, unknown>) {
+      const errorMsg =
+        (error?.response as Record<string, unknown>)?.data?.detail ||
+        'Failed to delete concept file'
+      setConceptUploadError(String(errorMsg))
+    }
+  }
+
+  // ============================================================================
+  // HANDLERS - Concept Text
+  // ============================================================================
+
+  /**
+   * Save concept text to backend
+   * Triggers vectorization for AI analysis
+   */
   const handleSaveConceptText = async () => {
     const text = formData.textInputs['initial-concept'] || ''
 
@@ -384,25 +463,28 @@ export function Step1InformationConsolidation({
 
       setConceptTextSaved(true)
       setIsEditingConceptText(false)
-      console.log('✅ Concept text saved successfully')
-    } catch (error: any) {
-      console.error('❌ Failed to save concept text:', error)
-      setConceptUploadError(error.response?.data?.detail || 'Failed to save concept text')
+    } catch (error: Record<string, unknown>) {
+      const errorMsg =
+        (error?.response as Record<string, unknown>)?.data?.detail || 'Failed to save concept text'
+      setConceptUploadError(String(errorMsg))
     } finally {
       setIsSavingConceptText(false)
     }
   }
 
+  /**
+   * Enable editing mode for concept text
+   */
   const handleEditConceptText = () => {
     setIsEditingConceptText(true)
     setConceptTextSaved(false)
   }
 
+  /**
+   * Delete saved concept text from backend
+   */
   const handleDeleteConceptText = async () => {
-    if (!confirm('Delete saved concept text?')) {
-      return
-    }
-    if (!proposalId) {
+    if (!confirm('Delete saved concept text?') || !proposalId) {
       return
     }
 
@@ -417,75 +499,86 @@ export function Step1InformationConsolidation({
 
       setConceptTextSaved(false)
       setIsEditingConceptText(false)
-      console.log('✅ Concept text deleted')
-    } catch (error: any) {
-      console.error('❌ Failed to delete concept text:', error)
-      setConceptUploadError(error.response?.data?.detail || 'Failed to delete concept text')
+    } catch (error: Record<string, unknown>) {
+      const errorMsg =
+        (error?.response as Record<string, unknown>)?.data?.detail ||
+        'Failed to delete concept text'
+      setConceptUploadError(String(errorMsg))
     }
   }
 
-  const handleConceptFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) {
-      return
-    }
-    if (!proposalId) {
-      return
-    }
+  // ============================================================================
+  // HANDLERS - Text Input
+  // ============================================================================
 
-    const file = files[0]
-    setIsUploadingConcept(true)
-    setConceptUploadError('')
-
-    try {
-      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-      await proposalService.uploadConceptFile(proposalId, file)
-
-      // Update local state
-      setFormData(prev => ({
-        ...prev,
-        uploadedFiles: {
-          ...prev.uploadedFiles,
-          'concept-document': [file.name],
-        },
-      }))
-
-      console.log('✅ Concept file uploaded successfully')
-    } catch (error: any) {
-      console.error('❌ Failed to upload concept file:', error)
-      setConceptUploadError(error.response?.data?.detail || 'Failed to upload concept file')
-    } finally {
-      setIsUploadingConcept(false)
-    }
-  }
-
-  const handleDeleteConceptFile = async (filename: string) => {
-    if (!confirm(`Delete ${filename}?`)) {
-      return
-    }
-    if (!proposalId) {
-      return
+  /**
+   * Handle text input changes with auto-save
+   * Debounced save to backend via updateFormData
+   *
+   * @param section - Text input section identifier
+   * @param value - New text value
+   */
+  const handleTextChange = async (section: string, value: string) => {
+    const updatedInputs = {
+      ...formData.textInputs,
+      [section]: value,
     }
 
-    try {
-      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-      await proposalService.deleteConceptFile(proposalId, filename)
+    setFormData(prev => ({
+      ...prev,
+      textInputs: updatedInputs,
+    }))
 
-      setFormData(prev => ({
-        ...prev,
-        uploadedFiles: {
-          ...prev.uploadedFiles,
-          'concept-document': [],
-        },
-      }))
-
-      console.log('✅ Concept file deleted')
-    } catch (error: any) {
-      console.error('❌ Failed to delete concept file:', error)
-      setConceptUploadError(error.response?.data?.detail || 'Failed to delete concept file')
+    // Auto-save to backend if proposal exists
+    if (proposalId) {
+      try {
+        await updateFormData({
+          uploadedFiles: formData.uploadedFiles,
+          textInputs: updatedInputs,
+        })
+      } catch (error) {
+        // Silent fail - localStorage will preserve the change
+      }
     }
   }
 
-  // Show skeleton until proposal is loaded
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
+
+  /**
+   * Get count of uploaded files for a section
+   *
+   * @param section - Section identifier
+   * @returns Number of uploaded files
+   */
+  const getUploadedFileCount = (section: string): number => {
+    return formData.uploadedFiles[section]?.length || 0
+  }
+
+  /**
+   * Check if all required files are uploaded
+   * Required: RFP document + (Concept text OR concept document)
+   *
+   * @returns True if all requirements met
+   */
+  const hasRequiredFiles = (): boolean => {
+    const hasRFP = getUploadedFileCount('rfp-document') > 0
+    const hasConcept =
+      (formData.textInputs['initial-concept'] || '').length >= 100 ||
+      getUploadedFileCount('concept-document') > 0
+
+    return hasRFP && hasConcept
+  }
+
+  // ============================================================================
+  // RENDER - Loading States
+  // ============================================================================
+
+  if (isLoading) {
+    return <Step1Skeleton />
+  }
+
   if (!proposalId) {
     return (
       <div className={styles.mainContent}>
@@ -502,19 +595,23 @@ export function Step1InformationConsolidation({
     )
   }
 
+  // ============================================================================
+  // RENDER - Main Content
+  // ============================================================================
+
   return (
     <div className={styles.mainContent}>
-      {/* Header */}
-      <div className={styles.stepHeader}>
+      {/* ===== Header Section ===== */}
+      <header className={styles.stepHeader}>
         <h1 className={styles.stepMainTitle}>Step 1: Information Consolidation</h1>
         <p className={styles.stepMainDescription}>
           Gather all necessary context: RFPs, reference proposals, existing work, and initial
           concepts
         </p>
-      </div>
+      </header>
 
-      {/* Progress Card */}
-      <div className={styles.progressCard}>
+      {/* ===== Progress Card ===== */}
+      <section className={styles.progressCard} aria-label="Information gathering progress">
         <div className={styles.progressCardHeader}>
           <div className={styles.progressCardInfo}>
             <h3 className={styles.progressCardTitle}>Information Gathering Progress</h3>
@@ -533,7 +630,7 @@ export function Step1InformationConsolidation({
             <span className={styles.progressLabel}>required sections complete</span>
           </div>
         </div>
-        <div className={styles.progressCardBar}>
+        <div className={styles.progressCardBar} role="progressbar" aria-valuenow={hasRequiredFiles() ? 100 : getUploadedFileCount('rfp-document') > 0 ? 50 : 0} aria-valuemin={0} aria-valuemax={100}>
           <div
             className={styles.progressCardFill}
             style={{
@@ -545,10 +642,10 @@ export function Step1InformationConsolidation({
             }}
           />
         </div>
-      </div>
+      </section>
 
-      {/* Next Steps Card */}
-      <div className={styles.nextStepsCard}>
+      {/* ===== Next Steps Info Card ===== */}
+      <section className={styles.nextStepsCard}>
         <h3 className={styles.nextStepsTitle}>Next Steps</h3>
         <p className={styles.nextStepsDescription}>
           Once you complete this information gathering, our AI will analyze your inputs and provide:
@@ -560,14 +657,16 @@ export function Step1InformationConsolidation({
           <li>Team skills and roles analysis</li>
           <li>Project roadmap with deadlines and milestones</li>
         </ul>
-      </div>
+      </section>
 
-      {/* RFP Upload Section */}
-      <div className={styles.uploadSection}>
+      {/* ===== RFP Upload Section ===== */}
+      <section className={styles.uploadSection} aria-labelledby="rfp-section-title">
         <div className={styles.uploadSectionHeader}>
-          <FileText className={styles.uploadSectionIcon} size={20} />
+          <FileText className={styles.uploadSectionIcon} size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
-            <h3 className={styles.uploadSectionTitle}>RFP / Call for Proposals*</h3>
+            <h3 id="rfp-section-title" className={styles.uploadSectionTitle}>
+              RFP / Call for Proposals*
+            </h3>
             <p className={styles.uploadSectionDescription}>
               Upload the official Request for Proposals document. This is essential for
               understanding donor requirements and evaluation criteria.
@@ -577,8 +676,8 @@ export function Step1InformationConsolidation({
 
         {/* Missing RFP Warning */}
         {!hasRequiredFiles() && (
-          <div className={styles.warningCard}>
-            <AlertTriangle className={styles.warningIcon} size={16} />
+          <div className={styles.warningCard} role="alert">
+            <AlertTriangle className={styles.warningIcon} size={16} aria-hidden="true" />
             <div className={styles.warningContent}>
               <p className={styles.warningTitle}>Missing RFP Document</p>
               <p className={styles.warningDescription}>
@@ -588,12 +687,12 @@ export function Step1InformationConsolidation({
           </div>
         )}
 
-        {/* Upload Area */}
+        {/* Upload Area or Uploaded File Display */}
         {getUploadedFileCount('rfp-document') === 0 ? (
           <div className={styles.uploadArea}>
             {isUploadingRFP ? (
               <>
-                <div className={styles.uploadingSpinner}>
+                <div className={styles.uploadingSpinner} aria-live="polite">
                   <div className={styles.spinner}></div>
                 </div>
                 <p className={styles.uploadAreaTitle}>Uploading and processing...</p>
@@ -603,7 +702,7 @@ export function Step1InformationConsolidation({
               </>
             ) : (
               <>
-                <FileText className={styles.uploadAreaIcon} size={32} />
+                <FileText className={styles.uploadAreaIcon} size={32} aria-hidden="true" />
                 <p className={styles.uploadAreaTitle}>Drop RFP file here or click to upload</p>
                 <p className={styles.uploadAreaDescription}>Supports PDF files up to 10MB</p>
                 <input
@@ -613,6 +712,7 @@ export function Step1InformationConsolidation({
                   className={styles.hiddenInput}
                   id="rfp-document"
                   disabled={isUploadingRFP}
+                  aria-label="Upload RFP document"
                 />
                 <label htmlFor="rfp-document" className={styles.uploadButton}>
                   Choose File
@@ -625,8 +725,8 @@ export function Step1InformationConsolidation({
             <div className={styles.uploadedFileHeader}>
               <div className={styles.uploadedFileInfo}>
                 <div className={styles.uploadedFileIconWrapper}>
-                  <FileText className={styles.uploadedFileIcon} size={24} />
-                  <div className={styles.uploadedFileCheck}>
+                  <FileText className={styles.uploadedFileIcon} size={24} aria-hidden="true" />
+                  <div className={styles.uploadedFileCheck} aria-label="Upload successful">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <circle cx="8" cy="8" r="8" fill="#10b981" />
                       <path
@@ -646,7 +746,7 @@ export function Step1InformationConsolidation({
                       : formData.uploadedFiles['rfp-document']?.[0]?.name || 'Document'}
                   </p>
                   <p className={styles.uploadedFileDescription}>
-                    ✓ Document uploaded successfully • Ready for analysis
+                    Document uploaded successfully • Ready for analysis
                   </p>
                 </div>
               </div>
@@ -654,6 +754,7 @@ export function Step1InformationConsolidation({
                 onClick={() => handleDeleteFile('rfp-document', 0)}
                 className={styles.deleteFileButton}
                 title="Delete and upload a different file"
+                aria-label="Delete RFP document"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path
@@ -679,10 +780,11 @@ export function Step1InformationConsolidation({
                 className={styles.hiddenInput}
                 id="rfp-document-replace"
                 disabled={isUpdating || isUploadingRFP}
+                aria-label="Replace RFP document"
               />
               {rfpAnalysis && (
                 <p className={styles.replaceHint}>
-                  ℹ️ Replacing will automatically trigger re-analysis
+                  Replacing will automatically trigger re-analysis
                 </p>
               )}
             </div>
@@ -691,22 +793,24 @@ export function Step1InformationConsolidation({
 
         {/* Upload Error Message */}
         {uploadError && (
-          <div className={styles.errorMessage}>
-            <AlertTriangle size={16} />
+          <div className={styles.errorMessage} role="alert">
+            <AlertTriangle size={16} aria-hidden="true" />
             <span>{uploadError}</span>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Reference Proposals Section - TEMPORARILY DISABLED */}
-      <div className={`${styles.uploadSection} ${styles.disabledSection}`}>
+      {/* ===== Reference Proposals Section (Coming Soon) ===== */}
+      <section className={`${styles.uploadSection} ${styles.disabledSection}`} aria-labelledby="reference-section-title">
         <div className={styles.disabledBadge}>
           <span>Coming Soon</span>
         </div>
         <div className={styles.uploadSectionHeader}>
-          <FileText className={styles.uploadSectionIcon} size={20} />
+          <FileText className={styles.uploadSectionIcon} size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
-            <h3 className={styles.uploadSectionTitle}>Reference Proposals</h3>
+            <h3 id="reference-section-title" className={styles.uploadSectionTitle}>
+              Reference Proposals
+            </h3>
             <p className={styles.uploadSectionDescription}>
               Upload successful proposals to this donor or similar calls. These help understand
               donor preferences and winning strategies.
@@ -715,7 +819,7 @@ export function Step1InformationConsolidation({
         </div>
 
         <div className={`${styles.uploadArea} ${styles.uploadAreaDisabled}`}>
-          <FileText className={styles.uploadAreaIcon} size={32} />
+          <FileText className={styles.uploadAreaIcon} size={32} aria-hidden="true" />
           <p className={styles.uploadAreaTitle}>Drop reference proposals here or click to upload</p>
           <p className={styles.uploadAreaDescription}>Multiple files supported</p>
           <input
@@ -726,6 +830,7 @@ export function Step1InformationConsolidation({
             className={styles.hiddenInput}
             id="reference-proposals"
             disabled={true}
+            aria-label="Upload reference proposals (disabled)"
           />
           <label
             htmlFor="reference-proposals"
@@ -734,17 +839,19 @@ export function Step1InformationConsolidation({
             Choose Files
           </label>
         </div>
-      </div>
+      </section>
 
-      {/* Existing Work Section - TEMPORARILY DISABLED */}
-      <div className={`${styles.uploadSection} ${styles.disabledSection}`}>
+      {/* ===== Existing Work Section (Coming Soon) ===== */}
+      <section className={`${styles.uploadSection} ${styles.disabledSection}`} aria-labelledby="existing-work-title">
         <div className={styles.disabledBadge}>
           <span>Coming Soon</span>
         </div>
         <div className={styles.uploadSectionHeader}>
-          <FileText className={styles.uploadSectionIcon} size={20} />
+          <FileText className={styles.uploadSectionIcon} size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
-            <h3 className={styles.uploadSectionTitle}>Existing Work &amp; Experience</h3>
+            <h3 id="existing-work-title" className={styles.uploadSectionTitle}>
+              Existing Work &amp; Experience
+            </h3>
             <p className={styles.uploadSectionDescription}>
               Describe your organization's relevant experience, ongoing projects, and previous work
               that relates to this call.
@@ -758,6 +865,7 @@ export function Step1InformationConsolidation({
           value={formData.textInputs['existing-work'] || ''}
           onChange={e => handleTextChange('existing-work', e.target.value)}
           disabled={true}
+          aria-label="Existing work and experience (disabled)"
         />
 
         <div className={styles.textAreaFooter}>
@@ -778,7 +886,7 @@ export function Step1InformationConsolidation({
           </p>
 
           <div className={`${styles.uploadAreaSmall} ${styles.uploadAreaDisabled}`}>
-            <FileText className={styles.uploadAreaIcon} size={24} />
+            <FileText className={styles.uploadAreaIcon} size={24} aria-hidden="true" />
             <p className={styles.uploadAreaTitle}>Drop supporting files here</p>
             <input
               type="file"
@@ -787,6 +895,7 @@ export function Step1InformationConsolidation({
               className={styles.hiddenInput}
               id="supporting-docs"
               disabled={true}
+              aria-label="Upload supporting documents (disabled)"
             />
             <label
               htmlFor="supporting-docs"
@@ -794,28 +903,18 @@ export function Step1InformationConsolidation({
             >
               Add Files
             </label>
-
-            {/* Show uploaded files */}
-            {getUploadedFileCount('supporting-docs') > 0 && (
-              <div className={styles.fileList}>
-                {formData.uploadedFiles['supporting-docs']?.map((file, index) => (
-                  <div key={index} className={styles.fileItem}>
-                    <FileText size={16} />
-                    {file.name}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Initial Concept Section */}
-      <div className={styles.uploadSection}>
+      {/* ===== Initial Concept Section ===== */}
+      <section className={styles.uploadSection} aria-labelledby="concept-section-title">
         <div className={styles.uploadSectionHeader}>
-          <FileText className={styles.uploadSectionIcon} size={20} />
+          <FileText className={styles.uploadSectionIcon} size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
-            <h3 className={styles.uploadSectionTitle}>Initial Concept or Direction*</h3>
+            <h3 id="concept-section-title" className={styles.uploadSectionTitle}>
+              Initial Concept or Direction*
+            </h3>
             <p className={styles.uploadSectionDescription}>
               Outline your initial ideas, approach, or hypothesis for this proposal. You can write
               text or upload a document outlining your concept.
@@ -828,7 +927,8 @@ export function Step1InformationConsolidation({
           placeholder="Describe your initial concept, proposed approach, target beneficiaries, expected outcomes, implementation strategy, or any specific innovations you plan to include..."
           value={formData.textInputs['initial-concept'] || ''}
           onChange={e => handleTextChange('initial-concept', e.target.value)}
-          disabled={(conceptTextSaved && !isEditingConceptText) || isSavingConceptText}
+          disabled={((conceptTextSaved && !isEditingConceptText) || isSavingConceptText) as boolean}
+          aria-label="Initial concept text"
         />
 
         <div className={styles.textAreaFooter}>
@@ -849,16 +949,17 @@ export function Step1InformationConsolidation({
                   isSavingConceptText || (formData.textInputs['initial-concept'] || '').length < 100
                 }
                 className={styles.saveButton}
+                aria-label="Save concept text"
               >
                 {isSavingConceptText ? 'Saving...' : 'Save Text'}
               </button>
             ) : (
               <>
-                <span className={styles.savedIndicator}>✓ Text saved</span>
-                <button onClick={handleEditConceptText} className={styles.editButton}>
+                <span className={styles.savedIndicator} aria-live="polite">Text saved</span>
+                <button onClick={handleEditConceptText} className={styles.editButton} aria-label="Edit concept text">
                   Edit
                 </button>
-                <button onClick={handleDeleteConceptText} className={styles.deleteButton}>
+                <button onClick={handleDeleteConceptText} className={styles.deleteButton} aria-label="Delete concept text">
                   Delete
                 </button>
               </>
@@ -867,13 +968,13 @@ export function Step1InformationConsolidation({
         </div>
 
         {conceptUploadError && (
-          <div className={styles.errorMessage}>
-            <AlertTriangle size={16} />
+          <div className={styles.errorMessage} role="alert">
+            <AlertTriangle size={16} aria-hidden="true" />
             <span>{conceptUploadError}</span>
           </div>
         )}
 
-        {/* Upload Alternative */}
+        {/* Upload Alternative - Concept Document */}
         <div className={styles.uploadAlternative}>
           <h4 className={styles.uploadAlternativeTitle}>Or Upload Concept Document</h4>
           <p className={styles.uploadAlternativeDescription}>
@@ -884,14 +985,14 @@ export function Step1InformationConsolidation({
             <div className={styles.uploadAreaSmall}>
               {isUploadingConcept ? (
                 <>
-                  <div className={styles.uploadingSpinner}>
+                  <div className={styles.uploadingSpinner} aria-live="polite">
                     <div className={styles.spinner}></div>
                   </div>
                   <p className={styles.uploadAreaTitle}>Uploading concept file...</p>
                 </>
               ) : (
                 <>
-                  <FileText className={styles.uploadAreaIcon} size={24} />
+                  <FileText className={styles.uploadAreaIcon} size={24} aria-hidden="true" />
                   <p className={styles.uploadAreaTitle}>Drop concept document here</p>
                   <input
                     type="file"
@@ -900,6 +1001,7 @@ export function Step1InformationConsolidation({
                     className={styles.hiddenInput}
                     id="concept-document"
                     disabled={isUploadingConcept}
+                    aria-label="Upload concept document"
                   />
                   <label htmlFor="concept-document" className={styles.uploadButtonSecondary}>
                     {isUploadingConcept ? 'Uploading...' : 'Choose File'}
@@ -912,8 +1014,8 @@ export function Step1InformationConsolidation({
               <div className={styles.uploadedFileHeader}>
                 <div className={styles.uploadedFileInfo}>
                   <div className={styles.uploadedFileIconWrapper}>
-                    <FileText className={styles.uploadedFileIcon} size={24} />
-                    <div className={styles.uploadedFileCheck}>
+                    <FileText className={styles.uploadedFileIcon} size={24} aria-hidden="true" />
+                    <div className={styles.uploadedFileCheck} aria-label="Upload successful">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <circle cx="8" cy="8" r="8" fill="#10b981" />
                         <path
@@ -933,7 +1035,7 @@ export function Step1InformationConsolidation({
                         : formData.uploadedFiles['concept-document']?.[0]?.name || 'Document'}
                     </p>
                     <p className={styles.uploadedFileDescription}>
-                      ✓ Concept document uploaded successfully
+                      Concept document uploaded successfully
                     </p>
                   </div>
                 </div>
@@ -943,6 +1045,7 @@ export function Step1InformationConsolidation({
                   }
                   className={styles.deleteFileButton}
                   title="Delete and upload a different file"
+                  aria-label="Delete concept document"
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path
@@ -957,9 +1060,9 @@ export function Step1InformationConsolidation({
             </div>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Manual RFP Input Modal */}
+      {/* ===== Manual RFP Input Modal ===== */}
       <ManualRFPInput
         isOpen={showManualInput}
         onClose={() => setShowManualInput(false)}
