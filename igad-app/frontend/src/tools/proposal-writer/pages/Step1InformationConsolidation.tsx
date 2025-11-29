@@ -556,21 +556,6 @@ export function Step1InformationConsolidation({
     return formData.uploadedFiles[section]?.length || 0
   }
 
-  /**
-   * Check if all required files are uploaded
-   * Required: RFP document + (Concept text OR concept document)
-   *
-   * @returns True if all requirements met
-   */
-  const hasRequiredFiles = (): boolean => {
-    const hasRFP = getUploadedFileCount('rfp-document') > 0
-    const hasConcept =
-      (formData.textInputs['initial-concept'] || '').length >= 100 ||
-      getUploadedFileCount('concept-document') > 0
-
-    return hasRFP && hasConcept
-  }
-
   // ============================================================================
   // RENDER - Loading States
   // ============================================================================
