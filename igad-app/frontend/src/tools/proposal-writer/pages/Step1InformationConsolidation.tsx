@@ -1026,9 +1026,21 @@ export function Step1InformationConsolidation({
           placeholder="Describe your initial concept, proposed approach, target beneficiaries, expected outcomes, implementation strategy, or any specific innovations you plan to include..."
           value={formData.textInputs['initial-concept'] || ''}
           onChange={e => handleTextChange('initial-concept', e.target.value)}
-          disabled={((conceptTextSaved && !isEditingConceptText) || isSavingConceptText) as boolean}
+          disabled={
+            ((conceptTextSaved && !isEditingConceptText) || isSavingConceptText ||
+              getUploadedFileCount('concept-document') > 0) as boolean
+          }
           aria-label="Initial concept text"
         />
+
+        {getUploadedFileCount('concept-document') > 0 && (
+          <div className={styles.infoMessage} role="alert">
+            <p>
+              You have uploaded a concept document. To use text input instead, please delete the
+              document first.
+            </p>
+          </div>
+        )}
 
         <div className={styles.textAreaFooter}>
           <div>
@@ -1089,6 +1101,15 @@ export function Step1InformationConsolidation({
           <p className={styles.uploadAlternativeDescription}>
             Upload an existing Word document, PDF, or other file outlining your concept instead
           </p>
+
+          {(formData.textInputs['initial-concept'] || '').length > 0 && (
+            <div className={styles.infoMessage} role="alert">
+              <p>
+                You have text in the concept field. To upload a document instead, please clear the
+                text first.
+              </p>
+            </div>
+          )}
 
           {getUploadedFileCount('concept-document') === 0 ? (
             <div
