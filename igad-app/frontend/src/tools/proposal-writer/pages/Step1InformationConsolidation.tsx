@@ -10,6 +10,13 @@ import { apiClient } from '@/shared/services/apiClient'
 import ManualRFPInput from '@/tools/proposal-writer/components/ManualRFPInput'
 
 // ============================================================================
+// CONSTANTS
+// ============================================================================
+
+/** Maximum file size in bytes (10 MB) */
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -227,6 +234,13 @@ export function Step1InformationConsolidation({
 
     const file = files[0]
 
+    // Validate file size
+    const sizeError = validateFileSize(file)
+    if (sizeError) {
+      setUploadError(sizeError)
+      return
+    }
+
     // RFP documents require special processing (S3 + vectorization)
     if (proposalId && section === 'rfp-document') {
       setIsUploadingRFP(true)
@@ -388,6 +402,14 @@ export function Step1InformationConsolidation({
     }
 
     const file = files[0]
+
+    // Validate file size
+    const sizeError = validateFileSize(file)
+    if (sizeError) {
+      setConceptUploadError(sizeError)
+      return
+    }
+
     setIsUploadingConcept(true)
     setConceptUploadError('')
 
@@ -630,6 +652,44 @@ export function Step1InformationConsolidation({
    */
   const getUploadedFileCount = (section: string): number => {
     return formData.uploadedFiles[section]?.length || 0
+  }
+
+  /**
+   * Validate file size
+   * Returns error message if file exceeds maximum size, empty string if valid
+   *
+   * @param file - File to validate
+   * @returns Error message or empty string
+   */
+  const validateFileSize = (file: File): string => {
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2)
+      const maxMB = MAX_FILE_SIZE / (1024 * 1024)
+      return `File size (${sizeMB} MB) exceeds maximum allowed size of ${maxMB} MB`
+    }
+    return ''
+  }
+
+  /**
+   * Validate files before upload
+   * Checks size and returns error message if any file is invalid
+   *
+   * @param files - FileList to validate
+   * @returns Error message or empty string
+   */
+  const validateFiles = (files: FileList | null): string => {
+    if (!files || files.length === 0) {
+      return ''
+    }
+
+    for (let i = 0; i < files.length; i++) {
+      const error = validateFileSize(files[i])
+      if (error) {
+        return error
+      }
+    }
+
+    return ''
   }
 
   // ============================================================================
