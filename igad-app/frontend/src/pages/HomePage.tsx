@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, BarChart3, Search, Edit, Mail, Briefcase } from 'lucide-react'
+import { useResponsiveIconSize } from '../shared/hooks/useResponsiveIconSize'
 import styles from './HomePage.module.css'
 
 /**
@@ -17,6 +18,9 @@ import styles from './HomePage.module.css'
  * @returns {JSX.Element} The HomePage component
  */
 export function HomePage() {
+  // Responsive icon sizing: 24px (mobile) -> 28px (tablet) -> 32px (desktop)
+  const iconSize = useResponsiveIconSize()
+
   return (
     <div className={styles.container}>
       {/* ===========================
@@ -76,7 +80,7 @@ export function HomePage() {
                 className={`${styles.iconContainer} ${styles.iconContainerAvailable}`}
                 aria-hidden="true"
               >
-                <Edit size={32} color="#008236" strokeWidth={2.67} />
+                <Edit size={iconSize} color="#008236" strokeWidth={2.67} />
               </div>
               <h3 className={styles.toolTitle}>Proposal Writer</h3>
               <p className={styles.toolDescription}>
@@ -104,7 +108,7 @@ export function HomePage() {
                 className={`${styles.iconContainer} ${styles.iconContainerAvailable}`}
                 aria-hidden="true"
               >
-                <Mail size={32} color="#008236" strokeWidth={2.67} />
+                <Mail size={iconSize} color="#008236" strokeWidth={2.67} />
               </div>
               <h3 className={styles.toolTitle}>Newsletter Generator</h3>
               <p className={styles.toolDescription}>
@@ -132,7 +136,7 @@ export function HomePage() {
                 className={`${styles.iconContainer} ${styles.iconContainerDisabled}`}
                 aria-hidden="true"
               >
-                <BarChart3 size={32} color="#6A7282" strokeWidth={2.67} />
+                <BarChart3 size={iconSize} color="#6A7282" strokeWidth={2.67} />
               </div>
               <h3 className={styles.toolTitle}>Report Generator</h3>
               <p className={styles.toolDescription}>
@@ -159,7 +163,7 @@ export function HomePage() {
                 className={`${styles.iconContainer} ${styles.iconContainerDisabled}`}
                 aria-hidden="true"
               >
-                <Search size={32} color="#6A7282" strokeWidth={2.67} />
+                <Search size={iconSize} color="#6A7282" strokeWidth={2.67} />
               </div>
               <h3 className={styles.toolTitle}>Policy Analyzer</h3>
               <p className={styles.toolDescription}>
@@ -186,7 +190,7 @@ export function HomePage() {
                 className={`${styles.iconContainer} ${styles.iconContainerDisabled}`}
                 aria-hidden="true"
               >
-                <Briefcase size={32} color="#6A7282" strokeWidth={2.67} />
+                <Briefcase size={iconSize} color="#6A7282" strokeWidth={2.67} />
               </div>
               <h3 className={styles.toolTitle}>Agribusiness Hub</h3>
               <p className={styles.toolDescription}>
