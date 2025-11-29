@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================================================
 import { useEffect, useState } from 'react'
-import { FileText, AlertTriangle } from 'lucide-react'
+import { FileText, AlertTriangle, Files, Briefcase, Lightbulb } from 'lucide-react'
 import { useProposal } from '@/tools/proposal-writer/hooks/useProposal'
 import { StepProps } from './stepConfig'
 import styles from './Step1InformationConsolidation.module.css'
@@ -606,63 +606,30 @@ export function Step1InformationConsolidation({
         <h1 className={styles.stepMainTitle}>Step 1: Information Consolidation</h1>
         <p className={styles.stepMainDescription}>
           Gather all necessary context: RFPs, reference proposals, existing work, and initial
-          concepts
+          concepts. Once you complete this step, the AI will analyze your inputs to guide proposal
+          development.
         </p>
       </header>
 
-      {/* ===== Progress Card ===== */}
-      <section className={styles.progressCard} aria-label="Information gathering progress">
-        <div className={styles.progressCardHeader}>
-          <div className={styles.progressCardInfo}>
-            <h3 className={styles.progressCardTitle}>Information Gathering Progress</h3>
-            <p className={styles.progressCardDescription}>
-              Complete RFP and Initial Concept sections to proceed with AI analysis
-            </p>
-          </div>
-          <div className={styles.progressCardStats}>
-            <span className={styles.progressCount}>
-              {hasRequiredFiles()
-                ? '2/2'
-                : getUploadedFileCount('rfp-document') > 0
-                  ? '1/2'
-                  : '0/2'}
-            </span>
-            <span className={styles.progressLabel}>required sections complete</span>
-          </div>
-        </div>
-        <div className={styles.progressCardBar} role="progressbar" aria-valuenow={hasRequiredFiles() ? 100 : getUploadedFileCount('rfp-document') > 0 ? 50 : 0} aria-valuemin={0} aria-valuemax={100}>
-          <div
-            className={styles.progressCardFill}
-            style={{
-              width: hasRequiredFiles()
-                ? '100%'
-                : getUploadedFileCount('rfp-document') > 0
-                  ? '50%'
-                  : '1%',
-            }}
-          />
-        </div>
-      </section>
-
-      {/* ===== Next Steps Info Card ===== */}
-      <section className={styles.nextStepsCard}>
-        <h3 className={styles.nextStepsTitle}>Next Steps</h3>
-        <p className={styles.nextStepsDescription}>
-          Once you complete this information gathering, our AI will analyze your inputs and provide:
-        </p>
-        <ul className={styles.nextStepsList}>
-          <li>Fit assessment between your work and RFP requirements</li>
-          <li>Specific suggestions for strengthening your proposal</li>
-          <li>Checklist of mandatory RFP items to address</li>
-          <li>Team skills and roles analysis</li>
-          <li>Project roadmap with deadlines and milestones</li>
-        </ul>
-      </section>
+      {/* ===== Title Field ===== */}
+      <div className={styles.titleField}>
+        <label className={styles.titleLabel}>
+          Title<span className={styles.requiredAsterisk}>*</span>
+        </label>
+        <input
+          type="text"
+          placeholder="Write the title"
+          value={formData.textInputs['proposal-title'] || ''}
+          onChange={e => handleTextChange('proposal-title', e.target.value)}
+          className={styles.titleInput}
+          aria-label="Proposal title"
+        />
+      </div>
 
       {/* ===== RFP Upload Section ===== */}
       <section className={styles.uploadSection} aria-labelledby="rfp-section-title">
         <div className={styles.uploadSectionHeader}>
-          <FileText className={styles.uploadSectionIcon} size={20} aria-hidden="true" />
+          <FileText color="#DF3737" size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
             <h3 id="rfp-section-title" className={styles.uploadSectionTitle}>
               RFP / Call for Proposals*
@@ -801,12 +768,15 @@ export function Step1InformationConsolidation({
       </section>
 
       {/* ===== Reference Proposals Section (Coming Soon) ===== */}
-      <section className={`${styles.uploadSection} ${styles.disabledSection}`} aria-labelledby="reference-section-title">
+      <section
+        className={`${styles.uploadSection} ${styles.disabledSection}`}
+        aria-labelledby="reference-section-title"
+      >
         <div className={styles.disabledBadge}>
           <span>Coming Soon</span>
         </div>
         <div className={styles.uploadSectionHeader}>
-          <FileText className={styles.uploadSectionIcon} size={20} aria-hidden="true" />
+          <Files color="#00A63E" size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
             <h3 id="reference-section-title" className={styles.uploadSectionTitle}>
               Reference Proposals
@@ -842,19 +812,22 @@ export function Step1InformationConsolidation({
       </section>
 
       {/* ===== Existing Work Section (Coming Soon) ===== */}
-      <section className={`${styles.uploadSection} ${styles.disabledSection}`} aria-labelledby="existing-work-title">
+      <section
+        className={`${styles.uploadSection} ${styles.disabledSection}`}
+        aria-labelledby="existing-work-title"
+      >
         <div className={styles.disabledBadge}>
           <span>Coming Soon</span>
         </div>
         <div className={styles.uploadSectionHeader}>
-          <FileText className={styles.uploadSectionIcon} size={20} aria-hidden="true" />
+          <Briefcase color="#9F1239" size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
             <h3 id="existing-work-title" className={styles.uploadSectionTitle}>
               Existing Work &amp; Experience
             </h3>
             <p className={styles.uploadSectionDescription}>
-              Describe your organization's relevant experience, ongoing projects, and previous work
-              that relates to this call.
+              Describe your organization&apos;s relevant experience, ongoing projects, and previous
+              work that relates to this call.
             </p>
           </div>
         </div>
@@ -910,7 +883,7 @@ export function Step1InformationConsolidation({
       {/* ===== Initial Concept Section ===== */}
       <section className={styles.uploadSection} aria-labelledby="concept-section-title">
         <div className={styles.uploadSectionHeader}>
-          <FileText className={styles.uploadSectionIcon} size={20} aria-hidden="true" />
+          <Lightbulb color="#2563EB" size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
             <h3 id="concept-section-title" className={styles.uploadSectionTitle}>
               Initial Concept or Direction*
@@ -955,11 +928,21 @@ export function Step1InformationConsolidation({
               </button>
             ) : (
               <>
-                <span className={styles.savedIndicator} aria-live="polite">Text saved</span>
-                <button onClick={handleEditConceptText} className={styles.editButton} aria-label="Edit concept text">
+                <span className={styles.savedIndicator} aria-live="polite">
+                  Text saved
+                </span>
+                <button
+                  onClick={handleEditConceptText}
+                  className={styles.editButton}
+                  aria-label="Edit concept text"
+                >
                   Edit
                 </button>
-                <button onClick={handleDeleteConceptText} className={styles.deleteButton} aria-label="Delete concept text">
+                <button
+                  onClick={handleDeleteConceptText}
+                  className={styles.deleteButton}
+                  aria-label="Delete concept text"
+                >
                   Delete
                 </button>
               </>
@@ -1040,9 +1023,14 @@ export function Step1InformationConsolidation({
                   </div>
                 </div>
                 <button
-                  onClick={() =>
-                    handleDeleteConceptFile(formData.uploadedFiles['concept-document'][0])
-                  }
+                  onClick={() => {
+                    const conceptFile = formData.uploadedFiles['concept-document'][0]
+                    const filename =
+                      typeof conceptFile === 'string' ? conceptFile : conceptFile?.name
+                    if (filename) {
+                      handleDeleteConceptFile(filename)
+                    }
+                  }}
                   className={styles.deleteFileButton}
                   title="Delete and upload a different file"
                   aria-label="Delete concept document"
