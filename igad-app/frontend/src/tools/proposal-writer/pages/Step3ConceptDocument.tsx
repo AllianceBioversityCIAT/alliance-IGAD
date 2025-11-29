@@ -13,6 +13,10 @@ interface Step3Props {
   ) => void
   onEditSections?: () => void
   onNextStep?: () => void
+  onConceptEvaluationChange?: (data: {
+    selectedSections: string[]
+    userComments?: { [key: string]: string }
+  }) => void
 }
 
 interface SectionNeedingElaboration {
@@ -35,6 +39,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
   onRegenerateDocument,
   onEditSections,
   onNextStep,
+  onConceptEvaluationChange,
 }) => {
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedSections, setSelectedSections] = useState<string[]>([])
@@ -519,6 +524,23 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
     }
   }, [showEditModal, conceptAnalysis])
 
+  // Synchronize section changes with parent component
+  useEffect(() => {
+    if (!onConceptEvaluationChange || selectedSections.length === 0) {
+      return
+    }
+
+    console.log('📤 Syncing concept evaluation with parent:')
+    console.log(`   Selected sections: ${selectedSections.length}`)
+    console.log(`   Sections:`, selectedSections)
+    console.log(`   Comments:`, userComments)
+
+    onConceptEvaluationChange({
+      selectedSections,
+      userComments: Object.keys(userComments).length > 0 ? userComments : undefined,
+    })
+  }, [selectedSections, userComments, onConceptEvaluationChange])
+
   const handleRegenerateDocument = async () => {
     if (!proposalId || !onRegenerateDocument) {
       alert('Unable to regenerate document. Please try again.')
@@ -627,7 +649,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                   Edit Sections
                 </h2>
                 <p className={styles.modalSubtitle}>
-                  Select which sections to include and add comments to guide content generation
+                  Select which sections to include in the regenerated document
                 </p>
               </div>
               <button className={styles.modalCloseButton} onClick={() => setShowEditModal(false)}>
@@ -675,7 +697,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                           className={styles.expandButton}
                           onClick={() => toggleSectionExpansion(section.section)}
                         >
-                          {isExpanded ? 'See less' : 'See more and comment'} ▼
+                          {isExpanded ? 'See less' : 'See more'} ▼
                         </button>
                       </div>
 
@@ -693,18 +715,6 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                               </ul>
                             </div>
                           )}
-
-                          <textarea
-                            className={styles.commentBox}
-                            placeholder="Add your comments for this section..."
-                            value={userComments[section.section] || ''}
-                            onChange={e =>
-                              setUserComments({
-                                ...userComments,
-                                [section.section]: e.target.value,
-                              })
-                            }
-                          />
                         </div>
                       )}
                     </div>

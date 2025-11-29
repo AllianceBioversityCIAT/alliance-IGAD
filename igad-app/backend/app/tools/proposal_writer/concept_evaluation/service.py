@@ -1,13 +1,31 @@
 """
-Simple Concept Analyzer - Analyzes Initial Concept using text or files
+Concept Evaluation Service
+
+Evaluates initial project concepts against RFP requirements to assess alignment:
+- Thematic relevance to donor priorities
+- Geographic and target population alignment
+- Methodological approach suitability
+- Completeness for proposal development
+
+The service:
+1. Retrieves concept document (text file or PDF/DOCX)
+2. Loads RFP analysis for context
+3. Combines with dynamic prompt from DynamoDB
+4. Sends to Claude for structured evaluation
+5. Returns alignment assessment and improvement recommendations
 """
 
 import json
 import os
-from typing import Any, Dict
+import re
+import time
+import traceback
+from typing import Any, Dict, Optional
+
 import boto3
 from boto3.dynamodb.conditions import Attr
 from PyPDF2 import PdfReader
+from docx import Document
 from io import BytesIO
 
 from app.database.client import db_client
@@ -16,261 +34,475 @@ from app.tools.proposal_writer.concept_evaluation.config import CONCEPT_EVALUATI
 
 
 class SimpleConceptAnalyzer:
+    """
+    Evaluates initial concepts against RFP requirements.
+
+    Workflow:
+    1. Load concept document from S3 (text, PDF, or DOCX)
+    2. Retrieve RFP analysis for context
+    3. Load evaluation prompt from DynamoDB
+    4. Inject context into prompt
+    5. Send to Claude via Bedrock
+    6. Parse and return evaluation results
+    """
+
     def __init__(self):
-        self.s3 = boto3.client('s3')
-        self.bucket = os.environ.get('PROPOSALS_BUCKET')
+        """Initialize S3, DynamoDB, and Bedrock clients."""
+        self.s3 = boto3.client("s3")
+        self.bucket = os.environ.get("PROPOSALS_BUCKET")
         if not self.bucket:
             raise Exception("PROPOSALS_BUCKET environment variable not set")
+
         self.bedrock = BedrockService()
-        
-        self.dynamodb = boto3.resource('dynamodb')
-        self.table_name = os.environ.get('TABLE_NAME', 'igad-testing-main-table')
-    
-    def analyze_concept(self, proposal_id: str, rfp_analysis: Dict) -> Dict[str, Any]:
-        """Analyze Initial Concept (synchronous for Lambda worker)"""
+        self.dynamodb = boto3.resource("dynamodb")
+        self.table_name = os.environ.get("TABLE_NAME", "igad-testing-main-table")
+
+    def analyze_concept(
+        self, proposal_id: str, rfp_analysis: Dict
+    ) -> Dict[str, Any]:
+        """
+        Evaluate concept against RFP requirements.
+
+        Args:
+            proposal_id: Unique proposal identifier
+            rfp_analysis: RFP analysis data from step 1
+
+        Returns:
+            Dict with structure:
+            {
+                "concept_analysis": {
+                    "fit_assessment": {...},
+                    "strong_aspects": [...],
+                    "sections_needing_elaboration": [...],
+                    "strategic_verdict": "..."
+                },
+                "status": "completed"
+            }
+
+        Raises:
+            Exception: If concept not found or analysis fails
+        """
         try:
-            # 1. Get proposal from DynamoDB
-            print(f"📋 Getting proposal: {proposal_id}")
+            # Step 1: Retrieve proposal metadata
+            print(f"📋 Loading proposal: {proposal_id}")
             proposal = db_client.get_item_sync(
-                pk=f"PROPOSAL#{proposal_id}",
-                sk="METADATA"
+                pk=f"PROPOSAL#{proposal_id}", sk="METADATA"
             )
-            
+
             if not proposal:
                 raise Exception(f"Proposal {proposal_id} not found")
-            
+
             proposal_code = proposal.get("proposalCode")
             if not proposal_code:
                 raise Exception("Proposal code not found")
-            
-            # 2. Get concept text or files from S3
-            print(f"Getting concept for proposal: {proposal_code}")
-            concept_folder = f"{proposal_code}/documents/initial_concept/"
-            
-            concept_text = None
-            
-            # Try to get concept_text.txt first
-            try:
-                text_key = f"{concept_folder}concept_text.txt"
-                print(f"Trying to get concept text: {text_key}")
-                obj = self.s3.get_object(Bucket=self.bucket, Key=text_key)
-                concept_text = obj['Body'].read().decode('utf-8')
-                print(f"✅ Found concept text: {len(concept_text)} characters")
-            except Exception as e:
-                print(f"⚠️ No concept_text.txt found: {str(e)}")
-            
-            # If no text, try to extract from files
-            if not concept_text:
-                print("Looking for concept files...")
-                response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=concept_folder)
-                
-                if 'Contents' in response and len(response['Contents']) > 0:
-                    # Find first PDF/DOC/DOCX file
-                    concept_file = None
-                    for obj in response['Contents']:
-                        key = obj['Key']
-                        if key.lower().endswith(('.pdf', '.doc', '.docx')) and not key.endswith('/'):
-                            concept_file = key
-                            break
-                    
-                    if concept_file:
-                        print(f"Extracting text from: {concept_file}")
-                        concept_text = self.extract_text_from_file(concept_file)
-                    else:
-                        raise Exception("No concept files found (PDF/DOC/DOCX)")
-                else:
-                    raise Exception("No concept content found. Please add concept text or upload a file.")
-            
+
+            # Step 2: Retrieve concept document
+            print(f"🔍 Locating concept document for: {proposal_code}")
+            concept_text = self._get_concept_text_from_s3(proposal_code)
+
+            # Step 3: Validate concept
             if not concept_text or len(concept_text) < 50:
-                raise Exception("Concept text is too short or empty")
-            
-            print(f"Concept text ready: {len(concept_text)} characters")
-            
-            # 3. Get prompt from DynamoDB
-            print("📝 Loading prompt from DynamoDB...")
+                raise Exception("Concept text is too short or empty (minimum 50 characters)")
+
+            print(f"✅ Concept loaded: {len(concept_text)} characters")
+
+            # Step 4: Load evaluation prompt
+            print("📝 Loading evaluation prompt...")
             prompt_parts = self.get_prompt_from_dynamodb()
-            
+
             if not prompt_parts:
-                raise Exception("No active prompt found for Initial Concept analysis")
-            
-            print("✅ Using DynamoDB prompt")
-            
-            # 4. Prepare prompts with context
-            # Handle long concept documents intelligently
-            max_chars = 100000  # Increased from 8000 to 100000
-            
-            if len(concept_text) > max_chars:
-                print(f"⚠️ Concept text is long ({len(concept_text)} chars), using intelligent truncation...")
-                
-                # Strategy: Keep beginning (context) and end (conclusion)
-                # This preserves both problem statement and proposed solutions
-                chars_to_keep = max_chars - 200  # Reserve 200 chars for truncation notice
-                beginning_chars = int(chars_to_keep * 0.6)  # 60% from beginning
-                ending_chars = int(chars_to_keep * 0.4)     # 40% from end
-                
-                beginning = concept_text[:beginning_chars]
-                ending = concept_text[-ending_chars:]
-                
-                truncated_concept = (
-                    f"{beginning}\n\n"
-                    f"[... Middle section truncated - total document: {len(concept_text)} characters ...]\n\n"
-                    f"{ending}"
+                raise Exception(
+                    "No active prompt found for concept evaluation"
                 )
-                
-                print(f"📏 Kept {beginning_chars} chars from beginning + {ending_chars} chars from end = {len(truncated_concept)} total")
-            else:
-                truncated_concept = concept_text
-                print(f"📄 Concept text within limit: {len(concept_text)} characters")
-            
-            # Inject rfp_analysis and concept_text into user prompt
-            user_prompt = prompt_parts['user_prompt']
-            user_prompt = user_prompt.replace("{rfp_analysis.summary}", json.dumps(rfp_analysis.get("summary", {}), indent=2))
-            user_prompt = user_prompt.replace("{rfp_analysis.extracted_data}", json.dumps(rfp_analysis.get("extracted_data", {}), indent=2))
-            user_prompt = user_prompt.replace("{{initial_concept}}", truncated_concept)
-            
-            # Combine with output format
-            final_user_prompt = f"{user_prompt}\n\n{prompt_parts['output_format']}"
-            
-            # 5. Call Bedrock
-            print("📡 Sending to Bedrock for concept analysis...")
-            import time
-            start_time = time.time()
-            
-            ai_response = self.bedrock.invoke_claude(
-                system_prompt=prompt_parts['system_prompt'],
-                user_prompt=final_user_prompt,
-                max_tokens=15000,
-                temperature=0.5,
-                model_id=CONCEPT_EVALUATION_SETTINGS['model']
+
+            print("✅ Using DynamoDB prompt")
+
+            # Step 5: Prepare prompt with context
+            prepared_concept = self._prepare_concept_text(concept_text)
+            unwrapped_rfp = self._unwrap_rfp_analysis(rfp_analysis)
+
+            final_user_prompt = self._build_user_prompt(
+                prompt_parts, prepared_concept, unwrapped_rfp
             )
-            
+
+            # Step 6: Call Bedrock for evaluation
+            print("📡 Sending to Bedrock for concept evaluation...")
+            start_time = time.time()
+
+            ai_response = self.bedrock.invoke_claude(
+                system_prompt=prompt_parts["system_prompt"],
+                user_prompt=final_user_prompt,
+                max_tokens=CONCEPT_EVALUATION_SETTINGS.get("max_tokens", 15000),
+                temperature=CONCEPT_EVALUATION_SETTINGS.get("temperature", 0.2),
+                model_id=CONCEPT_EVALUATION_SETTINGS["model"],
+            )
+
             elapsed = time.time() - start_time
             print(f"⏱️ Bedrock response time: {elapsed:.2f} seconds")
-            
-            # 6. Parse response
-            print("Parsing AI response...")
+
+            # Step 7: Parse response
+            print("🔄 Parsing AI response...")
             result = self.parse_response(ai_response)
-            
-            print("✅ Concept analysis completed successfully")
-            
-            return {
-                "concept_analysis": result,
-                "status": "completed"
-            }
-            
+
+            print("✅ Concept evaluation completed successfully")
+
+            return {"concept_analysis": result, "status": "completed"}
+
         except Exception as e:
-            print(f"❌ Concept analysis error: {str(e)}")
-            import traceback
+            print(f"❌ Concept evaluation failed: {str(e)}")
             traceback.print_exc()
             raise Exception(f"Concept analysis failed: {str(e)}")
-    
+
+    # ==================== PRIVATE HELPER METHODS ====================
+
+    def _get_concept_text_from_s3(self, proposal_code: str) -> str:
+        """
+        Retrieve concept document from S3.
+
+        Tries in order:
+        1. Plain text file (concept_text.txt)
+        2. PDF/DOC/DOCX files in concept folder
+
+        Args:
+            proposal_code: Proposal code for path construction
+
+        Returns:
+            Extracted concept text
+
+        Raises:
+            Exception: If no concept document found
+        """
+        concept_folder = f"{proposal_code}/documents/initial_concept/"
+
+        # Try text file first (fastest)
+        try:
+            text_key = f"{concept_folder}concept_text.txt"
+            print(f"📄 Trying concept text file: {text_key}")
+            obj = self.s3.get_object(Bucket=self.bucket, Key=text_key)
+            concept_text = obj["Body"].read().decode("utf-8")
+            print(f"✅ Loaded concept text: {len(concept_text)} characters")
+            return concept_text
+        except Exception as e:
+            print(f"ℹ️  No concept_text.txt found: {str(e)}")
+
+        # Try document files (PDF/DOCX)
+        print("🔍 Searching for concept document files...")
+        response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=concept_folder)
+
+        if "Contents" not in response or len(response["Contents"]) == 0:
+            raise Exception("No concept content found. Please upload a document.")
+
+        # Find and extract from first document file
+        concept_file = self._find_document_file(response["Contents"])
+        if not concept_file:
+            raise Exception("No document files found (PDF/DOC/DOCX).")
+
+        print(f"📥 Extracting text from: {concept_file}")
+        return self.extract_text_from_file(concept_file)
+
+    def _find_document_file(self, contents: list) -> Optional[str]:
+        """
+        Find first document file in S3 contents.
+
+        Searches for: PDF, DOC, DOCX files.
+
+        Args:
+            contents: List of S3 object summaries
+
+        Returns:
+            Document file key if found, None otherwise
+        """
+        for obj in contents:
+            key = obj["Key"]
+            if (
+                key.lower().endswith((".pdf", ".doc", ".docx"))
+                and not key.endswith("/")
+            ):
+                return key
+        return None
+
+    def _prepare_concept_text(self, concept_text: str) -> str:
+        """
+        Prepare concept text for injection into prompt.
+
+        Uses intelligent truncation:
+        - Keeps 60% from beginning (context/problem)
+        - Keeps 40% from end (solution/conclusion)
+        - Adds truncation notice
+
+        Args:
+            concept_text: Full concept document text
+
+        Returns:
+            Prepared text (possibly truncated)
+        """
+        max_chars = CONCEPT_EVALUATION_SETTINGS.get("max_chars", 100000)
+
+        if len(concept_text) <= max_chars:
+            print(f"📄 Concept within limit ({len(concept_text)} chars)")
+            return concept_text
+
+        print(f"✂️  Truncating concept from {len(concept_text)} to {max_chars} chars")
+
+        chars_to_keep = max_chars - 200
+        beginning_chars = int(chars_to_keep * 0.6)
+        ending_chars = int(chars_to_keep * 0.4)
+
+        beginning = concept_text[:beginning_chars]
+        ending = concept_text[-ending_chars:]
+
+        return (
+            f"{beginning}\n\n"
+            f"[... Middle section truncated - "
+            f"total document: {len(concept_text)} characters ...]\n\n"
+            f"{ending}"
+        )
+
+    def _unwrap_rfp_analysis(self, rfp_analysis: Dict) -> Dict:
+        """
+        Unwrap nested RFP analysis structure.
+
+        RFP analysis may come wrapped as:
+        {'rfp_analysis': {...}, 'status': '...'}
+
+        Args:
+            rfp_analysis: RFP analysis data (possibly nested)
+
+        Returns:
+            Unwrapped RFP analysis dict
+        """
+        if not isinstance(rfp_analysis, dict):
+            return {}
+
+        return rfp_analysis.get("rfp_analysis", rfp_analysis)
+
+    def _build_user_prompt(
+        self, prompt_parts: Dict, concept_text: str, rfp_analysis: Dict
+    ) -> str:
+        """
+        Build complete user prompt with injected context.
+
+        Injects:
+        - RFP summary ({{rfp_analysis.summary}})
+        - RFP extracted data ({{rfp_analysis.extracted_data}})
+        - Concept text ({{initial_concept}})
+
+        Args:
+            prompt_parts: Prompt template parts from DynamoDB
+            concept_text: Prepared concept text
+            rfp_analysis: RFP analysis data
+
+        Returns:
+            Complete user prompt ready for Claude
+        """
+        user_prompt = prompt_parts["user_prompt"]
+
+        # Prepare RFP data for injection
+        rfp_summary_json = json.dumps(rfp_analysis.get("summary", {}), indent=2)
+        rfp_extracted_json = json.dumps(
+            rfp_analysis.get("extracted_data", {}), indent=2
+        )
+
+        # Inject all placeholders
+        user_prompt = user_prompt.replace(
+            "{{rfp_analysis.summary}}", rfp_summary_json
+        )
+        user_prompt = user_prompt.replace(
+            "{{rfp_analysis.extracted_data}}", rfp_extracted_json
+        )
+        user_prompt = user_prompt.replace("{{initial_concept}}", concept_text)
+
+        # Append output format
+        final_prompt = f"{user_prompt}\n\n{prompt_parts['output_format']}".strip()
+
+        print(f"📝 Final prompt: {len(final_prompt)} characters")
+        return final_prompt
+
+    # ==================== FILE EXTRACTION ====================
+
     def extract_text_from_file(self, s3_key: str) -> str:
-        """Extract text from PDF/DOC/DOCX file"""
+        """
+        Extract text from document file (PDF, DOC, or DOCX).
+
+        Args:
+            s3_key: S3 key of the file
+
+        Returns:
+            Extracted text
+
+        Raises:
+            Exception: If file type not supported or extraction fails
+        """
         try:
             obj = self.s3.get_object(Bucket=self.bucket, Key=s3_key)
-            file_bytes = obj['Body'].read()
-            
-            if s3_key.lower().endswith('.pdf'):
+            file_bytes = obj["Body"].read()
+
+            if s3_key.lower().endswith(".pdf"):
                 return self.extract_text_from_pdf(file_bytes)
-            elif s3_key.lower().endswith(('.doc', '.docx')):
-                # For now, just return a message - full DOC/DOCX support requires python-docx
-                return "[Document file uploaded - text extraction not yet implemented for DOC/DOCX]"
+            elif s3_key.lower().endswith((".doc", ".docx")):
+                return self.extract_text_from_docx(file_bytes)
             else:
                 raise Exception(f"Unsupported file type: {s3_key}")
-                
+
         except Exception as e:
-            raise Exception(f"File text extraction failed: {str(e)}")
-    
+            raise Exception(f"File extraction failed: {str(e)}")
+
     def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
-        """Extract text from PDF bytes"""
+        """
+        Extract text from PDF bytes.
+
+        Args:
+            pdf_bytes: PDF file content as bytes
+
+        Returns:
+            Extracted text
+
+        Raises:
+            Exception: If PDF extraction fails
+        """
         try:
             pdf_file = BytesIO(pdf_bytes)
             reader = PdfReader(pdf_file)
             text = ""
+
             for page in reader.pages:
-                text += page.extract_text() + "\n"
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+
             return text.strip()
+
         except Exception as e:
-            raise Exception(f"PDF text extraction failed: {str(e)}")
-    
-    def get_prompt_from_dynamodb(self) -> Dict[str, str]:
-        """Get prompt from DynamoDB for Initial Concept analysis"""
+            raise Exception(f"PDF extraction failed: {str(e)}")
+
+    def extract_text_from_docx(self, docx_bytes: bytes) -> str:
+        """
+        Extract text from DOCX bytes.
+
+        Extracts from:
+        - Paragraphs
+        - Tables (with pipe-separated columns)
+
+        Args:
+            docx_bytes: DOCX file content as bytes
+
+        Returns:
+            Extracted text, or message if empty
+
+        Raises:
+            Exception: If DOCX extraction fails
+        """
         try:
-            print("🔍 Querying DynamoDB for concept prompt...")
-            table = self.dynamodb.Table(self.table_name)
-            
-            response = table.scan(
-                FilterExpression=
-                    Attr("is_active").eq(True) &
-                    Attr("section").eq("proposal_writer") &
-                    Attr("sub_section").eq("step-1") &
-                    Attr("categories").contains("Initial Concept")
-            )
-            
-            items = response.get("Items", [])
-            
-            if not items:
-                print("⚠️ No active prompts found for Initial Concept")
-                return None
-            
-            prompt_item = items[0]
-            print(f"✅ Found prompt: {prompt_item.get('name', 'Unnamed')}")
-            
-            system_prompt = prompt_item.get("system_prompt", "")
-            user_prompt = prompt_item.get("user_prompt_template", "")
-            output_format = prompt_item.get("output_format", "")
-            
-            print(f"📝 Prompt parts loaded:")
-            print(f"   - system_prompt: {len(system_prompt)} chars")
-            print(f"   - user_prompt_template: {len(user_prompt)} chars")
-            print(f"   - output_format: {len(output_format)} chars")
-            
-            return {
-                'system_prompt': system_prompt,
-                'user_prompt': user_prompt,
-                'output_format': output_format
-            }
-            
+            docx_file = BytesIO(docx_bytes)
+            document = Document(docx_file)
+            text = ""
+
+            # Extract from paragraphs
+            for paragraph in document.paragraphs:
+                if paragraph.text.strip():
+                    text += paragraph.text + "\n"
+
+            # Extract from tables
+            for table in document.tables:
+                for row in table.rows:
+                    row_text = [cell.text.strip() for cell in row.cells]
+                    text += " | ".join(row_text) + "\n"
+
+            return text.strip() if text.strip() else "[Empty DOCX file]"
+
         except Exception as e:
-            print(f"❌ Error loading prompt from DynamoDB: {str(e)}")
+            raise Exception(f"DOCX extraction failed: {str(e)}")
+
+    # ==================== PROMPT MANAGEMENT ====================
+
+    def get_prompt_from_dynamodb(self) -> Optional[Dict[str, str]]:
+        """
+        Load evaluation prompt from DynamoDB.
+
+        Searches for active prompt with criteria:
+        - is_active: true
+        - section: "proposal_writer"
+        - sub_section: "step-1"
+        - categories: contains "Initial Concept"
+
+        Returns:
+            Dict with 'system_prompt', 'user_prompt', 'output_format', or None
+        """
+        try:
+            table = self.dynamodb.Table(self.table_name)
+            response = table.scan(
+                FilterExpression=(
+                    Attr("is_active").eq(True)
+                    & Attr("section").eq("proposal_writer")
+                    & Attr("sub_section").eq("step-1")
+                    & Attr("categories").contains("Initial Concept")
+                )
+            )
+
+            items = response.get("Items", [])
+            if not items:
+                print("⚠️  No active prompts found in DynamoDB")
+                return None
+
+            prompt_item = items[0]
+            print(f"✅ Loaded prompt: {prompt_item.get('name', 'Unnamed')}")
+
+            return {
+                "system_prompt": prompt_item.get("system_prompt", ""),
+                "user_prompt": prompt_item.get("user_prompt_template", ""),
+                "output_format": prompt_item.get("output_format", ""),
+            }
+
+        except Exception as e:
+            print(f"⚠️  Failed to load prompt from DynamoDB: {str(e)}")
             return None
-    
+
+    # ==================== RESPONSE PARSING ====================
+
     def parse_response(self, response: str) -> Dict[str, Any]:
-        """Parse AI response into structured format"""
+        """
+        Parse Claude's response into structured JSON.
+
+        Handles multiple response formats:
+        1. Valid JSON object
+        2. JSON in markdown code block (```json ... ```)
+        3. JSON with markdown markers
+        4. Falls back to error structure if parsing fails
+
+        Args:
+            response: Raw response from Claude
+
+        Returns:
+            Parsed JSON dict or error structure
+        """
         try:
             response = response.strip()
-            
-            import re
-            
-            # Try to find JSON code block
-            json_match = re.search(r'```json\s*(\{.*\})\s*```', response, re.DOTALL)
+
+            # Try to extract JSON from code block
+            json_match = re.search(
+                r"```json\s*(\{.*?\})\s*```", response, re.DOTALL
+            )
             if json_match:
-                print("📦 Found JSON in code block")
                 response = json_match.group(1)
             else:
                 # Try to find JSON object directly
-                json_match = re.search(r'\{.*\}', response, re.DOTALL)
+                json_match = re.search(r"\{.*?\}", response, re.DOTALL)
                 if json_match:
-                    print("📦 Found JSON object in response")
                     response = json_match.group(0)
                 else:
-                    # Clean markdown markers
-                    if response.startswith('```json'):
-                        response = response[7:]
-                    if response.startswith('```'):
-                        response = response[3:]
-                    if response.endswith('```'):
-                        response = response[:-3]
-            
+                    # Remove markdown markers
+                    response = (
+                        response.lstrip("```json").lstrip("```").rstrip("```")
+                    )
+
             response = response.strip()
-            
             parsed = json.loads(response)
             print("✅ Response parsed successfully")
             return parsed
-            
+
         except json.JSONDecodeError as e:
-            print(f"❌ JSON decode error: {str(e)}")
+            print(f"⚠️  JSON parsing failed: {str(e)}")
             return {
                 "raw_response": response,
-                "parse_error": str(e)
+                "parse_error": str(e),
             }

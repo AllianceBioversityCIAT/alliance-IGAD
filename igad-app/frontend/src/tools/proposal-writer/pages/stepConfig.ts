@@ -25,7 +25,7 @@ export interface StepProps {
   conceptAnalysis?: any
   onConceptEvaluationChange?: (data: {
     selectedSections: string[]
-    userComments: { [key: string]: string }
+    userComments?: { [key: string]: string }
   }) => void
   conceptDocument?: any
 }

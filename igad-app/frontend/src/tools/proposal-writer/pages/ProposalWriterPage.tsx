@@ -1057,7 +1057,7 @@ export function ProposalWriterPage() {
           <Step3ConceptDocument
             {...stepProps}
             onNextStep={handleNextStep}
-            onRegisterDownload={fn => {}}
+            onConceptEvaluationChange={handleConceptEvaluationChange}
             onRegenerateDocument={async (selectedSections, userComments) => {
               // Use the same logic as handleGenerateConceptDocument
               setIsGeneratingDocument(true)
