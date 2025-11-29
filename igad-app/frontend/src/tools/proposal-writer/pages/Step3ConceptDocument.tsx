@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { FileText, Download, Sparkles, X, Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { Document, Packer, Paragraph, HeadingLevel, AlignmentType } from 'docx'
 import styles from './step3-concept.module.css'
 import step2Styles from './step2.module.css'
 
@@ -308,6 +309,70 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
     return formatted
   }
 
+  const markdownToParagraphs = (markdown: string): Paragraph[] => {
+    const lines = markdown.split('\n')
+    const paragraphs: Paragraph[] = []
+
+    let i = 0
+    while (i < lines.length) {
+      const line = lines[i]
+
+      // Headers (### or ##)
+      if (line.startsWith('### ')) {
+        paragraphs.push(
+          new Paragraph({
+            text: line.substring(4),
+            heading: HeadingLevel.HEADING_3,
+            spacing: { before: 200, after: 100 }
+          })
+        )
+      } else if (line.startsWith('## ')) {
+        paragraphs.push(
+          new Paragraph({
+            text: line.substring(3),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 100 }
+          })
+        )
+      } else if (line.startsWith('# ')) {
+        paragraphs.push(
+          new Paragraph({
+            text: line.substring(2),
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 400, after: 200 }
+          })
+        )
+      }
+      // Lists
+      else if (line.match(/^[\*\-]\s+/)) {
+        paragraphs.push(
+          new Paragraph({
+            text: line.replace(/^[\*\-]\s+/, ''),
+            bullet: { level: 0 },
+            spacing: { after: 50 }
+          })
+        )
+      }
+      // Empty lines
+      else if (line.trim() === '') {
+        paragraphs.push(new Paragraph({ text: '' }))
+      }
+      // Regular paragraphs
+      else if (line.trim()) {
+        paragraphs.push(
+          new Paragraph({
+            text: line.trim(),
+            spacing: { after: 100 }
+          })
+        )
+      }
+
+      i++
+    }
+
+    return paragraphs.length > 0 ? paragraphs : [new Paragraph({ text: 'No content available' })]
+  }
+
   const handleDownloadDocument = useCallback(
     async (e?: React.MouseEvent) => {
       if (e) {
@@ -319,105 +384,78 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
       console.log('📦 conceptDocument for download:', conceptDocument)
       setIsDownloading(true)
 
-      // Use setTimeout to ensure the click event completes before download starts
-      setTimeout(() => {
-        try {
-          let content = ''
+      try {
+        let content = ''
 
-          // Extract content from the same structure used in renderConceptDocument
-          // Priority: generated_concept_document > content > document > proposal_outline > sections
-          if (typeof conceptDocument === 'string') {
-            console.log('✅ Download: Using string content')
-            content = conceptDocument
-          } else if (conceptDocument?.generated_concept_document) {
-            console.log('✅ Download: Using generated_concept_document (NEW FORMAT)')
-            content = conceptDocument.generated_concept_document
+        // Extract content from the same structure used in renderConceptDocument
+        if (typeof conceptDocument === 'string') {
+          console.log('✅ Download: Using string content')
+          content = conceptDocument
+        } else if (conceptDocument?.generated_concept_document) {
+          console.log('✅ Download: Using generated_concept_document (NEW FORMAT)')
+          content = conceptDocument.generated_concept_document
+        } else if (conceptDocument?.content) {
+          console.log('✅ Download: Using content field')
+          content = conceptDocument.content
+        } else if (conceptDocument?.document) {
+          console.log('✅ Download: Using document field')
+          content = conceptDocument.document
+        } else if (conceptDocument?.proposal_outline) {
+          console.log('✅ Download: Using proposal_outline')
+          const outline = conceptDocument.proposal_outline
+          if (Array.isArray(outline)) {
+            content = outline
+              .map(section => {
+                const title = section.section_title || ''
+                const purpose = section.purpose || ''
+                const wordCount = section.recommended_word_count || ''
+                const questions = Array.isArray(section.guiding_questions)
+                  ? section.guiding_questions.map(q => `- ${q}`).join('\n')
+                  : ''
 
-            // Optionally add section metadata if available
-            if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
-              const sectionCount = Object.keys(conceptDocument.sections).length
-              console.log(`📊 Download: Document has ${sectionCount} sections`)
-            }
-          } else if (conceptDocument?.content) {
-            console.log('✅ Download: Using content field')
-            content = conceptDocument.content
-          } else if (conceptDocument?.document) {
-            console.log('✅ Download: Using document field')
-            content = conceptDocument.document
-          } else if (conceptDocument?.proposal_outline) {
-            console.log('✅ Download: Using proposal_outline')
-            const outline = conceptDocument.proposal_outline
-            if (Array.isArray(outline)) {
-              content = outline
-                .map(section => {
-                  const title = section.section_title || ''
-                  const purpose = section.purpose || ''
-                  const wordCount = section.recommended_word_count || ''
-                  const questions = Array.isArray(section.guiding_questions)
-                    ? section.guiding_questions.map(q => `- ${q}`).join('\n')
-                    : ''
-
-                  return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
-                })
-                .join('\n\n')
-            }
-          } else if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
-            console.log('✅ Download: Using sections object')
-            content = Object.entries(conceptDocument.sections)
-              .map(([key, value]) => `## ${key}\n\n${value}`)
+                return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
+              })
               .join('\n\n')
-          } else {
-            console.warn('⚠️ Download: No valid content format found')
-            content = 'No content available'
           }
-
-          console.log(`📝 Download: Final content length: ${content.length} characters`)
-
-          // Convert markdown to HTML
-          const htmlContent = parseMarkdownToHTML(content)
-
-          // Create a complete HTML document
-          const fullHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Concept Document</title>
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 20px; }
-    h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-    h2 { color: #34495e; margin-top: 30px; }
-    h3 { color: #7f8c8d; }
-    p { margin: 10px 0; }
-    strong { color: #2c3e50; }
-    ul, ol { margin: 10px 0; padding-left: 30px; }
-  </style>
-</head>
-<body>
-  ${htmlContent}
-</body>
-</html>
-        `
-
-          // Create blob and download as DOCX format
-          const blob = new Blob([fullHtml], {
-            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-          })
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = `concept-document-${new Date().toISOString().slice(0, 10)}.docx`
-          a.click()
-          URL.revokeObjectURL(url)
-
-          console.log('✅ Download complete!')
-          setIsDownloading(false)
-        } catch (error) {
-          console.error('❌ Error generating document:', error)
-          alert('Error generating document. Please try again.')
-          setIsDownloading(false)
+        } else if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
+          console.log('✅ Download: Using sections object')
+          content = Object.entries(conceptDocument.sections)
+            .map(([key, value]) => `## ${key}\n\n${value}`)
+            .join('\n\n')
+        } else {
+          console.warn('⚠️ Download: No valid content format found')
+          content = 'No content available'
         }
-      }, 100)
+
+        console.log(`📝 Download: Final content length: ${content.length} characters`)
+
+        // Convert markdown to DOCX using docx library
+        const sections = markdownToParagraphs(content)
+
+        const doc = new Document({
+          sections: [
+            {
+              children: sections
+            }
+          ]
+        })
+
+        // Generate and download DOCX
+        const blob = await Packer.toBlob(doc)
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `concept-document-${new Date().toISOString().slice(0, 10)}.docx`
+        a.click()
+        URL.revokeObjectURL(url)
+
+        console.log('✅ Download complete!')
+        setIsDownloading(false)
+      } catch (error) {
+        console.error('❌ Error generating document:', error)
+        alert('Error generating document. Please try again.')
+        setIsDownloading(false)
+      }
     },
     [conceptDocument]
   )
