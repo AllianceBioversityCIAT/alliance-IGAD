@@ -151,11 +151,16 @@ export function Step1InformationConsolidation({
     }
 
     const loadProposalData = async () => {
-      const storageKey = `proposal_draft_${proposalId}`
-      const savedData = localStorage.getItem(storageKey)
+      // Check both localStorage keys:
+      // 1. draft_form_data - used by ProposalWriterPage (contains title + other text inputs)
+      // 2. proposal_draft_${proposalId} - used by Step1 (contains uploaded files)
+      const draftFormDataStr = localStorage.getItem('draft_form_data')
+      const step1StorageKey = `proposal_draft_${proposalId}`
+      const step1SavedData = localStorage.getItem(step1StorageKey)
 
       console.log('📄 [Step1 Load] proposalId:', proposalId)
-      console.log('📄 [Step1 Load] localStorage saved data:', savedData)
+      console.log('📄 [Step1 Load] draft_form_data (from ProposalWriterPage):', draftFormDataStr)
+      console.log('📄 [Step1 Load] proposal_draft (from Step1):', step1SavedData)
       console.log('📄 [Step1 Load] proposal object:', proposal)
 
       try {
@@ -176,31 +181,50 @@ export function Step1InformationConsolidation({
           textInputs: {} as { [key: string]: string },
         }
 
-        // Merge with localStorage data (for text inputs only)
-        if (savedData) {
+        // Priority: draft_form_data > step1 localStorage > proposal
+        // draft_form_data has the title and is the main source
+        if (draftFormDataStr) {
           try {
-            const parsed = JSON.parse(savedData)
-            console.log('📄 [Step1 Load] Using textInputs from localStorage:', parsed.textInputs)
+            const parsed = JSON.parse(draftFormDataStr)
+            console.log('📄 [Step1 Load] Using textInputs from draft_form_data:', parsed.textInputs)
             backendFormData.textInputs = parsed.textInputs || {}
           } catch {
-            // Silent fail - use empty text inputs
-            console.log('📄 [Step1 Load] Failed to parse localStorage data')
+            console.log('📄 [Step1 Load] Failed to parse draft_form_data')
+          }
+        } else if (step1SavedData) {
+          try {
+            const parsed = JSON.parse(step1SavedData)
+            console.log('📄 [Step1 Load] Using textInputs from step1 localStorage:', parsed.textInputs)
+            backendFormData.textInputs = parsed.textInputs || {}
+          } catch {
+            console.log('📄 [Step1 Load] Failed to parse step1 localStorage data')
           }
         } else if (proposal) {
           // Load text inputs from proposal if no localStorage data
           console.log('📄 [Step1 Load] Using textInputs from proposal:', proposal.text_inputs)
           backendFormData.textInputs = proposal.text_inputs || {}
         } else {
-          console.log('📄 [Step1 Load] No localStorage or proposal, using empty textInputs')
+          console.log('📄 [Step1 Load] No data source found, using empty textInputs')
         }
 
         console.log('📄 [Step1 Load] Final backendFormData:', backendFormData)
         setFormData(backendFormData)
       } catch {
         // Fallback to localStorage or proposal on error
-        if (savedData) {
+        console.log('📄 [Step1 Load] Error loading from backend, using fallback')
+        if (draftFormDataStr) {
           try {
-            const parsed = JSON.parse(savedData)
+            const parsed = JSON.parse(draftFormDataStr)
+            setFormData(parsed)
+            return
+          } catch {
+            // Silent fail - use empty state
+          }
+        }
+
+        if (step1SavedData) {
+          try {
+            const parsed = JSON.parse(step1SavedData)
             setFormData(parsed)
             return
           } catch {
