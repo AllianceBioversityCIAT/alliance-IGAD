@@ -264,6 +264,49 @@ export function ProposalWriterPage() {
     }
   }, [conceptEvaluationData, proposalId])
 
+  // Track previous selectedSections to detect changes
+  const previousSelectedSectionsRef = useRef<string[] | null>(null)
+
+  // Invalidate concept document when section selections change in Step 2
+  useEffect(() => {
+    if (!conceptEvaluationData?.selectedSections || !proposalId) {
+      return
+    }
+
+    const currentSelections = conceptEvaluationData.selectedSections
+    const previousSelections = previousSelectedSectionsRef.current
+
+    // Skip on initial load - only invalidate if there was a previous document
+    if (previousSelections === null) {
+      // Store initial selections but don't invalidate
+      previousSelectedSectionsRef.current = [...currentSelections]
+      return
+    }
+
+    // Check if selections have actually changed
+    const selectionsChanged =
+      previousSelections.length !== currentSelections.length ||
+      !previousSelections.every(section => currentSelections.includes(section))
+
+    // Only invalidate if selections changed AND a concept document already exists
+    if (selectionsChanged && conceptDocument) {
+      console.log('📋 Section selections changed - invalidating concept document')
+      console.log('   Previous:', previousSelections)
+      console.log('   Current:', currentSelections)
+
+      // Clear concept document
+      setConceptDocument(null)
+
+      // Clear localStorage
+      localStorage.removeItem(`proposal_concept_document_${proposalId}`)
+
+      console.log('✅ Concept document invalidated - user will need to regenerate')
+    }
+
+    // Update reference for next comparison
+    previousSelectedSectionsRef.current = [...currentSelections]
+  }, [conceptEvaluationData?.selectedSections, proposalId, conceptDocument])
+
   // Calculate completed steps based on available data
   useEffect(() => {
     const completed: number[] = []
@@ -1133,7 +1176,12 @@ export function ProposalWriterPage() {
       case 1:
         return <Step1InformationConsolidation {...stepProps} />
       case 2:
-        return <Step2ContentGeneration {...stepProps} />
+        return (
+          <Step2ContentGeneration
+            {...stepProps}
+            conceptDocument={conceptDocument}
+          />
+        )
       case 3:
         return (
           <Step3ConceptDocument

@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react'
 
 // External Libraries - Icons
-import { Target, CheckCircle, Layers, Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { Target, CheckCircle, Layers, Check, ChevronDown, ChevronUp, Info, X } from 'lucide-react'
 
 // Local Imports
 import { StepProps } from './stepConfig'
@@ -60,16 +60,8 @@ interface ConceptAnalysis {
  * Extends base StepProps with Step 2 specific properties
  */
 interface Step2Props extends StepProps {
-  /** Unique identifier for the proposal */
-  proposalId?: string
   /** AI-generated concept analysis (may be nested due to backend structure) */
   conceptAnalysis?: ConceptAnalysis | { concept_analysis: ConceptAnalysis }
-  /** Saved evaluation data containing user selections */
-  conceptEvaluationData?: {
-    selectedSections: string[]
-  }
-  /** Callback fired when user changes their section selections */
-  onConceptEvaluationChange?: (data: { selectedSections: string[] }) => void
 }
 
 /**
@@ -174,8 +166,11 @@ function useUnwrappedConceptAnalysis(
  */
 function useSelectedSections(
   conceptAnalysis: ConceptAnalysis | undefined,
-  conceptEvaluationData?: { selectedSections: string[] },
-  onConceptEvaluationChange?: (data: { selectedSections: string[] }) => void
+  conceptEvaluationData?: { selectedSections: string[] } | null,
+  onConceptEvaluationChange?: (data: {
+    selectedSections: string[]
+    userComments?: { [key: string]: string }
+  }) => void
 ): [string[], React.Dispatch<React.SetStateAction<string[]>>] {
   // Initialize selected sections from saved data OR default to Critical priority sections
   const [selectedSections, setSelectedSections] = useState<string[]>(() => {
@@ -414,6 +409,42 @@ function SectionItem({
 }
 
 /**
+ * Regeneration Info Banner Component
+ * Displays a dismissible notification when a concept document exists,
+ * informing users that changes will require regeneration
+ */
+function RegenerationInfoBanner() {
+  const [isDismissed, setIsDismissed] = useState(false)
+
+  // Don't render if dismissed
+  if (isDismissed) {
+    return null
+  }
+
+  return (
+    <div className={styles.regenerationBanner}>
+      <div className={styles.bannerContent}>
+        <Info className={styles.bannerIcon} size={20} />
+        <div className={styles.bannerText}>
+          <h4 className={styles.bannerTitle}>Changes will require regeneration</h4>
+          <p className={styles.bannerMessage}>
+            If you change your section selections, you'll need to regenerate your concept document
+            in the next step.
+          </p>
+        </div>
+      </div>
+      <button
+        className={styles.bannerDismiss}
+        onClick={() => setIsDismissed(true)}
+        aria-label="Dismiss notification"
+      >
+        <X size={16} />
+      </button>
+    </div>
+  )
+}
+
+/**
  * Sections Needing Elaboration Card Component
  * Main interactive component where users select which sections to elaborate
  */
@@ -423,6 +454,7 @@ interface SectionsNeedingElaborationCardProps {
   expandedSections: string[]
   onToggleSection: (sectionName: string) => void
   onToggleExpansion: (sectionName: string) => void
+  hasConceptDocument?: boolean
 }
 
 function SectionsNeedingElaborationCard({
@@ -431,6 +463,7 @@ function SectionsNeedingElaborationCard({
   expandedSections,
   onToggleSection,
   onToggleExpansion,
+  hasConceptDocument,
 }: SectionsNeedingElaborationCardProps) {
   return (
     <div className={styles.sectionsCard}>
@@ -446,6 +479,9 @@ function SectionsNeedingElaborationCard({
             </p>
           </div>
         </div>
+
+        {/* Show banner only when a concept document exists */}
+        {hasConceptDocument && <RegenerationInfoBanner />}
 
         {/* Selection counter */}
         <div className={styles.selectionCount}>
@@ -510,6 +546,7 @@ export function Step2ContentGeneration({
   conceptAnalysis: rawConceptAnalysis,
   conceptEvaluationData,
   onConceptEvaluationChange,
+  conceptDocument,
 }: Step2Props) {
   // ========================================
   // HOOKS & STATE
@@ -586,6 +623,7 @@ export function Step2ContentGeneration({
           expandedSections={expandedSections}
           onToggleSection={toggleSection}
           onToggleExpansion={toggleExpansion}
+          hasConceptDocument={!!conceptDocument}
         />
 
         {/* Strategic Verdict (if available) */}

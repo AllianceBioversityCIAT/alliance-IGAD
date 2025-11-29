@@ -111,11 +111,91 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
   )
   console.log(`📊 Step3 - Document has ${totalSections} sections in outline`)
 
+  // Check if user has previously had a document (based on localStorage or conceptAnalysis with selections)
+  const hadPreviousDocument = (() => {
+    if (!proposalId) return false
+
+    // Check localStorage for a previously saved document
+    const savedDocument = localStorage.getItem(`proposal_concept_document_${proposalId}`)
+    if (savedDocument) return true
+
+    // Check if conceptAnalysis has selected sections (indicates user has made selections)
+    if (sectionsNeedingElaboration.some((s: any) => s.selected === true)) {
+      return true
+    }
+
+    return false
+  })()
+
   if (!conceptDocument) {
+    // Different message if sections have changed vs first time
+    if (hadPreviousDocument && sectionsNeedingElaboration.length > 0) {
+      // User had a document but changed their selections
+      return (
+        <div className={styles.mainContent}>
+          <div className={styles.stepHeader}>
+            <h1 className={styles.stepMainTitle}>Step 3: Updated Concept Document</h1>
+            <p className={styles.stepMainDescription}>
+              Review and download your enhanced concept document with elaborated sections
+            </p>
+          </div>
+
+          <div className={styles.invalidatedDocumentCard}>
+            <div className={styles.invalidatedIcon}>
+              <Sparkles size={48} color="#F59E0B" />
+            </div>
+            <h2 className={styles.invalidatedTitle}>Section Selections Have Changed</h2>
+            <p className={styles.invalidatedDescription}>
+              You've updated your section selections in Step 2. To see an updated concept document with your new selections, please click the button below to generate a fresh document.
+            </p>
+            <div className={styles.invalidatedStats}>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>Sections Selected:</span>
+                <span className={styles.statValue}>{selectedCount}</span>
+              </div>
+            </div>
+            <button
+              className={styles.regeneratePrimaryButton}
+              onClick={() => {
+                // Trigger regeneration flow - navigate back to Step 2 or show modal
+                if (onRegenerateDocument && sectionsNeedingElaboration.length > 0) {
+                  // Get currently selected sections
+                  const currentSelections = sectionsNeedingElaboration
+                    .filter((s: any) => s.selected === true)
+                    .map((s: any) => s.section)
+
+                  const currentComments = sectionsNeedingElaboration.reduce((acc: any, s: any) => {
+                    if (s.user_comment) {
+                      acc[s.section] = s.user_comment
+                    }
+                    return acc
+                  }, {})
+
+                  onRegenerateDocument(currentSelections, currentComments)
+                }
+              }}
+            >
+              <Sparkles size={16} />
+              Generate Updated Concept Document
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    // First time - no document yet, no previous selections
     return (
-      <div className={styles.emptyState}>
-        <FileText size={48} color="#9CA3AF" />
-        <p>No concept document available. Please complete Step 2 first.</p>
+      <div className={styles.mainContent}>
+        <div className={styles.stepHeader}>
+          <h1 className={styles.stepMainTitle}>Step 3: Updated Concept Document</h1>
+          <p className={styles.stepMainDescription}>
+            Review and download your enhanced concept document with elaborated sections
+          </p>
+        </div>
+        <div className={styles.emptyState}>
+          <FileText size={48} color="#9CA3AF" />
+          <p>No concept document available. Please complete Step 2 first.</p>
+        </div>
       </div>
     )
   }
