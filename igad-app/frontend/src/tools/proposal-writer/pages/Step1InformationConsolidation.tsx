@@ -298,6 +298,10 @@ export function Step1InformationConsolidation({
           uploadedFiles: updatedFiles,
           textInputs: formData.textInputs,
         })
+
+        // Invalidate analyses when documents are updated
+        // This ensures the user re-analyzes with the new document
+        window.dispatchEvent(new CustomEvent('documents-updated'))
       } catch (error: unknown) {
         const errorMsg =
           (error as Record<string, unknown>)?.response?.data?.detail ||
@@ -325,6 +329,9 @@ export function Step1InformationConsolidation({
             uploadedFiles: updatedFiles,
             textInputs: formData.textInputs,
           })
+
+          // Invalidate analyses when documents are updated
+          window.dispatchEvent(new CustomEvent('documents-updated'))
         } catch (error) {
           // Silent fail - localStorage will preserve the change
         }
@@ -1303,6 +1310,28 @@ export function Step1InformationConsolidation({
                     />
                   </svg>
                 </button>
+              </div>
+              <div className={styles.uploadedFileActions}>
+                <label htmlFor="concept-document-replace" className={styles.replaceFileButton}>
+                  Replace Document
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.txt"
+                  onChange={e => {
+                    const conceptFile = formData.uploadedFiles['concept-document'][0]
+                    const filename =
+                      typeof conceptFile === 'string' ? conceptFile : conceptFile?.name
+                    if (filename) {
+                      handleDeleteConceptFile(filename)
+                    }
+                    handleConceptFileUpload(e.target.files)
+                  }}
+                  className={styles.hiddenInput}
+                  id="concept-document-replace"
+                  disabled={isUpdating || isUploadingConcept}
+                  aria-label="Replace concept document"
+                />
               </div>
             </div>
           )}

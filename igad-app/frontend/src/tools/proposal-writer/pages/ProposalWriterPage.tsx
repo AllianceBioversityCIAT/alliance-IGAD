@@ -278,12 +278,11 @@ export function ProposalWriterPage() {
     }
   }, [formData.uploadedFiles, conceptAnalysis, conceptDocument, proposalTemplate])
 
-  // Detect RFP changes and invalidate analyses
+  // Detect RFP/document changes and invalidate analyses
   useEffect(() => {
     if (proposalId) {
-      // Listen for RFP deletion events
-      const handleRfpDeleted = () => {
-        console.log('🔄 RFP deleted - invalidating analyses')
+      // Listen for document update events
+      const handleDocumentsUpdated = () => {
         setRfpAnalysis(null)
         setConceptAnalysis(null)
         setConceptDocument(null)
@@ -298,8 +297,17 @@ export function ProposalWriterPage() {
         localStorage.removeItem(`proposal_structure_selection_${proposalId}`)
       }
 
+      // Listen for RFP deletion events (legacy)
+      const handleRfpDeleted = () => {
+        handleDocumentsUpdated()
+      }
+
       window.addEventListener('rfp-deleted', handleRfpDeleted)
-      return () => window.removeEventListener('rfp-deleted', handleRfpDeleted)
+      window.addEventListener('documents-updated', handleDocumentsUpdated)
+      return () => {
+        window.removeEventListener('rfp-deleted', handleRfpDeleted)
+        window.removeEventListener('documents-updated', handleDocumentsUpdated)
+      }
     }
   }, [proposalId])
 
