@@ -204,7 +204,7 @@ class SimpleConceptAnalyzer:
         """
         Find first document file in S3 contents.
 
-        Searches for: PDF, DOC, DOCX files.
+        Searches for: PDF and DOCX files (excludes legacy .doc format).
 
         Args:
             contents: List of S3 object summaries
@@ -214,8 +214,9 @@ class SimpleConceptAnalyzer:
         """
         for obj in contents:
             key = obj["Key"]
+            # Only support PDF and DOCX (legacy .doc format not supported)
             if (
-                key.lower().endswith((".pdf", ".doc", ".docx"))
+                key.lower().endswith((".pdf", ".docx"))
                 and not key.endswith("/")
             ):
                 return key
@@ -339,13 +340,18 @@ class SimpleConceptAnalyzer:
 
             if s3_key.lower().endswith(".pdf"):
                 return self.extract_text_from_pdf(file_bytes)
-            elif s3_key.lower().endswith((".doc", ".docx")):
+            elif s3_key.lower().endswith(".docx"):
                 return self.extract_text_from_docx(file_bytes)
+            elif s3_key.lower().endswith(".doc"):
+                print("❌ Legacy .doc format not supported. Please upload as .docx or .pdf")
+                return None
             else:
-                raise Exception(f"Unsupported file type: {s3_key}")
+                print(f"❌ Unsupported file type: {s3_key}")
+                return None
 
         except Exception as e:
-            raise Exception(f"File extraction failed: {str(e)}")
+            print(f"❌ File extraction failed: {str(e)}")
+            return None
 
     def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
         """

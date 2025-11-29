@@ -256,8 +256,13 @@ class ConceptDocumentGenerator:
 
             if s3_key.lower().endswith(".pdf"):
                 return self.extract_text_from_pdf(file_bytes)
-            elif s3_key.lower().endswith((".doc", ".docx")):
+            elif s3_key.lower().endswith(".docx"):
                 return self.extract_text_from_docx(file_bytes)
+            elif s3_key.lower().endswith(".doc"):
+                logger.error(
+                    "❌ Legacy .doc format not supported. Please upload as .docx or .pdf"
+                )
+                return None
             else:
                 logger.error(f"❌ Unsupported file type: {s3_key}")
                 return None
@@ -771,7 +776,7 @@ class ConceptDocumentGenerator:
         """
         Extract sections from markdown text.
 
-        Looks for ## Section Title markers.
+        Looks for # Section Title or ## Section Title markers.
 
         Args:
             text: Markdown or plain text
@@ -784,12 +789,20 @@ class ConceptDocumentGenerator:
         current_content = []
 
         for line in text.split("\n"):
+            # Check for # or ## section headers
             if line.startswith("## "):
                 if current_section:
                     sections[current_section] = (
                         "\n".join(current_content).strip()
                     )
                 current_section = line[3:].strip()
+                current_content = []
+            elif line.startswith("# "):
+                if current_section:
+                    sections[current_section] = (
+                        "\n".join(current_content).strip()
+                    )
+                current_section = line[2:].strip()
                 current_content = []
             elif current_section:
                 current_content.append(line)

@@ -204,7 +204,7 @@ class SimpleRFPAnalyzer:
             print("✅ Using DynamoDB prompt")
             # Inject RFP text with proper placeholder
             user_prompt = prompt_parts["user_prompt"].replace(
-                "{{rfp_analysis.rfp_text}}", prepared_text
+                "{{rfp_text}}", prepared_text
             )
             user_prompt = (
                 f"{user_prompt}\n\n{prompt_parts['output_format']}"
