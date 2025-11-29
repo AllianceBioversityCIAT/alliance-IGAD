@@ -32,6 +32,8 @@ interface Step1Props extends StepProps {
   proposalId?: string
   /** RFP analysis data from AI processing */
   rfpAnalysis?: Record<string, unknown>
+  /** Concept analysis data from AI processing */
+  conceptAnalysis?: Record<string, unknown>
 }
 
 // ============================================================================
@@ -93,6 +95,7 @@ export function Step1InformationConsolidation({
   setFormData,
   proposalId,
   rfpAnalysis,
+  conceptAnalysis,
 }: Step1Props) {
   // ============================================================================
   // STATE - Hooks
@@ -301,6 +304,7 @@ export function Step1InformationConsolidation({
 
         // Invalidate analyses when documents are updated
         // This ensures the user re-analyzes with the new document
+        console.log('🔄 [Document Updated] Dispatching documents-updated event for RFP')
         window.dispatchEvent(new CustomEvent('documents-updated'))
       } catch (error: unknown) {
         const errorMsg =
@@ -464,6 +468,10 @@ export function Step1InformationConsolidation({
           'concept-document': [file.name],
         },
       }))
+
+      // Invalidate analyses when concept document is updated
+      // This ensures the user re-analyzes with the new document
+      window.dispatchEvent(new CustomEvent('documents-updated'))
     } catch (error: Record<string, unknown>) {
       const errorMsg =
         (error?.response as Record<string, unknown>)?.data?.detail ||
@@ -479,8 +487,11 @@ export function Step1InformationConsolidation({
    *
    * @param filename - Name of file to delete
    */
-  const handleDeleteConceptFile = async (filename: string) => {
-    if (!confirm(`Delete ${filename}?`) || !proposalId) {
+  const handleDeleteConceptFile = async (filename: string, skipConfirm?: boolean) => {
+    if (!skipConfirm && !confirm(`Delete ${filename}?`)) {
+      return
+    }
+    if (!proposalId) {
       return
     }
 
@@ -711,9 +722,15 @@ export function Step1InformationConsolidation({
       getUploadedFileCount('concept-document') > 0
 
     const missingFields: string[] = []
-    if (!hasTitle) missingFields.push('Title')
-    if (!hasRFP) missingFields.push('RFP document')
-    if (!hasConcept) missingFields.push('Initial Concept')
+    if (!hasTitle) {
+      missingFields.push('Title')
+    }
+    if (!hasRFP) {
+      missingFields.push('RFP document')
+    }
+    if (!hasConcept) {
+      missingFields.push('Initial Concept')
+    }
 
     return {
       isValid: hasTitle && hasRFP && hasConcept,
@@ -1141,7 +1158,8 @@ export function Step1InformationConsolidation({
           value={formData.textInputs['initial-concept'] || ''}
           onChange={e => handleTextChange('initial-concept', e.target.value)}
           disabled={
-            ((conceptTextSaved && !isEditingConceptText) || isSavingConceptText ||
+            ((conceptTextSaved && !isEditingConceptText) ||
+              isSavingConceptText ||
               getUploadedFileCount('concept-document') > 0) as boolean
           }
           aria-label="Initial concept text"
@@ -1323,7 +1341,7 @@ export function Step1InformationConsolidation({
                     const filename =
                       typeof conceptFile === 'string' ? conceptFile : conceptFile?.name
                     if (filename) {
-                      handleDeleteConceptFile(filename)
+                      handleDeleteConceptFile(filename, true)
                     }
                     handleConceptFileUpload(e.target.files)
                   }}
@@ -1332,6 +1350,11 @@ export function Step1InformationConsolidation({
                   disabled={isUpdating || isUploadingConcept}
                   aria-label="Replace concept document"
                 />
+                {conceptAnalysis && (
+                  <p className={styles.replaceHint}>
+                    Replacing will automatically trigger re-analysis
+                  </p>
+                )}
               </div>
             </div>
           )}

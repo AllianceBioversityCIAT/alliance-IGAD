@@ -32,7 +32,7 @@ export function LoginPage() {
         setIsCheckingAuth(false)
       }
     }
-    
+
     checkAuth()
   }, [navigate, location])
 
@@ -104,14 +104,16 @@ export function LoginPage() {
       {isCheckingAuth ? (
         <div className={styles.leftColumn}>
           <div className={styles.formContainer}>
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              minHeight: '400px',
-              gap: '16px'
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '400px',
+                gap: '16px',
+              }}
+            >
               <Spinner size="lg" />
               <p style={{ color: '#4a5565', fontSize: '14px' }}>Checking authentication...</p>
             </div>
@@ -122,130 +124,136 @@ export function LoginPage() {
           {/* Left Column - Form */}
           <div className={styles.leftColumn}>
             <div className={styles.formContainer}>
-          {/* IGAD Logo */}
-          <div>
-            <img src="/logologin.png" alt="IGAD Innovation Hub" className={styles.logo} />
-          </div>
-
-          {/* Form Content */}
-          <div className={styles.formContent}>
-            {/* Form Header */}
-            <div className={styles.formHeader}>
-              <h1 className={styles.title}>Log In</h1>
-              <p className={styles.subtitle}>
-                Enter your email and password to access your account
-              </p>
-            </div>
-
-            {/* Login Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-              {/* Success Message */}
-              {successMessage && (
-                <div
-                  style={{
-                    backgroundColor: '#d4edda',
-                    border: '1px solid #c3e6cb',
-                    color: '#155724',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    marginBottom: '16px',
-                    fontSize: '14px',
-                  }}
-                >
-                  {successMessage}
-                </div>
-              )}
-
-              {/* Error Message */}
-              {error && <div className={styles.errorMessage}>{error}</div>}
-
-              {/* Email Field */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Email address</label>
-                <input
-                  type="email"
-                  placeholder="you@organization.org"
-                  autoComplete="email"
-                  {...register('email', {
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
-                    },
-                    setValueAs: value => value.toLowerCase().trim(),
-                  })}
-                  className={styles.input}
-                  style={{ textTransform: 'lowercase' }}
-                />
-                {errors.email && <span className={styles.errorText}>{errors.email.message}</span>}
+              {/* IGAD Logo */}
+              <div>
+                <img src="/logologin.png" alt="IGAD Innovation Hub" className={styles.logo} />
               </div>
 
-              {/* Password Field */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Password</label>
-                <div className={styles.passwordField}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    {...register('password', {
-                      required: 'Password is required',
-                      minLength: {
-                        value: 8,
-                        message: 'Password must be at least 8 characters',
-                      },
-                    })}
-                    className={`${styles.input} ${styles.passwordInput}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className={styles.passwordToggle}
-                  >
-                    {showPassword ? '👁️' : '👁️🗨️'}
+              {/* Form Content */}
+              <div className={styles.formContent}>
+                {/* Form Header */}
+                <div className={styles.formHeader}>
+                  <h1 className={styles.title}>Log In</h1>
+                  <p className={styles.subtitle}>
+                    Enter your email and password to access your account
+                  </p>
+                </div>
+
+                {/* Login Form */}
+                <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
+                  {/* Success Message */}
+                  {successMessage && (
+                    <div
+                      style={{
+                        backgroundColor: '#d4edda',
+                        border: '1px solid #c3e6cb',
+                        color: '#155724',
+                        padding: '12px',
+                        borderRadius: '6px',
+                        marginBottom: '16px',
+                        fontSize: '14px',
+                      }}
+                    >
+                      {successMessage}
+                    </div>
+                  )}
+
+                  {/* Error Message */}
+                  {error && <div className={styles.errorMessage}>{error}</div>}
+
+                  {/* Email Field */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Email address</label>
+                    <input
+                      type="email"
+                      placeholder="you@organization.org"
+                      autoComplete="email"
+                      {...register('email', {
+                        required: 'Email is required',
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: 'Invalid email address',
+                        },
+                        setValueAs: value => value.toLowerCase().trim(),
+                      })}
+                      className={styles.input}
+                      style={{ textTransform: 'lowercase' }}
+                    />
+                    {errors.email && (
+                      <span className={styles.errorText}>{errors.email.message}</span>
+                    )}
+                  </div>
+
+                  {/* Password Field */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Password</label>
+                    <div className={styles.passwordField}>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Enter your password"
+                        {...register('password', {
+                          required: 'Password is required',
+                          minLength: {
+                            value: 8,
+                            message: 'Password must be at least 8 characters',
+                          },
+                        })}
+                        className={`${styles.input} ${styles.passwordInput}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className={styles.passwordToggle}
+                      >
+                        {showPassword ? '👁️' : '👁️🗨️'}
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <span className={styles.errorText}>{errors.password.message}</span>
+                    )}
+                  </div>
+
+                  {/* Remember Me & Forgot Password */}
+                  <div className={styles.formOptions}>
+                    <label className={styles.checkboxGroup}>
+                      <input
+                        type="checkbox"
+                        {...register('rememberMe')}
+                        className={styles.checkbox}
+                      />
+                      Remember me
+                    </label>
+                    <a href="/forgot-password" className={styles.forgotPassword}>
+                      Forgot password?
+                    </a>
+                  </div>
+
+                  {/* Login Button */}
+                  <button type="submit" disabled={isLoading} className={styles.submitButton}>
+                    {isLoading ? <Spinner size="sm" /> : 'Log In'}
+                    {!isLoading && <span>→</span>}
                   </button>
-                </div>
-                {errors.password && (
-                  <span className={styles.errorText}>{errors.password.message}</span>
-                )}
+
+                  {/* Support Text */}
+                  <p className={styles.supportText}>
+                    Need help? Contact our support team at{' '}
+                    <a href="mailto:support@igad.org" className={styles.supportLink}>
+                      [email]
+                    </a>
+                  </p>
+                </form>
               </div>
-
-              {/* Remember Me & Forgot Password */}
-              <div className={styles.formOptions}>
-                <label className={styles.checkboxGroup}>
-                  <input type="checkbox" {...register('rememberMe')} className={styles.checkbox} />
-                  Remember me
-                </label>
-                <a href="/forgot-password" className={styles.forgotPassword}>
-                  Forgot password?
-                </a>
-              </div>
-
-              {/* Login Button */}
-              <button type="submit" disabled={isLoading} className={styles.submitButton}>
-                {isLoading ? <Spinner size="sm" /> : 'Log In'}
-                {!isLoading && <span>→</span>}
-              </button>
-
-              {/* Support Text */}
-              <p className={styles.supportText}>
-                Need help? Contact our support team at{' '}
-                <a href="mailto:support@igad.org" className={styles.supportLink}>
-                  [email]
-                </a>
-              </p>
-            </form>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Right Column - Background Image */}
-      {!isCheckingAuth && (
-        <div className={styles.rightColumn}>
-          <div className={styles.backgroundImage}></div>
-          <div className={styles.overlay}></div>
-        </div>
-      )}
-      </>
+          {/* Right Column - Background Image */}
+          {!isCheckingAuth && (
+            <div className={styles.rightColumn}>
+              <div className={styles.backgroundImage}></div>
+              <div className={styles.overlay}></div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

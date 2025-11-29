@@ -18,11 +18,17 @@ import { useState, useEffect } from 'react'
 export function useResponsiveIconSize(): number {
   const [iconSize, setIconSize] = useState<number>(() => {
     // Initialize based on current window width (SSR-safe)
-    if (typeof window === 'undefined') return 24
+    if (typeof window === 'undefined') {
+      return 24
+    }
 
     const width = window.innerWidth
-    if (width >= 1024) return 32
-    if (width >= 640) return 28
+    if (width >= 1024) {
+      return 32
+    }
+    if (width >= 640) {
+      return 28
+    }
     return 24
   })
 

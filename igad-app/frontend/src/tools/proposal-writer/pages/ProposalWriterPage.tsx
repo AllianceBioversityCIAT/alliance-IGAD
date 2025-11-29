@@ -85,6 +85,7 @@ export function ProposalWriterPage() {
       }
     }
     if (draft.rfpAnalysis) {
+      console.log('📊 Loading rfpAnalysis from localStorage:', !!draft.rfpAnalysis)
       setRfpAnalysis(draft.rfpAnalysis)
     }
 
@@ -95,6 +96,10 @@ export function ProposalWriterPage() {
     if (draft.proposalId) {
       const savedConceptAnalysis = localStorage.getItem(
         `proposal_concept_analysis_${draft.proposalId}`
+      )
+      console.log(
+        `📊 Checking for conceptAnalysis with key: proposal_concept_analysis_${draft.proposalId}`,
+        !!savedConceptAnalysis
       )
       if (savedConceptAnalysis) {
         try {
@@ -107,6 +112,7 @@ export function ProposalWriterPage() {
             unwrapped = unwrapped.concept_analysis
           }
 
+          console.log('📊 Loading conceptAnalysis from localStorage:', !!unwrapped)
           setConceptAnalysis(unwrapped)
         } catch (e) {
           console.error('Failed to parse saved concept analysis:', e)
@@ -137,6 +143,8 @@ export function ProposalWriterPage() {
         }
       }
     }
+
+    console.log('📊 Initial load complete - rfpAnalysis:', !!draft.rfpAnalysis)
   }, [])
 
   // Load formData from DynamoDB if localStorage is empty
@@ -214,6 +222,7 @@ export function ProposalWriterPage() {
 
   useEffect(() => {
     if (rfpAnalysis) {
+      console.log('💾 Saving rfpAnalysis to localStorage with key: draft_rfp_analysis')
       saveRfpAnalysis(rfpAnalysis)
     }
   }, [rfpAnalysis, saveRfpAnalysis])
@@ -221,9 +230,16 @@ export function ProposalWriterPage() {
   // Save concept analysis to localStorage
   useEffect(() => {
     if (conceptAnalysis && proposalId) {
+      console.log(
+        `💾 Saving conceptAnalysis to localStorage with key: proposal_concept_analysis_${proposalId}`
+      )
       localStorage.setItem(
         `proposal_concept_analysis_${proposalId}`,
         JSON.stringify(conceptAnalysis)
+      )
+    } else {
+      console.log(
+        `⚠️ Not saving conceptAnalysis - conceptAnalysis: ${!!conceptAnalysis}, proposalId: ${!!proposalId}`
       )
     }
   }, [conceptAnalysis, proposalId])
@@ -283,6 +299,7 @@ export function ProposalWriterPage() {
     if (proposalId) {
       // Listen for document update events
       const handleDocumentsUpdated = () => {
+        console.log('📄 [ProposalWriterPage] documents-updated event received - clearing analyses')
         setRfpAnalysis(null)
         setConceptAnalysis(null)
         setConceptDocument(null)
@@ -385,7 +402,7 @@ export function ProposalWriterPage() {
       if (proposalId && currentStep === 4 && !proposalTemplate) {
         try {
           console.log('🔍 Loading proposal template for proposalId:', proposalId)
-          
+
           // First check localStorage
           const cachedTemplate = localStorage.getItem(`proposal_template_${proposalId}`)
           if (cachedTemplate) {
@@ -588,28 +605,25 @@ export function ProposalWriterPage() {
       // TODO: Call API to generate proposal template
       // For now, simulate template generation
       console.log('🔄 Generating proposal template...')
-      
+
       // Placeholder: In real implementation, call proposalService.generateProposalTemplate
       await new Promise(resolve => setTimeout(resolve, 2000))
-      
+
       const mockTemplate = {
         sections: selectedSections.map(section => ({
           title: section,
           content: `Content for ${section}`,
-          userComment: userComments[section] || ''
+          userComment: userComments[section] || '',
         })),
-        generatedAt: new Date().toISOString()
+        generatedAt: new Date().toISOString(),
       }
 
       setProposalTemplate(mockTemplate)
       setIsGeneratingDocument(false)
-      
+
       // Save to localStorage
       if (proposalId) {
-        localStorage.setItem(
-          `proposal_template_${proposalId}`,
-          JSON.stringify(mockTemplate)
-        )
+        localStorage.setItem(`proposal_template_${proposalId}`, JSON.stringify(mockTemplate))
         localStorage.setItem(
           `proposal_structure_selection_${proposalId}`,
           JSON.stringify({ selectedSections, userComments })
@@ -965,12 +979,9 @@ export function ProposalWriterPage() {
     poll()
   }
 
-  const handleConceptEvaluationChange = useCallback(
-    (data: { selectedSections: string[] }) => {
-      setConceptEvaluationData(data)
-    },
-    []
-  )
+  const handleConceptEvaluationChange = useCallback((data: { selectedSections: string[] }) => {
+    setConceptEvaluationData(data)
+  }, [])
 
   const parseMarkdownToHTML = (markdown: string): string => {
     let formatted = markdown
@@ -1140,12 +1151,7 @@ export function ProposalWriterPage() {
           />
         )
       case 4:
-        return (
-          <Step4StructureWorkplan
-            {...stepProps}
-            onGenerateTemplate={handleGenerateTemplate}
-          />
-        )
+        return <Step4StructureWorkplan {...stepProps} onGenerateTemplate={handleGenerateTemplate} />
       case 5:
         return <Step5ReviewRefinement {...stepProps} />
       case 6:

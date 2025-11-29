@@ -65,7 +65,9 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
   const selectedCount = sectionsNeedingElaboration.filter((s: any) => s.selected === true).length
   // Calculate number of sections from the actual document
   const getDocumentSectionCount = () => {
-    if (!conceptDocument) return 0
+    if (!conceptDocument) {
+      return 0
+    }
 
     // NEW FORMAT: Check generated_concept_document and sections
     if (conceptDocument?.generated_concept_document) {
@@ -323,7 +325,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
           new Paragraph({
             text: line.substring(4),
             heading: HeadingLevel.HEADING_3,
-            spacing: { before: 200, after: 100 }
+            spacing: { before: 200, after: 100 },
           })
         )
       } else if (line.startsWith('## ')) {
@@ -331,7 +333,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
           new Paragraph({
             text: line.substring(3),
             heading: HeadingLevel.HEADING_2,
-            spacing: { before: 300, after: 100 }
+            spacing: { before: 300, after: 100 },
           })
         )
       } else if (line.startsWith('# ')) {
@@ -339,7 +341,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
           new Paragraph({
             text: line.substring(2),
             heading: HeadingLevel.HEADING_1,
-            spacing: { before: 400, after: 200 }
+            spacing: { before: 400, after: 200 },
           })
         )
       }
@@ -349,7 +351,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
           new Paragraph({
             text: line.replace(/^[\*\-]\s+/, ''),
             bullet: { level: 0 },
-            spacing: { after: 50 }
+            spacing: { after: 50 },
           })
         )
       }
@@ -362,7 +364,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
         paragraphs.push(
           new Paragraph({
             text: line.trim(),
-            spacing: { after: 100 }
+            spacing: { after: 100 },
           })
         )
       }
@@ -435,9 +437,9 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
         const doc = new Document({
           sections: [
             {
-              children: sections
-            }
-          ]
+              children: sections,
+            },
+          ],
         })
 
         // Generate and download DOCX

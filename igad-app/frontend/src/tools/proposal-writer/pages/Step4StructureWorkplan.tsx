@@ -14,10 +14,7 @@ interface Section {
 interface Step4Props extends StepProps {
   proposalId?: string
   conceptDocument?: any
-  onGenerateTemplate?: (
-    selectedSections: string[],
-    userComments: { [key: string]: string }
-  ) => void
+  onGenerateTemplate?: (selectedSections: string[], userComments: { [key: string]: string }) => void
 }
 
 const PRIORITY_COLORS = {
@@ -150,7 +147,7 @@ const PROPOSAL_SECTIONS: Section[] = [
   {
     section: 'Organizational Capacity',
     description:
-      'Demonstration of your organization\'s ability to successfully implement the project, including relevant experience, expertise, and resources.',
+      "Demonstration of your organization's ability to successfully implement the project, including relevant experience, expertise, and resources.",
     priority: 'Recommended',
     suggestions: [
       'Highlight relevant past projects and results',
@@ -323,7 +320,8 @@ export function Step4StructureWorkplan({
             <div>
               <h3 className={step2Styles.sectionTitle}>Generate Proposal Template</h3>
               <p className={step2Styles.sectionSubtitle}>
-                Create a customized Word template with instructions and suggested content based on your RFP
+                Create a customized Word template with instructions and suggested content based on
+                your RFP
               </p>
             </div>
           </div>

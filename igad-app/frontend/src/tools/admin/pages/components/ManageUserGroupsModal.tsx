@@ -96,7 +96,7 @@ export function ManageUserGroupsModal({
             </div>
           </div>
         )}
-        
+
         <div className={styles.header}>
           <h2 className={styles.title}>
             <Users size={20} />
@@ -138,8 +138,10 @@ export function ManageUserGroupsModal({
                             <Loader2 size={14} className={styles.spinner} />
                             {isInGroup ? 'Removing...' : 'Adding...'}
                           </>
+                        ) : isInGroup ? (
+                          'Remove'
                         ) : (
-                          isInGroup ? 'Remove' : 'Add'
+                          'Add'
                         )}
                       </button>
                     </div>

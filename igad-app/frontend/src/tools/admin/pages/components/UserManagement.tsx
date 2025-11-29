@@ -139,7 +139,7 @@ export function UserManagement() {
   const handleToggleUser = async (username: string, enabled: boolean, email: string) => {
     const actionKey = `toggle-${username}`
     setLoadingStates(prev => ({ ...prev, [actionKey]: 'toggling' }))
-    
+
     try {
       const result = enabled
         ? await userService.disableUser(username)
@@ -360,8 +360,8 @@ export function UserManagement() {
               </tr>
             ) : (
               filteredUsers.map(user => (
-                <tr 
-                  key={user.username} 
+                <tr
+                  key={user.username}
                   className={`${styles.tableRow} ${deletingUsername === user.username ? styles.rowDeleting : ''}`}
                 >
                   <td className={styles.tableCell}>

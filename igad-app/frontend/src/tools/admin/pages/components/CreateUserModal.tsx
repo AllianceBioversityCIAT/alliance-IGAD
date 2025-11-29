@@ -93,7 +93,7 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
             </div>
           </div>
         )}
-        
+
         <div className={styles.header}>
           <h2 className={styles.title}>Create New User</h2>
           <button onClick={onClose} className={styles.closeButton}>
@@ -112,7 +112,9 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
             <input
               type="email"
               value={formData.email}
-              onChange={e => setFormData(prev => ({ ...prev, email: e.target.value.toLowerCase() }))}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, email: e.target.value.toLowerCase() }))
+              }
               className={styles.input}
               placeholder="Enter email address"
               required

@@ -50,7 +50,7 @@ class AuthService {
 
   setToken(token: string, refreshToken?: string, rememberMe: boolean = false): void {
     tokenManager.setTokens(token, refreshToken, rememberMe)
-    
+
     // Dispatch custom event for same-tab auth changes
     window.dispatchEvent(new CustomEvent('auth-change', { detail: { type: 'login' } }))
   }
@@ -68,7 +68,7 @@ class AuthService {
       localStorage.removeItem('user_email')
     }
     sessionStorage.removeItem('user_email')
-    
+
     // Dispatch custom event for same-tab auth changes
     window.dispatchEvent(new CustomEvent('auth-change', { detail: { type: 'logout' } }))
   }

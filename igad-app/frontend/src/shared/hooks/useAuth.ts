@@ -57,7 +57,7 @@ export const useAuth = () => {
     }) as EventListener
 
     loadUser()
-    
+
     // Add listeners
     window.addEventListener('storage', handleStorageChange)
     window.addEventListener('auth-change', handleAuthEvent)

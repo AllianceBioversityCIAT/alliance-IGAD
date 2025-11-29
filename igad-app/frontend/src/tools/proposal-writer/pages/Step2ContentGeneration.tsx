@@ -1,40 +1,108 @@
+// ============================================================================
+// IMPORTS
+// ============================================================================
+// React Core
 import { useState, useEffect } from 'react'
+
+// External Libraries - Icons
 import { Target, CheckCircle, Layers, Check, ChevronDown, ChevronUp } from 'lucide-react'
+
+// Local Imports
 import { StepProps } from './stepConfig'
 import styles from './step2.module.css'
 
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+/**
+ * Represents the fit assessment between the proposal concept and donor priorities
+ */
 interface FitAssessment {
+  /** Level of alignment (e.g., "Very strong alignment", "Moderate alignment") */
   alignment_level: string
+  /** Detailed explanation of the alignment assessment */
   justification: string
+  /** Confidence level in the assessment */
   confidence: string
 }
 
+/**
+ * Represents a section of the proposal that needs further elaboration
+ */
 interface SectionNeedingElaboration {
+  /** Name of the section requiring elaboration */
   section: string
+  /** Description of the issue or gap in the section */
   issue: string
+  /** Priority level for addressing this section */
   priority: 'Critical' | 'Recommended' | 'Optional'
+  /** Optional array of suggestions for improving the section */
   suggestions?: string[]
 }
 
+/**
+ * Complete analysis of the proposal concept from AI evaluation
+ */
 interface ConceptAnalysis {
+  /** Overall fit assessment with donor priorities */
   fit_assessment: FitAssessment
+  /** List of strong aspects identified in the concept */
   strong_aspects: string[]
+  /** Sections that need further elaboration */
   sections_needing_elaboration: SectionNeedingElaboration[]
+  /** Strategic verdict and recommendations */
   strategic_verdict: string
 }
 
+/**
+ * Props for the Step2ContentGeneration component
+ * Extends base StepProps with Step 2 specific properties
+ */
 interface Step2Props extends StepProps {
+  /** Unique identifier for the proposal */
   proposalId?: string
-  conceptAnalysis?: ConceptAnalysis
+  /** AI-generated concept analysis (may be nested due to backend structure) */
+  conceptAnalysis?: ConceptAnalysis | { concept_analysis: ConceptAnalysis }
+  /** Saved evaluation data containing user selections */
   conceptEvaluationData?: {
     selectedSections: string[]
   }
-  onConceptEvaluationChange?: (data: {
-    selectedSections: string[]
-  }) => void
+  /** Callback fired when user changes their section selections */
+  onConceptEvaluationChange?: (data: { selectedSections: string[] }) => void
 }
 
-const ALIGNMENT_COLORS = {
+/**
+ * Color configuration for alignment level badges
+ * Maps alignment levels to their corresponding visual styling
+ */
+type AlignmentColorConfig = {
+  bg: string
+  border: string
+  text: string
+}
+
+/**
+ * Color configuration for priority badges
+ * Maps priority levels to their corresponding visual styling
+ */
+type PriorityColorConfig = {
+  bg: string
+  border: string
+  text: string
+}
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+/**
+ * Color mapping for different alignment levels
+ * Green: Strong/Very strong alignment
+ * Yellow: Moderate/Partial alignment
+ * Red: Weak alignment
+ */
+const ALIGNMENT_COLORS: Record<string, AlignmentColorConfig> = {
   'Very strong alignment': { bg: '#DCFCE7', border: '#B9F8CF', text: '#016630' },
   'Strong alignment': { bg: '#DCFCE7', border: '#B9F8CF', text: '#016630' },
   'Moderate alignment': { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
@@ -46,39 +114,77 @@ const ALIGNMENT_COLORS = {
   'Weak alignment': { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' },
 }
 
-const PRIORITY_COLORS = {
+/**
+ * Color mapping for section priority levels
+ * Red: Critical priority
+ * Yellow: Recommended priority
+ * Blue: Optional priority
+ */
+const PRIORITY_COLORS: Record<'Critical' | 'Recommended' | 'Optional', PriorityColorConfig> = {
   Critical: { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' },
   Recommended: { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
   Optional: { bg: '#E0E7FF', border: '#C7D2FE', text: '#193CB8' },
 }
 
-export function Step2ContentGeneration({
-  conceptAnalysis: rawConceptAnalysis,
-  conceptEvaluationData,
-  onConceptEvaluationChange,
-}: Step2Props) {
-  // Unwrap concept_analysis if it comes wrapped from backend (double unwrap)
-  let conceptAnalysis = rawConceptAnalysis?.concept_analysis || rawConceptAnalysis
+/**
+ * Default suggestions shown when a section has no specific suggestions
+ */
+const DEFAULT_SUGGESTIONS = [
+  'Start with the end (impact) and work backwards',
+  'List key assumptions that must hold true',
+  'Reference evidence for why your approach will work',
+]
 
-  // Check for double nesting (concept_analysis.concept_analysis)
-  if (conceptAnalysis?.concept_analysis) {
-    console.log('🔍 Step 2 - Found nested concept_analysis, unwrapping again...')
-    conceptAnalysis = conceptAnalysis.concept_analysis
+// ============================================================================
+// CUSTOM HOOKS
+// ============================================================================
+
+/**
+ * Custom hook to unwrap potentially nested concept analysis data
+ * Backend sometimes returns data nested as concept_analysis.concept_analysis
+ */
+function useUnwrappedConceptAnalysis(
+  rawConceptAnalysis?: ConceptAnalysis | { concept_analysis: ConceptAnalysis }
+): ConceptAnalysis | undefined {
+  if (!rawConceptAnalysis) {
+    return undefined
   }
 
-  console.log('🔍 Step 2 - Raw Concept Analysis:', rawConceptAnalysis)
-  console.log('🔍 Step 2 - Unwrapped Concept Analysis:', conceptAnalysis)
-  console.log('🔍 Step 2 - Saved Evaluation Data:', conceptEvaluationData)
+  // First level unwrap: check if wrapped in concept_analysis
+  const hasConceptAnalysisProperty = 'concept_analysis' in rawConceptAnalysis
+  let conceptAnalysis: ConceptAnalysis = hasConceptAnalysisProperty
+    ? rawConceptAnalysis.concept_analysis
+    : rawConceptAnalysis
 
-  // Initialize selected sections from saved data OR default to Critical
+  // Second level unwrap: check for double nesting
+  if (
+    'concept_analysis' in conceptAnalysis &&
+    typeof conceptAnalysis.concept_analysis === 'object'
+  ) {
+    conceptAnalysis = conceptAnalysis.concept_analysis as ConceptAnalysis
+  }
+
+  return conceptAnalysis
+}
+
+/**
+ * Custom hook to manage selected sections state
+ * Initializes from saved data or defaults to Critical sections
+ * Notifies parent component of changes via callback
+ */
+function useSelectedSections(
+  conceptAnalysis: ConceptAnalysis | undefined,
+  conceptEvaluationData?: { selectedSections: string[] },
+  onConceptEvaluationChange?: (data: { selectedSections: string[] }) => void
+): [string[], React.Dispatch<React.SetStateAction<string[]>>] {
+  // Initialize selected sections from saved data OR default to Critical priority sections
   const [selectedSections, setSelectedSections] = useState<string[]>(() => {
-    // First priority: load from saved evaluation data
+    // Priority 1: Load from saved evaluation data (when returning to this step)
     if (conceptEvaluationData?.selectedSections) {
-      console.log('✅ Loading saved sections:', conceptEvaluationData.selectedSections)
       return conceptEvaluationData.selectedSections
     }
 
-    // Fallback: Critical sections by default
+    // Priority 2: Default to Critical sections (first time on this step)
     if (!conceptAnalysis?.sections_needing_elaboration) {
       return []
     }
@@ -87,9 +193,7 @@ export function Step2ContentGeneration({
       .map(s => s.section)
   })
 
-  const [expandedSections, setExpandedSections] = useState<string[]>([])
-
-  // Notify parent of state changes
+  // Notify parent component whenever selections change
   useEffect(() => {
     if (onConceptEvaluationChange) {
       onConceptEvaluationChange({
@@ -98,30 +202,15 @@ export function Step2ContentGeneration({
     }
   }, [selectedSections, onConceptEvaluationChange])
 
-  if (!conceptAnalysis || !conceptAnalysis.fit_assessment) {
-    return (
-      <div className={styles.mainContent}>
-        <div className={styles.stepHeader}>
-          <h1 className={styles.stepMainTitle}>Step 2: Concept Review</h1>
-          <p className={styles.stepMainDescription}>
-            AI review of your high-level concept with fit assessment and elaboration suggestions
-          </p>
-        </div>
-        <div className={styles.emptyState}>
-          <p>Complete Step 1 to see your concept analysis</p>
-        </div>
-      </div>
-    )
-  }
+  return [selectedSections, setSelectedSections]
+}
 
-  const { fit_assessment, strong_aspects, sections_needing_elaboration, strategic_verdict } =
-    conceptAnalysis
-
-  const toggleSection = (sectionName: string) => {
-    setSelectedSections(prev =>
-      prev.includes(sectionName) ? prev.filter(s => s !== sectionName) : [...prev, sectionName]
-    )
-  }
+/**
+ * Custom hook to manage expanded sections state
+ * Tracks which section detail panels are currently expanded
+ */
+function useExpandedSections(): [string[], (sectionName: string) => void] {
+  const [expandedSections, setExpandedSections] = useState<string[]>([])
 
   const toggleExpansion = (sectionName: string) => {
     setExpandedSections(prev =>
@@ -129,9 +218,349 @@ export function Step2ContentGeneration({
     )
   }
 
-  const alignmentColor =
-    ALIGNMENT_COLORS[fit_assessment.alignment_level as keyof typeof ALIGNMENT_COLORS] ||
-    ALIGNMENT_COLORS['Moderate alignment']
+  return [expandedSections, toggleExpansion]
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Gets the color configuration for an alignment level badge
+ * Falls back to "Moderate alignment" if level is not found
+ */
+function getAlignmentColor(alignmentLevel: string): AlignmentColorConfig {
+  return ALIGNMENT_COLORS[alignmentLevel] || ALIGNMENT_COLORS['Moderate alignment']
+}
+
+/**
+ * Gets the color configuration for a priority badge
+ */
+function getPriorityColor(priority: 'Critical' | 'Recommended' | 'Optional'): PriorityColorConfig {
+  return PRIORITY_COLORS[priority]
+}
+
+// ============================================================================
+// SUB-COMPONENTS
+// ============================================================================
+
+/**
+ * Empty state component shown when concept analysis is not available
+ * Prompts user to complete Step 1 first
+ */
+function EmptyState() {
+  return (
+    <div className={styles.mainContent}>
+      <div className={styles.stepHeader}>
+        <h1 className={styles.stepMainTitle}>Step 2: Concept Review</h1>
+        <p className={styles.stepMainDescription}>
+          AI review of your high-level concept with fit assessment and elaboration suggestions
+        </p>
+      </div>
+      <div className={styles.emptyState}>
+        <p>Complete Step 1 to see your concept analysis</p>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Fit Assessment Card Component
+ * Displays the overall alignment assessment between proposal and donor priorities
+ */
+function FitAssessmentCard({ fitAssessment }: { fitAssessment: FitAssessment }) {
+  const alignmentColor = getAlignmentColor(fitAssessment.alignment_level)
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <div className={styles.sectionHeader}>
+          <Target className={styles.sectionIcon} size={24} />
+          <div>
+            <h2 className={styles.sectionTitle}>Fit Assessment</h2>
+            <p className={styles.sectionSubtitle}>
+              Overall alignment with donor priorities and RFP requirements
+            </p>
+          </div>
+        </div>
+        <span
+          className={styles.badge}
+          style={{
+            backgroundColor: alignmentColor.bg,
+            border: `1px solid ${alignmentColor.border}`,
+            color: alignmentColor.text,
+          }}
+        >
+          {fitAssessment.alignment_level}
+        </span>
+      </div>
+      <div className={styles.fitAssessmentContent}>
+        <p className={styles.justificationText}>{fitAssessment.justification}</p>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Strong Aspects Card Component
+ * Lists the key strengths identified in the proposal concept
+ */
+function StrongAspectsCard({ strongAspects }: { strongAspects: string[] }) {
+  return (
+    <div className={styles.card}>
+      <div className={styles.sectionHeader}>
+        <CheckCircle className={styles.sectionIcon} size={24} />
+        <div>
+          <h2 className={styles.sectionTitle}>Strong Aspects of Your Proposal</h2>
+          <p className={styles.sectionSubtitle}>Key strengths identified in your initial concept</p>
+        </div>
+      </div>
+      <div className={styles.strongAspectsList}>
+        {strongAspects.map((aspect, index) => (
+          <div key={index} className={styles.strongAspectItem}>
+            <Check className={styles.checkIcon} size={16} />
+            <span className={styles.aspectText}>{aspect}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Section Item Component
+ * Represents a single section that needs elaboration
+ * Includes checkbox, priority badge, and expandable details
+ */
+interface SectionItemProps {
+  section: SectionNeedingElaboration
+  isSelected: boolean
+  isExpanded: boolean
+  onToggleSelection: () => void
+  onToggleExpansion: () => void
+}
+
+function SectionItem({
+  section,
+  isSelected,
+  isExpanded,
+  onToggleSelection,
+  onToggleExpansion,
+}: SectionItemProps) {
+  const priorityColor = getPriorityColor(section.priority)
+  const suggestions =
+    section.suggestions && section.suggestions.length > 0
+      ? section.suggestions
+      : DEFAULT_SUGGESTIONS
+
+  return (
+    <div className={styles.sectionItem}>
+      {/* Section Header - always visible */}
+      <div className={styles.sectionItemHeader}>
+        <div className={styles.sectionItemHeaderLeft}>
+          {/* Checkbox for selection */}
+          <div
+            className={`${styles.checkbox} ${isSelected ? styles.checkboxChecked : ''}`}
+            onClick={onToggleSelection}
+          >
+            {isSelected && <Check size={14} color="white" />}
+          </div>
+
+          {/* Section info: title and priority badge */}
+          <div className={styles.sectionItemInfo}>
+            <h3 className={styles.sectionItemTitle}>{section.section}</h3>
+            <span
+              className={styles.badge}
+              style={{
+                backgroundColor: priorityColor.bg,
+                border: `1px solid ${priorityColor.border}`,
+                color: priorityColor.text,
+              }}
+            >
+              {section.priority}
+            </span>
+          </div>
+        </div>
+
+        {/* Expand/Collapse button */}
+        <button className={styles.expandButton} onClick={onToggleExpansion}>
+          {isExpanded ? 'See less' : 'See more'}
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+      </div>
+
+      {/* Expanded content - shown when isExpanded is true */}
+      {isExpanded && (
+        <div className={styles.sectionItemContent}>
+          {/* Details and guidance */}
+          <div className={styles.detailsSection}>
+            <h4 className={styles.subsectionTitle}>Details and Guidance</h4>
+            <p className={styles.subsectionText}>{section.issue}</p>
+          </div>
+
+          {/* Suggestions */}
+          <div className={styles.suggestionsSection}>
+            <h4 className={styles.subsectionTitle}>Suggestions</h4>
+            <ul className={styles.suggestionsList}>
+              {suggestions.map((suggestion, idx) => (
+                <li key={idx}>{suggestion}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Sections Needing Elaboration Card Component
+ * Main interactive component where users select which sections to elaborate
+ */
+interface SectionsNeedingElaborationCardProps {
+  sections: SectionNeedingElaboration[]
+  selectedSections: string[]
+  expandedSections: string[]
+  onToggleSection: (sectionName: string) => void
+  onToggleExpansion: (sectionName: string) => void
+}
+
+function SectionsNeedingElaborationCard({
+  sections,
+  selectedSections,
+  expandedSections,
+  onToggleSection,
+  onToggleExpansion,
+}: SectionsNeedingElaborationCardProps) {
+  return (
+    <div className={styles.sectionsCard}>
+      <div className={styles.sectionsCardInner}>
+        <div className={styles.sectionHeader}>
+          <Layers className={styles.sectionIcon} size={24} />
+          <div>
+            <h2 className={styles.sectionTitle}>Sections Needing Elaboration</h2>
+            <p className={styles.sectionSubtitle}>
+              Select the sections you would like to include in the updated concept document.
+              Selected sections will be automatically generated and included in your updated concept
+              document in the next step.
+            </p>
+          </div>
+        </div>
+
+        {/* Selection counter */}
+        <div className={styles.selectionCount}>
+          <strong>{selectedSections.length}</strong> sections selected
+        </div>
+
+        {/* List of sections */}
+        <div className={styles.sectionsList}>
+          {sections.map((section, index) => (
+            <SectionItem
+              key={index}
+              section={section}
+              isSelected={selectedSections.includes(section.section)}
+              isExpanded={expandedSections.includes(section.section)}
+              onToggleSelection={() => onToggleSection(section.section)}
+              onToggleExpansion={() => onToggleExpansion(section.section)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Strategic Verdict Component
+ * Displays the overall strategic verdict and recommendations
+ * Only shown if verdict text is available
+ */
+function StrategicVerdict({ verdict }: { verdict?: string }) {
+  if (!verdict) {
+    return null
+  }
+
+  return (
+    <div className={styles.verdictBox}>
+      <p className={styles.verdictText}>{verdict}</p>
+    </div>
+  )
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+/**
+ * Step 2: Content Generation Component
+ *
+ * This step displays AI-generated analysis of the proposal concept, including:
+ * - Fit assessment: How well the concept aligns with donor priorities
+ * - Strong aspects: Key strengths identified in the concept
+ * - Sections needing elaboration: Areas that need more detail (user can select which to include)
+ * - Strategic verdict: Overall recommendations
+ *
+ * The component handles:
+ * - Unwrapping potentially nested API response data
+ * - Persisting user selections across navigation
+ * - Default selection of Critical priority sections
+ * - Expandable/collapsible section details
+ */
+export function Step2ContentGeneration({
+  conceptAnalysis: rawConceptAnalysis,
+  conceptEvaluationData,
+  onConceptEvaluationChange,
+}: Step2Props) {
+  // ========================================
+  // HOOKS & STATE
+  // ========================================
+
+  // Unwrap potentially nested concept analysis data
+  const conceptAnalysis = useUnwrappedConceptAnalysis(rawConceptAnalysis)
+
+  // Manage selected sections (which sections user wants to elaborate)
+  const [selectedSections, setSelectedSections] = useSelectedSections(
+    conceptAnalysis,
+    conceptEvaluationData,
+    onConceptEvaluationChange
+  )
+
+  // Manage expanded sections (which section details are currently visible)
+  const [expandedSections, toggleExpansion] = useExpandedSections()
+
+  // ========================================
+  // EVENT HANDLERS
+  // ========================================
+
+  /**
+   * Toggles selection of a section for elaboration
+   * Adds to selectedSections if not present, removes if already present
+   */
+  const toggleSection = (sectionName: string) => {
+    setSelectedSections(prev =>
+      prev.includes(sectionName) ? prev.filter(s => s !== sectionName) : [...prev, sectionName]
+    )
+  }
+
+  // ========================================
+  // EARLY RETURNS
+  // ========================================
+
+  // Show empty state if concept analysis is not available
+  if (!conceptAnalysis || !conceptAnalysis.fit_assessment) {
+    return <EmptyState />
+  }
+
+  // ========================================
+  // DESTRUCTURE DATA
+  // ========================================
+
+  const { fit_assessment, strong_aspects, sections_needing_elaboration, strategic_verdict } =
+    conceptAnalysis
+
+  // ========================================
+  // RENDER
+  // ========================================
 
   return (
     <div className={styles.mainContent}>
@@ -145,150 +574,22 @@ export function Step2ContentGeneration({
 
       <div className={styles.step2Container}>
         {/* Fit Assessment Card */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div className={styles.sectionHeader}>
-              <Target className={styles.sectionIcon} size={24} />
-              <div>
-                <h2 className={styles.sectionTitle}>Fit Assessment</h2>
-                <p className={styles.sectionSubtitle}>
-                  Overall alignment with donor priorities and RFP requirements
-                </p>
-              </div>
-            </div>
-            <span
-              className={styles.badge}
-              style={{
-                backgroundColor: alignmentColor.bg,
-                border: `1px solid ${alignmentColor.border}`,
-                color: alignmentColor.text,
-              }}
-            >
-              {fit_assessment.alignment_level}
-            </span>
-          </div>
-          <div className={styles.fitAssessmentContent}>
-            <p className={styles.justificationText}>{fit_assessment.justification}</p>
-          </div>
-        </div>
+        <FitAssessmentCard fitAssessment={fit_assessment} />
 
         {/* Strong Aspects Card */}
-        <div className={styles.card}>
-          <div className={styles.sectionHeader}>
-            <CheckCircle className={styles.sectionIcon} size={24} />
-            <div>
-              <h2 className={styles.sectionTitle}>Strong Aspects of Your Proposal</h2>
-              <p className={styles.sectionSubtitle}>
-                Key strengths identified in your initial concept
-              </p>
-            </div>
-          </div>
-          <div className={styles.strongAspectsList}>
-            {strong_aspects.map((aspect, index) => (
-              <div key={index} className={styles.strongAspectItem}>
-                <Check className={styles.checkIcon} size={16} />
-                <span className={styles.aspectText}>{aspect}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <StrongAspectsCard strongAspects={strong_aspects} />
 
         {/* Sections Needing Elaboration Card */}
-        <div className={styles.sectionsCard}>
-          <div className={styles.sectionsCardInner}>
-            <div className={styles.sectionHeader}>
-              <Layers className={styles.sectionIcon} size={24} />
-              <div>
-                <h2 className={styles.sectionTitle}>Sections Needing Elaboration</h2>
-                <p className={styles.sectionSubtitle}>
-                  Select the sections you'd like to include in the updated concept document.
-                  Selected sections will be automatically generated and included in your updated
-                  concept document in the next step.
-                </p>
-              </div>
-            </div>
+        <SectionsNeedingElaborationCard
+          sections={sections_needing_elaboration}
+          selectedSections={selectedSections}
+          expandedSections={expandedSections}
+          onToggleSection={toggleSection}
+          onToggleExpansion={toggleExpansion}
+        />
 
-            <div className={styles.selectionCount}>
-              <strong>{selectedSections.length}</strong> sections selected
-            </div>
-
-            <div className={styles.sectionsList}>
-              {sections_needing_elaboration.map((section, index) => {
-                const isSelected = selectedSections.includes(section.section)
-                const isExpanded = expandedSections.includes(section.section)
-                const priorityColor = PRIORITY_COLORS[section.priority]
-
-                return (
-                  <div key={index} className={styles.sectionItem}>
-                    <div className={styles.sectionItemHeader}>
-                      <div className={styles.sectionItemHeaderLeft}>
-                        <div
-                          className={`${styles.checkbox} ${isSelected ? styles.checkboxChecked : ''}`}
-                          onClick={() => toggleSection(section.section)}
-                        >
-                          {isSelected && <Check size={14} color="white" />}
-                        </div>
-                        <div className={styles.sectionItemInfo}>
-                          <h3 className={styles.sectionItemTitle}>{section.section}</h3>
-                          <span
-                            className={styles.badge}
-                            style={{
-                              backgroundColor: priorityColor.bg,
-                              border: `1px solid ${priorityColor.border}`,
-                              color: priorityColor.text,
-                            }}
-                          >
-                            {section.priority}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        className={styles.expandButton}
-                        onClick={() => toggleExpansion(section.section)}
-                      >
-                        {isExpanded ? 'See less' : 'See more'}
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </button>
-                    </div>
-
-                    {isExpanded && (
-                      <div className={styles.sectionItemContent}>
-                        <div className={styles.detailsSection}>
-                          <h4 className={styles.subsectionTitle}>Details and Guidance</h4>
-                          <p className={styles.subsectionText}>{section.issue}</p>
-                        </div>
-
-                        <div className={styles.suggestionsSection}>
-                          <h4 className={styles.subsectionTitle}>Suggestions</h4>
-                          <ul className={styles.suggestionsList}>
-                            {section.suggestions && section.suggestions.length > 0 ? (
-                              section.suggestions.map((suggestion, idx) => (
-                                <li key={idx}>{suggestion}</li>
-                              ))
-                            ) : (
-                              <>
-                                <li>Start with the end (impact) and work backwards</li>
-                                <li>List key assumptions that must hold true</li>
-                                <li>Reference evidence for why your approach will work</li>
-                              </>
-                            )}
-                          </ul>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Strategic Verdict (if needed) */}
-        {strategic_verdict && (
-          <div className={styles.verdictBox}>
-            <p className={styles.verdictText}>{strategic_verdict}</p>
-          </div>
-        )}
+        {/* Strategic Verdict (if available) */}
+        <StrategicVerdict verdict={strategic_verdict} />
       </div>
     </div>
   )

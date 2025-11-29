@@ -205,7 +205,9 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={e => setFormData(prev => ({ ...prev, email: e.target.value.toLowerCase() }))}
+                    onChange={e =>
+                      setFormData(prev => ({ ...prev, email: e.target.value.toLowerCase() }))
+                    }
                     className={styles.input}
                     required
                   />
@@ -297,8 +299,10 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
                               <Loader2 size={14} className={styles.spinner} />
                               {isInGroup ? 'Removing...' : 'Adding...'}
                             </>
+                          ) : isInGroup ? (
+                            'Remove'
                           ) : (
-                            isInGroup ? 'Remove' : 'Add'
+                            'Add'
                           )}
                         </button>
                       </div>
