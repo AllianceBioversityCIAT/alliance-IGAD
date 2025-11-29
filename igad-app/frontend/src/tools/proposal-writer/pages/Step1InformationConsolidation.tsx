@@ -102,6 +102,14 @@ export function Step1InformationConsolidation({
   const [showManualInput, setShowManualInput] = useState(false)
 
   // ============================================================================
+  // STATE - Drag and Drop
+  // ============================================================================
+
+  /** Track if files are being dragged over upload area */
+  const [isDraggingRFP, setIsDraggingRFP] = useState(false)
+  const [isDraggingConcept, setIsDraggingConcept] = useState(false)
+
+  // ============================================================================
   // STATE - Concept Document
   // ============================================================================
 
@@ -508,6 +516,74 @@ export function Step1InformationConsolidation({
   }
 
   // ============================================================================
+  // HANDLERS - Drag and Drop
+  // ============================================================================
+
+  /**
+   * Handle drag over event for RFP upload area
+   */
+  const handleRFPDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingRFP(true)
+  }
+
+  /**
+   * Handle drag leave event for RFP upload area
+   */
+  const handleRFPDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingRFP(false)
+  }
+
+  /**
+   * Handle drop event for RFP upload area
+   */
+  const handleRFPDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingRFP(false)
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      handleFileUpload('rfp-document', files)
+    }
+  }
+
+  /**
+   * Handle drag over event for concept upload area
+   */
+  const handleConceptDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingConcept(true)
+  }
+
+  /**
+   * Handle drag leave event for concept upload area
+   */
+  const handleConceptDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingConcept(false)
+  }
+
+  /**
+   * Handle drop event for concept upload area
+   */
+  const handleConceptDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingConcept(false)
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      handleConceptFileUpload(files)
+    }
+  }
+
+  // ============================================================================
   // HANDLERS - Text Input
   // ============================================================================
 
@@ -641,7 +717,12 @@ export function Step1InformationConsolidation({
 
         {/* Upload Area or Uploaded File Display */}
         {getUploadedFileCount('rfp-document') === 0 ? (
-          <div className={styles.uploadArea}>
+          <div
+            className={`${styles.uploadArea} ${isDraggingRFP ? styles.uploadAreaDragging : ''}`}
+            onDragOver={handleRFPDragOver}
+            onDragLeave={handleRFPDragLeave}
+            onDrop={handleRFPDrop}
+          >
             {isUploadingRFP ? (
               <>
                 <div className={styles.uploadingSpinner} aria-live="polite">
@@ -950,7 +1031,12 @@ export function Step1InformationConsolidation({
           </p>
 
           {getUploadedFileCount('concept-document') === 0 ? (
-            <div className={styles.uploadAreaSmall}>
+            <div
+              className={`${styles.uploadAreaSmall} ${isDraggingConcept ? styles.uploadAreaDragging : ''}`}
+              onDragOver={handleConceptDragOver}
+              onDragLeave={handleConceptDragLeave}
+              onDrop={handleConceptDrop}
+            >
               {isUploadingConcept ? (
                 <>
                   <div className={styles.uploadingSpinner} aria-live="polite">

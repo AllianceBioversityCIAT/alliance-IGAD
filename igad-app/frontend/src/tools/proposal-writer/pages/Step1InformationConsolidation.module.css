@@ -27,6 +27,51 @@
   line-height: 24px;
 }
 
+/* Title Field */
+.titleField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.titleLabel {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0A0A0A;
+  line-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.requiredAsterisk {
+  color: #DC2626;
+}
+
+.titleInput {
+  padding: 12px;
+  font-size: 14px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: #0A0A0A;
+  font-family: inherit;
+  line-height: 20px;
+  height: 48px;
+  transition: all 0.2s ease;
+}
+
+.titleInput::placeholder {
+  color: #A4A4AF;
+}
+
+.titleInput:focus {
+  outline: none;
+  border-color: #00A63E;
+  box-shadow: 0 0 0 2px rgba(0, 166, 62, 0.1);
+}
+
 /* Progress Card */
 .progressCard {
   background: #EFF6FF;
@@ -250,6 +295,12 @@
   background: #F0FDF4;
 }
 
+.uploadArea.uploadAreaDragging {
+  border-color: #00A63E;
+  background: #F0FDF4;
+  box-shadow: 0 0 0 3px rgba(0, 166, 62, 0.1);
+}
+
 .uploadAreaSmall {
   border: 2px dashed #E5E7EB;
   border-radius: 12px;
@@ -267,6 +318,12 @@
 .uploadAreaSmall:hover {
   border-color: #00A63E;
   background: #F0FDF4;
+}
+
+.uploadAreaSmall.uploadAreaDragging {
+  border-color: #00A63E;
+  background: #F0FDF4;
+  box-shadow: 0 0 0 3px rgba(0, 166, 62, 0.1);
 }
 
 .uploadAreaIcon {
