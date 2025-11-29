@@ -798,3 +798,9 @@ class ConceptDocumentGenerator:
             sections[current_section] = "\n".join(current_content).strip()
 
         return sections
+
+
+# ==================== SERVICE INSTANCE ====================
+
+# Global instance for document generation
+concept_generator = ConceptDocumentGenerator()
