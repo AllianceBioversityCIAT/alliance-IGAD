@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react'
 
 // External Libraries - Icons
-import { Target, CheckCircle, Layers, Check, ChevronDown, ChevronUp, Info, X } from 'lucide-react'
+import { Target, CheckCircle, Check, ChevronDown, ChevronUp, Info, X, Sparkles } from 'lucide-react'
 
 // Local Imports
 import { StepProps } from './stepConfig'
@@ -469,7 +469,7 @@ function SectionsNeedingElaborationCard({
     <div className={styles.sectionsCard}>
       <div className={styles.sectionsCardInner}>
         <div className={styles.sectionHeader}>
-          <Layers className={styles.sectionIcon} size={24} />
+          <Sparkles className={styles.sectionIcon} size={24} />
           <div>
             <h2 className={styles.sectionTitle}>Sections Needing Elaboration</h2>
             <p className={styles.sectionSubtitle}>
