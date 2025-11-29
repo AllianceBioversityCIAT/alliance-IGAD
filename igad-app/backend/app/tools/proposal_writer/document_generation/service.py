@@ -12,13 +12,17 @@ and uses Claude to generate detailed, donor-aligned documentation.
 
 import json
 import logging
+import os
 import re
 import traceback
 from typing import Any, Dict, Optional
 from datetime import datetime
+from io import BytesIO
 
 import boto3
 from boto3.dynamodb.conditions import Attr
+from PyPDF2 import PdfReader
+from docx import Document
 
 from app.shared.ai.bedrock_service import BedrockService
 from app.tools.proposal_writer.document_generation.config import (
@@ -43,12 +47,23 @@ class ConceptDocumentGenerator:
     """
 
     def __init__(self):
-        """Initialize Bedrock and DynamoDB clients."""
+        """
+        Initialize Bedrock, DynamoDB, and S3 clients.
+
+        Sets up clients for:
+        - Bedrock: Claude AI invocation
+        - DynamoDB: Proposal data and outline retrieval
+        - S3: Initial concept document retrieval
+        """
         self.bedrock = BedrockService()
         self.dynamodb = boto3.resource("dynamodb")
+        self.s3 = boto3.client("s3")
         self.table_name = DOCUMENT_GENERATION_SETTINGS.get(
             "table_name", "igad-testing-main-table"
         )
+        self.bucket = os.environ.get("PROPOSALS_BUCKET")
+        if not self.bucket:
+            raise Exception("PROPOSALS_BUCKET environment variable not set")
 
     def generate_document(
         self,
@@ -93,19 +108,29 @@ class ConceptDocumentGenerator:
                     )
                     logger.info(f"✅ Loaded {outline_count} outline sections")
 
-            # Step 3: Prepare context
+            # Step 3: Load initial concept from S3
+            logger.info("📥 Loading initial concept from S3...")
+            initial_concept = self._get_initial_concept_from_s3(proposal_code)
+            if initial_concept:
+                logger.info(
+                    f"✅ Initial concept loaded: {len(initial_concept)} characters"
+                )
+            else:
+                logger.warning("⚠️  Initial concept not found in S3")
+
+            # Step 4: Prepare context
             logger.info("🔄 Preparing context...")
             context = self._prepare_context(
-                rfp_analysis, concept_evaluation, proposal_outline
+                rfp_analysis, concept_evaluation, proposal_outline, initial_concept
             )
 
-            # Step 4: Build final prompt
+            # Step 5: Build final prompt
             user_prompt = self._inject_context(
                 prompt_parts["user_prompt"], context
             )
             final_prompt = f"{user_prompt}\n\n{prompt_parts['output_format']}".strip()
 
-            # Step 5: Call Bedrock
+            # Step 6: Call Bedrock
             logger.info(
                 "📡 Calling Bedrock (this may take 3-5 minutes)..."
             )
@@ -126,7 +151,7 @@ class ConceptDocumentGenerator:
             elapsed = (datetime.utcnow() - start_time).total_seconds()
             logger.info(f"✅ Response received in {elapsed:.1f} seconds")
 
-            # Step 6: Parse response
+            # Step 7: Parse response
             logger.info("📊 Parsing response...")
             document = self._parse_response(ai_response)
 
@@ -137,6 +162,171 @@ class ConceptDocumentGenerator:
             logger.error(f"❌ Document generation failed: {str(e)}")
             traceback.print_exc()
             raise
+
+    # ==================== S3 OPERATIONS ====================
+
+    def _get_initial_concept_from_s3(self, proposal_code: str) -> Optional[str]:
+        """
+        Retrieve initial concept document from S3.
+
+        Tries in order:
+        1. Plain text file (concept_text.txt)
+        2. PDF/DOC/DOCX files in initial_concept folder
+
+        Args:
+            proposal_code: Proposal code for path construction
+
+        Returns:
+            Extracted concept text or None if not found
+
+        Raises:
+            Returns None if concept not found or extraction fails
+        """
+        try:
+            concept_folder = f"{proposal_code}/documents/initial_concept/"
+
+            # Try text file first (fastest)
+            try:
+                text_key = f"{concept_folder}concept_text.txt"
+                logger.info(f"📄 Trying concept text file: {text_key}")
+                obj = self.s3.get_object(Bucket=self.bucket, Key=text_key)
+                concept_text = obj["Body"].read().decode("utf-8")
+                logger.info(f"✅ Loaded concept text: {len(concept_text)} characters")
+                return concept_text
+            except Exception as e:
+                logger.info(f"ℹ️  No concept_text.txt found: {str(e)}")
+
+            # Try document files (PDF/DOCX)
+            logger.info("🔍 Searching for concept document files...")
+            response = self.s3.list_objects_v2(
+                Bucket=self.bucket, Prefix=concept_folder
+            )
+
+            if "Contents" not in response or len(response["Contents"]) == 0:
+                logger.warning("⚠️  No concept content found in S3")
+                return None
+
+            # Find and extract from first document file
+            concept_file = self._find_document_file(response["Contents"])
+            if not concept_file:
+                logger.warning("⚠️  No document files found (PDF/DOC/DOCX)")
+                return None
+
+            logger.info(f"📥 Extracting text from: {concept_file}")
+            return self.extract_text_from_file(concept_file)
+
+        except Exception as e:
+            logger.error(f"❌ Error loading initial concept: {str(e)}")
+            return None
+
+    def _find_document_file(self, contents: list) -> Optional[str]:
+        """
+        Find first document file in S3 contents list.
+
+        Searches for: PDF, DOC, DOCX files.
+
+        Args:
+            contents: List of S3 object summaries
+
+        Returns:
+            Document file key if found, None otherwise
+        """
+        for obj in contents:
+            key = obj["Key"]
+            if (
+                key.lower().endswith((".pdf", ".doc", ".docx"))
+                and not key.endswith("/")
+            ):
+                return key
+        return None
+
+    def extract_text_from_file(self, s3_key: str) -> Optional[str]:
+        """
+        Extract text from document file (PDF, DOC, or DOCX).
+
+        Args:
+            s3_key: S3 key of the file
+
+        Returns:
+            Extracted text or None if extraction fails
+        """
+        try:
+            obj = self.s3.get_object(Bucket=self.bucket, Key=s3_key)
+            file_bytes = obj["Body"].read()
+
+            if s3_key.lower().endswith(".pdf"):
+                return self.extract_text_from_pdf(file_bytes)
+            elif s3_key.lower().endswith((".doc", ".docx")):
+                return self.extract_text_from_docx(file_bytes)
+            else:
+                logger.error(f"❌ Unsupported file type: {s3_key}")
+                return None
+
+        except Exception as e:
+            logger.error(f"❌ File extraction failed: {str(e)}")
+            return None
+
+    def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
+        """
+        Extract text from PDF bytes.
+
+        Args:
+            pdf_bytes: PDF file content as bytes
+
+        Returns:
+            Extracted text
+        """
+        try:
+            pdf_file = BytesIO(pdf_bytes)
+            reader = PdfReader(pdf_file)
+            text = ""
+
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+
+            return text.strip()
+
+        except Exception as e:
+            logger.error(f"❌ PDF extraction failed: {str(e)}")
+            return ""
+
+    def extract_text_from_docx(self, docx_bytes: bytes) -> str:
+        """
+        Extract text from DOCX bytes.
+
+        Extracts from:
+        - Paragraphs
+        - Tables (with pipe-separated columns)
+
+        Args:
+            docx_bytes: DOCX file content as bytes
+
+        Returns:
+            Extracted text
+        """
+        try:
+            docx_file = BytesIO(docx_bytes)
+            document = Document(docx_file)
+            text = ""
+
+            # Extract from paragraphs
+            for paragraph in document.paragraphs:
+                if paragraph.text.strip():
+                    text += paragraph.text + "\n"
+
+            # Extract from tables
+            for table in document.tables:
+                for row in table.rows:
+                    row_text = [cell.text.strip() for cell in row.cells]
+                    text += " | ".join(row_text) + "\n"
+
+            return text.strip() if text.strip() else ""
+
+        except Exception as e:
+            logger.error(f"❌ DOCX extraction failed: {str(e)}")
+            return ""
 
     # ==================== PRIVATE HELPER METHODS ====================
 
@@ -222,6 +412,7 @@ class ConceptDocumentGenerator:
         rfp_analysis: Dict[str, Any],
         concept_evaluation: Dict[str, Any],
         proposal_outline: Optional[Dict[str, Any]] = None,
+        initial_concept: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Prepare context for prompt injection.
@@ -229,15 +420,17 @@ class ConceptDocumentGenerator:
         Process:
         1. Filter to selected sections
         2. Enrich with outline data
-        3. Return as JSON strings for prompt
+        3. Prepare initial concept (truncate if needed)
+        4. Return as JSON/text strings for prompt
 
         Args:
             rfp_analysis: RFP analysis data
             concept_evaluation: Concept evaluation with selections
             proposal_outline: Optional proposal outline for enrichment
+            initial_concept: Optional initial concept document text
 
         Returns:
-            Dict with 'rfp_analysis' and 'concept_evaluation' as JSON strings
+            Dict with 'rfp_analysis', 'concept_evaluation', and 'initial_concept'
         """
         # Filter to selected sections
         filtered_evaluation = self._filter_selected_sections(
@@ -254,9 +447,16 @@ class ConceptDocumentGenerator:
             logger.info("ℹ️  Proceeding without outline enrichment")
             enriched_evaluation = filtered_evaluation
 
+        # Prepare initial concept
+        prepared_concept = ""
+        if initial_concept:
+            prepared_concept = self._prepare_initial_concept(initial_concept)
+            logger.info(f"📋 Initial concept prepared: {len(prepared_concept)} chars")
+
         return {
             "rfp_analysis": json.dumps(rfp_analysis, indent=2),
             "concept_evaluation": json.dumps(enriched_evaluation, indent=2),
+            "initial_concept": prepared_concept,
         }
 
     def _filter_selected_sections(
@@ -403,6 +603,47 @@ class ConceptDocumentGenerator:
         except Exception as e:
             logger.error(f"❌ Error enriching sections: {str(e)}")
             return filtered_evaluation
+
+    def _prepare_initial_concept(self, concept_text: str) -> str:
+        """
+        Prepare initial concept for prompt injection.
+
+        Applies intelligent truncation if text exceeds limit:
+        - Keeps 60% from beginning (context/problem)
+        - Keeps 40% from end (solution/conclusion)
+        - Adds truncation notice
+
+        Args:
+            concept_text: Full initial concept document text
+
+        Returns:
+            Prepared text (possibly truncated)
+        """
+        max_chars = 50000  # Generous limit for initial concept
+
+        if len(concept_text) <= max_chars:
+            logger.info(
+                f"📄 Initial concept within limit ({len(concept_text)} chars)"
+            )
+            return concept_text
+
+        logger.info(
+            f"✂️  Truncating initial concept from {len(concept_text)} to {max_chars} chars"
+        )
+
+        chars_to_keep = max_chars - 200
+        beginning_chars = int(chars_to_keep * 0.6)
+        ending_chars = int(chars_to_keep * 0.4)
+
+        beginning = concept_text[:beginning_chars]
+        ending = concept_text[-ending_chars:]
+
+        return (
+            f"{beginning}\n\n"
+            f"[... Middle section truncated - "
+            f"total document: {len(concept_text)} characters ...]\n\n"
+            f"{ending}"
+        )
 
     def _summarize_guidance(self, guidance: str) -> str:
         """
