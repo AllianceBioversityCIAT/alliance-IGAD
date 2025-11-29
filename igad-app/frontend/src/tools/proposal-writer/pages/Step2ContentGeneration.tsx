@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react'
 
 // External Libraries - Icons
-import { Target, CheckCircle, Check, ChevronDown, ChevronUp, Info, X, Sparkles } from 'lucide-react'
+import { Target, CheckCircle, Check, ChevronDown, ChevronUp, Info, X, Sparkles, Award } from 'lucide-react'
 
 // Local Imports
 import { StepProps } from './stepConfig'
@@ -304,7 +304,7 @@ function StrongAspectsCard({ strongAspects }: { strongAspects: string[] }) {
   return (
     <div className={styles.card}>
       <div className={styles.sectionHeader}>
-        <CheckCircle className={styles.sectionIcon} size={24} />
+        <Award className={styles.sectionIcon} size={24} />
         <div>
           <h2 className={styles.sectionTitle}>Strong Aspects of Your Proposal</h2>
           <p className={styles.sectionSubtitle}>Key strengths identified in your initial concept</p>
