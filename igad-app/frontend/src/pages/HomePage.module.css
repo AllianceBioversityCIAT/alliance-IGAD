@@ -557,9 +557,9 @@
     gap: 20px;
   }
 
-  /* Two cards per row on medium desktop */
+  /* Three cards per row on desktop (1024px+) */
   .toolCard {
-    width: calc(50% - 10px);
+    width: calc(33.333% - 16px);
     min-width: 280px;
     max-width: none;
     min-height: 360px;
@@ -648,7 +648,7 @@
   /* Three cards per row on large desktop */
   .toolCard {
     width: calc(33.333% - 16px);
-    height: 310px;
+    min-height: 360px;
   }
 }
 
@@ -660,7 +660,7 @@
   /* Four cards per row on extra large screens */
   .toolCard {
     width: calc(25% - 18px);
-    height: 310px;
+    min-height: 360px;
   }
 
   .toolsGrid {
