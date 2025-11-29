@@ -49,6 +49,7 @@ export function ProposalWriterPage() {
   })
 
   const allowNavigation = useRef(false)
+  const formDataLoadedFromDB = useRef(false)
 
   const { createProposal, isCreating, deleteProposal, isDeleting } = useProposals()
   const { saveProposalId, saveProposalCode, saveFormData, saveRfpAnalysis, loadDraft, clearDraft } =
@@ -123,6 +124,63 @@ export function ProposalWriterPage() {
       }
     }
   }, [])
+
+  // Load formData from DynamoDB if localStorage is empty
+  useEffect(() => {
+    const loadFormDataFromDynamoDB = async () => {
+      if (!proposalId || formDataLoadedFromDB.current) {
+        return
+      }
+
+      // Wait a brief moment to ensure localStorage is fully loaded first
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Check if formData has any text inputs (indicating it was loaded from localStorage)
+      const hasFormData =
+        Object.keys(formData.textInputs).length > 0 ||
+        Object.keys(formData.uploadedFiles).length > 0
+
+      if (hasFormData) {
+        formDataLoadedFromDB.current = true
+        return
+      }
+
+      try {
+        const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+        const proposal = await proposalService.getProposal(proposalId)
+
+        if (proposal) {
+          // Map DynamoDB documents field to formData uploadedFiles structure
+          // DynamoDB stores documents in a separate 'documents' field with arrays like:
+          // documents: { rfp_documents: [...], concept_documents: [...], ... }
+          const uploadedFiles: { [key: string]: string[] } = {}
+
+          if (proposal.documents) {
+            uploadedFiles['rfp-document'] = proposal.documents.rfp_documents || []
+            uploadedFiles['concept-document'] = proposal.documents.concept_documents || []
+            uploadedFiles['reference-proposals'] = proposal.documents.reference_documents || []
+            uploadedFiles['supporting-docs'] = proposal.documents.supporting_documents || []
+          } else if (proposal.uploaded_files) {
+            // Fallback to uploaded_files if documents field doesn't exist
+            Object.assign(uploadedFiles, proposal.uploaded_files)
+          }
+
+          setFormData({
+            textInputs: proposal.text_inputs || {},
+            uploadedFiles: uploadedFiles as any,
+          })
+          formDataLoadedFromDB.current = true
+        } else {
+          formDataLoadedFromDB.current = true
+        }
+      } catch (error) {
+        // This is not a critical error - the form will still work with empty values
+        formDataLoadedFromDB.current = true
+      }
+    }
+
+    loadFormDataFromDynamoDB()
+  }, [proposalId])
 
   // Save to localStorage whenever state changes
   useEffect(() => {
@@ -1028,14 +1086,6 @@ export function ProposalWriterPage() {
   }
 
   const renderCurrentStep = () => {
-    console.log('🎯 Rendering step:', currentStep, {
-      hasRfpAnalysis: !!rfpAnalysis,
-      hasConceptAnalysis: !!conceptAnalysis,
-      conceptAnalysisKeys: conceptAnalysis ? Object.keys(conceptAnalysis) : [],
-      hasConceptDocument: !!conceptDocument,
-      conceptDocumentKeys: conceptDocument ? Object.keys(conceptDocument) : [],
-    })
-
     const stepProps = {
       formData,
       setFormData,

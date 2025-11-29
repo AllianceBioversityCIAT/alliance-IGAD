@@ -14,6 +14,12 @@ export interface Proposal {
   metadata: Record<string, any>
   uploaded_files: Record<string, string[]>
   text_inputs: Record<string, string>
+  documents?: {
+    rfp_documents: string[]
+    concept_documents: string[]
+    reference_documents: string[]
+    supporting_documents: string[]
+  }
   ai_context?: Record<string, any>
   created_at: string
   updated_at: string
