@@ -313,7 +313,7 @@ function StrongAspectsCard({ strongAspects }: { strongAspects: string[] }) {
       <div className={styles.strongAspectsList}>
         {strongAspects.map((aspect, index) => (
           <div key={index} className={styles.strongAspectItem}>
-            <Check className={styles.checkIcon} size={16} />
+            <CheckCircle className={styles.checkIcon} size={20} />
             <span className={styles.aspectText}>{aspect}</span>
           </div>
         ))}
