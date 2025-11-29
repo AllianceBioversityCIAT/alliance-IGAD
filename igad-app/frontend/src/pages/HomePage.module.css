@@ -187,7 +187,7 @@
   position: relative;
   width: 100%;
   max-width: 450px;
-  min-height: 280px;
+  min-height: 360px;
   background: #ffffff;
   border: 2.03385px solid #ebedf0;
   border-radius: 14.237px;
@@ -455,7 +455,7 @@
   .toolCard {
     width: 100%;
     max-width: 450px;
-    min-height: 300px;
+    min-height: 360px;
     padding: 28px 24px;
   }
 
@@ -562,7 +562,7 @@
     width: calc(50% - 10px);
     min-width: 280px;
     max-width: none;
-    height: 310px;
+    min-height: 360px;
     padding: 28px 32px;
   }
 
@@ -693,7 +693,7 @@
   }
 
   .toolCard {
-    height: 270px;
+    min-height: 360px;
     padding: 22px 26px;
   }
 }
@@ -728,7 +728,7 @@
   }
 
   .toolCard {
-    height: 250px;
+    min-height: 360px;
     padding: 20px 24px;
   }
 
@@ -841,7 +841,7 @@
 
   .toolCard {
     width: calc(33.333% - 16px);
-    height: 230px;
+    min-height: 360px;
     padding: 18px 22px;
   }
 
