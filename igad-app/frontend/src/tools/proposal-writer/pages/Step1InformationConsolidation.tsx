@@ -687,6 +687,37 @@ export function Step1InformationConsolidation({
   }
 
   /**
+   * Get validation status for all required fields
+   * Returns object with validation state and missing fields list
+   */
+  const getValidationStatus = (): {
+    isValid: boolean
+    missingFields: string[]
+    hasTitle: boolean
+    hasRFP: boolean
+    hasConcept: boolean
+  } => {
+    const hasTitle = (formData.textInputs['proposal-title'] || '').trim().length > 0
+    const hasRFP = getUploadedFileCount('rfp-document') > 0
+    const hasConcept =
+      (formData.textInputs['initial-concept'] || '').length >= 100 ||
+      getUploadedFileCount('concept-document') > 0
+
+    const missingFields: string[] = []
+    if (!hasTitle) missingFields.push('Title')
+    if (!hasRFP) missingFields.push('RFP document')
+    if (!hasConcept) missingFields.push('Initial Concept')
+
+    return {
+      isValid: hasTitle && hasRFP && hasConcept,
+      missingFields,
+      hasTitle,
+      hasRFP,
+      hasConcept,
+    }
+  }
+
+  /**
    * Validate file type for concept document
    * Returns error message if file type is not allowed, empty string if valid
    *
@@ -769,6 +800,8 @@ export function Step1InformationConsolidation({
   // RENDER - Main Content
   // ============================================================================
 
+  const validationStatus = getValidationStatus()
+
   return (
     <div className={styles.mainContent}>
       {/* ===== Header Section ===== */}
@@ -780,6 +813,31 @@ export function Step1InformationConsolidation({
           development.
         </p>
       </header>
+
+      {/* ===== Validation Status Card ===== */}
+      {!validationStatus.isValid && (
+        <div className={styles.progressCard}>
+          <div className={styles.completionText}>
+            <strong>{3 - validationStatus.missingFields.length}</strong> of <strong>3</strong>{' '}
+            required fields completed
+          </div>
+          {validationStatus.missingFields.length > 0 && (
+            <p className={styles.missingFieldsText}>
+              Missing: {validationStatus.missingFields.join(', ')}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ===== Success Message ===== */}
+      {validationStatus.isValid && (
+        <div className={styles.nextStepsCard}>
+          <div className={styles.nextStepsTitle}>✓ All required fields complete</div>
+          <p className={styles.nextStepsDescription}>
+            You can now click "Analyze &amp; Continue" to proceed to the next step
+          </p>
+        </div>
+      )}
 
       {/* ===== Title Field ===== */}
       <div className={styles.titleField}>

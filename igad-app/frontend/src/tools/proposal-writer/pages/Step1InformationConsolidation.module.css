@@ -144,6 +144,21 @@
   transition: width 0.3s ease;
 }
 
+.completionText {
+  font-size: 16px;
+  color: #193CB8;
+  margin: 0;
+  line-height: 24px;
+  font-weight: 500;
+}
+
+.missingFieldsText {
+  font-size: 14px;
+  color: #155DFC;
+  margin: 0;
+  line-height: 20px;
+}
+
 /* Next Steps Card */
 .nextStepsCard {
   background: #F0FDF4;
