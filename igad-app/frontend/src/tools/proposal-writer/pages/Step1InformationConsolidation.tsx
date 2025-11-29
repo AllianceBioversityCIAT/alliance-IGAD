@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { FileText, AlertTriangle } from 'lucide-react'
 import { useProposal } from '@/tools/proposal-writer/hooks/useProposal'
 import { StepProps } from './stepConfig'
-import styles from './proposalWriter.module.css'
+import styles from './Step1InformationConsolidation.module.css'
 import { apiClient } from '@/shared/services/apiClient'
 import ManualRFPInput from '@/tools/proposal-writer/components/ManualRFPInput'
 
