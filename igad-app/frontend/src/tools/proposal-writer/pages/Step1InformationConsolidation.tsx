@@ -16,6 +16,9 @@ import ManualRFPInput from '@/tools/proposal-writer/components/ManualRFPInput'
 /** Maximum file size in bytes (10 MB) */
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 
+/** Allowed file types for concept document */
+const ALLOWED_CONCEPT_TYPES = ['.pdf', '.docx', '.txt']
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -403,6 +406,13 @@ export function Step1InformationConsolidation({
 
     const file = files[0]
 
+    // Validate file type
+    const typeError = validateConceptFileType(file)
+    if (typeError) {
+      setConceptUploadError(typeError)
+      return
+    }
+
     // Validate file size
     const sizeError = validateFileSize(file)
     if (sizeError) {
@@ -652,6 +662,23 @@ export function Step1InformationConsolidation({
    */
   const getUploadedFileCount = (section: string): number => {
     return formData.uploadedFiles[section]?.length || 0
+  }
+
+  /**
+   * Validate file type for concept document
+   * Returns error message if file type is not allowed, empty string if valid
+   *
+   * @param file - File to validate
+   * @returns Error message or empty string
+   */
+  const validateConceptFileType = (file: File): string => {
+    const fileExtension = `.${file.name.split('.').pop()?.toLowerCase() || ''}`
+
+    if (!ALLOWED_CONCEPT_TYPES.includes(fileExtension)) {
+      return `File type not supported. Please upload a PDF, DOCX, or TXT file. You uploaded: ${fileExtension}`
+    }
+
+    return ''
   }
 
   /**
@@ -1099,7 +1126,7 @@ export function Step1InformationConsolidation({
         <div className={styles.uploadAlternative}>
           <h4 className={styles.uploadAlternativeTitle}>Or Upload Concept Document</h4>
           <p className={styles.uploadAlternativeDescription}>
-            Upload an existing Word document, PDF, or other file outlining your concept instead
+            Upload a Word document (DOCX), PDF, or text file (TXT) outlining your concept instead
           </p>
 
           {(formData.textInputs['initial-concept'] || '').length > 0 && (
@@ -1131,7 +1158,7 @@ export function Step1InformationConsolidation({
                   <p className={styles.uploadAreaTitle}>Drop concept document here</p>
                   <input
                     type="file"
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,.docx,.txt"
                     onChange={e => handleConceptFileUpload(e.target.files)}
                     className={styles.hiddenInput}
                     id="concept-document"
