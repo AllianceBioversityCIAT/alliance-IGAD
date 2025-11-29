@@ -74,9 +74,20 @@ export function ProposalWriterPage() {
       setProposalCode(draft.proposalCode)
     }
     if (draft.formData) {
-      console.log('📦 [localStorage Load] Found formData in localStorage:', draft.formData)
-      setFormData(draft.formData)
-      formDataLoadedFromDB.current = true // Mark as loaded from localStorage
+      // Check if formData actually has meaningful content (not just empty objects)
+      const hasContent =
+        Object.keys(draft.formData.textInputs || {}).length > 0 ||
+        Object.keys(draft.formData.uploadedFiles || {}).some(
+          key => (draft.formData.uploadedFiles[key] || []).length > 0
+        )
+
+      if (hasContent) {
+        console.log('📦 [localStorage Load] Found formData with content in localStorage:', draft.formData)
+        setFormData(draft.formData)
+        formDataLoadedFromDB.current = true // Mark as loaded from localStorage
+      } else {
+        console.log('📦 [localStorage Load] Found formData but it\'s empty, will try DynamoDB')
+      }
     } else {
       console.log('📦 [localStorage Load] No formData in localStorage')
     }
