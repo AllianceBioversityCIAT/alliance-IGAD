@@ -449,7 +449,7 @@
 
   .toolsGrid {
     gap: 20px;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .toolCard {
