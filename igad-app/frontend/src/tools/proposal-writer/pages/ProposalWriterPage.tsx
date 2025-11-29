@@ -50,6 +50,7 @@ export function ProposalWriterPage() {
 
   const allowNavigation = useRef(false)
   const formDataLoadedFromDB = useRef(false)
+  const localStorageLoaded = useRef(false)
 
   const { createProposal, isCreating, deleteProposal, isDeleting } = useProposals()
   const { saveProposalId, saveProposalCode, saveFormData, saveRfpAnalysis, loadDraft, clearDraft } =
@@ -72,10 +73,14 @@ export function ProposalWriterPage() {
     }
     if (draft.formData) {
       setFormData(draft.formData)
+      formDataLoadedFromDB.current = true // Mark as loaded from localStorage
     }
     if (draft.rfpAnalysis) {
       setRfpAnalysis(draft.rfpAnalysis)
     }
+
+    // Mark that we've completed localStorage loading
+    localStorageLoaded.current = true
 
     // Load concept analysis from localStorage
     if (draft.proposalId) {
@@ -132,16 +137,15 @@ export function ProposalWriterPage() {
         return
       }
 
-      // Wait a brief moment to ensure localStorage is fully loaded first
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Wait until localStorage loading is complete
+      let attempts = 0
+      while (!localStorageLoaded.current && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 10))
+        attempts++
+      }
 
-      // Check if formData has any text inputs (indicating it was loaded from localStorage)
-      const hasFormData =
-        Object.keys(formData.textInputs).length > 0 ||
-        Object.keys(formData.uploadedFiles).length > 0
-
-      if (hasFormData) {
-        formDataLoadedFromDB.current = true
+      // If formData was already loaded from localStorage, skip DynamoDB loading
+      if (formDataLoadedFromDB.current) {
         return
       }
 
