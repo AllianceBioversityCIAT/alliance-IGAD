@@ -642,7 +642,7 @@ export function Step1InformationConsolidation({
         </div>
 
         {/* Missing RFP Warning */}
-        {!hasRequiredFiles() && (
+        {getUploadedFileCount('rfp-document') === 0 && (
           <div className={styles.warningCard} role="alert">
             <AlertTriangle className={styles.warningIcon} size={16} aria-hidden="true" />
             <div className={styles.warningContent}>
