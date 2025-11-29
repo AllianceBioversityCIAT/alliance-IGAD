@@ -65,6 +65,8 @@ export function ProposalWriterPage() {
   useEffect(() => {
     const draft = loadDraft()
 
+    console.log('📦 [localStorage Load] Draft loaded:', draft)
+
     if (draft.proposalId) {
       setProposalId(draft.proposalId)
     }
@@ -72,8 +74,11 @@ export function ProposalWriterPage() {
       setProposalCode(draft.proposalCode)
     }
     if (draft.formData) {
+      console.log('📦 [localStorage Load] Found formData in localStorage:', draft.formData)
       setFormData(draft.formData)
       formDataLoadedFromDB.current = true // Mark as loaded from localStorage
+    } else {
+      console.log('📦 [localStorage Load] No formData in localStorage')
     }
     if (draft.rfpAnalysis) {
       setRfpAnalysis(draft.rfpAnalysis)
@@ -153,6 +158,10 @@ export function ProposalWriterPage() {
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
         const proposal = await proposalService.getProposal(proposalId)
 
+        console.log('🔍 [DynamoDB Load] Proposal data:', proposal)
+        console.log('🔍 [DynamoDB Load] text_inputs:', proposal?.text_inputs)
+        console.log('🔍 [DynamoDB Load] documents:', proposal?.documents)
+
         if (proposal) {
           // Map DynamoDB documents field to formData uploadedFiles structure
           // DynamoDB stores documents in a separate 'documents' field with arrays like:
@@ -169,12 +178,16 @@ export function ProposalWriterPage() {
             Object.assign(uploadedFiles, proposal.uploaded_files)
           }
 
-          setFormData({
+          const newFormData = {
             textInputs: proposal.text_inputs || {},
             uploadedFiles: uploadedFiles as any,
-          })
+          }
+          console.log('🔍 [DynamoDB Load] Setting formData:', newFormData)
+
+          setFormData(newFormData)
           formDataLoadedFromDB.current = true
         } else {
+          console.log('⚠️ [DynamoDB Load] No proposal found')
           formDataLoadedFromDB.current = true
         }
       } catch (error) {

@@ -154,10 +154,16 @@ export function Step1InformationConsolidation({
       const storageKey = `proposal_draft_${proposalId}`
       const savedData = localStorage.getItem(storageKey)
 
+      console.log('📄 [Step1 Load] proposalId:', proposalId)
+      console.log('📄 [Step1 Load] localStorage saved data:', savedData)
+      console.log('📄 [Step1 Load] proposal object:', proposal)
+
       try {
         // Load uploaded documents from backend (source of truth)
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
         const documents = await proposalService.getUploadedDocuments(proposalId)
+
+        console.log('📄 [Step1 Load] documents from backend:', documents)
 
         // Build formData from backend documents
         const backendFormData = {
@@ -174,15 +180,21 @@ export function Step1InformationConsolidation({
         if (savedData) {
           try {
             const parsed = JSON.parse(savedData)
+            console.log('📄 [Step1 Load] Using textInputs from localStorage:', parsed.textInputs)
             backendFormData.textInputs = parsed.textInputs || {}
           } catch {
             // Silent fail - use empty text inputs
+            console.log('📄 [Step1 Load] Failed to parse localStorage data')
           }
         } else if (proposal) {
           // Load text inputs from proposal if no localStorage data
+          console.log('📄 [Step1 Load] Using textInputs from proposal:', proposal.text_inputs)
           backendFormData.textInputs = proposal.text_inputs || {}
+        } else {
+          console.log('📄 [Step1 Load] No localStorage or proposal, using empty textInputs')
         }
 
+        console.log('📄 [Step1 Load] Final backendFormData:', backendFormData)
         setFormData(backendFormData)
       } catch {
         // Fallback to localStorage or proposal on error
