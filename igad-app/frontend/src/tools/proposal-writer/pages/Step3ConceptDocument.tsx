@@ -49,6 +49,168 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
   const [isDownloading, setIsDownloading] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
 
+  // ALL HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL LOGIC OR EARLY RETURNS
+  const handleDownloadDocument = useCallback(
+    async (e?: React.MouseEvent) => {
+      if (e) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+
+      console.log('🔽 Download button clicked!')
+      console.log('📦 conceptDocument for download:', conceptDocument)
+      setIsDownloading(true)
+
+      try {
+        let content = ''
+
+        // Extract content from the same structure used in renderConceptDocument
+        if (typeof conceptDocument === 'string') {
+          console.log('✅ Download: Using string content')
+          content = conceptDocument
+        } else if (conceptDocument?.generated_concept_document) {
+          console.log('✅ Download: Using generated_concept_document (NEW FORMAT)')
+          content = conceptDocument.generated_concept_document
+        } else if (conceptDocument?.content) {
+          console.log('✅ Download: Using content field')
+          content = conceptDocument.content
+        } else if (conceptDocument?.document) {
+          console.log('✅ Download: Using document field')
+          content = conceptDocument.document
+        } else if (conceptDocument?.proposal_outline) {
+          console.log('✅ Download: Using proposal_outline')
+          const outline = conceptDocument.proposal_outline
+          if (Array.isArray(outline)) {
+            content = outline
+              .map(section => {
+                const title = section.section_title || ''
+                const purpose = section.purpose || ''
+                const wordCount = section.recommended_word_count || ''
+                const questions = Array.isArray(section.guiding_questions)
+                  ? section.guiding_questions.map(q => `- ${q}`).join('\n')
+                  : ''
+
+                return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
+              })
+              .join('\n\n')
+          }
+        } else if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
+          console.log('✅ Download: Using sections object')
+          content = Object.entries(conceptDocument.sections)
+            .map(([key, value]) => `## ${key}\n\n${value}`)
+            .join('\n\n')
+        } else {
+          console.warn('⚠️ Download: No valid content format found')
+          content = 'No content available'
+        }
+
+        console.log(`📝 Download: Final content length: ${content.length} characters`)
+
+        // Convert markdown to DOCX using docx library
+        const sections = markdownToParagraphs(content)
+
+        const doc = new Document({
+          sections: [
+            {
+              children: sections,
+            },
+          ],
+        })
+
+        // Generate and download DOCX
+        const blob = await Packer.toBlob(doc)
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `concept-document-${new Date().toISOString().slice(0, 10)}.docx`
+        a.click()
+        URL.revokeObjectURL(url)
+
+        console.log('✅ Download complete!')
+        setIsDownloading(false)
+      } catch (error) {
+        console.error('❌ Error generating document:', error)
+        alert('Error generating document. Please try again.')
+        setIsDownloading(false)
+      }
+    },
+    [conceptDocument]
+  )
+
+  // Initialize selected sections when modal opens
+  useEffect(() => {
+    if (showEditModal) {
+      console.log('📂 Opening Edit Sections modal...')
+      console.log('📋 Full conceptAnalysis:', JSON.stringify(conceptAnalysis, null, 2))
+
+      // Load from conceptAnalysis if available (from DynamoDB)
+      // Handle multiple levels of nesting
+      let analysis = conceptAnalysis?.concept_analysis || conceptAnalysis
+
+      // Check if there's another level of nesting (concept_analysis.concept_analysis)
+      if (analysis?.concept_analysis) {
+        console.log('🔍 Found nested concept_analysis, unwrapping...')
+        analysis = analysis.concept_analysis
+      }
+
+      const sections = analysis?.sections_needing_elaboration || []
+
+      console.log('📊 Unwrapped analysis:', JSON.stringify(analysis, null, 2))
+      console.log(`📊 Found ${sections.length} sections in concept analysis`)
+
+      // Check if sections have the 'selected' flag
+      const hasSelectedFlags = sections.some((s: any) => 'selected' in s)
+
+      console.log(`🔍 Has selected flags: ${hasSelectedFlags}`)
+
+      if (hasSelectedFlags) {
+        // Load saved selections from DynamoDB
+        const savedSelections = sections
+          .filter((s: any) => s.selected === true)
+          .map((s: any) => s.section)
+
+        const savedComments = sections.reduce((acc: any, s: any) => {
+          if (s.user_comment) {
+            acc[s.section] = s.user_comment
+          }
+          return acc
+        }, {})
+
+        console.log('✅ Loading saved selections from DynamoDB:', savedSelections)
+        console.log('✅ Loading saved comments from DynamoDB:', savedComments)
+
+        setSelectedSections(savedSelections)
+        setUserComments(savedComments)
+      } else {
+        // No selected flags found - default to all Critical sections
+        console.log('⚠️ No selected flags found, defaulting to Critical sections')
+        const criticalSections = sections
+          .filter((s: SectionNeedingElaboration) => s.priority === 'Critical')
+          .map((s: SectionNeedingElaboration) => s.section)
+
+        console.log('📌 Critical sections:', criticalSections)
+        setSelectedSections(criticalSections)
+      }
+    }
+  }, [showEditModal, conceptAnalysis])
+
+  // Synchronize section changes with parent component
+  useEffect(() => {
+    if (!onConceptEvaluationChange || selectedSections.length === 0) {
+      return
+    }
+
+    console.log('📤 Syncing concept evaluation with parent:')
+    console.log(`   Selected sections: ${selectedSections.length}`)
+    console.log(`   Sections:`, selectedSections)
+    console.log(`   Comments:`, userComments)
+
+    onConceptEvaluationChange({
+      selectedSections,
+      userComments: Object.keys(userComments).length > 0 ? userComments : undefined,
+    })
+  }, [selectedSections, userComments, onConceptEvaluationChange])
+
   console.log('📄 Step3 - conceptDocument:', conceptDocument)
   console.log('📄 Step3 - conceptAnalysis:', conceptAnalysis)
 
@@ -455,93 +617,6 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
     return paragraphs.length > 0 ? paragraphs : [new Paragraph({ text: 'No content available' })]
   }
 
-  const handleDownloadDocument = useCallback(
-    async (e?: React.MouseEvent) => {
-      if (e) {
-        e.preventDefault()
-        e.stopPropagation()
-      }
-
-      console.log('🔽 Download button clicked!')
-      console.log('📦 conceptDocument for download:', conceptDocument)
-      setIsDownloading(true)
-
-      try {
-        let content = ''
-
-        // Extract content from the same structure used in renderConceptDocument
-        if (typeof conceptDocument === 'string') {
-          console.log('✅ Download: Using string content')
-          content = conceptDocument
-        } else if (conceptDocument?.generated_concept_document) {
-          console.log('✅ Download: Using generated_concept_document (NEW FORMAT)')
-          content = conceptDocument.generated_concept_document
-        } else if (conceptDocument?.content) {
-          console.log('✅ Download: Using content field')
-          content = conceptDocument.content
-        } else if (conceptDocument?.document) {
-          console.log('✅ Download: Using document field')
-          content = conceptDocument.document
-        } else if (conceptDocument?.proposal_outline) {
-          console.log('✅ Download: Using proposal_outline')
-          const outline = conceptDocument.proposal_outline
-          if (Array.isArray(outline)) {
-            content = outline
-              .map(section => {
-                const title = section.section_title || ''
-                const purpose = section.purpose || ''
-                const wordCount = section.recommended_word_count || ''
-                const questions = Array.isArray(section.guiding_questions)
-                  ? section.guiding_questions.map(q => `- ${q}`).join('\n')
-                  : ''
-
-                return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
-              })
-              .join('\n\n')
-          }
-        } else if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
-          console.log('✅ Download: Using sections object')
-          content = Object.entries(conceptDocument.sections)
-            .map(([key, value]) => `## ${key}\n\n${value}`)
-            .join('\n\n')
-        } else {
-          console.warn('⚠️ Download: No valid content format found')
-          content = 'No content available'
-        }
-
-        console.log(`📝 Download: Final content length: ${content.length} characters`)
-
-        // Convert markdown to DOCX using docx library
-        const sections = markdownToParagraphs(content)
-
-        const doc = new Document({
-          sections: [
-            {
-              children: sections,
-            },
-          ],
-        })
-
-        // Generate and download DOCX
-        const blob = await Packer.toBlob(doc)
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `concept-document-${new Date().toISOString().slice(0, 10)}.docx`
-        a.click()
-        URL.revokeObjectURL(url)
-
-        console.log('✅ Download complete!')
-        setIsDownloading(false)
-      } catch (error) {
-        console.error('❌ Error generating document:', error)
-        alert('Error generating document. Please try again.')
-        setIsDownloading(false)
-      }
-    },
-    [conceptDocument]
-  )
-
   const parseMarkdownToHTML = (markdown: string): string => {
     let html = markdown
 
@@ -588,80 +663,6 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
       prev.includes(section) ? prev.filter(s => s !== section) : [...prev, section]
     )
   }
-
-  // Initialize selected sections when modal opens
-  useEffect(() => {
-    if (showEditModal) {
-      console.log('📂 Opening Edit Sections modal...')
-      console.log('📋 Full conceptAnalysis:', JSON.stringify(conceptAnalysis, null, 2))
-
-      // Load from conceptAnalysis if available (from DynamoDB)
-      // Handle multiple levels of nesting
-      let analysis = conceptAnalysis?.concept_analysis || conceptAnalysis
-
-      // Check if there's another level of nesting (concept_analysis.concept_analysis)
-      if (analysis?.concept_analysis) {
-        console.log('🔍 Found nested concept_analysis, unwrapping...')
-        analysis = analysis.concept_analysis
-      }
-
-      const sections = analysis?.sections_needing_elaboration || []
-
-      console.log('📊 Unwrapped analysis:', JSON.stringify(analysis, null, 2))
-      console.log(`📊 Found ${sections.length} sections in concept analysis`)
-
-      // Check if sections have the 'selected' flag
-      const hasSelectedFlags = sections.some((s: any) => 'selected' in s)
-
-      console.log(`🔍 Has selected flags: ${hasSelectedFlags}`)
-
-      if (hasSelectedFlags) {
-        // Load saved selections from DynamoDB
-        const savedSelections = sections
-          .filter((s: any) => s.selected === true)
-          .map((s: any) => s.section)
-
-        const savedComments = sections.reduce((acc: any, s: any) => {
-          if (s.user_comment) {
-            acc[s.section] = s.user_comment
-          }
-          return acc
-        }, {})
-
-        console.log('✅ Loading saved selections from DynamoDB:', savedSelections)
-        console.log('✅ Loading saved comments from DynamoDB:', savedComments)
-
-        setSelectedSections(savedSelections)
-        setUserComments(savedComments)
-      } else {
-        // No selected flags found - default to all Critical sections
-        console.log('⚠️ No selected flags found, defaulting to Critical sections')
-        const criticalSections = sections
-          .filter((s: SectionNeedingElaboration) => s.priority === 'Critical')
-          .map((s: SectionNeedingElaboration) => s.section)
-
-        console.log('📌 Critical sections:', criticalSections)
-        setSelectedSections(criticalSections)
-      }
-    }
-  }, [showEditModal, conceptAnalysis])
-
-  // Synchronize section changes with parent component
-  useEffect(() => {
-    if (!onConceptEvaluationChange || selectedSections.length === 0) {
-      return
-    }
-
-    console.log('📤 Syncing concept evaluation with parent:')
-    console.log(`   Selected sections: ${selectedSections.length}`)
-    console.log(`   Sections:`, selectedSections)
-    console.log(`   Comments:`, userComments)
-
-    onConceptEvaluationChange({
-      selectedSections,
-      userComments: Object.keys(userComments).length > 0 ? userComments : undefined,
-    })
-  }, [selectedSections, userComments, onConceptEvaluationChange])
 
   const handleRegenerateDocument = async () => {
     if (!proposalId || !onRegenerateDocument) {
