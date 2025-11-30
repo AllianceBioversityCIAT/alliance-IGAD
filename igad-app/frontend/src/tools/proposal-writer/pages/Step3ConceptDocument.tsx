@@ -302,12 +302,6 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
             <p className={styles.invalidatedDescription}>
               You've updated your section selections in Step 2. To see an updated concept document with your new selections, please click the button below to generate a fresh document.
             </p>
-            <div className={styles.invalidatedStats}>
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>Sections Selected:</span>
-                <span className={styles.statValue}>{selectedCount}</span>
-              </div>
-            </div>
             <button
               className={styles.regeneratePrimaryButton}
               onClick={() => {
