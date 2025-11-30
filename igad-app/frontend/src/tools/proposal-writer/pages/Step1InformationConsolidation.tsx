@@ -180,6 +180,36 @@ export function Step1InformationConsolidation({
           const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
           const documents = await proposalService.getUploadedDocuments(proposalId)
 
+          // Build initial textInputs from localStorage or proposal
+          let initialTextInputs: { [key: string]: string } = {}
+
+          // Priority: draft_form_data > step1 localStorage > proposal text_inputs
+          if (draftFormDataStr) {
+            try {
+              const parsed = JSON.parse(draftFormDataStr)
+              initialTextInputs = parsed.textInputs || {}
+            } catch {
+              // Silent fail - try next priority
+            }
+          } else if (step1SavedData) {
+            try {
+              const parsed = JSON.parse(step1SavedData)
+              initialTextInputs = parsed.textInputs || {}
+            } catch {
+              // Silent fail - try next priority
+            }
+          }
+
+          // If no localStorage data, use proposal text_inputs as fallback
+          console.log('📋 Step1 - proposal available:', !!proposal)
+          console.log('📋 Step1 - proposal.text_inputs:', proposal?.text_inputs)
+          console.log('📋 Step1 - initialTextInputs before proposal:', initialTextInputs)
+          if (Object.keys(initialTextInputs).length === 0 && proposal?.text_inputs) {
+            console.log('✅ Step1 - Using proposal.text_inputs as fallback')
+            initialTextInputs = { ...proposal.text_inputs }
+          }
+          console.log('📋 Step1 - Final initialTextInputs:', initialTextInputs)
+
           // Build formData from backend documents
           const backendFormData = {
             uploadedFiles: {
@@ -188,25 +218,7 @@ export function Step1InformationConsolidation({
               'reference-proposals': documents.reference_documents || [],
               'supporting-docs': documents.supporting_documents || [],
             },
-            textInputs: {} as { [key: string]: string },
-          }
-
-          // Priority: draft_form_data > step1 localStorage > empty
-          // draft_form_data has the title and is the main source
-          if (draftFormDataStr) {
-            try {
-              const parsed = JSON.parse(draftFormDataStr)
-              backendFormData.textInputs = parsed.textInputs || {}
-            } catch {
-              // Silent fail - use empty text inputs
-            }
-          } else if (step1SavedData) {
-            try {
-              const parsed = JSON.parse(step1SavedData)
-              backendFormData.textInputs = parsed.textInputs || {}
-            } catch {
-              // Silent fail - use empty text inputs
-            }
+            textInputs: initialTextInputs,
           }
 
           setFormData(backendFormData)
@@ -239,6 +251,32 @@ export function Step1InformationConsolidation({
 
     loadProposalData()
   }, [proposalId, setFormData])
+
+  /**
+   * Fill in missing text inputs from proposal when it loads
+   * This handles the case where proposal loads after the initial effect
+   */
+  useEffect(() => {
+    if (!proposalId || !proposal?.text_inputs) {
+      return
+    }
+
+    console.log('📋 Step1 - Proposal loaded, checking if text_inputs need updating')
+    console.log('📋 Step1 - Current formData.textInputs:', formData.textInputs)
+    console.log('📋 Step1 - Proposal text_inputs:', proposal.text_inputs)
+
+    // Only update if formData doesn't have a title but proposal does
+    if (!formData.textInputs['proposal-title'] && proposal.text_inputs['proposal-title']) {
+      console.log('✅ Step1 - Updating formData with proposal.text_inputs')
+      setFormData(prev => ({
+        ...prev,
+        textInputs: {
+          ...prev.textInputs,
+          ...proposal.text_inputs,
+        },
+      }))
+    }
+  }, [proposal?.text_inputs, proposalId, formData.textInputs])
 
   /**
    * Auto-save formData to localStorage on changes
