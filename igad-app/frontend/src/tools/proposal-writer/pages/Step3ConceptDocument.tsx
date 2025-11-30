@@ -273,20 +273,12 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
   )
   console.log(`📊 Step3 - Document has ${totalSections} sections in outline`)
 
-  // Check if user has previously had a document (based on localStorage or conceptAnalysis with selections)
+  // Check if user has previously had a document (only check for actual saved documents)
   const hadPreviousDocument = (() => {
     if (!proposalId) return false
-
-    // Check localStorage for a previously saved document
+    // Only check if document was actually saved
     const savedDocument = localStorage.getItem(`proposal_concept_document_${proposalId}`)
-    if (savedDocument) return true
-
-    // Check if conceptAnalysis has selected sections (indicates user has made selections)
-    if (sectionsNeedingElaboration.some((s: any) => s.selected === true)) {
-      return true
-    }
-
-    return false
+    return !!savedDocument
   })()
 
   if (!conceptDocument) {
