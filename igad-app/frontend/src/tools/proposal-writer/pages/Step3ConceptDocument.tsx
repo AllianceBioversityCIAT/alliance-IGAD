@@ -233,17 +233,36 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
 
     // NEW FORMAT: Check generated_concept_document and sections
     if (conceptDocument?.generated_concept_document) {
-      // If sections object exists, use its count (more accurate)
+      // If sections object exists, use its count (most accurate)
       if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
         const count = Object.keys(conceptDocument.sections).length
         console.log(`📊 Using sections count from NEW format: ${count}`)
         return count
       }
-      // Otherwise, count ## headers in markdown
-      const headerMatches = conceptDocument.generated_concept_document.match(/^##\s+/gm)
-      const count = headerMatches ? headerMatches.length : 0
-      console.log(`📊 Counting headers in generated_concept_document: ${count}`)
-      return count
+
+      // Otherwise, count ## headers in markdown, excluding document titles
+      const headerMatches = conceptDocument.generated_concept_document.match(/^##\s+(.+)$/gm)
+      if (headerMatches) {
+        // Filter out common title patterns (case-insensitive)
+        const titlePatterns = [
+          /improved concept note/i,
+          /generated concept document/i,
+          /concept document/i,
+          /outline/i,
+        ]
+
+        const contentHeaders = headerMatches.filter((header: string) => {
+          const headerText = header.substring(3).trim() // Remove '## '
+          return !titlePatterns.some(pattern => pattern.test(headerText))
+        })
+
+        const count = contentHeaders.length
+        console.log(`📊 Counting content headers in generated_concept_document: ${count} (found ${headerMatches.length} total)`)
+        return count
+      }
+
+      console.log(`📊 No headers found in generated_concept_document`)
+      return 0
     }
 
     // OLD FORMAT: proposal_outline

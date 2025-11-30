@@ -260,19 +260,6 @@ export function UserManagement() {
             className={styles.searchInput}
           />
         </div>
-
-        <div className={styles.filterGroup}>
-          <Filter className={styles.filterIcon} />
-          <select
-            value={filters.status || 'all'}
-            onChange={e => setFilters(prev => ({ ...prev, status: e.target.value as any }))}
-            className={styles.filterSelect}
-          >
-            <option value="all">All Users</option>
-            <option value="enabled">Enabled</option>
-            <option value="disabled">Disabled</option>
-          </select>
-        </div>
       </div>
 
       {/* Users Table */}

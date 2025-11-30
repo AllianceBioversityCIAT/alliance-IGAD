@@ -104,6 +104,13 @@ export function Step1InformationConsolidation({
   const { proposal, updateFormData, isUpdating, isLoading } = useProposal(proposalId)
 
   // ============================================================================
+  // STATE - Data Loading
+  // ============================================================================
+
+  /** Internal loading state to track actual data loading in component */
+  const [isLoadingData, setIsLoadingData] = useState(true)
+
+  // ============================================================================
   // STATE - RFP Upload
   // ============================================================================
 
@@ -147,91 +154,91 @@ export function Step1InformationConsolidation({
    *
    * This ensures we always have the most up-to-date file list from S3
    * while preserving any unsaved text inputs from localStorage
+   *
+   * NOTE: Only depends on proposalId to prevent re-runs when proposal object changes
+   * (which happens frequently during data fetching)
    */
   useEffect(() => {
     if (!proposalId) {
+      setIsLoadingData(false)
       return
     }
 
     const loadProposalData = async () => {
-      // Check both localStorage keys:
-      // 1. draft_form_data - used by ProposalWriterPage (contains title + other text inputs)
-      // 2. proposal_draft_${proposalId} - used by Step1 (contains uploaded files)
-      const draftFormDataStr = localStorage.getItem('draft_form_data')
-      const step1StorageKey = `proposal_draft_${proposalId}`
-      const step1SavedData = localStorage.getItem(step1StorageKey)
+      setIsLoadingData(true)
 
       try {
-        // Load uploaded documents from backend (source of truth)
-        const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-        const documents = await proposalService.getUploadedDocuments(proposalId)
+        // Check both localStorage keys:
+        // 1. draft_form_data - used by ProposalWriterPage (contains title + other text inputs)
+        // 2. proposal_draft_${proposalId} - used by Step1 (contains uploaded files)
+        const draftFormDataStr = localStorage.getItem('draft_form_data')
+        const step1StorageKey = `proposal_draft_${proposalId}`
+        const step1SavedData = localStorage.getItem(step1StorageKey)
 
-        // Build formData from backend documents
-        const backendFormData = {
-          uploadedFiles: {
-            'rfp-document': documents.rfp_documents || [],
-            'concept-document': documents.concept_documents || [],
-            'reference-proposals': documents.reference_documents || [],
-            'supporting-docs': documents.supporting_documents || [],
-          },
-          textInputs: {} as { [key: string]: string },
-        }
+        try {
+          // Load uploaded documents from backend (source of truth)
+          const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+          const documents = await proposalService.getUploadedDocuments(proposalId)
 
-        // Priority: draft_form_data > step1 localStorage > proposal
-        // draft_form_data has the title and is the main source
-        if (draftFormDataStr) {
-          try {
-            const parsed = JSON.parse(draftFormDataStr)
-            backendFormData.textInputs = parsed.textInputs || {}
-          } catch {
-            // Silent fail - use empty text inputs
+          // Build formData from backend documents
+          const backendFormData = {
+            uploadedFiles: {
+              'rfp-document': documents.rfp_documents || [],
+              'concept-document': documents.concept_documents || [],
+              'reference-proposals': documents.reference_documents || [],
+              'supporting-docs': documents.supporting_documents || [],
+            },
+            textInputs: {} as { [key: string]: string },
           }
-        } else if (step1SavedData) {
-          try {
-            const parsed = JSON.parse(step1SavedData)
-            backendFormData.textInputs = parsed.textInputs || {}
-          } catch {
-            // Silent fail - use empty text inputs
-          }
-        } else if (proposal) {
-          // Load text inputs from proposal if no localStorage data
-          backendFormData.textInputs = proposal.text_inputs || {}
-        }
 
-        setFormData(backendFormData)
-      } catch {
-        // Fallback to localStorage or proposal on error
-        if (draftFormDataStr) {
-          try {
-            const parsed = JSON.parse(draftFormDataStr)
-            setFormData(parsed)
-            return
-          } catch {
-            // Silent fail - use empty state
+          // Priority: draft_form_data > step1 localStorage > empty
+          // draft_form_data has the title and is the main source
+          if (draftFormDataStr) {
+            try {
+              const parsed = JSON.parse(draftFormDataStr)
+              backendFormData.textInputs = parsed.textInputs || {}
+            } catch {
+              // Silent fail - use empty text inputs
+            }
+          } else if (step1SavedData) {
+            try {
+              const parsed = JSON.parse(step1SavedData)
+              backendFormData.textInputs = parsed.textInputs || {}
+            } catch {
+              // Silent fail - use empty text inputs
+            }
+          }
+
+          setFormData(backendFormData)
+        } catch {
+          // Fallback to localStorage on error
+          if (draftFormDataStr) {
+            try {
+              const parsed = JSON.parse(draftFormDataStr)
+              setFormData(parsed)
+              return
+            } catch {
+              // Silent fail - use empty state
+            }
+          }
+
+          if (step1SavedData) {
+            try {
+              const parsed = JSON.parse(step1SavedData)
+              setFormData(parsed)
+              return
+            } catch {
+              // Silent fail - use empty state
+            }
           }
         }
-
-        if (step1SavedData) {
-          try {
-            const parsed = JSON.parse(step1SavedData)
-            setFormData(parsed)
-            return
-          } catch {
-            // Silent fail - use empty state
-          }
-        }
-
-        if (proposal) {
-          setFormData({
-            uploadedFiles: proposal.uploaded_files || {},
-            textInputs: proposal.text_inputs || {},
-          })
-        }
+      } finally {
+        setIsLoadingData(false)
       }
     }
 
     loadProposalData()
-  }, [proposalId, proposal, setFormData])
+  }, [proposalId, setFormData])
 
   /**
    * Auto-save formData to localStorage on changes
@@ -800,7 +807,7 @@ export function Step1InformationConsolidation({
   // RENDER - Loading States
   // ============================================================================
 
-  if (isLoading) {
+  if (isLoading || isLoadingData) {
     return <Step1Skeleton />
   }
 
