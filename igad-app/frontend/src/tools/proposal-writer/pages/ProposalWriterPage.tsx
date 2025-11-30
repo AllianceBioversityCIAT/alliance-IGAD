@@ -37,6 +37,7 @@ export function ProposalWriterPage() {
     selectedSections: string[]
   } | null>(null)
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
+  const [generationProgressStep, setGenerationProgressStep] = useState(1)
   const [conceptDocument, setConceptDocument] = useState<any>(null)
   const [proposalTemplate, setProposalTemplate] = useState<any>(null)
   const [structureSelectionData, setStructureSelectionData] = useState<{
@@ -868,6 +869,7 @@ export function ProposalWriterPage() {
     }
 
     setIsGeneratingDocument(true)
+    setGenerationProgressStep(1)
 
     try {
       const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
@@ -964,12 +966,15 @@ export function ProposalWriterPage() {
       setConceptAnalysis(updatedConceptAnalysis)
 
       // Step 2: Generate concept document
+      setGenerationProgressStep(2)
       const result = await proposalService.generateConceptDocument(proposalId, conceptEvaluation)
 
       if (result.status === 'completed') {
         console.log('✅ Document generated successfully')
+        setGenerationProgressStep(3)
         setConceptDocument(result.concept_document)
         setIsGeneratingDocument(false)
+        setGenerationProgressStep(1) // Reset for next time
         // Only proceed to next step if not regenerating from Step 3
         if (!overrideData) {
           proceedToNextStep()
@@ -981,6 +986,7 @@ export function ProposalWriterPage() {
     } catch (error: any) {
       console.error('❌ Concept document generation failed:', error)
       setIsGeneratingDocument(false)
+      setGenerationProgressStep(1) // Reset on error
       alert(`Generation failed: ${error.message || 'Unknown error'}`)
     }
   }
@@ -994,27 +1000,39 @@ export function ProposalWriterPage() {
     const poll = async () => {
       attempts++
 
+      // Update progress step based on polling attempts for better UX
+      if (attempts === 2) {
+        setGenerationProgressStep(2) // Move to step 2 after first check
+      } else if (attempts === 4) {
+        setGenerationProgressStep(3) // Move to step 3 after a few more checks
+      }
+
       try {
         const status = await proposalService.getConceptDocumentStatus(proposalId!)
 
         if (status.status === 'completed') {
+          setGenerationProgressStep(3) // Ensure we're at final step
           setConceptDocument(status.concept_document)
           setIsGeneratingDocument(false)
+          setGenerationProgressStep(1) // Reset for next time
           // Only proceed to next step if not regenerating
           if (!isRegenerating) {
             proceedToNextStep()
           }
         } else if (status.status === 'failed') {
           setIsGeneratingDocument(false)
+          setGenerationProgressStep(1) // Reset on failure
           alert(`Generation failed: ${status.error}`)
         } else if (attempts >= maxAttempts) {
           setIsGeneratingDocument(false)
+          setGenerationProgressStep(1) // Reset on timeout
           alert('Generation timeout. Please try again.')
         } else {
           setTimeout(poll, 3000)
         }
       } catch (error) {
         setIsGeneratingDocument(false)
+        setGenerationProgressStep(1) // Reset on error
         alert('Failed to check generation status')
       }
     }
@@ -1321,7 +1339,7 @@ export function ProposalWriterPage() {
         progress={
           isGeneratingDocument
             ? {
-                step: 1,
+                step: generationProgressStep,
                 total: 3,
                 message: 'Generating Enhanced Concept Document...',
                 description:
