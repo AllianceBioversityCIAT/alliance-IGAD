@@ -196,7 +196,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
 
   // Synchronize section changes with parent component
   useEffect(() => {
-    if (!onConceptEvaluationChange || selectedSections.length === 0) {
+    if (showEditModal || !onConceptEvaluationChange || selectedSections.length === 0) {
       return
     }
 
@@ -209,7 +209,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
       selectedSections,
       userComments: Object.keys(userComments).length > 0 ? userComments : undefined,
     })
-  }, [selectedSections, userComments, onConceptEvaluationChange])
+  }, [selectedSections, userComments, onConceptEvaluationChange, showEditModal])
 
   console.log('📄 Step3 - conceptDocument:', conceptDocument)
   console.log('📄 Step3 - conceptAnalysis:', conceptAnalysis)
