@@ -68,6 +68,12 @@
   }
 }
 
+.navbarButtons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .promptManagerButton {
   background: #00A63E;
   color: #FFFFFF;
@@ -81,6 +87,32 @@
 
 .promptManagerButton:hover {
   background: #059669;
+}
+
+.saveAndCloseButton {
+  background: #FFFFFF;
+  color: #016630;
+  border: 1px solid #016630;
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.saveAndCloseButton:hover:not(:disabled) {
+  background: #F0FDF4;
+  border-color: #00A63E;
+  color: #00A63E;
+}
+
+.saveAndCloseButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #F9FAFB;
+  color: #9CA3AF;
+  border-color: #D1D5DC;
 }
 
 .proposalWriterContainer {

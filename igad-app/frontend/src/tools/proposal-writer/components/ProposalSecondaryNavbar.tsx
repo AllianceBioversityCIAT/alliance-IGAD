@@ -36,9 +36,14 @@ export function ProposalSecondaryNavbar({
             </span>
           ) : null}
         </div>
-        <button className={styles.promptManagerButton} onClick={handlePromptManagerClick}>
-          Prompt Manager
-        </button>
+        <div className={styles.navbarButtons}>
+          <button className={styles.promptManagerButton} onClick={handlePromptManagerClick}>
+            Prompt Manager
+          </button>
+          <button className={styles.saveAndCloseButton} disabled={true}>
+            Save and close
+          </button>
+        </div>
       </div>
     </div>
   )
