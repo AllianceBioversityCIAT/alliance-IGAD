@@ -749,28 +749,37 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
 
       {/* Edit Sections Modal */}
       {showEditModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setShowEditModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+          aria-describedby="modal-description"
+        >
           <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+            {/* Fixed Header */}
             <div className={styles.modalHeader}>
               <div>
-                <h2 className={styles.modalTitle}>
+                <h2 id="modal-title" className={styles.modalTitle}>
                   <Sparkles size={20} />
                   Edit Sections
                 </h2>
-                <p className={styles.modalSubtitle}>
-                  Select which sections to include in the regenerated document
+                <p id="modal-description" className={styles.modalSubtitle}>
+                  Select sections to include ({selectedSections.length}/{sectionsNeedingElaboration.length})
                 </p>
               </div>
-              <button className={styles.modalCloseButton} onClick={() => setShowEditModal(false)}>
+              <button
+                className={styles.modalCloseButton}
+                onClick={() => setShowEditModal(false)}
+                aria-label="Close modal"
+              >
                 <X size={20} />
               </button>
             </div>
 
+            {/* Scrollable Body */}
             <div className={styles.modalBody}>
-              <div className={styles.selectionCount}>
-                {selectedSections.length} sections selected
-              </div>
-
               <div className={styles.sectionsList}>
                 {sectionsNeedingElaboration.map((section: any, index: number) => {
                   const isSelected = selectedSections.includes(section.section)
@@ -779,7 +788,10 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                     PRIORITY_COLORS[section.priority as keyof typeof PRIORITY_COLORS]
 
                   return (
-                    <div key={index} className={styles.sectionItem}>
+                    <div
+                      key={index}
+                      className={`${styles.sectionItem} ${isSelected ? styles.sectionItemSelected : ''}`}
+                    >
                       <div className={styles.sectionItemHeader}>
                         <div className={styles.sectionItemLeft}>
                           <input
@@ -787,8 +799,10 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                             checked={isSelected}
                             onChange={() => toggleSectionSelection(section.section)}
                             className={styles.sectionCheckbox}
+                            id={`section-${index}`}
+                            aria-label={`Select ${section.section}`}
                           />
-                          <div className={styles.sectionInfo}>
+                          <label htmlFor={`section-${index}`} className={styles.sectionInfo}>
                             <h4 className={styles.sectionName}>{section.section}</h4>
                             <span
                               className={styles.priorityBadge}
@@ -800,13 +814,23 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                             >
                               {section.priority}
                             </span>
-                          </div>
+                          </label>
                         </div>
                         <button
                           className={styles.expandButton}
                           onClick={() => toggleSectionExpansion(section.section)}
+                          aria-expanded={isExpanded}
+                          aria-label={isExpanded ? 'Show less details' : 'Show more details'}
                         >
-                          {isExpanded ? 'See less' : 'See more'} ▼
+                          {isExpanded ? (
+                            <>
+                              See less <ChevronUp size={16} />
+                            </>
+                          ) : (
+                            <>
+                              See more <ChevronDown size={16} />
+                            </>
+                          )}
                         </button>
                       </div>
 
@@ -830,7 +854,17 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                   )
                 })}
               </div>
+            </div>
 
+            {/* Fixed Footer */}
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.cancelButton}
+                onClick={() => setShowEditModal(false)}
+                disabled={isRegenerating}
+              >
+                Cancel
+              </button>
               <button
                 className={styles.regenerateButton}
                 onClick={handleRegenerateDocument}
@@ -842,7 +876,10 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                     Regenerating...
                   </>
                 ) : (
-                  'Re-generate Concept Document'
+                  <>
+                    <Sparkles size={16} />
+                    Re-generate ({selectedSections.length} section{selectedSections.length !== 1 ? 's' : ''})
+                  </>
                 )}
               </button>
             </div>

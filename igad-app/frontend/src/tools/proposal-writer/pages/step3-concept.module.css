@@ -282,16 +282,23 @@
   max-width: 800px;
   width: 100%;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
 }
 
 .modalHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 24px 24px 16px 24px;
+  padding: 24px 24px 20px 24px;
   border-bottom: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .modalTitle {
@@ -309,6 +316,18 @@
   line-height: 20px;
   color: #717182;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sectionCounter {
+  font-weight: 600;
+  color: #00A63E;
+  padding: 2px 8px;
+  background: #F0FDF4;
+  border-radius: 12px;
+  font-size: 13px;
 }
 
 .modalCloseButton {
@@ -326,17 +345,23 @@
 
 .modalBody {
   padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  max-height: 60vh;
 }
 
-.selectionCount {
-  font-size: 14px;
-  font-weight: 600;
-  color: #0A0A0A;
-  margin-bottom: 16px;
-  padding: 12px;
-  background: #F0FDF4;
-  border-radius: 8px;
-  border-left: 4px solid #00A63E;
+/* Modal Footer - Fixed at bottom */
+.modalFooter {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 /* Sections List */
@@ -344,19 +369,32 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 24px;
 }
 
 .sectionItem {
   border: 1px solid #E5E7EB;
   border-radius: 10px;
   padding: 16px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  background: #FFFFFF;
+  cursor: pointer;
 }
 
 .sectionItem:hover {
   border-color: #00A63E;
   background: #F9FAFB;
+  box-shadow: 0 2px 8px rgba(0, 166, 62, 0.1);
+  transform: translateY(-1px);
+}
+
+.sectionItemSelected {
+  border-color: #00A63E;
+  background: #F0FDF4;
+  box-shadow: 0 0 0 3px rgba(0, 166, 62, 0.1);
+}
+
+.sectionItemSelected:hover {
+  background: #DCFCE7;
 }
 
 .sectionItemHeader {
@@ -385,6 +423,8 @@
   align-items: center;
   gap: 12px;
   flex: 1;
+  cursor: pointer;
+  user-select: none;
 }
 
 .sectionName {
@@ -392,6 +432,7 @@
   font-weight: 500;
   color: #0A0A0A;
   margin: 0;
+  line-height: 1.5;
 }
 
 .priorityBadge {
@@ -403,18 +444,28 @@
 }
 
 .expandButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   background: none;
   border: none;
   color: #00A63E;
   font-size: 14px;
   cursor: pointer;
-  padding: 4px 8px;
-  transition: color 0.2s;
+  padding: 6px 12px;
+  transition: all 0.2s;
   white-space: nowrap;
+  border-radius: 6px;
 }
 
 .expandButton:hover {
   color: #008236;
+  background: #F0FDF4;
+}
+
+.expandButton:focus {
+  outline: 2px solid #00A63E;
+  outline-offset: 2px;
 }
 
 .sectionDetails {
@@ -478,9 +529,41 @@
   color: #9CA3AF;
 }
 
+/* Cancel Button */
+.cancelButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.cancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Regenerate Button */
 .regenerateButton {
-  width: 100%;
-  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
   background: #00A63E;
   border: none;
   border-radius: 8px;
@@ -488,11 +571,24 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  flex: 2;
 }
 
-.regenerateButton:hover {
+.regenerateButton:hover:not(:disabled) {
   background: #008236;
+  box-shadow: 0 4px 12px rgba(0, 166, 62, 0.2);
+  transform: translateY(-1px);
+}
+
+.regenerateButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.regenerateButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #9CA3AF;
 }
 
 /* Empty State */
@@ -577,13 +673,25 @@
     margin: 16px;
     max-height: calc(100vh - 32px);
   }
-  
+
   .modalHeader {
     padding: 16px;
   }
-  
+
   .modalBody {
     padding: 16px;
+    max-height: 50vh;
+  }
+
+  .modalFooter {
+    padding: 12px 16px;
+    flex-direction: column;
+  }
+
+  .cancelButton,
+  .regenerateButton {
+    flex: 1;
+    width: 100%;
   }
 }
 
