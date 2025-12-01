@@ -1311,6 +1311,7 @@ export function Step1InformationConsolidation({
                 <>
                   <FileText className={styles.uploadAreaIcon} size={24} aria-hidden="true" />
                   <p className={styles.uploadAreaTitle}>Drop concept document here</p>
+                  <p className={styles.uploadAreaDescription}>Supports PDF, DOCX, and TXT files up to 10MB</p>
                   <input
                     type="file"
                     accept=".pdf,.docx,.txt"
