@@ -1,47 +1,126 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { FileText, Download, Sparkles, X, Check, ChevronDown, ChevronUp } from 'lucide-react'
-import { Document, Packer, Paragraph, HeadingLevel, AlignmentType } from 'docx'
-import styles from './step3-concept.module.css'
-import step2Styles from './step2.module.css'
+// ============================================================================
+// IMPORTS
+// ============================================================================
+// React Core
+import { useState, useEffect, useCallback } from 'react'
 
+// External Libraries - Icons & Document Generation
+import { FileText, Download, Sparkles, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Document, Packer, Paragraph, HeadingLevel } from 'docx'
+
+// Local Imports
+import styles from './step3-concept.module.css'
+
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+/**
+ * Represents a section that needs elaboration in the concept
+ */
+interface SectionNeedingElaboration {
+  /** Name of the section */
+  section: string
+  /** Description of what needs to be addressed */
+  issue: string
+  /** Priority level for this section */
+  priority: 'Critical' | 'Recommended' | 'Optional'
+  /** Optional improvement suggestions */
+  suggestions?: string[]
+  /** Whether this section is selected for generation */
+  selected?: boolean
+  /** Optional user comment for this section */
+  user_comment?: string
+}
+
+/**
+ * Complete analysis of the proposal concept
+ */
+interface ConceptAnalysis {
+  /** Sections that need further elaboration */
+  sections_needing_elaboration: SectionNeedingElaboration[]
+  /** Strategic verdict and recommendations */
+  strategic_verdict?: string
+  /** Strong aspects identified */
+  strong_aspects?: string[]
+  /** Fit assessment */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fit_assessment?: any
+}
+
+/**
+ * Props for the Step3ConceptDocument component
+ */
 interface Step3Props {
+  /** Generated concept document (can have various formats) */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   conceptDocument: any | null
-  conceptAnalysis?: any
+  /** AI-generated concept analysis (may be nested) */
+  conceptAnalysis?: ConceptAnalysis | { concept_analysis: ConceptAnalysis }
+  /** Unique proposal identifier */
   proposalId?: string
+  /** Callback to regenerate document with new selections */
   onRegenerateDocument?: (
     selectedSections: string[],
     userComments: { [key: string]: string }
   ) => void
-  onEditSections?: () => void
-  onNextStep?: () => void
+  /** Callback when concept evaluation changes */
   onConceptEvaluationChange?: (data: {
     selectedSections: string[]
     userComments?: { [key: string]: string }
   }) => void
 }
 
-interface SectionNeedingElaboration {
-  section: string
-  issue: string
-  priority: 'Critical' | 'Recommended' | 'Optional'
-  suggestions?: string[]
+/**
+ * Color configuration for priority badges
+ */
+type PriorityColorConfig = {
+  bg: string
+  border: string
+  text: string
 }
 
-const PRIORITY_COLORS = {
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+/**
+ * Color mapping for section priority levels
+ * Red: Critical priority
+ * Yellow: Recommended priority
+ * Blue: Optional priority
+ */
+const PRIORITY_COLORS: Record<'Critical' | 'Recommended' | 'Optional', PriorityColorConfig> = {
   Critical: { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' },
   Recommended: { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
   Optional: { bg: '#E0E7FF', border: '#C7D2FE', text: '#193CB8' },
 }
+
+/**
+ * Common document title patterns to exclude from section counting
+ */
+const DOCUMENT_TITLE_PATTERNS = [
+  /improved concept note/i,
+  /generated concept document/i,
+  /concept document/i,
+  /outline/i,
+]
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
 const Step3ConceptDocument: React.FC<Step3Props> = ({
   conceptDocument,
   conceptAnalysis,
   proposalId,
   onRegenerateDocument,
-  onEditSections,
-  onNextStep,
   onConceptEvaluationChange,
 }) => {
+  // ============================================================================
+  // STATE
+  // ============================================================================
+
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [userComments, setUserComments] = useState<{ [key: string]: string }>({})
@@ -49,524 +128,321 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
   const [isDownloading, setIsDownloading] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
 
-  // ALL HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL LOGIC OR EARLY RETURNS
-  const handleDownloadDocument = useCallback(
-    async (e?: React.MouseEvent) => {
-      if (e) {
-        e.preventDefault()
-        e.stopPropagation()
-      }
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
 
-      console.log('🔽 Download button clicked!')
-      console.log('📦 conceptDocument for download:', conceptDocument)
-      setIsDownloading(true)
+  /**
+   * Unwraps potentially nested concept analysis structure
+   * Handles multiple levels of nesting (concept_analysis.concept_analysis)
+   *
+   * @param analysis - The concept analysis object (may be nested)
+   * @returns Unwrapped concept analysis
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const unwrapConceptAnalysis = useCallback((analysis: any): ConceptAnalysis | undefined => {
+    if (!analysis) {
+      return undefined
+    }
 
-      try {
-        let content = ''
+    let unwrapped = analysis.concept_analysis || analysis
 
-        // Extract content from the same structure used in renderConceptDocument
-        if (typeof conceptDocument === 'string') {
-          console.log('✅ Download: Using string content')
-          content = conceptDocument
-        } else if (conceptDocument?.generated_concept_document) {
-          console.log('✅ Download: Using generated_concept_document (NEW FORMAT)')
-          content = conceptDocument.generated_concept_document
-        } else if (conceptDocument?.content) {
-          console.log('✅ Download: Using content field')
-          content = conceptDocument.content
-        } else if (conceptDocument?.document) {
-          console.log('✅ Download: Using document field')
-          content = conceptDocument.document
-        } else if (conceptDocument?.proposal_outline) {
-          console.log('✅ Download: Using proposal_outline')
-          const outline = conceptDocument.proposal_outline
-          if (Array.isArray(outline)) {
-            content = outline
-              .map(section => {
-                const title = section.section_title || ''
-                const purpose = section.purpose || ''
-                const wordCount = section.recommended_word_count || ''
-                const questions = Array.isArray(section.guiding_questions)
-                  ? section.guiding_questions.map(q => `- ${q}`).join('\n')
-                  : ''
+    // Check for additional nesting
+    if (unwrapped?.concept_analysis) {
+      unwrapped = unwrapped.concept_analysis
+    }
 
-                return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
-              })
-              .join('\n\n')
-          }
-        } else if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
-          console.log('✅ Download: Using sections object')
-          content = Object.entries(conceptDocument.sections)
-            .map(([key, value]) => `## ${key}\n\n${value}`)
-            .join('\n\n')
-        } else {
-          console.warn('⚠️ Download: No valid content format found')
-          content = 'No content available'
-        }
+    return unwrapped
+  }, [])
 
-        console.log(`📝 Download: Final content length: ${content.length} characters`)
+  /**
+   * Extracts content from various possible document structures
+   * Priority: generated_concept_document > content > document > proposal_outline > sections
+   *
+   * @param doc - The concept document object
+   * @returns Extracted content as string
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const extractDocumentContent = useCallback((doc: any): string => {
+    if (!doc) {
+      return ''
+    }
 
-        // Convert markdown to DOCX using docx library
-        const sections = markdownToParagraphs(content)
+    // eslint-disable-next-line no-console
+    console.log('📄 Extracting content from document')
+    // eslint-disable-next-line no-console
+    console.log('📦 Document type:', typeof doc)
 
-        const doc = new Document({
-          sections: [
-            {
-              children: sections,
-            },
-          ],
+    // String content
+    if (typeof doc === 'string') {
+      // eslint-disable-next-line no-console
+      console.log('✅ Using string content')
+      return doc
+    }
+
+    // New format: generated_concept_document
+    if (doc.generated_concept_document) {
+      // eslint-disable-next-line no-console
+      console.log('✅ Using generated_concept_document field (NEW FORMAT)')
+      return doc.generated_concept_document
+    }
+
+    // Content field
+    if (doc.content) {
+      // eslint-disable-next-line no-console
+      console.log('✅ Using content field')
+      return doc.content
+    }
+
+    // Document field
+    if (doc.document) {
+      // eslint-disable-next-line no-console
+      console.log('✅ Using document field')
+      return doc.document
+    }
+
+    // Proposal outline structure
+    if (doc.proposal_outline && Array.isArray(doc.proposal_outline)) {
+      // eslint-disable-next-line no-console
+      console.log('✅ Using proposal_outline structure')
+      return doc.proposal_outline
+        .map(section => {
+          const title = section.section_title || ''
+          const purpose = section.purpose || ''
+          const wordCount = section.recommended_word_count || ''
+          const questions = Array.isArray(section.guiding_questions)
+            ? section.guiding_questions.map(q => `- ${q}`).join('\n')
+            : ''
+
+          return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
         })
-
-        // Generate and download DOCX
-        const blob = await Packer.toBlob(doc)
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `concept-document-${new Date().toISOString().slice(0, 10)}.docx`
-        a.click()
-        URL.revokeObjectURL(url)
-
-        console.log('✅ Download complete!')
-        setIsDownloading(false)
-      } catch (error) {
-        console.error('❌ Error generating document:', error)
-        alert('Error generating document. Please try again.')
-        setIsDownloading(false)
-      }
-    },
-    [conceptDocument]
-  )
-
-  // Initialize selected sections when modal opens
-  useEffect(() => {
-    if (showEditModal) {
-      console.log('📂 Opening Edit Sections modal...')
-      console.log('📋 Full conceptAnalysis:', JSON.stringify(conceptAnalysis, null, 2))
-
-      // Load from conceptAnalysis if available (from DynamoDB)
-      // Handle multiple levels of nesting
-      let analysis = conceptAnalysis?.concept_analysis || conceptAnalysis
-
-      // Check if there's another level of nesting (concept_analysis.concept_analysis)
-      if (analysis?.concept_analysis) {
-        console.log('🔍 Found nested concept_analysis, unwrapping...')
-        analysis = analysis.concept_analysis
-      }
-
-      const sections = analysis?.sections_needing_elaboration || []
-
-      console.log('📊 Unwrapped analysis:', JSON.stringify(analysis, null, 2))
-      console.log(`📊 Found ${sections.length} sections in concept analysis`)
-
-      // Check if sections have the 'selected' flag
-      const hasSelectedFlags = sections.some((s: any) => 'selected' in s)
-
-      console.log(`🔍 Has selected flags: ${hasSelectedFlags}`)
-
-      if (hasSelectedFlags) {
-        // Load saved selections from DynamoDB
-        const savedSelections = sections
-          .filter((s: any) => s.selected === true)
-          .map((s: any) => s.section)
-
-        const savedComments = sections.reduce((acc: any, s: any) => {
-          if (s.user_comment) {
-            acc[s.section] = s.user_comment
-          }
-          return acc
-        }, {})
-
-        console.log('✅ Loading saved selections from DynamoDB:', savedSelections)
-        console.log('✅ Loading saved comments from DynamoDB:', savedComments)
-
-        setSelectedSections(savedSelections)
-        setUserComments(savedComments)
-      } else {
-        // No selected flags found - default to all Critical sections
-        console.log('⚠️ No selected flags found, defaulting to Critical sections')
-        const criticalSections = sections
-          .filter((s: SectionNeedingElaboration) => s.priority === 'Critical')
-          .map((s: SectionNeedingElaboration) => s.section)
-
-        console.log('📌 Critical sections:', criticalSections)
-        setSelectedSections(criticalSections)
-      }
-    }
-  }, [showEditModal, conceptAnalysis])
-
-  // Synchronize section changes with parent component
-  useEffect(() => {
-    if (showEditModal || !onConceptEvaluationChange || selectedSections.length === 0) {
-      return
+        .join('\n\n')
     }
 
-    console.log('📤 Syncing concept evaluation with parent:')
-    console.log(`   Selected sections: ${selectedSections.length}`)
-    console.log(`   Sections:`, selectedSections)
-    console.log(`   Comments:`, userComments)
+    // Sections object
+    if (doc.sections && typeof doc.sections === 'object') {
+      // eslint-disable-next-line no-console
+      console.log('✅ Using sections object')
+      return Object.entries(doc.sections)
+        .map(([key, value]) => `## ${key}\n\n${value}`)
+        .join('\n\n')
+    }
 
-    onConceptEvaluationChange({
-      selectedSections,
-      userComments: Object.keys(userComments).length > 0 ? userComments : undefined,
-    })
-  }, [selectedSections, userComments, onConceptEvaluationChange, showEditModal])
+    // Fallback
+    // eslint-disable-next-line no-console
+    console.warn('⚠️ Unknown document structure')
+    return JSON.stringify(doc, null, 2)
+  }, [])
 
-  console.log('📄 Step3 - conceptDocument:', conceptDocument)
-  console.log('📄 Step3 - conceptAnalysis:', conceptAnalysis)
-
-  // Calculate number of selected sections
-  // Handle multiple levels of nesting
-  let unwrappedAnalysis = conceptAnalysis?.concept_analysis || conceptAnalysis
-
-  // Check if there's another level of nesting (concept_analysis.concept_analysis)
-  if (unwrappedAnalysis?.concept_analysis) {
-    unwrappedAnalysis = unwrappedAnalysis.concept_analysis
-  }
-
-  const sectionsNeedingElaboration = unwrappedAnalysis?.sections_needing_elaboration || []
-  const selectedCount = sectionsNeedingElaboration.filter((s: any) => s.selected === true).length
-  // Calculate number of sections from the actual document
-  const getDocumentSectionCount = () => {
+  /**
+   * Counts the number of sections in the document
+   *
+   * @returns Number of sections
+   */
+  const getDocumentSectionCount = useCallback((): number => {
     if (!conceptDocument) {
       return 0
     }
 
-    // NEW FORMAT: Check generated_concept_document and sections
-    if (conceptDocument?.generated_concept_document) {
-      // If sections object exists, use its count (most accurate)
-      if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
-        const count = Object.keys(conceptDocument.sections).length
-        console.log(`📊 Using sections count from NEW format: ${count}`)
-        return count
-      }
-
-      // Otherwise, count ## headers in markdown, excluding document titles
-      const headerMatches = conceptDocument.generated_concept_document.match(/^##\s+(.+)$/gm)
-      if (headerMatches) {
-        // Filter out common title patterns (case-insensitive)
-        const titlePatterns = [
-          /improved concept note/i,
-          /generated concept document/i,
-          /concept document/i,
-          /outline/i,
-        ]
-
-        const contentHeaders = headerMatches.filter((header: string) => {
-          const headerText = header.substring(3).trim() // Remove '## '
-          return !titlePatterns.some(pattern => pattern.test(headerText))
-        })
-
-        const count = contentHeaders.length
-        console.log(`📊 Counting content headers in generated_concept_document: ${count} (found ${headerMatches.length} total)`)
-        return count
-      }
-
-      console.log(`📊 No headers found in generated_concept_document`)
-      return 0
-    }
-
-    // OLD FORMAT: proposal_outline
-    if (conceptDocument?.proposal_outline && Array.isArray(conceptDocument.proposal_outline)) {
-      const count = conceptDocument.proposal_outline.length
-      console.log(`📊 Using proposal_outline count: ${count}`)
-      return count
-    }
-
-    // FALLBACK: sections object
+    // New format: check sections object first (most accurate)
     if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
       const count = Object.keys(conceptDocument.sections).length
-      console.log(`📊 Using sections object count: ${count}`)
+      // eslint-disable-next-line no-console
+      console.log(`📊 Section count from sections object: ${count}`)
       return count
     }
 
-    // From selected sections
-    const count = selectedCount || 0
-    console.log(`📊 Using selected sections count (fallback): ${count}`)
-    return count
-  }
+    // Count headers in generated_concept_document
+    if (conceptDocument?.generated_concept_document) {
+      const headerMatches = conceptDocument.generated_concept_document.match(/^##\s+(.+)$/gm)
+      if (headerMatches) {
+        // Filter out document title patterns
+        const contentHeaders = headerMatches.filter((header: string) => {
+          const headerText = header.substring(3).trim()
+          return !DOCUMENT_TITLE_PATTERNS.some(pattern => pattern.test(headerText))
+        })
+        const count = contentHeaders.length
+        // eslint-disable-next-line no-console
+        console.log(`📊 Section count from headers: ${count} (${headerMatches.length} total)`)
+        return count
+      }
+    }
 
-  const totalSections = getDocumentSectionCount()
+    // Old format: proposal_outline
+    if (conceptDocument?.proposal_outline && Array.isArray(conceptDocument.proposal_outline)) {
+      const count = conceptDocument.proposal_outline.length
+      // eslint-disable-next-line no-console
+      console.log(`📊 Section count from proposal_outline: ${count}`)
+      return count
+    }
 
-  console.log(
-    `📊 Step3 - Selected sections: ${selectedCount} of ${sectionsNeedingElaboration.length} total`
-  )
-  console.log(`📊 Step3 - Document has ${totalSections} sections in outline`)
+    // Fallback to selected sections count
+    const unwrapped = unwrapConceptAnalysis(conceptAnalysis)
+    const sections = unwrapped?.sections_needing_elaboration || []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const selectedCount = sections.filter((s: any) => s.selected === true).length
+    // eslint-disable-next-line no-console
+    console.log(`📊 Section count from selections (fallback): ${selectedCount}`)
+    return selectedCount
+  }, [conceptDocument, conceptAnalysis, unwrapConceptAnalysis])
 
-  // Check if user has previously had a document (only check for actual saved documents)
-  const hadPreviousDocument = (() => {
-    if (!proposalId) return false
-    // Only check if document was actually saved
+  /**
+   * Checks if user had a previously saved document
+   *
+   * @returns True if document was previously saved
+   */
+  const hadPreviousDocument = useCallback((): boolean => {
+    if (!proposalId) {
+      return false
+    }
     const savedDocument = localStorage.getItem(`proposal_concept_document_${proposalId}`)
     return !!savedDocument
-  })()
+  }, [proposalId])
 
-  if (!conceptDocument) {
-    // Different message if sections have changed vs first time
-    if (hadPreviousDocument && sectionsNeedingElaboration.length > 0) {
-      // User had a document but changed their selections
-      return (
-        <div className={styles.mainContent}>
-          <div className={styles.stepHeader}>
-            <h1 className={styles.stepMainTitle}>Step 3: Updated Concept Document</h1>
-            <p className={styles.stepMainDescription}>
-              Review and download your enhanced concept document with elaborated sections
-            </p>
-          </div>
+  // ============================================================================
+  // MARKDOWN PARSING FUNCTIONS
+  // ============================================================================
 
-          <div className={styles.invalidatedDocumentCard}>
-            <div className={styles.invalidatedIcon}>
-              <Sparkles size={48} color="#F59E0B" />
-            </div>
-            <h2 className={styles.invalidatedTitle}>Section Selections Have Changed</h2>
-            <p className={styles.invalidatedDescription}>
-              You've updated your section selections in Step 2. To see an updated concept document with your new selections, please click the button below to generate a fresh document.
-            </p>
-            <button
-              className={styles.regeneratePrimaryButton}
-              onClick={() => {
-                // Trigger regeneration flow - navigate back to Step 2 or show modal
-                if (onRegenerateDocument && sectionsNeedingElaboration.length > 0) {
-                  // Get currently selected sections
-                  const currentSelections = sectionsNeedingElaboration
-                    .filter((s: any) => s.selected === true)
-                    .map((s: any) => s.section)
+  /**
+   * Formats inline markdown (bold, italic, code)
+   *
+   * @param text - Text with markdown syntax
+   * @returns HTML-formatted text
+   */
+  const formatInlineMarkdown = useCallback((text: string): string => {
+    let formatted = text
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
+    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
+    return formatted
+  }, [])
 
-                  const currentComments = sectionsNeedingElaboration.reduce((acc: any, s: any) => {
-                    if (s.user_comment) {
-                      acc[s.section] = s.user_comment
-                    }
-                    return acc
-                  }, {})
+  /**
+   * Parses markdown content to React elements
+   * Handles headers, lists, and paragraphs
+   *
+   * @param markdown - Markdown content
+   * @returns Array of React elements
+   */
+  const parseMarkdownToReact = useCallback(
+    (markdown: string): JSX.Element[] => {
+      // eslint-disable-next-line no-console
+      console.log('🎨 Parsing markdown to React')
+      // eslint-disable-next-line no-console
+      console.log(`📝 Content: ${markdown.length} chars, ${markdown.split('\n').length} lines`)
 
-                  onRegenerateDocument(currentSelections, currentComments)
-                }
-              }}
-            >
-              <Sparkles size={16} />
-              Generate Updated Concept Document
-            </button>
-          </div>
-        </div>
-      )
-    }
+      const lines = markdown.split('\n')
+      const elements: JSX.Element[] = []
+      let currentList: string[] = []
+      let currentParagraph: string[] = []
 
-    // First time - no document yet, no previous selections
-    return (
-      <div className={styles.mainContent}>
-        <div className={styles.stepHeader}>
-          <h1 className={styles.stepMainTitle}>Step 3: Updated Concept Document</h1>
-          <p className={styles.stepMainDescription}>
-            Review and download your enhanced concept document with elaborated sections
-          </p>
-        </div>
-        <div className={styles.emptyState}>
-          <FileText size={48} color="#9CA3AF" />
-          <p>No concept document available. Please complete Step 2 first.</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Parse the concept document content
-  const renderConceptDocument = () => {
-    let content = ''
-
-    // Log the structure for debugging
-    console.log('📄 Step3 - renderConceptDocument called')
-    console.log('📦 conceptDocument structure:', conceptDocument)
-    console.log('📦 conceptDocument type:', typeof conceptDocument)
-
-    if (conceptDocument && typeof conceptDocument === 'object') {
-      console.log('📦 conceptDocument keys:', Object.keys(conceptDocument))
-    }
-
-    // Try to extract the actual content from various possible structures
-    // Priority order: generated_concept_document > content > document > proposal_outline > sections
-
-    if (typeof conceptDocument === 'string') {
-      console.log('✅ Using conceptDocument as string')
-      content = conceptDocument
-    } else if (conceptDocument?.generated_concept_document) {
-      console.log('✅ Using generated_concept_document field (NEW FORMAT)')
-      console.log('📝 Content length:', conceptDocument.generated_concept_document.length)
-      console.log(
-        '📝 First 500 chars:',
-        conceptDocument.generated_concept_document.substring(0, 500)
-      )
-      console.log('📝 Has newlines:', conceptDocument.generated_concept_document.includes('\n'))
-
-      // Check if sections are also available for enhanced display
-      if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
-        const sectionCount = Object.keys(conceptDocument.sections).length
-        console.log(`📊 Also found ${sectionCount} sections in sections object`)
-      }
-
-      content = conceptDocument.generated_concept_document
-    } else if (conceptDocument?.content) {
-      console.log('✅ Using content field')
-      content = conceptDocument.content
-    } else if (conceptDocument?.document) {
-      console.log('✅ Using document field')
-      content = conceptDocument.document
-    } else if (conceptDocument?.proposal_outline) {
-      console.log('✅ Using proposal_outline structure')
-      // Handle proposal_outline structure - convert sections to markdown
-      const outline = conceptDocument.proposal_outline
-      if (Array.isArray(outline)) {
-        content = outline
-          .map(section => {
-            const title = section.section_title || ''
-            const purpose = section.purpose || ''
-            const wordCount = section.recommended_word_count || ''
-            const questions = Array.isArray(section.guiding_questions)
-              ? section.guiding_questions.map(q => `- ${q}`).join('\n')
-              : ''
-
-            return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
-          })
-          .join('\n\n')
-      }
-    } else if (conceptDocument?.sections && typeof conceptDocument.sections === 'object') {
-      console.log('✅ Using sections object (fallback)')
-      console.log('📊 Number of sections:', Object.keys(conceptDocument.sections).length)
-      // Build content from sections
-      content = Object.entries(conceptDocument.sections)
-        .map(([key, value]) => `## ${key}\n\n${value}`)
-        .join('\n\n')
-    } else {
-      console.warn('⚠️ Unknown conceptDocument structure, using JSON stringify')
-      // Last resort: stringify the object
-      content = JSON.stringify(conceptDocument, null, 2)
-    }
-
-    console.log('📝 Final content length:', content.length, 'characters')
-
-    return (
-      <div className={styles.documentContent}>
-        <div className={styles.markdownContent}>{parseMarkdownToReact(content)}</div>
-      </div>
-    )
-  }
-
-  const parseMarkdownToReact = (markdown: string) => {
-    console.log('🎨 parseMarkdownToReact called')
-    console.log('📝 Markdown length:', markdown.length)
-    console.log('📝 First 200 chars:', markdown.substring(0, 200))
-    console.log('📝 Number of lines:', markdown.split('\n').length)
-
-    const lines = markdown.split('\n')
-    const elements: JSX.Element[] = []
-    let currentList: string[] = []
-    let currentParagraph: string[] = []
-
-    const flushList = () => {
-      if (currentList.length > 0) {
-        elements.push(
-          <ul key={`ul-${elements.length}`} className={styles.markdownList}>
-            {currentList.map((item, i) => (
-              <li key={i} dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(item) }} />
-            ))}
-          </ul>
-        )
-        currentList = []
-      }
-    }
-
-    const flushParagraph = () => {
-      if (currentParagraph.length > 0) {
-        const text = currentParagraph.join(' ')
-        if (text.trim()) {
+      /**
+       * Flushes accumulated list items to elements array
+       */
+      const flushList = () => {
+        if (currentList.length > 0) {
           elements.push(
-            <p
-              key={`p-${elements.length}`}
-              className={styles.markdownParagraph}
-              dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
-            />
+            <ul key={`ul-${elements.length}`} className={styles.markdownList}>
+              {currentList.map((item, i) => (
+                <li key={i} dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(item) }} />
+              ))}
+            </ul>
+          )
+          currentList = []
+        }
+      }
+
+      /**
+       * Flushes accumulated paragraph text to elements array
+       */
+      const flushParagraph = () => {
+        if (currentParagraph.length > 0) {
+          const text = currentParagraph.join(' ')
+          if (text.trim()) {
+            elements.push(
+              <p
+                key={`p-${elements.length}`}
+                className={styles.markdownParagraph}
+                dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
+              />
+            )
+          }
+          currentParagraph = []
+        }
+      }
+
+      // Parse each line
+      lines.forEach((line, index) => {
+        // H3 headers
+        if (line.startsWith('### ')) {
+          flushList()
+          flushParagraph()
+          elements.push(
+            <h3 key={`h3-${index}`} className={styles.markdownH3}>
+              {line.substring(4)}
+            </h3>
           )
         }
-        currentParagraph = []
-      }
-    }
+        // H2 headers
+        else if (line.startsWith('## ')) {
+          flushList()
+          flushParagraph()
+          elements.push(
+            <h2 key={`h2-${index}`} className={styles.markdownH2}>
+              {line.substring(3)}
+            </h2>
+          )
+        }
+        // H1 headers
+        else if (line.startsWith('# ')) {
+          flushList()
+          flushParagraph()
+          elements.push(
+            <h1 key={`h1-${index}`} className={styles.markdownH1}>
+              {line.substring(2)}
+            </h1>
+          )
+        }
+        // List items
+        else if (line.match(/^[*-]\s+/)) {
+          flushParagraph()
+          currentList.push(line.replace(/^[*-]\s+/, ''))
+        }
+        // Empty lines
+        else if (line.trim() === '') {
+          flushList()
+          flushParagraph()
+        }
+        // Paragraph text
+        else {
+          flushList()
+          currentParagraph.push(line)
+        }
+      })
 
-    lines.forEach((line, index) => {
-      // Headers
-      if (line.startsWith('### ')) {
-        flushList()
-        flushParagraph()
-        elements.push(
-          <h3 key={`h3-${index}`} className={styles.markdownH3}>
-            {line.substring(4)}
-          </h3>
-        )
-      } else if (line.startsWith('## ')) {
-        flushList()
-        flushParagraph()
-        elements.push(
-          <h2 key={`h2-${index}`} className={styles.markdownH2}>
-            {line.substring(3)}
-          </h2>
-        )
-      } else if (line.startsWith('# ')) {
-        flushList()
-        flushParagraph()
-        elements.push(
-          <h1 key={`h1-${index}`} className={styles.markdownH1}>
-            {line.substring(2)}
-          </h1>
-        )
-      }
-      // Lists
-      else if (line.match(/^[\*\-]\s+/)) {
-        flushParagraph()
-        currentList.push(line.replace(/^[\*\-]\s+/, ''))
-      }
-      // Empty line
-      else if (line.trim() === '') {
-        flushList()
-        flushParagraph()
-      }
-      // Paragraph text
-      else {
-        flushList()
-        currentParagraph.push(line)
-      }
-    })
+      // Flush any remaining content
+      flushList()
+      flushParagraph()
 
-    // Flush any remaining content
-    flushList()
-    flushParagraph()
+      // eslint-disable-next-line no-console
+      console.log(`📊 Created ${elements.length} React elements`)
+      return elements
+    },
+    [formatInlineMarkdown]
+  )
 
-    console.log('📊 parseMarkdownToReact result:')
-    console.log('   - Total elements created:', elements.length)
-    console.log('   - Element types:', elements.map(e => e.type).join(', '))
-
-    return elements
-  }
-
-  const formatInlineMarkdown = (text: string): string => {
-    let formatted = text
-
-    // Bold
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-
-    // Italic
-    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
-
-    // Code
-    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
-
-    return formatted
-  }
-
-  const markdownToParagraphs = (markdown: string): Paragraph[] => {
+  /**
+   * Converts markdown to DOCX Paragraph objects for document export
+   *
+   * @param markdown - Markdown content
+   * @returns Array of DOCX Paragraph objects
+   */
+  const markdownToParagraphs = useCallback((markdown: string): Paragraph[] => {
     const lines = markdown.split('\n')
     const paragraphs: Paragraph[] = []
 
-    let i = 0
-    while (i < lines.length) {
-      const line = lines[i]
-
-      // Headers (### or ##)
+    lines.forEach(line => {
+      // H3 headers
       if (line.startsWith('### ')) {
         paragraphs.push(
           new Paragraph({
@@ -575,7 +451,9 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
             spacing: { before: 200, after: 100 },
           })
         )
-      } else if (line.startsWith('## ')) {
+      }
+      // H2 headers
+      else if (line.startsWith('## ')) {
         paragraphs.push(
           new Paragraph({
             text: line.substring(3),
@@ -583,7 +461,9 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
             spacing: { before: 300, after: 100 },
           })
         )
-      } else if (line.startsWith('# ')) {
+      }
+      // H1 headers
+      else if (line.startsWith('# ')) {
         paragraphs.push(
           new Paragraph({
             text: line.substring(2),
@@ -592,11 +472,11 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
           })
         )
       }
-      // Lists
-      else if (line.match(/^[\*\-]\s+/)) {
+      // List items
+      else if (line.match(/^[*-]\s+/)) {
         paragraphs.push(
           new Paragraph({
-            text: line.replace(/^[\*\-]\s+/, ''),
+            text: line.replace(/^[*-]\s+/, ''),
             bullet: { level: 0 },
             spacing: { after: 50 },
           })
@@ -615,88 +495,315 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
           })
         )
       }
-
-      i++
-    }
+    })
 
     return paragraphs.length > 0 ? paragraphs : [new Paragraph({ text: 'No content available' })]
-  }
+  }, [])
 
-  const parseMarkdownToHTML = (markdown: string): string => {
-    let html = markdown
+  // ============================================================================
+  // EVENT HANDLERS
+  // ============================================================================
 
-    // Headers
-    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+  /**
+   * Handles document download as DOCX file
+   * Converts markdown content to Word document format
+   */
+  const handleDownloadDocument = useCallback(
+    async (e?: React.MouseEvent) => {
+      if (e) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
 
-    // Bold
-    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      // eslint-disable-next-line no-console
+      console.log('🔽 Download initiated')
+      setIsDownloading(true)
 
-    // Italic
-    html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>')
+      try {
+        const content = extractDocumentContent(conceptDocument)
+        // eslint-disable-next-line no-console
+        console.log(`📝 Content extracted: ${content.length} characters`)
 
-    // Lists
-    html = html.replace(/^\* (.*$)/gim, '<li>$1</li>')
-    html = html.replace(/^- (.*$)/gim, '<li>$1</li>')
+        // Convert markdown to DOCX
+        const sections = markdownToParagraphs(content)
+        const doc = new Document({
+          sections: [{ children: sections }],
+        })
 
-    // Wrap consecutive list items
-    html = html.replace(/(<li>.*<\/li>\n?)+/gim, '<ul>$&</ul>')
+        // Generate and download
+        const blob = await Packer.toBlob(doc)
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `concept-document-${new Date().toISOString().slice(0, 10)}.docx`
+        a.click()
+        URL.revokeObjectURL(url)
 
-    // Paragraphs
-    html = html
-      .split('\n\n')
-      .map(para => {
-        if (!para.match(/^<[h|u|l]/)) {
-          return `<p>${para}</p>`
-        }
-        return para
-      })
-      .join('\n')
+        // eslint-disable-next-line no-console
+        console.log('✅ Download complete')
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('❌ Download error:', error)
+        alert('Error generating document. Please try again.')
+      } finally {
+        setIsDownloading(false)
+      }
+    },
+    [conceptDocument, extractDocumentContent, markdownToParagraphs]
+  )
 
-    return html
-  }
-
-  const toggleSectionSelection = (section: string) => {
+  /**
+   * Toggles section selection for regeneration
+   *
+   * @param section - Section name to toggle
+   */
+  const toggleSectionSelection = useCallback((section: string) => {
     setSelectedSections(prev =>
       prev.includes(section) ? prev.filter(s => s !== section) : [...prev, section]
     )
-  }
+  }, [])
 
-  const toggleSectionExpansion = (section: string) => {
+  /**
+   * Toggles section expansion in modal
+   *
+   * @param section - Section name to toggle
+   */
+  const toggleSectionExpansion = useCallback((section: string) => {
     setExpandedSections(prev =>
       prev.includes(section) ? prev.filter(s => s !== section) : [...prev, section]
     )
-  }
+  }, [])
 
-  const handleRegenerateDocument = async () => {
+  /**
+   * Handles document regeneration with selected sections
+   * Validates required data and triggers regeneration callback
+   */
+  const handleRegenerateDocument = useCallback(async () => {
     if (!proposalId || !onRegenerateDocument) {
       alert('Unable to regenerate document. Please try again.')
       return
     }
 
-    console.log('🔄 Regenerating document with:')
-    console.log(`   Selected sections: ${selectedSections.length}`)
-    console.log(`   Sections:`, selectedSections)
-    console.log(`   Comments:`, userComments)
+    // eslint-disable-next-line no-console
+    console.log('🔄 Regenerating document')
+    // eslint-disable-next-line no-console
+    console.log(`   Selected: ${selectedSections.length} sections`)
+    // eslint-disable-next-line no-console
+    console.log(`   Comments: ${Object.keys(userComments).length}`)
 
     setIsRegenerating(true)
     try {
       await onRegenerateDocument(selectedSections, userComments)
-      console.log('✅ Document regenerated successfully')
+      // eslint-disable-next-line no-console
+      console.log('✅ Regeneration successful')
       setShowEditModal(false)
-      // Don't reset states - they will be reloaded when modal reopens
-      // This preserves the selection state
     } catch (error) {
-      console.error('❌ Error regenerating document:', error)
+      // eslint-disable-next-line no-console
+      console.error('❌ Regeneration error:', error)
       alert('Error regenerating document. Please try again.')
     } finally {
       setIsRegenerating(false)
     }
+  }, [proposalId, onRegenerateDocument, selectedSections, userComments])
+
+  // ============================================================================
+  // EFFECTS
+  // ============================================================================
+
+  /**
+   * Initialize selected sections when modal opens
+   * Loads saved selections from DynamoDB or defaults to Critical sections
+   */
+  useEffect(() => {
+    if (!showEditModal) {
+      return
+    }
+
+    // eslint-disable-next-line no-console
+    console.log('📂 Opening Edit Sections modal')
+
+    const analysis = unwrapConceptAnalysis(conceptAnalysis)
+    const sections = analysis?.sections_needing_elaboration || []
+
+    // eslint-disable-next-line no-console
+    console.log(`📊 Found ${sections.length} sections`)
+
+    // Check if sections have saved selections
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hasSelectedFlags = sections.some((s: any) => 'selected' in s)
+
+    if (hasSelectedFlags) {
+      // Load saved selections
+      const savedSelections = sections
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((s: any) => s.selected === true)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((s: any) => s.section)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const savedComments = sections.reduce((acc: any, s: any) => {
+        if (s.user_comment) {
+          acc[s.section] = s.user_comment
+        }
+        return acc
+      }, {})
+
+      // eslint-disable-next-line no-console
+      console.log('✅ Loading saved selections:', savedSelections)
+      setSelectedSections(savedSelections)
+      setUserComments(savedComments)
+    } else {
+      // Default to Critical sections
+      // eslint-disable-next-line no-console
+      console.log('⚠️ No saved selections, defaulting to Critical')
+      const criticalSections = sections
+        .filter((s: SectionNeedingElaboration) => s.priority === 'Critical')
+        .map((s: SectionNeedingElaboration) => s.section)
+
+      setSelectedSections(criticalSections)
+    }
+  }, [showEditModal, conceptAnalysis, unwrapConceptAnalysis])
+
+  /**
+   * Synchronize section changes with parent component
+   * Triggers callback when selections or comments change
+   */
+  useEffect(() => {
+    if (showEditModal || !onConceptEvaluationChange || selectedSections.length === 0) {
+      return
+    }
+
+    // eslint-disable-next-line no-console
+    console.log('📤 Syncing evaluation with parent')
+    // eslint-disable-next-line no-console
+    console.log(`   Sections: ${selectedSections.length}`)
+
+    onConceptEvaluationChange({
+      selectedSections,
+      userComments: Object.keys(userComments).length > 0 ? userComments : undefined,
+    })
+  }, [selectedSections, userComments, onConceptEvaluationChange, showEditModal])
+
+  // ============================================================================
+  // RENDER HELPERS
+  // ============================================================================
+
+  /**
+   * Renders the concept document content
+   * Parses markdown and displays as formatted React elements
+   */
+  const renderConceptDocument = useCallback(() => {
+    const content = extractDocumentContent(conceptDocument)
+    // eslint-disable-next-line no-console
+    console.log(`📝 Rendering document: ${content.length} chars`)
+
+    return (
+      <div className={styles.documentContent}>
+        <div className={styles.markdownContent}>{parseMarkdownToReact(content)}</div>
+      </div>
+    )
+  }, [conceptDocument, extractDocumentContent, parseMarkdownToReact])
+
+  /**
+   * Renders the empty state when no document is available
+   * Shows different messages based on whether sections changed or first time
+   */
+  const renderEmptyState = useCallback(() => {
+    const unwrapped = unwrapConceptAnalysis(conceptAnalysis)
+    const sectionsNeedingElaboration = unwrapped?.sections_needing_elaboration || []
+    const hasPreviousDocument = hadPreviousDocument()
+
+    // Sections changed - show regeneration prompt
+    if (hasPreviousDocument && sectionsNeedingElaboration.length > 0) {
+      return (
+        <div className={styles.invalidatedDocumentCard}>
+          <div className={styles.invalidatedIcon}>
+            <Sparkles size={48} color="#F59E0B" />
+          </div>
+          <h2 className={styles.invalidatedTitle}>Section Selections Have Changed</h2>
+          <p className={styles.invalidatedDescription}>
+            You&apos;ve updated your section selections in Step 2. To see an updated concept
+            document with your new selections, please click the button below to generate a fresh
+            document.
+          </p>
+          <button
+            className={styles.regeneratePrimaryButton}
+            onClick={() => {
+              if (onRegenerateDocument && sectionsNeedingElaboration.length > 0) {
+                const currentSelections = sectionsNeedingElaboration
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  .filter((s: any) => s.selected === true)
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  .map((s: any) => s.section)
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const currentComments = sectionsNeedingElaboration.reduce((acc: any, s: any) => {
+                  if (s.user_comment) {
+                    acc[s.section] = s.user_comment
+                  }
+                  return acc
+                }, {})
+
+                onRegenerateDocument(currentSelections, currentComments)
+              }
+            }}
+          >
+            <Sparkles size={16} />
+            Generate Updated Concept Document
+          </button>
+        </div>
+      )
+    }
+
+    // First time - no document yet
+    return (
+      <div className={styles.emptyState}>
+        <FileText size={48} color="#9CA3AF" />
+        <p>No concept document available. Please complete Step 2 first.</p>
+      </div>
+    )
+  }, [conceptAnalysis, hadPreviousDocument, onRegenerateDocument, unwrapConceptAnalysis])
+
+  // ============================================================================
+  // COMPUTED VALUES
+  // ============================================================================
+
+  const unwrappedAnalysis = unwrapConceptAnalysis(conceptAnalysis)
+  const sectionsNeedingElaboration = unwrappedAnalysis?.sections_needing_elaboration || []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const selectedCount = sectionsNeedingElaboration.filter((s: any) => s.selected === true).length
+  const totalSections = getDocumentSectionCount()
+
+  // eslint-disable-next-line no-console
+  console.log('📄 Step3 render')
+  // eslint-disable-next-line no-console
+  console.log(`   Document sections: ${totalSections}`)
+  // eslint-disable-next-line no-console
+  console.log(`   Selected sections: ${selectedCount}/${sectionsNeedingElaboration.length}`)
+
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
+
+  // No document available
+  if (!conceptDocument) {
+    return (
+      <div className={styles.mainContent}>
+        <div className={styles.stepHeader}>
+          <h1 className={styles.stepMainTitle}>Step 3: Updated Concept Document</h1>
+          <p className={styles.stepMainDescription}>
+            Review and download your enhanced concept document with elaborated sections
+          </p>
+        </div>
+        {renderEmptyState()}
+      </div>
+    )
   }
 
+  // Document available
   return (
     <div className={styles.mainContent}>
+      {/* Header */}
       <div className={styles.stepHeader}>
         <h1 className={styles.stepMainTitle}>Step 3: Updated Concept Document</h1>
         <p className={styles.stepMainDescription}>
@@ -712,8 +819,8 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
             <div>
               <h3 className={styles.documentTitle}>Generated Concept Document</h3>
               <p className={styles.documentSubtitle}>
-                {totalSections} section{totalSections !== 1 ? 's' : ''} included • Ready for review
-                and refinement
+                {totalSections} section{totalSections !== 1 ? 's' : ''} included &bull; Ready for
+                review and refinement
                 {conceptDocument?.generated_concept_document && conceptDocument?.sections && (
                   <>
                     <br />
@@ -777,7 +884,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
           aria-describedby="modal-description"
         >
           <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-            {/* Fixed Header */}
+            {/* Modal Header */}
             <div className={styles.modalHeader}>
               <div>
                 <h2 id="modal-title" className={styles.modalTitle}>
@@ -785,7 +892,8 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                   Edit Sections
                 </h2>
                 <p id="modal-description" className={styles.modalSubtitle}>
-                  Select sections to include ({selectedSections.length}/{sectionsNeedingElaboration.length})
+                  Select sections to include ({selectedSections.length}/
+                  {sectionsNeedingElaboration.length})
                 </p>
               </div>
               <button
@@ -797,9 +905,10 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
               </button>
             </div>
 
-            {/* Scrollable Body */}
+            {/* Modal Body - Scrollable */}
             <div className={styles.modalBody}>
               <div className={styles.sectionsList}>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {sectionsNeedingElaboration.map((section: any, index: number) => {
                   const isSelected = selectedSections.includes(section.section)
                   const isExpanded = expandedSections.includes(section.section)
@@ -875,7 +984,7 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
               </div>
             </div>
 
-            {/* Fixed Footer */}
+            {/* Modal Footer */}
             <div className={styles.modalFooter}>
               <button
                 className={styles.cancelButton}
@@ -897,7 +1006,8 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
                 ) : (
                   <>
                     <Sparkles size={16} />
-                    Re-generate ({selectedSections.length} section{selectedSections.length !== 1 ? 's' : ''})
+                    Re-generate ({selectedSections.length} section
+                    {selectedSections.length !== 1 ? 's' : ''})
                   </>
                 )}
               </button>

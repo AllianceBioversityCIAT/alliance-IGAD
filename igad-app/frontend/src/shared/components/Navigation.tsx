@@ -435,14 +435,26 @@ export function Navigation() {
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  maxWidth: '200px',
+                }}
+              >
                 <span
                   style={{
                     fontFamily: 'Arial',
                     fontSize: '14px',
                     lineHeight: '20px',
                     color: '#364153',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                   }}
+                  title={isAuthenticated && userEmail ? userEmail : 'Login'}
                 >
                   {isAuthenticated && userEmail ? userEmail : 'Login'}
                 </span>
@@ -487,7 +499,12 @@ export function Navigation() {
                             fontFamily: 'Arial',
                             color: '#374151',
                             fontWeight: 'bold',
+                            maxWidth: '168px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                           }}
+                          title={userEmail || ''}
                         >
                           {userEmail}
                         </div>

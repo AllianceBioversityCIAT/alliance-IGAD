@@ -7,9 +7,7 @@ import AnalysisProgressModal from '@/tools/proposal-writer/components/AnalysisPr
 import { Step1InformationConsolidation } from './Step1InformationConsolidation'
 import { Step2ContentGeneration } from './Step2ContentGeneration'
 import Step3ConceptDocument from './Step3ConceptDocument'
-import Step4StructureWorkplan from './Step4StructureWorkplan'
-import Step5ReviewRefinement from './Step5ReviewRefinement'
-import Step6FinalExport from './Step6FinalExport'
+import { ComingSoonPlaceholder } from './ComingSoonPlaceholder'
 import { useProposals } from '@/tools/proposal-writer/hooks/useProposal'
 import { useProposalDraft } from '@/tools/proposal-writer/hooks/useProposalDraft'
 import { authService } from '@/shared/services/authService'
@@ -1217,11 +1215,11 @@ export function ProposalWriterPage() {
           />
         )
       case 4:
-        return <Step4StructureWorkplan {...stepProps} onGenerateTemplate={handleGenerateTemplate} />
+        return <ComingSoonPlaceholder stepNumber={4} stepTitle="Structure & Workplan" />
       case 5:
-        return <Step5ReviewRefinement {...stepProps} />
+        return <ComingSoonPlaceholder stepNumber={5} stepTitle="Review & Refinement" />
       case 6:
-        return <Step6FinalExport {...stepProps} />
+        return <ComingSoonPlaceholder stepNumber={6} stepTitle="Final Export" />
       default:
         return <Step1InformationConsolidation {...stepProps} />
     }
@@ -1260,6 +1258,8 @@ export function ProposalWriterPage() {
       }}
       disabled={
         currentStep === 6 ||
+        currentStep === 4 ||
+        currentStep === 5 ||
         isAnalyzingRFP ||
         isGeneratingDocument ||
         (currentStep === 1 &&

@@ -1381,14 +1381,16 @@ export function Step1InformationConsolidation({
                 <input
                   type="file"
                   accept=".pdf,.docx,.txt"
-                  onChange={e => {
+                  onChange={async e => {
                     const conceptFile = formData.uploadedFiles['concept-document'][0]
                     const filename =
                       typeof conceptFile === 'string' ? conceptFile : conceptFile?.name
                     if (filename) {
-                      handleDeleteConceptFile(filename, true)
+                      await handleDeleteConceptFile(filename, true)
                     }
                     handleConceptFileUpload(e.target.files)
+                    // Reset input so same file can be selected again
+                    e.target.value = ''
                   }}
                   className={styles.hiddenInput}
                   id="concept-document-replace"
