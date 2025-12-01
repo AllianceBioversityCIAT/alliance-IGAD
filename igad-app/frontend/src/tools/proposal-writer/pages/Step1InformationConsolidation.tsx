@@ -875,7 +875,12 @@ export function Step1InformationConsolidation({
     <div className={styles.mainContent}>
       {/* ===== Header Section ===== */}
       <header className={styles.stepHeader}>
-        <h1 className={styles.stepMainTitle}>Step 1: Information Consolidation</h1>
+        <h1 className={styles.stepMainTitle}>
+          Step 1: Information Consolidation
+          <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeConcept}`}>
+            Concept
+          </span>
+        </h1>
         <p className={styles.stepMainDescription}>
           Gather all necessary context: RFPs, reference proposals, existing work, and initial
           concepts. Once you complete this step, the AI will analyze your inputs to guide proposal

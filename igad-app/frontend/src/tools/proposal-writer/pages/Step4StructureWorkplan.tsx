@@ -211,7 +211,12 @@ export function Step4StructureWorkplan({
     <div className={styles.mainContent}>
       {/* Page Header */}
       <div className={styles.stepHeader}>
-        <h1 className={styles.stepMainTitle}>Step 4: Structure & Workplan</h1>
+        <h1 className={styles.stepMainTitle}>
+          Step 4: Structure & Workplan
+          <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeProposal}`}>
+            Proposal
+          </span>
+        </h1>
         <p className={styles.stepMainDescription}>
           Select the sections you'd like to include in your proposal template. Add comments to
           provide additional context for AI generation.

@@ -790,7 +790,12 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
     return (
       <div className={styles.mainContent}>
         <div className={styles.stepHeader}>
-          <h1 className={styles.stepMainTitle}>Step 3: Updated Concept Document</h1>
+          <h1 className={styles.stepMainTitle}>
+            Step 3: Updated Concept Document
+            <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeConcept}`}>
+              Concept
+            </span>
+          </h1>
           <p className={styles.stepMainDescription}>
             Review and download your enhanced concept document with elaborated sections
           </p>
@@ -805,7 +810,12 @@ const Step3ConceptDocument: React.FC<Step3Props> = ({
     <div className={styles.mainContent}>
       {/* Header */}
       <div className={styles.stepHeader}>
-        <h1 className={styles.stepMainTitle}>Step 3: Updated Concept Document</h1>
+        <h1 className={styles.stepMainTitle}>
+          Step 3: Updated Concept Document
+          <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeConcept}`}>
+            Concept
+          </span>
+        </h1>
         <p className={styles.stepMainDescription}>
           Review and download your enhanced concept document with elaborated sections
         </p>

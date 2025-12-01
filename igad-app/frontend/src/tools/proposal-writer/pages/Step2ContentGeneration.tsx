@@ -247,7 +247,12 @@ function EmptyState() {
   return (
     <div className={styles.mainContent}>
       <div className={styles.stepHeader}>
-        <h1 className={styles.stepMainTitle}>Step 2: Concept Review</h1>
+        <h1 className={styles.stepMainTitle}>
+          Step 2: Concept Review
+          <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeConcept}`}>
+            Concept
+          </span>
+        </h1>
         <p className={styles.stepMainDescription}>
           AI review of your high-level concept with fit assessment and elaboration suggestions
         </p>
@@ -603,7 +608,12 @@ export function Step2ContentGeneration({
     <div className={styles.mainContent}>
       {/* Page Header */}
       <div className={styles.stepHeader}>
-        <h1 className={styles.stepMainTitle}>Step 2: Concept Review</h1>
+        <h1 className={styles.stepMainTitle}>
+          Step 2: Concept Review
+          <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeConcept}`}>
+            Concept
+          </span>
+        </h1>
         <p className={styles.stepMainDescription}>
           AI review of your high-level concept with fit assessment and elaboration suggestions
         </p>
