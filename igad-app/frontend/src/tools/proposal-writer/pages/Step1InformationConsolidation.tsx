@@ -145,6 +145,34 @@ export function Step1InformationConsolidation({
   const [conceptUploadError, setConceptUploadError] = useState('')
 
   // ============================================================================
+  // STATE - Reference Proposals
+  // ============================================================================
+
+  /** Track if files are being dragged over reference proposals upload area */
+  const [isDraggingReference, setIsDraggingReference] = useState(false)
+  /** Loading state for reference proposals file upload */
+  const [isUploadingReference, setIsUploadingReference] = useState(false)
+  /** Error message for reference proposals operations */
+  const [referenceUploadError, setReferenceUploadError] = useState('')
+
+  // ============================================================================
+  // STATE - Existing Work & Experience
+  // ============================================================================
+
+  /** Track if files are being dragged over supporting docs upload area */
+  const [isDraggingSupporting, setIsDraggingSupporting] = useState(false)
+  /** Loading state for supporting docs file upload */
+  const [isUploadingSupporting, setIsUploadingSupporting] = useState(false)
+  /** Loading state for existing work text save operation */
+  const [isSavingWorkText, setIsSavingWorkText] = useState(false)
+  /** Whether existing work text has been saved to backend */
+  const [workTextSaved, setWorkTextSaved] = useState(false)
+  /** Whether user is currently editing existing work text */
+  const [isEditingWorkText, setIsEditingWorkText] = useState(false)
+  /** Error message for existing work operations */
+  const [workUploadError, setWorkUploadError] = useState('')
+
+  // ============================================================================
   // EFFECTS - Data Loading
   // ============================================================================
 
@@ -701,6 +729,315 @@ export function Step1InformationConsolidation({
   }
 
   // ============================================================================
+  // HANDLERS - Reference Proposals
+  // ============================================================================
+
+  /**
+   * Handle drag over event for reference proposals upload area
+   */
+  const handleReferenceDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingReference(true)
+  }
+
+  /**
+   * Handle drag leave event for reference proposals upload area
+   */
+  const handleReferenceDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingReference(false)
+  }
+
+  /**
+   * Handle drop event for reference proposals upload area
+   */
+  const handleReferenceDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingReference(false)
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      handleReferenceFileUpload(files)
+    }
+  }
+
+  /**
+   * Upload reference proposal files
+   * Supports multiple files
+   *
+   * @param files - FileList from input element
+   */
+  const handleReferenceFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !proposalId) {
+      return
+    }
+
+    const file = files[0]
+
+    // Validate file type
+    const typeError = validateConceptFileType(file)
+    if (typeError) {
+      setReferenceUploadError(typeError)
+      return
+    }
+
+    // Validate file size
+    const sizeError = validateFileSize(file)
+    if (sizeError) {
+      setReferenceUploadError(sizeError)
+      return
+    }
+
+    setIsUploadingReference(true)
+    setReferenceUploadError('')
+
+    try {
+      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+      await proposalService.uploadReferenceFile(proposalId, file)
+
+      // Update local state
+      const currentFiles = formData.uploadedFiles['reference-proposals'] || []
+      setFormData(prev => ({
+        ...prev,
+        uploadedFiles: {
+          ...prev.uploadedFiles,
+          'reference-proposals': [...currentFiles, file.name],
+        },
+      }))
+
+      // Invalidate analyses when reference documents are updated
+      window.dispatchEvent(new CustomEvent('documents-updated'))
+    } catch (error: unknown) {
+      const errorMsg =
+        (error as Record<string, unknown>)?.response?.data?.detail ||
+        'Failed to upload reference file'
+      setReferenceUploadError(String(errorMsg))
+    } finally {
+      setIsUploadingReference(false)
+    }
+  }
+
+  /**
+   * Delete reference proposal file
+   *
+   * @param filename - Name of file to delete
+   */
+  const handleDeleteReferenceFile = async (filename: string) => {
+    if (!confirm(`Delete ${filename}?`) || !proposalId) {
+      return
+    }
+
+    try {
+      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+      await proposalService.deleteReferenceFile(proposalId, filename)
+
+      const currentFiles = formData.uploadedFiles['reference-proposals'] || []
+      const updatedFiles = currentFiles.filter(f => f !== filename)
+
+      setFormData(prev => ({
+        ...prev,
+        uploadedFiles: {
+          ...prev.uploadedFiles,
+          'reference-proposals': updatedFiles,
+        },
+      }))
+    } catch (error: unknown) {
+      const errorMsg =
+        (error as Record<string, unknown>)?.response?.data?.detail ||
+        'Failed to delete reference file'
+      setReferenceUploadError(String(errorMsg))
+    }
+  }
+
+  // ============================================================================
+  // HANDLERS - Existing Work & Experience
+  // ============================================================================
+
+  /**
+   * Handle drag over event for supporting docs upload area
+   */
+  const handleSupportingDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingSupporting(true)
+  }
+
+  /**
+   * Handle drag leave event for supporting docs upload area
+   */
+  const handleSupportingDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingSupporting(false)
+  }
+
+  /**
+   * Handle drop event for supporting docs upload area
+   */
+  const handleSupportingDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingSupporting(false)
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      handleSupportingFileUpload(files)
+    }
+  }
+
+  /**
+   * Upload supporting document files
+   * Supports multiple files
+   *
+   * @param files - FileList from input element
+   */
+  const handleSupportingFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !proposalId) {
+      return
+    }
+
+    const file = files[0]
+
+    // Validate file size
+    const sizeError = validateFileSize(file)
+    if (sizeError) {
+      setWorkUploadError(sizeError)
+      return
+    }
+
+    setIsUploadingSupporting(true)
+    setWorkUploadError('')
+
+    try {
+      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+      await proposalService.uploadSupportingFile(proposalId, file)
+
+      // Update local state
+      const currentFiles = formData.uploadedFiles['supporting-docs'] || []
+      setFormData(prev => ({
+        ...prev,
+        uploadedFiles: {
+          ...prev.uploadedFiles,
+          'supporting-docs': [...currentFiles, file.name],
+        },
+      }))
+
+      // Invalidate analyses when supporting documents are updated
+      window.dispatchEvent(new CustomEvent('documents-updated'))
+    } catch (error: unknown) {
+      const errorMsg =
+        (error as Record<string, unknown>)?.response?.data?.detail ||
+        'Failed to upload supporting file'
+      setWorkUploadError(String(errorMsg))
+    } finally {
+      setIsUploadingSupporting(false)
+    }
+  }
+
+  /**
+   * Delete supporting document file
+   *
+   * @param filename - Name of file to delete
+   */
+  const handleDeleteSupportingFile = async (filename: string) => {
+    if (!confirm(`Delete ${filename}?`) || !proposalId) {
+      return
+    }
+
+    try {
+      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+      await proposalService.deleteSupportingFile(proposalId, filename)
+
+      const currentFiles = formData.uploadedFiles['supporting-docs'] || []
+      const updatedFiles = currentFiles.filter(f => f !== filename)
+
+      setFormData(prev => ({
+        ...prev,
+        uploadedFiles: {
+          ...prev.uploadedFiles,
+          'supporting-docs': updatedFiles,
+        },
+      }))
+    } catch (error: unknown) {
+      const errorMsg =
+        (error as Record<string, unknown>)?.response?.data?.detail ||
+        'Failed to delete supporting file'
+      setWorkUploadError(String(errorMsg))
+    }
+  }
+
+  /**
+   * Save existing work text to backend
+   */
+  const handleSaveWorkText = async () => {
+    const text = formData.textInputs['existing-work'] || ''
+
+    if (text.length < 50) {
+      setWorkUploadError('Existing work text must be at least 50 characters')
+      return
+    }
+
+    if (!proposalId) {
+      return
+    }
+
+    setIsSavingWorkText(true)
+    setWorkUploadError('')
+
+    try {
+      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+      await proposalService.saveWorkText(proposalId, text)
+
+      setWorkTextSaved(true)
+      setIsEditingWorkText(false)
+    } catch (error: unknown) {
+      const errorMsg =
+        (error as Record<string, unknown>)?.response?.data?.detail || 'Failed to save work text'
+      setWorkUploadError(String(errorMsg))
+    } finally {
+      setIsSavingWorkText(false)
+    }
+  }
+
+  /**
+   * Enable editing mode for existing work text
+   */
+  const handleEditWorkText = () => {
+    setIsEditingWorkText(true)
+    setWorkTextSaved(false)
+  }
+
+  /**
+   * Delete saved existing work text from backend
+   */
+  const handleDeleteWorkText = async () => {
+    if (!confirm('Delete saved work text?') || !proposalId) {
+      return
+    }
+
+    try {
+      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+      await proposalService.deleteWorkText(proposalId)
+
+      setFormData(prev => ({
+        ...prev,
+        textInputs: { ...prev.textInputs, 'existing-work': '' },
+      }))
+
+      setWorkTextSaved(false)
+      setIsEditingWorkText(false)
+    } catch (error: unknown) {
+      const errorMsg =
+        (error as Record<string, unknown>)?.response?.data?.detail ||
+        'Failed to delete work text'
+      setWorkUploadError(String(errorMsg))
+    }
+  }
+
+  // ============================================================================
   // HANDLERS - Text Input
   // ============================================================================
 
@@ -877,9 +1214,6 @@ export function Step1InformationConsolidation({
       <header className={styles.stepHeader}>
         <h1 className={styles.stepMainTitle}>
           Step 1: Information Consolidation
-          <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeConcept}`}>
-            Concept
-          </span>
         </h1>
         <p className={styles.stepMainDescription}>
           Gather all necessary context: RFPs, reference proposals, existing work, and initial
@@ -934,7 +1268,7 @@ export function Step1InformationConsolidation({
           <FileText color="#DF3737" size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
             <h3 id="rfp-section-title" className={styles.uploadSectionTitle}>
-              RFP / Call for Proposals*
+              RFP / Call for Proposals<span className={styles.requiredAsterisk}>*</span>
             </h3>
             <p className={styles.uploadSectionDescription}>
               Upload the official Request for Proposals document. This is essential for
@@ -1074,14 +1408,8 @@ export function Step1InformationConsolidation({
         )}
       </section>
 
-      {/* ===== Reference Proposals Section (Coming Soon) ===== */}
-      <section
-        className={`${styles.uploadSection} ${styles.disabledSection}`}
-        aria-labelledby="reference-section-title"
-      >
-        <div className={styles.disabledBadge}>
-          <span>Coming Soon</span>
-        </div>
+      {/* ===== Reference Proposals Section ===== */}
+      <section className={styles.uploadSection} aria-labelledby="reference-section-title">
         <div className={styles.uploadSectionHeader}>
           <Files color="#00A63E" size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
@@ -1095,37 +1423,117 @@ export function Step1InformationConsolidation({
           </div>
         </div>
 
-        <div className={`${styles.uploadArea} ${styles.uploadAreaDisabled}`}>
-          <FileText className={styles.uploadAreaIcon} size={32} aria-hidden="true" />
-          <p className={styles.uploadAreaTitle}>Drop reference proposals here or click to upload</p>
-          <p className={styles.uploadAreaDescription}>Multiple files supported</p>
-          <input
-            type="file"
-            multiple
-            accept=".pdf,.doc,.docx"
-            onChange={e => handleFileUpload('reference-proposals', e.target.files)}
-            className={styles.hiddenInput}
-            id="reference-proposals"
-            disabled={true}
-            aria-label="Upload reference proposals (disabled)"
-          />
-          <label
-            htmlFor="reference-proposals"
-            className={`${styles.uploadButtonSecondary} ${styles.uploadButtonDisabled}`}
+        {/* Upload Area or Uploaded Files Display */}
+        {getUploadedFileCount('reference-proposals') === 0 ? (
+          <div
+            className={`${styles.uploadArea} ${isDraggingReference ? styles.uploadAreaDragging : ''}`}
+            onDragOver={handleReferenceDragOver}
+            onDragLeave={handleReferenceDragLeave}
+            onDrop={handleReferenceDrop}
           >
-            Choose Files
-          </label>
-        </div>
+            {isUploadingReference ? (
+              <>
+                <div className={styles.uploadingSpinner} aria-live="polite">
+                  <div className={styles.spinner}></div>
+                </div>
+                <p className={styles.uploadAreaTitle}>Uploading reference file...</p>
+              </>
+            ) : (
+              <>
+                <FileText className={styles.uploadAreaIcon} size={32} aria-hidden="true" />
+                <p className={styles.uploadAreaTitle}>Drop reference proposals here or click to upload</p>
+                <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files up to 10MB</p>
+                <input
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={e => handleReferenceFileUpload(e.target.files)}
+                  className={styles.hiddenInput}
+                  id="reference-proposals"
+                  disabled={isUploadingReference}
+                  aria-label="Upload reference proposals"
+                />
+                <label htmlFor="reference-proposals" className={styles.uploadButtonSecondary}>
+                  Choose File
+                </label>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className={styles.uploadedFilesList}>
+            {(formData.uploadedFiles['reference-proposals'] || []).map((file, index) => {
+              const filename = typeof file === 'string' ? file : file.name
+              return (
+                <div key={index} className={styles.uploadedFileCard}>
+                  <div className={styles.uploadedFileHeader}>
+                    <div className={styles.uploadedFileInfo}>
+                      <div className={styles.uploadedFileIconWrapper}>
+                        <FileText className={styles.uploadedFileIcon} size={24} aria-hidden="true" />
+                        <div className={styles.uploadedFileCheck} aria-label="Upload successful">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <circle cx="8" cy="8" r="8" fill="#10b981" />
+                            <path
+                              d="M5 8l2 2 4-4"
+                              stroke="white"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                      <div>
+                        <p className={styles.uploadedFileName}>{filename}</p>
+                        <p className={styles.uploadedFileDescription}>Reference document uploaded</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteReferenceFile(filename)}
+                      className={styles.deleteFileButton}
+                      title="Delete file"
+                      aria-label={`Delete ${filename}`}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                          d="M6 8v8m4-8v8m4-8v8M4 6h12M9 4h2a1 1 0 011 1v1H8V5a1 1 0 011-1z"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+            {/* Add more files button */}
+            <div className={styles.addMoreFiles}>
+              <input
+                type="file"
+                accept=".pdf,.docx"
+                onChange={e => handleReferenceFileUpload(e.target.files)}
+                className={styles.hiddenInput}
+                id="reference-proposals-add"
+                disabled={isUploadingReference}
+                aria-label="Add more reference proposals"
+              />
+              <label htmlFor="reference-proposals-add" className={styles.uploadButtonSecondary}>
+                Add More Files
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Error Message */}
+        {referenceUploadError && (
+          <div className={styles.errorMessage} role="alert">
+            <AlertTriangle size={16} aria-hidden="true" />
+            <span>{referenceUploadError}</span>
+          </div>
+        )}
       </section>
 
-      {/* ===== Existing Work Section (Coming Soon) ===== */}
-      <section
-        className={`${styles.uploadSection} ${styles.disabledSection}`}
-        aria-labelledby="existing-work-title"
-      >
-        <div className={styles.disabledBadge}>
-          <span>Coming Soon</span>
-        </div>
+      {/* ===== Existing Work Section ===== */}
+      <section className={styles.uploadSection} aria-labelledby="existing-work-title">
         <div className={styles.uploadSectionHeader}>
           <Briefcase color="#9F1239" size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
@@ -1140,22 +1548,79 @@ export function Step1InformationConsolidation({
         </div>
 
         <textarea
-          className={`${styles.textArea} ${styles.textAreaDisabled}`}
+          className={styles.textArea}
           placeholder="Describe your relevant experience, ongoing projects, previous work with similar donors, institutional strengths, partnerships, and any preliminary research or activities related to this call..."
           value={formData.textInputs['existing-work'] || ''}
           onChange={e => handleTextChange('existing-work', e.target.value)}
-          disabled={true}
-          aria-label="Existing work and experience (disabled)"
+          disabled={
+            ((workTextSaved && !isEditingWorkText) ||
+              isSavingWorkText ||
+              getUploadedFileCount('supporting-docs') > 0) as boolean
+          }
+          aria-label="Existing work and experience"
         />
 
+        {getUploadedFileCount('supporting-docs') > 0 && (
+          <div className={styles.infoMessage} role="alert">
+            <p>
+              You have uploaded supporting documents. To use text input instead, please delete the
+              documents first.
+            </p>
+          </div>
+        )}
+
         <div className={styles.textAreaFooter}>
-          <span className={styles.textAreaHint}>
-            Please provide more detail (minimum 50 characters)
-          </span>
-          <span className={styles.textAreaCount}>
-            {(formData.textInputs['existing-work'] || '').length} characters
-          </span>
+          <div>
+            <span className={styles.textAreaHint}>
+              Please provide more detail (minimum 50 characters)
+            </span>
+            <span className={styles.textAreaCount}>
+              {(formData.textInputs['existing-work'] || '').length} characters
+            </span>
+          </div>
+
+          <div className={styles.textAreaActions}>
+            {!workTextSaved ? (
+              <button
+                onClick={handleSaveWorkText}
+                disabled={
+                  isSavingWorkText || (formData.textInputs['existing-work'] || '').length < 50
+                }
+                className={styles.saveButton}
+                aria-label="Save work text"
+              >
+                {isSavingWorkText ? 'Saving...' : 'Save Text'}
+              </button>
+            ) : (
+              <>
+                <span className={styles.savedIndicator} aria-live="polite">
+                  Text saved
+                </span>
+                <button
+                  onClick={handleEditWorkText}
+                  className={styles.editButton}
+                  aria-label="Edit work text"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={handleDeleteWorkText}
+                  className={styles.deleteButton}
+                  aria-label="Delete work text"
+                >
+                  Delete
+                </button>
+              </>
+            )}
+          </div>
         </div>
+
+        {workUploadError && (
+          <div className={styles.errorMessage} role="alert">
+            <AlertTriangle size={16} aria-hidden="true" />
+            <span>{workUploadError}</span>
+          </div>
+        )}
 
         {/* Supporting Documents */}
         <div className={styles.supportingDocs}>
@@ -1165,25 +1630,113 @@ export function Step1InformationConsolidation({
             technical papers.
           </p>
 
-          <div className={`${styles.uploadAreaSmall} ${styles.uploadAreaDisabled}`}>
-            <FileText className={styles.uploadAreaIcon} size={24} aria-hidden="true" />
-            <p className={styles.uploadAreaTitle}>Drop supporting files here</p>
-            <input
-              type="file"
-              multiple
-              onChange={e => handleFileUpload('supporting-docs', e.target.files)}
-              className={styles.hiddenInput}
-              id="supporting-docs"
-              disabled={true}
-              aria-label="Upload supporting documents (disabled)"
-            />
-            <label
-              htmlFor="supporting-docs"
-              className={`${styles.uploadButtonSecondary} ${styles.uploadButtonDisabled}`}
+          {(formData.textInputs['existing-work'] || '').length > 0 && (
+            <div className={styles.infoMessage} role="alert">
+              <p>
+                You have text in the existing work field. To upload documents instead, please clear
+                the text first.
+              </p>
+            </div>
+          )}
+
+          {getUploadedFileCount('supporting-docs') === 0 ? (
+            <div
+              className={`${styles.uploadAreaSmall} ${isDraggingSupporting ? styles.uploadAreaDragging : ''}`}
+              onDragOver={handleSupportingDragOver}
+              onDragLeave={handleSupportingDragLeave}
+              onDrop={handleSupportingDrop}
             >
-              Add Files
-            </label>
-          </div>
+              {isUploadingSupporting ? (
+                <>
+                  <div className={styles.uploadingSpinner} aria-live="polite">
+                    <div className={styles.spinner}></div>
+                  </div>
+                  <p className={styles.uploadAreaTitle}>Uploading supporting file...</p>
+                </>
+              ) : (
+                <>
+                  <FileText className={styles.uploadAreaIcon} size={24} aria-hidden="true" />
+                  <p className={styles.uploadAreaTitle}>Drop supporting files here</p>
+                  <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files up to 10MB</p>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx"
+                    onChange={e => handleSupportingFileUpload(e.target.files)}
+                    className={styles.hiddenInput}
+                    id="supporting-docs"
+                    disabled={isUploadingSupporting}
+                    aria-label="Upload supporting documents"
+                  />
+                  <label htmlFor="supporting-docs" className={styles.uploadButtonSecondary}>
+                    Choose File
+                  </label>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className={styles.uploadedFilesList}>
+              {(formData.uploadedFiles['supporting-docs'] || []).map((file, index) => {
+                const filename = typeof file === 'string' ? file : file.name
+                return (
+                  <div key={index} className={styles.uploadedFileCard}>
+                    <div className={styles.uploadedFileHeader}>
+                      <div className={styles.uploadedFileInfo}>
+                        <div className={styles.uploadedFileIconWrapper}>
+                          <FileText className={styles.uploadedFileIcon} size={24} aria-hidden="true" />
+                          <div className={styles.uploadedFileCheck} aria-label="Upload successful">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <circle cx="8" cy="8" r="8" fill="#10b981" />
+                              <path
+                                d="M5 8l2 2 4-4"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                        <div>
+                          <p className={styles.uploadedFileName}>{filename}</p>
+                          <p className={styles.uploadedFileDescription}>Supporting document uploaded</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteSupportingFile(filename)}
+                        className={styles.deleteFileButton}
+                        title="Delete file"
+                        aria-label={`Delete ${filename}`}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                          <path
+                            d="M6 8v8m4-8v8m4-8v8M4 6h12M9 4h2a1 1 0 011 1v1H8V5a1 1 0 011-1z"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+              {/* Add more files button */}
+              <div className={styles.addMoreFiles}>
+                <input
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={e => handleSupportingFileUpload(e.target.files)}
+                  className={styles.hiddenInput}
+                  id="supporting-docs-add"
+                  disabled={isUploadingSupporting}
+                  aria-label="Add more supporting documents"
+                />
+                <label htmlFor="supporting-docs-add" className={styles.uploadButtonSecondary}>
+                  Add More Files
+                </label>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -1193,7 +1746,7 @@ export function Step1InformationConsolidation({
           <Lightbulb color="#2563EB" size={20} aria-hidden="true" />
           <div className={styles.uploadSectionInfo}>
             <h3 id="concept-section-title" className={styles.uploadSectionTitle}>
-              Initial Concept or Direction*
+              Initial Concept or Direction<span className={styles.requiredAsterisk}>*</span>
             </h3>
             <p className={styles.uploadSectionDescription}>
               Outline your initial ideas, approach, or hypothesis for this proposal. You can write

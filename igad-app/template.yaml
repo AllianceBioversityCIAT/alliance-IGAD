@@ -93,6 +93,18 @@ Resources:
               Resource: '*'
             - Effect: Allow
               Action:
+                - s3vectors:PutVectors
+                - s3vectors:QueryVectors
+                - s3vectors:GetVectors
+                - s3vectors:DeleteVectors
+                - s3vectors:ListVectors
+                - s3vectors:DescribeVectorIndex
+                - s3vectors:ListIndexes
+              Resource:
+                - !Sub 'arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/igad-proposals-vectors-testing'
+                - !Sub 'arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/igad-proposals-vectors-testing/*'
+            - Effect: Allow
+              Action:
                 - s3:PutObject
                 - s3:GetObject
                 - s3:DeleteObject

@@ -59,6 +59,76 @@ fi
 
 echo "✅ Project structure validated"
 
+# ============================================
+# S3 Vectors Infrastructure Setup
+# ============================================
+echo ""
+echo "🎯 Setting up S3 Vectors Infrastructure..."
+
+python3 - <<'PYTHON_SCRIPT'
+import boto3
+import sys
+
+def setup_s3_vectors():
+    try:
+        s3vectors = boto3.client('s3vectors', region_name='us-east-1')
+        bucket_name = "igad-proposals-vectors-testing"
+        
+        # Check/Create vector bucket
+        try:
+            s3vectors.list_indexes(vectorBucketName=bucket_name)
+            print(f"✅ Vector bucket '{bucket_name}' exists")
+        except Exception as e:
+            if 'NoSuchBucket' in str(e) or 'ResourceNotFoundException' in str(e):
+                print(f"📦 Creating vector bucket...")
+                s3vectors.create_vector_bucket(
+                    vectorBucketName=bucket_name,
+                    encryptionConfiguration={'sseType': 'AES256'}
+                )
+                print(f"✅ Vector bucket created")
+            else:
+                raise
+        
+        # Create indexes
+        indexes = [
+            {'name': 'reference-proposals-index'},
+            {'name': 'existing-work-index'}
+        ]
+        
+        for idx in indexes:
+            try:
+                s3vectors.get_index(vectorBucketName=bucket_name, indexName=idx['name'])
+                print(f"✅ Index '{idx['name']}' exists")
+            except Exception as e:
+                if 'NoSuchVectorIndex' in str(e) or 'ResourceNotFoundException' in str(e):
+                    print(f"📊 Creating index '{idx['name']}'...")
+                    s3vectors.create_index(
+                        vectorBucketName=bucket_name,
+                        indexName=idx['name'],
+                        dataType='float32',
+                        dimension=1024,
+                        distanceMetric='cosine',
+                        metadataConfiguration={
+                            'nonFilterableMetadataKeys': ['source_text', 'document_name', 'upload_date']
+                        }
+                    )
+                    print(f"✅ Index created")
+                else:
+                    raise
+        
+        print("✅ S3 Vectors ready")
+        
+    except Exception as e:
+        if 'InvalidAction' in str(e) or 'UnknownOperation' in str(e):
+            print("⚠️  S3 Vectors not available yet - continuing")
+        else:
+            print(f"⚠️  S3 Vectors setup: {str(e)[:100]}")
+
+setup_s3_vectors()
+PYTHON_SCRIPT
+
+echo ""
+
 # Build Frontend
 if [ "$DEPLOY_FRONTEND" = true ]; then
     echo "🔨 Building frontend..."

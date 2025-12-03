@@ -317,6 +317,114 @@ class ProposalService {
     const response = await apiClient.get(`/api/proposals/${proposalId}/concept-evaluation`)
     return response.data
   }
+
+  // Reference proposals file operations
+  async uploadReferenceFile(
+    proposalId: string,
+    file: File
+  ): Promise<{
+    success: boolean
+    filename: string
+    document_key: string
+    size: number
+  }> {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/documents/upload-reference-file`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+    return response.data
+  }
+
+  async deleteReferenceFile(
+    proposalId: string,
+    filename: string
+  ): Promise<{
+    success: boolean
+    message: string
+  }> {
+    const response = await apiClient.delete(
+      `/api/proposals/${proposalId}/documents/reference/${filename}`
+    )
+    return response.data
+  }
+
+  // Supporting documents file operations
+  async uploadSupportingFile(
+    proposalId: string,
+    file: File
+  ): Promise<{
+    success: boolean
+    filename: string
+    document_key: string
+    size: number
+  }> {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/documents/upload-supporting-file`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+    return response.data
+  }
+
+  async deleteSupportingFile(
+    proposalId: string,
+    filename: string
+  ): Promise<{
+    success: boolean
+    message: string
+  }> {
+    const response = await apiClient.delete(
+      `/api/proposals/${proposalId}/documents/supporting/${filename}`
+    )
+    return response.data
+  }
+
+  // Existing work text operations
+  async saveWorkText(
+    proposalId: string,
+    text: string
+  ): Promise<{
+    success: boolean
+    message: string
+    text_length: number
+  }> {
+    const formData = new FormData()
+    formData.append('work_text', text)
+
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/documents/save-work-text`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+    return response.data
+  }
+
+  async deleteWorkText(proposalId: string): Promise<{
+    success: boolean
+    message: string
+  }> {
+    const response = await apiClient.delete(`/api/proposals/${proposalId}/documents/work-text`)
+    return response.data
+  }
 }
 
 export const proposalService = new ProposalService()

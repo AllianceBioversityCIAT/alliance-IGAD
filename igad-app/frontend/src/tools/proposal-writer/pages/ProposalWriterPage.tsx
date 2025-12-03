@@ -1263,7 +1263,8 @@ export function ProposalWriterPage() {
         isAnalyzingRFP ||
         isGeneratingDocument ||
         (currentStep === 1 &&
-          (!formData.uploadedFiles['rfp-document'] ||
+          (!(formData.textInputs['proposal-title'] || '').trim() ||
+            !formData.uploadedFiles['rfp-document'] ||
             formData.uploadedFiles['rfp-document'].length === 0 ||
             ((formData.textInputs['initial-concept'] || '').length < 100 &&
               (!formData.uploadedFiles['concept-document'] ||
@@ -1271,9 +1272,13 @@ export function ProposalWriterPage() {
       }
       title={
         currentStep === 1 &&
-        (!formData.uploadedFiles['rfp-document'] ||
-          formData.uploadedFiles['rfp-document'].length === 0)
-          ? 'Please upload an RFP document and provide an initial concept first'
+        (!(formData.textInputs['proposal-title'] || '').trim() ||
+          !formData.uploadedFiles['rfp-document'] ||
+          formData.uploadedFiles['rfp-document'].length === 0 ||
+          ((formData.textInputs['initial-concept'] || '').length < 100 &&
+            (!formData.uploadedFiles['concept-document'] ||
+              formData.uploadedFiles['concept-document'].length === 0)))
+          ? 'Please provide a title, upload an RFP document, and provide an initial concept'
           : ''
       }
     >

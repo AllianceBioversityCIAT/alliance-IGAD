@@ -12,6 +12,7 @@ import os
 from app.middleware.auth_middleware import AuthMiddleware
 from app.database.client import db_client
 from app.utils.aws_session import get_aws_session
+from app.utils.document_extraction import extract_text_from_file, chunk_text
 
 router = APIRouter(prefix="/api/proposals/{proposal_id}/documents", tags=["documents"])
 security = HTTPBearer()
@@ -526,6 +527,592 @@ async def delete_concept_file(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to delete concept file: {str(e)}")
+
+
+@router.post("/upload-reference-file")
+async def upload_reference_file(
+    proposal_id: str,
+    file: UploadFile = File(...),
+    donor: str = Form(default=""),
+    sector: str = Form(default=""),
+    year: str = Form(default=""),
+    status: str = Form(default=""),
+    user=Depends(get_current_user)
+):
+    """
+    Upload reference proposal and store as vectors in S3 Vectors
+    """
+    try:
+        # Validate file
+        allowed_extensions = ('.pdf', '.docx')
+        if not file.filename or not file.filename.lower().endswith(allowed_extensions):
+            raise HTTPException(status_code=400, detail="Only PDF and DOCX files are supported")
+
+        # Read file
+        file_bytes = await file.read()
+        file_size = len(file_bytes)
+
+        if file_size == 0:
+            raise HTTPException(status_code=400, detail="File is empty")
+
+        if file_size > 10 * 1024 * 1024:  # 10MB limit
+            raise HTTPException(status_code=400, detail="File size must be less than 10MB")
+
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        proposal_code = proposal.get("proposalCode")
+
+        # Upload to S3 (regular storage)
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+
+        if not bucket:
+            raise HTTPException(status_code=500, detail="S3 bucket not configured")
+
+        s3_key = f"{proposal_code}/documents/references/{file.filename}"
+
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=s3_key,
+            Body=BytesIO(file_bytes),
+            ContentType=file.content_type or 'application/octet-stream',
+            Metadata={
+                'proposal-id': proposal_id,
+                'uploaded-by': user.get('user_id'),
+                'original-size': str(file_size),
+                'donor': donor,
+                'sector': sector,
+                'year': year,
+                'status': status
+            }
+        )
+
+        # Extract text from file
+        print(f"Extracting text from {file.filename}...")
+        extracted_text = extract_text_from_file(file_bytes, file.filename)
+
+        # If extraction failed, use a fallback description
+        if not extracted_text or len(extracted_text.strip()) < 100:
+            print(f"Warning: Text extraction failed or too short for {file.filename}")
+            extracted_text = f"Reference proposal: {file.filename}"
+            if donor:
+                extracted_text += f" from {donor}"
+            if sector:
+                extracted_text += f" in {sector} sector"
+            if year:
+                extracted_text += f" ({year})"
+
+        print(f"Extracted {len(extracted_text)} characters")
+
+        # Chunk text if it's too long (>1000 chars)
+        text_chunks = chunk_text(extracted_text, chunk_size=1000, overlap=200)
+        print(f"Created {len(text_chunks)} chunks")
+
+        # Store in S3 Vectors (each chunk as separate vector)
+        from app.shared.vectors.service import VectorEmbeddingsService
+        vector_service = VectorEmbeddingsService()
+
+        vector_result = True
+        for idx, chunk in enumerate(text_chunks):
+            chunk_metadata = {
+                "donor": donor,
+                "sector": sector,
+                "year": year,
+                "status": status,
+                "document_name": file.filename,
+                "chunk_index": str(idx),
+                "total_chunks": str(len(text_chunks))
+            }
+
+            result = vector_service.insert_reference_proposal(
+                proposal_id=f"{proposal_id}-chunk-{idx}",
+                text=chunk,
+                metadata=chunk_metadata
+            )
+
+            if not result:
+                vector_result = False
+                print(f"Warning: Vector storage failed for chunk {idx} of {file.filename}")
+
+        if not vector_result:
+            print(f"Warning: Vector storage failed for {file.filename}")
+
+        # Update DynamoDB
+        current_files = proposal.get("uploaded_files", {}).get("reference-proposals", [])
+        updated_files = current_files + [file.filename]
+
+        await db_client.update_item(
+            pk=f"PROPOSAL#{proposal_code}",
+            sk="METADATA",
+            update_expression="SET uploaded_files.#ref = :files, updated_at = :updated",
+            expression_attribute_names={"#ref": "reference-proposals"},
+            expression_attribute_values={
+                ":files": updated_files,
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+
+        return {
+            "success": True,
+            "message": "Reference proposal uploaded successfully",
+            "filename": file.filename,
+            "document_key": s3_key,
+            "size": file_size,
+            "vectorized": vector_result
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Upload reference file error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to upload reference file: {str(e)}")
+
+
+@router.delete("/reference/{filename}")
+async def delete_reference_file(
+    proposal_id: str,
+    filename: str,
+    user=Depends(get_current_user)
+):
+    """Delete a reference proposal file"""
+    try:
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        proposal_code = proposal.get("proposalCode")
+
+        # Delete from S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+
+        s3_key = f"{proposal_code}/documents/references/{filename}"
+
+        try:
+            s3_client.delete_object(Bucket=bucket, Key=s3_key)
+        except Exception as s3_error:
+            print(f"S3 Delete Error: {str(s3_error)}")
+            raise
+
+        # Delete from S3 Vectors
+        print(f"Deleting vectors for document: {filename}")
+        from app.shared.vectors.service import VectorEmbeddingsService
+        vector_service = VectorEmbeddingsService()
+
+        vector_deleted = vector_service.delete_vectors_by_document_name(
+            document_name=filename,
+            index_name="reference-proposals-index"
+        )
+
+        if not vector_deleted:
+            print(f"Warning: Failed to delete vectors for {filename}")
+
+        # Update DynamoDB
+        current_files = proposal.get("uploaded_files", {}).get("reference-proposals", [])
+        updated_files = [f for f in current_files if f != filename]
+
+        await db_client.update_item(
+            pk=f"PROPOSAL#{proposal_code}",
+            sk="METADATA",
+            update_expression="SET uploaded_files.#ref = :files, updated_at = :updated",
+            expression_attribute_names={"#ref": "reference-proposals"},
+            expression_attribute_values={
+                ":files": updated_files,
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+
+        return {
+            "success": True,
+            "message": "Reference file deleted successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Delete reference file error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to delete reference file: {str(e)}")
+
+
+@router.post("/upload-supporting-file")
+async def upload_supporting_file(
+    proposal_id: str,
+    file: UploadFile = File(...),
+    user=Depends(get_current_user)
+):
+    """Upload supporting document"""
+    try:
+        # Validate file
+        allowed_extensions = ('.pdf', '.docx')
+        if not file.filename or not file.filename.lower().endswith(allowed_extensions):
+            raise HTTPException(status_code=400, detail="Only PDF and DOCX files are supported")
+
+        # Read file
+        file_bytes = await file.read()
+        file_size = len(file_bytes)
+
+        if file_size == 0:
+            raise HTTPException(status_code=400, detail="File is empty")
+
+        if file_size > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File size must be less than 10MB")
+
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        proposal_code = proposal.get("proposalCode")
+
+        # Upload to S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+
+        if not bucket:
+            raise HTTPException(status_code=500, detail="S3 bucket not configured")
+
+        s3_key = f"{proposal_code}/documents/supporting/{file.filename}"
+
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=s3_key,
+            Body=BytesIO(file_bytes),
+            ContentType=file.content_type or 'application/octet-stream',
+            Metadata={
+                'proposal-id': proposal_id,
+                'uploaded-by': user.get('user_id'),
+                'original-size': str(file_size)
+            }
+        )
+
+        # Update DynamoDB
+        current_files = proposal.get("uploaded_files", {}).get("supporting-docs", [])
+        updated_files = current_files + [file.filename]
+
+        await db_client.update_item(
+            pk=f"PROPOSAL#{proposal_code}",
+            sk="METADATA",
+            update_expression="SET uploaded_files.#sup = :files, updated_at = :updated",
+            expression_attribute_names={"#sup": "supporting-docs"},
+            expression_attribute_values={
+                ":files": updated_files,
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+
+        return {
+            "success": True,
+            "message": "Supporting document uploaded successfully",
+            "filename": file.filename,
+            "document_key": s3_key,
+            "size": file_size
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Upload supporting file error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to upload supporting file: {str(e)}")
+
+
+@router.delete("/supporting/{filename}")
+async def delete_supporting_file(
+    proposal_id: str,
+    filename: str,
+    user=Depends(get_current_user)
+):
+    """Delete a supporting document file"""
+    try:
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        proposal_code = proposal.get("proposalCode")
+
+        # Delete from S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+
+        s3_key = f"{proposal_code}/documents/supporting/{filename}"
+
+        try:
+            s3_client.delete_object(Bucket=bucket, Key=s3_key)
+        except Exception as s3_error:
+            print(f"S3 Delete Error: {str(s3_error)}")
+            raise
+
+        # Update DynamoDB
+        current_files = proposal.get("uploaded_files", {}).get("supporting-docs", [])
+        updated_files = [f for f in current_files if f != filename]
+
+        await db_client.update_item(
+            pk=f"PROPOSAL#{proposal_code}",
+            sk="METADATA",
+            update_expression="SET uploaded_files.#sup = :files, updated_at = :updated",
+            expression_attribute_names={"#sup": "supporting-docs"},
+            expression_attribute_values={
+                ":files": updated_files,
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+
+        return {
+            "success": True,
+            "message": "Supporting file deleted successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Delete supporting file error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to delete supporting file: {str(e)}")
+
+
+@router.post("/save-work-text")
+async def save_work_text(
+    proposal_id: str,
+    work_text: str = Form(...),
+    organization: str = Form(default=""),
+    project_type: str = Form(default=""),
+    region: str = Form(default=""),
+    user=Depends(get_current_user)
+):
+    """Save existing work text and store as vectors"""
+    try:
+        if len(work_text.strip()) < 50:
+            raise HTTPException(status_code=400, detail="Work text must be at least 50 characters")
+
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        proposal_code = proposal.get("proposalCode")
+
+        # Save to S3 as text file
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+
+        if not bucket:
+            raise HTTPException(status_code=500, detail="S3 bucket not configured")
+
+        s3_key = f"{proposal_code}/documents/supporting/existing_work_text.txt"
+
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=s3_key,
+            Body=work_text.encode('utf-8'),
+            ContentType='text/plain',
+            Metadata={
+                'proposal-id': proposal_id,
+                'uploaded-by': user.get('user_id'),
+                'organization': organization,
+                'project_type': project_type,
+                'region': region
+            }
+        )
+
+        # Chunk text if it's too long (>1000 chars)
+        text_chunks = chunk_text(work_text, chunk_size=1000, overlap=200)
+        print(f"Created {len(text_chunks)} chunks for work text")
+
+        # Store in S3 Vectors (each chunk as separate vector)
+        from app.shared.vectors.service import VectorEmbeddingsService
+        vector_service = VectorEmbeddingsService()
+
+        vector_result = True
+        for idx, chunk in enumerate(text_chunks):
+            chunk_metadata = {
+                "organization": organization,
+                "project_type": project_type,
+                "region": region,
+                "document_name": "existing_work_text",
+                "chunk_index": str(idx),
+                "total_chunks": str(len(text_chunks))
+            }
+
+            result = vector_service.insert_existing_work(
+                proposal_id=f"{proposal_id}-work-chunk-{idx}",
+                text=chunk,
+                metadata=chunk_metadata
+            )
+
+            if not result:
+                vector_result = False
+                print(f"Warning: Vector storage failed for work text chunk {idx}")
+
+        if not vector_result:
+            print(f"Warning: Vector storage failed for work text")
+
+        # Update DynamoDB text_inputs
+        await db_client.update_item(
+            pk=f"PROPOSAL#{proposal_code}",
+            sk="METADATA",
+            update_expression="SET text_inputs.#work = :text, updated_at = :updated",
+            expression_attribute_names={"#work": "existing-work"},
+            expression_attribute_values={
+                ":text": work_text,
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+
+        return {
+            "success": True,
+            "message": "Work text saved successfully",
+            "text_length": len(work_text),
+            "vectorized": vector_result
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Save work text error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to save work text: {str(e)}")
+
+
+@router.delete("/work-text")
+async def delete_work_text(
+    proposal_id: str,
+    user=Depends(get_current_user)
+):
+    """Delete existing work text"""
+    try:
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        proposal_code = proposal.get("proposalCode")
+
+        # Delete from S3
+        session = get_aws_session()
+        s3_client = session.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+
+        s3_key = f"{proposal_code}/documents/supporting/existing_work_text.txt"
+
+        try:
+            s3_client.delete_object(Bucket=bucket, Key=s3_key)
+        except Exception as s3_error:
+            print(f"S3 Delete Error: {str(s3_error)}")
+            # Continue even if S3 delete fails
+
+        # Delete from S3 Vectors
+        print(f"Deleting vectors for work text")
+        from app.shared.vectors.service import VectorEmbeddingsService
+        vector_service = VectorEmbeddingsService()
+
+        vector_deleted = vector_service.delete_vectors_by_document_name(
+            document_name="existing_work_text",
+            index_name="existing-work-index"
+        )
+
+        if not vector_deleted:
+            print(f"Warning: Failed to delete vectors for work text")
+
+        # Update DynamoDB
+        await db_client.update_item(
+            pk=f"PROPOSAL#{proposal_code}",
+            sk="METADATA",
+            update_expression="REMOVE text_inputs.#work SET updated_at = :updated",
+            expression_attribute_names={"#work": "existing-work"},
+            expression_attribute_values={
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+
+        return {
+            "success": True,
+            "message": "Work text deleted successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Delete work text error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to delete work text: {str(e)}")
 
 
 # Legacy code below - to be removed after cleanup
