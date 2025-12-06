@@ -156,6 +156,51 @@ class ProposalService {
     return response.data
   }
 
+  /**
+   * Step 1 Combined Analysis: RFP + Reference Proposals in parallel
+   * Triggers both RFP and Reference Proposals analysis simultaneously
+   */
+  async analyzeStep1(proposalId: string): Promise<{
+    status: string
+    message?: string
+    analyses: Array<{
+      type: string
+      status: string
+      started?: boolean
+      cached?: boolean
+      already_running?: boolean
+    }>
+    started_at: string
+  }> {
+    const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-step-1`)
+    return response.data
+  }
+
+  /**
+   * Get combined status of Step 1 analyses (RFP + Reference Proposals)
+   * Returns overall status and individual status for each analysis
+   */
+  async getStep1Status(proposalId: string): Promise<{
+    overall_status: 'not_started' | 'processing' | 'completed' | 'failed'
+    rfp_analysis: {
+      status: string
+      data?: any
+      error?: string
+      started_at?: string
+      completed_at?: string
+    }
+    reference_proposals_analysis: {
+      status: string
+      data?: any
+      error?: string
+      started_at?: string
+      completed_at?: string
+    }
+  }> {
+    const response = await apiClient.get(`/api/proposals/${proposalId}/step-1-status`)
+    return response.data
+  }
+
   async deleteDocument(
     proposalId: string,
     filename: string

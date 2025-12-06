@@ -25,6 +25,7 @@ export function ProposalWriterPage() {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
   const [isAnalyzingRFP, setIsAnalyzingRFP] = useState(false)
   const [rfpAnalysis, setRfpAnalysis] = useState<any>(null)
+  const [referenceProposalsAnalysis, setReferenceProposalsAnalysis] = useState<any>(null)
   const [conceptAnalysis, setConceptAnalysis] = useState<any>(null)
   const [analysisProgress, setAnalysisProgress] = useState<{
     step: number
@@ -86,6 +87,22 @@ export function ProposalWriterPage() {
     if (draft.rfpAnalysis) {
       console.log('📊 Loading rfpAnalysis from localStorage:', !!draft.rfpAnalysis)
       setRfpAnalysis(draft.rfpAnalysis)
+    }
+
+    // Load reference proposals analysis from localStorage
+    if (draft.proposalId) {
+      const savedRefAnalysis = localStorage.getItem(
+        `proposal_reference_proposals_analysis_${draft.proposalId}`
+      )
+      if (savedRefAnalysis) {
+        try {
+          const parsed = JSON.parse(savedRefAnalysis)
+          console.log('📊 Loading referenceProposalsAnalysis from localStorage')
+          setReferenceProposalsAnalysis(parsed)
+        } catch (e) {
+          console.error('Failed to parse saved reference proposals analysis:', e)
+        }
+      }
     }
 
     // Mark that we've completed localStorage loading
@@ -226,6 +243,19 @@ export function ProposalWriterPage() {
     }
   }, [rfpAnalysis, saveRfpAnalysis])
 
+  // Save reference proposals analysis to localStorage
+  useEffect(() => {
+    if (referenceProposalsAnalysis && proposalId) {
+      console.log(
+        `💾 Saving referenceProposalsAnalysis to localStorage with key: proposal_reference_proposals_analysis_${proposalId}`
+      )
+      localStorage.setItem(
+        `proposal_reference_proposals_analysis_${proposalId}`,
+        JSON.stringify(referenceProposalsAnalysis)
+      )
+    }
+  }, [referenceProposalsAnalysis, proposalId])
+
   // Save concept analysis to localStorage
   useEffect(() => {
     if (conceptAnalysis && proposalId) {
@@ -343,12 +373,14 @@ export function ProposalWriterPage() {
       const handleDocumentsUpdated = () => {
         console.log('📄 [ProposalWriterPage] documents-updated event received - clearing analyses')
         setRfpAnalysis(null)
+        setReferenceProposalsAnalysis(null)
         setConceptAnalysis(null)
         setConceptDocument(null)
         setConceptEvaluationData(null)
         setProposalTemplate(null)
         setStructureSelectionData(null)
         localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
+        localStorage.removeItem(`proposal_reference_proposals_analysis_${proposalId}`)
         localStorage.removeItem(`proposal_concept_analysis_${proposalId}`)
         localStorage.removeItem(`proposal_concept_document_${proposalId}`)
         localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
@@ -684,7 +716,7 @@ export function ProposalWriterPage() {
   const handleNextStep = async () => {
     console.log('🔵 handleNextStep called - Current step:', currentStep)
 
-    // If on Step 1 and trying to go to Step 2, analyze RFP AND Concept
+    // If on Step 1 and trying to go to Step 2, analyze Step 1 (RFP + Reference Proposals) AND Concept
     if (currentStep === 1) {
       // Check required fields
       const hasRFP = formData.uploadedFiles['rfp-document']?.length > 0
@@ -704,46 +736,35 @@ export function ProposalWriterPage() {
         return
       }
 
-      // If both analyses already exist, just proceed
+      // If all analyses already exist, just proceed
       if (rfpAnalysis && conceptAnalysis) {
-        console.log('✅ Both analyses already complete, proceeding to next step')
+        console.log('✅ All analyses already complete, proceeding to next step')
         proceedToNextStep()
         return
       }
 
-      // Start sequential analysis
-      console.log('🟢 Starting sequential analysis...')
+      // Start parallel Step 1 analysis (RFP + Reference Proposals) + Concept analysis
+      console.log('🟢 Starting Step 1 parallel analysis (RFP + Reference Proposals) + Concept...')
       setIsAnalyzingRFP(true)
-      setAnalysisProgress({ step: 1, total: 2, message: 'Analyzing RFP document...' })
+      setAnalysisProgress({ step: 1, total: 2, message: 'Analyzing RFP & Reference Proposals...' })
 
       try {
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
 
-        // STEP 1: RFP Analysis
+        // STEP 1: Launch parallel RFP + Reference Proposals analysis
         if (!rfpAnalysis) {
-          console.log('📡 Step 1/2: Starting RFP analysis...')
-          const rfpResult = await proposalService.analyzeRFP(proposalId!)
+          console.log('📡 Step 1/2: Starting Step 1 parallel analysis (RFP + Reference Proposals)...')
+          const step1Result = await proposalService.analyzeStep1(proposalId!)
 
-          if (rfpResult.status === 'processing') {
-            // Poll for RFP completion
-            await pollAnalysisStatus(
-              () => proposalService.getAnalysisStatus(proposalId!),
-              result => {
-                setRfpAnalysis(result.rfp_analysis)
-                return result.rfp_analysis
-              },
-              'RFP'
-            )
-          } else if (rfpResult.status === 'completed') {
-            setRfpAnalysis(rfpResult.rfp_analysis)
-          } else {
-            throw new Error('Failed to start RFP analysis')
-          }
+          console.log('📊 Step 1 analysis launched:', step1Result)
+
+          // Poll for Step 1 completion (RFP + Reference Proposals)
+          await pollStep1Status(proposalService)
         }
 
         // STEP 2: Concept Analysis
         console.log('📡 Step 2/2: Starting Concept analysis...')
-        setAnalysisProgress({ step: 2, total: 2, message: 'Analyzing initial concept...' })
+        setAnalysisProgress({ step: 2, total: 2, message: 'Analyzing Initial Concept...' })
 
         if (!conceptAnalysis) {
           const conceptResult = await proposalService.analyzeConcept(proposalId!)
@@ -765,8 +786,8 @@ export function ProposalWriterPage() {
           }
         }
 
-        // Both analyses complete!
-        console.log('✅ Sequential analysis completed!')
+        // All analyses complete!
+        console.log('✅ All analyses completed!')
         setIsAnalyzingRFP(false)
         setAnalysisProgress(null)
         proceedToNextStep()
@@ -791,7 +812,58 @@ export function ProposalWriterPage() {
     proceedToNextStep()
   }
 
-  // Helper function to poll analysis status
+  // Helper function to poll Step 1 combined status (RFP + Reference Proposals)
+  const pollStep1Status = async (proposalService: any): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      let attempts = 0
+      const maxAttempts = 100 // 5 minutes at 3 second intervals
+
+      const poll = async () => {
+        try {
+          attempts++
+          const status = await proposalService.getStep1Status(proposalId!)
+
+          console.log(`📊 Step 1 combined status (attempt ${attempts}):`, status.overall_status)
+          console.log('   RFP:', status.rfp_analysis.status)
+          console.log('   Reference Proposals:', status.reference_proposals_analysis.status)
+
+          // Update individual states as they complete
+          if (status.rfp_analysis.status === 'completed' && status.rfp_analysis.data) {
+            setRfpAnalysis(status.rfp_analysis.data)
+          }
+
+          if (
+            status.reference_proposals_analysis.status === 'completed' &&
+            status.reference_proposals_analysis.data
+          ) {
+            setReferenceProposalsAnalysis(status.reference_proposals_analysis.data)
+          }
+
+          // Check overall status
+          if (status.overall_status === 'completed') {
+            console.log('✅ Step 1 analyses completed!')
+            resolve()
+          } else if (status.overall_status === 'failed') {
+            const rfpError = status.rfp_analysis.error
+            const refError = status.reference_proposals_analysis.error
+            const errorMsg = rfpError || refError || 'Step 1 analysis failed'
+            reject(new Error(errorMsg))
+          } else if (attempts >= maxAttempts) {
+            reject(new Error('Step 1 analysis timeout'))
+          } else {
+            // Continue polling
+            setTimeout(poll, 3000)
+          }
+        } catch (error) {
+          reject(error)
+        }
+      }
+
+      poll()
+    })
+  }
+
+  // Helper function to poll analysis status (for Concept analysis)
   const pollAnalysisStatus = async (
     statusFn: () => Promise<any>,
     onSuccess: (result: any) => any,

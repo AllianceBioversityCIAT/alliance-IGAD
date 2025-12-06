@@ -204,6 +204,15 @@ Resources:
                 - !GetAtt ProposalDocumentsBucket.Arn
             - Effect: Allow
               Action:
+                - s3vectors:ListVectors
+                - s3vectors:GetVectors
+                - s3vectors:QueryVectors
+              Resource:
+                - !Sub 'arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/igad-proposals-vectors-testing'
+                - !Sub 'arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/igad-proposals-vectors-testing/*'
+                - !GetAtt ProposalDocumentsBucket.Arn
+            - Effect: Allow
+              Action:
                 - lambda:InvokeFunction
               Resource:
                 - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-AnalysisWorkerFunction'

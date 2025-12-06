@@ -39,15 +39,19 @@ def setup_s3_vectors():
                 print(f"   ✅ Exists")
             except:
                 print(f"   Creating (1024 dim, cosine)...")
+                # Configure metadata: only upload_date is non-filterable
+                # All other keys (proposal_id, document_name, donor, sector, etc.) will be filterable
+                metadata_config = {
+                    'nonFilterableMetadataKeys': ['upload_date']
+                }
+                
                 s3vectors.create_index(
                     vectorBucketName=bucket_name,
                     indexName=idx['name'],
                     dataType='float32',
                     dimension=1024,
                     distanceMetric='cosine',
-                    metadataConfiguration={
-                        'nonFilterableMetadataKeys': ['source_text', 'document_name', 'upload_date']
-                    }
+                    metadataConfiguration=metadata_config
                 )
                 print(f"   ✅ Created")
         

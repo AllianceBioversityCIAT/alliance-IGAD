@@ -626,6 +626,9 @@ async def upload_reference_file(
         from app.shared.vectors.service import VectorEmbeddingsService
         vector_service = VectorEmbeddingsService()
 
+        print(f"🔄 Starting vectorization for {len(text_chunks)} chunks...")
+        print(f"   Metadata: donor={donor}, sector={sector}, year={year}")
+        
         vector_result = True
         for idx, chunk in enumerate(text_chunks):
             chunk_metadata = {
@@ -638,15 +641,20 @@ async def upload_reference_file(
                 "total_chunks": str(len(text_chunks))
             }
 
+            print(f"   Vectorizing chunk {idx+1}/{len(text_chunks)}...")
             result = vector_service.insert_reference_proposal(
-                proposal_id=f"{proposal_id}-chunk-{idx}",
+                proposal_id=proposal_code,  # Base proposal code without chunk suffix
                 text=chunk,
                 metadata=chunk_metadata
             )
 
             if not result:
                 vector_result = False
-                print(f"Warning: Vector storage failed for chunk {idx} of {file.filename}")
+                print(f"❌ Vector storage failed for chunk {idx} of {file.filename}")
+            else:
+                print(f"✅ Chunk {idx+1} vectorized")
+        
+        print(f"✅ Vectorization complete: {len(text_chunks)} chunks processed")
 
         if not vector_result:
             print(f"Warning: Vector storage failed for {file.filename}")

@@ -20,6 +20,7 @@ from typing import Any, Dict, Optional
 from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer
 from app.tools.proposal_writer.concept_evaluation.service import SimpleConceptAnalyzer
 from app.tools.proposal_writer.document_generation.service import concept_generator
+from app.tools.proposal_writer.reference_proposals_analysis.service import ReferenceProposalsAnalyzer
 from app.database.client import db_client
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ def _set_processing_status(
 
     Args:
         proposal_id: Proposal identifier
-        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document')
+        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document', 'reference_proposals')
 
     Raises:
         Exception: If DynamoDB update fails
@@ -73,6 +74,16 @@ def _set_processing_status(
                 ":started": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "reference_proposals":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="SET analysis_status_reference = :status, reference_analysis_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 def _set_completed_status(
@@ -85,7 +96,7 @@ def _set_completed_status(
 
     Args:
         proposal_id: Proposal identifier
-        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document')
+        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document', 'reference_proposals')
         result: Analysis result to save
 
     Raises:
@@ -146,6 +157,29 @@ def _set_completed_status(
                 ":updated": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "reference_proposals":
+        # Extract just the analysis content (avoid duplication)
+        analysis_data = result.get("reference_proposal_analysis", {})
+        documents_analyzed = result.get("documents_analyzed", 0)
+
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET reference_proposal_analysis = :analysis,
+                    reference_documents_analyzed = :docs_count,
+                    analysis_status_reference_proposals = :status,
+                    reference_analysis_completed_at = :completed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":analysis": analysis_data,
+                ":docs_count": documents_analyzed,
+                ":status": "completed",
+                ":completed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 def _set_failed_status(
@@ -158,7 +192,7 @@ def _set_failed_status(
 
     Args:
         proposal_id: Proposal identifier
-        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document')
+        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document', 'reference_proposals')
         error_msg: Error message to save
 
     Raises:
@@ -206,6 +240,23 @@ def _set_failed_status(
                 SET concept_document_status = :status,
                     concept_document_error = :error,
                     concept_document_failed_at = :failed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":status": "failed",
+                ":error": error_msg,
+                ":failed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
+    elif analysis_type == "reference_proposals":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET analysis_status_reference = :status,
+                    reference_analysis_error = :error,
+                    reference_analysis_failed_at = :failed,
                     updated_at = :updated
             """,
             expression_attribute_values={
@@ -272,6 +323,44 @@ def _handle_rfp_analysis(proposal_id: str) -> Dict[str, Any]:
 
     _set_completed_status(proposal_id, "rfp", result)
     logger.info("💾 RFP result saved to DynamoDB")
+
+    return result
+
+
+# ==================== REFERENCE PROPOSALS ANALYSIS ====================
+
+
+def _handle_reference_proposals_analysis(proposal_id: str) -> Dict[str, Any]:
+    """
+    Execute reference proposals analysis from S3 Vectors.
+
+    Analyzes uploaded reference proposals to extract:
+    - Structural patterns
+    - Narrative techniques
+    - Writing style
+    - Donor alignment strategies
+
+    Args:
+        proposal_id: Proposal identifier
+
+    Returns:
+        Analysis result from ReferenceProposalsAnalyzer
+
+    Raises:
+        Exception: If analysis fails
+    """
+    logger.info(f"📋 Processing reference proposals analysis for: {proposal_id}")
+    _set_processing_status(proposal_id, "reference_proposals")
+
+    logger.info("🔍 Starting reference proposals analysis...")
+    analyzer = ReferenceProposalsAnalyzer()
+    result = analyzer.analyze_reference_proposals(proposal_id)
+
+    logger.info("✅ Reference proposals analysis completed successfully")
+    logger.info(f"📊 Documents analyzed: {result.get('documents_analyzed', 0)}")
+
+    _set_completed_status(proposal_id, "reference_proposals", result)
+    logger.info("💾 Reference proposals result saved to DynamoDB")
 
     return result
 
@@ -453,15 +542,16 @@ def handler(event, context):
     """
     Lambda handler for asynchronous proposal analysis.
 
-    Coordinates three types of analysis workflows:
+    Coordinates four types of analysis workflows:
     1. RFP Analysis: Extracts structured data from RFP documents
-    2. Concept Analysis: Evaluates concept alignment with RFP
-    3. Document Generation: Creates refined concept document
+    2. Reference Proposals Analysis: Analyzes reference proposals from S3 Vectors
+    3. Concept Analysis: Evaluates concept alignment with RFP
+    4. Document Generation: Creates refined concept document
 
     Expected event format:
     {
         "proposal_id": "uuid-string",
-        "analysis_type": "rfp" | "concept" | "concept_document",
+        "analysis_type": "rfp" | "reference_proposals" | "concept" | "concept_document",
         "concept_evaluation": {...}  # Required for concept_document
     }
 
@@ -488,6 +578,8 @@ def handler(event, context):
         # Route to appropriate analysis handler
         if analysis_type == "rfp":
             _handle_rfp_analysis(proposal_id)
+        elif analysis_type == "reference_proposals":
+            _handle_reference_proposals_analysis(proposal_id)
         elif analysis_type == "concept":
             _handle_concept_analysis(proposal_id)
         elif analysis_type == "concept_document":

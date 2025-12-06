@@ -8,7 +8,9 @@ class VectorEmbeddingsService:
     def __init__(self):
         self.bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
         self.s3vectors = boto3.client('s3vectors', region_name='us-east-1')
+        self.s3 = boto3.client('s3', region_name='us-east-1')
         self.bucket_name = "igad-proposals-vectors-testing"
+        self.documents_bucket = "igad-proposal-documents-569113802249"
         self.model_id = "amazon.titan-embed-text-v2:0"
     
     def generate_embedding(self, text: str) -> List[float]:
@@ -20,25 +22,28 @@ class VectorEmbeddingsService:
         return json.loads(response['body'].read())['embedding']
     
     def insert_reference_proposal(self, proposal_id: str, text: str, metadata: Dict[str, str]) -> bool:
-        """Insert reference proposal vector"""
+        """Insert reference proposal vector with metadata encoded in key"""
         try:
             embedding = self.generate_embedding(text)
+            
+            # Encode metadata in key (bypass AWS metadata bug)
+            key = "|".join([
+                proposal_id,
+                metadata.get("donor", ""),
+                metadata.get("sector", ""),
+                metadata.get("year", ""),
+                metadata.get("document_name", ""),
+                metadata.get("chunk_index", "0"),
+                metadata.get("total_chunks", "1")
+            ])
+            
             self.s3vectors.put_vectors(
                 vectorBucketName=self.bucket_name,
                 indexName="reference-proposals-index",
                 vectors=[{
-                    "key": f"ref-{proposal_id}-{int(datetime.utcnow().timestamp())}",
+                    "key": key,
                     "data": {"float32": embedding},
-                    "metadata": {
-                        "proposal_id": proposal_id,
-                        "donor": metadata.get("donor", ""),
-                        "sector": metadata.get("sector", ""),
-                        "year": metadata.get("year", ""),
-                        "status": metadata.get("status", ""),
-                        "source_text": text[:1000],
-                        "document_name": metadata.get("document_name", ""),
-                        "upload_date": datetime.utcnow().isoformat()
-                    }
+                    "metadata": {}  # Empty - using key encoding instead
                 }]
             )
             return True
@@ -47,24 +52,27 @@ class VectorEmbeddingsService:
             return False
     
     def insert_existing_work(self, proposal_id: str, text: str, metadata: Dict[str, str]) -> bool:
-        """Insert existing work vector"""
+        """Insert existing work vector with metadata encoded in key"""
         try:
             embedding = self.generate_embedding(text)
+            
+            # Encode metadata in key (bypass AWS metadata bug)
+            key = "|".join([
+                proposal_id,
+                metadata.get("organization", ""),
+                metadata.get("project_type", ""),
+                metadata.get("region", ""),
+                metadata.get("document_name", ""),
+                str(int(datetime.utcnow().timestamp()))
+            ])
+            
             self.s3vectors.put_vectors(
                 vectorBucketName=self.bucket_name,
                 indexName="existing-work-index",
                 vectors=[{
-                    "key": f"work-{proposal_id}-{int(datetime.utcnow().timestamp())}",
+                    "key": key,
                     "data": {"float32": embedding},
-                    "metadata": {
-                        "proposal_id": proposal_id,
-                        "organization": metadata.get("organization", ""),
-                        "project_type": metadata.get("project_type", ""),
-                        "region": metadata.get("region", ""),
-                        "source_text": text[:1000],
-                        "document_name": metadata.get("document_name", ""),
-                        "upload_date": datetime.utcnow().isoformat()
-                    }
+                    "metadata": {}  # Empty - using key encoding instead
                 }]
             )
             return True
@@ -113,15 +121,22 @@ class VectorEmbeddingsService:
             return []
     
     def delete_proposal_vectors(self, proposal_id: str) -> bool:
-        """Delete all vectors for a proposal"""
+        """Delete all vectors for a proposal (using key encoding)"""
         try:
             for index in ["reference-proposals-index", "existing-work-index"]:
                 response = self.s3vectors.list_vectors(
                     vectorBucketName=self.bucket_name,
                     indexName=index
                 )
-                keys = [v['key'] for v in response.get('vectors', [])
-                       if v.get('metadata', {}).get('proposal_id') == proposal_id]
+                
+                # Parse keys and filter by proposal_id
+                keys = []
+                for v in response.get('vectors', []):
+                    key = v.get('key', '')
+                    parts = key.split('|')
+                    if len(parts) >= 1 and parts[0] == proposal_id:
+                        keys.append(key)
+                
                 if keys:
                     self.s3vectors.delete_vectors(
                         vectorBucketName=self.bucket_name,
@@ -135,30 +150,29 @@ class VectorEmbeddingsService:
 
     def delete_vectors_by_document_name(self, document_name: str, index_name: str) -> bool:
         """
-        Delete all vectors associated with a specific document name
+        Delete all vectors associated with a specific document name (using key encoding)
 
         Args:
             document_name: The document filename to delete vectors for
-            index_name: The index to delete from (reference-proposals-index or existing-work-index)
+            index_name: The index to delete from
 
         Returns:
             True if successful, False otherwise
         """
         try:
-            # List all vectors in the index
             response = self.s3vectors.list_vectors(
                 vectorBucketName=self.bucket_name,
                 indexName=index_name
             )
 
-            # Filter vectors by document_name metadata
+            # Parse keys and filter by document_name
             keys_to_delete = []
             for vector in response.get('vectors', []):
-                metadata = vector.get('metadata', {})
-                if metadata.get('document_name') == document_name:
-                    keys_to_delete.append(vector['key'])
+                key = vector.get('key', '')
+                parts = key.split('|')
+                if len(parts) >= 7 and parts[4] == document_name:
+                    keys_to_delete.append(key)
 
-            # Delete the vectors if any found
             if keys_to_delete:
                 print(f"Deleting {len(keys_to_delete)} vectors for document {document_name}")
                 self.s3vectors.delete_vectors(
@@ -169,11 +183,132 @@ class VectorEmbeddingsService:
                 return True
             else:
                 print(f"No vectors found for document {document_name}")
-                return True  # Not an error, just no vectors to delete
+                return True
 
         except Exception as e:
             print(f"Error deleting vectors by document name: {e}")
             import traceback
             traceback.print_exc()
             return False
+    
+    def get_documents_by_proposal(self, proposal_id: str, index_name: str = "reference-proposals-index", max_docs: int = 5) -> List[Dict[str, Any]]:
+        """
+        Retrieve documents for a proposal from S3 Vectors (using key encoding)
+        
+        Args:
+            proposal_id: Proposal ID to filter by
+            index_name: Index to search in
+            max_docs: Maximum number of documents to return
+            
+        Returns:
+            List of documents with their full text reconstructed from S3
+        """
+        try:
+            response = self.s3vectors.list_vectors(
+                vectorBucketName=self.bucket_name,
+                indexName=index_name
+            )
+            
+            vectors = response.get('vectors', [])
+            
+            # Parse keys and filter by proposal_id
+            proposal_vectors = []
+            for vector in vectors:
+                key = vector.get('key', '')
+                parts = key.split('|')
+                if len(parts) >= 7 and parts[0] == proposal_id:
+                    vector['decoded_metadata'] = {
+                        'proposal_id': parts[0],
+                        'donor': parts[1],
+                        'sector': parts[2],
+                        'year': parts[3],
+                        'document_name': parts[4],
+                        'chunk_index': int(parts[5]),
+                        'total_chunks': parts[6]
+                    }
+                    proposal_vectors.append(vector)
+            
+            if not proposal_vectors:
+                return []
+            
+            # Group by document_name
+            docs_by_name = {}
+            for vector in proposal_vectors:
+                metadata = vector['decoded_metadata']
+                doc_name = metadata['document_name']
+                
+                if doc_name not in docs_by_name:
+                    docs_by_name[doc_name] = []
+                
+                docs_by_name[doc_name].append(vector)
+            
+            # Reconstruct each document with full text from S3
+            reconstructed_docs = []
+            for doc_name, doc_vectors in docs_by_name.items():
+                doc_vectors.sort(key=lambda v: v['decoded_metadata']['chunk_index'])
+                first_metadata = doc_vectors[0]['decoded_metadata']
+
+                # Retrieve full text from S3
+                try:
+                    # Correct S3 key path for reference proposals
+                    s3_key = f"{proposal_id}/documents/references/{doc_name}"
+                    s3_response = self.s3.get_object(
+                        Bucket=self.documents_bucket,
+                        Key=s3_key
+                    )
+
+                    # Extract text based on file format
+                    content = s3_response['Body'].read()
+                    ext = doc_name.lower().split('.')[-1] if '.' in doc_name else ''
+
+                    if ext == 'pdf':
+                        # PDF extraction
+                        from PyPDF2 import PdfReader
+                        from io import BytesIO
+                        pdf_reader = PdfReader(BytesIO(content))
+                        full_text = "\n\n".join([page.extract_text() for page in pdf_reader.pages])
+
+                    elif ext == 'docx':
+                        # DOCX extraction
+                        from docx import Document
+                        from io import BytesIO
+                        doc = Document(BytesIO(content))
+                        full_text = "\n\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+
+                    elif ext == 'txt':
+                        # TXT extraction
+                        full_text = content.decode('utf-8')
+
+                    else:
+                        # Unsupported format
+                        print(f"⚠️  Unsupported format: {ext} for {doc_name}")
+                        full_text = f"[Unsupported format: {ext}]"
+
+                    reconstructed_docs.append({
+                        "document_name": doc_name,
+                        "full_text": full_text.strip(),
+                        "chunk_count": len(doc_vectors),
+                        "metadata": first_metadata
+                    })
+
+                    print(f"✅ Reconstructed {doc_name} ({ext.upper()}, {len(doc_vectors)} chunks)")
+
+                except Exception as e:
+                    print(f"❌ Error reading {doc_name} from S3: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    reconstructed_docs.append({
+                        "document_name": doc_name,
+                        "full_text": f"[Error retrieving text: {str(e)}]",
+                        "chunk_count": len(doc_vectors),
+                        "metadata": first_metadata
+                    })
+            
+            return reconstructed_docs[:max_docs]
+            
+        except Exception as e:
+            print(f"Error retrieving documents by proposal: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
 

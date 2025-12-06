@@ -17,10 +17,10 @@ const AnalysisProgressModal: React.FC<AnalysisProgressModalProps> = ({ isOpen, p
     return null
   }
 
-  // Default values for Step 1 (RFP Analysis)
+  // Default values for Step 1 (RFP + Reference Proposals + Concept Analysis)
   const defaultDescription =
-    'Our AI is analyzing your RFP and initial concept to provide strategic insights. This may take 1-3 minutes.'
-  const defaultSteps = ['Analyzing RFP Document', 'Analyzing Initial Concept']
+    'Our AI is analyzing your RFP, reference proposals, and initial concept to provide strategic insights. This may take 2-4 minutes.'
+  const defaultSteps = ['Analyzing RFP & Reference Proposals', 'Analyzing Initial Concept']
 
   const description = progress?.description || defaultDescription
   const steps = progress?.steps || defaultSteps
