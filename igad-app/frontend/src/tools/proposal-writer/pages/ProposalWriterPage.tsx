@@ -743,28 +743,38 @@ export function ProposalWriterPage() {
         return
       }
 
-      // Start parallel Step 1 analysis (RFP + Reference Proposals) + Concept analysis
-      console.log('🟢 Starting Step 1 parallel analysis (RFP + Reference Proposals) + Concept...')
+      // Start 3-step sequential analysis: RFP → Reference Proposals → Concept
+      console.log('🟢 Starting 3-step sequential analysis...')
       setIsAnalyzingRFP(true)
-      setAnalysisProgress({ step: 1, total: 2, message: 'Analyzing RFP & Reference Proposals...' })
+      setAnalysisProgress({ step: 1, total: 3, message: 'Analyzing RFP...' })
 
       try {
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
 
-        // STEP 1: Launch parallel RFP + Reference Proposals analysis
+        // STEP 1: RFP Analysis ONLY
         if (!rfpAnalysis) {
-          console.log('📡 Step 1/2: Starting Step 1 parallel analysis (RFP + Reference Proposals)...')
+          console.log('📡 Step 1/3: Starting RFP analysis...')
           const step1Result = await proposalService.analyzeStep1(proposalId!)
 
-          console.log('📊 Step 1 analysis launched:', step1Result)
+          console.log('📊 Step 1 (RFP) launched:', step1Result)
 
-          // Poll for Step 1 completion (RFP + Reference Proposals)
+          // Poll for Step 1 completion (RFP only)
           await pollStep1Status(proposalService)
         }
 
-        // STEP 2: Concept Analysis
-        console.log('📡 Step 2/2: Starting Concept analysis...')
-        setAnalysisProgress({ step: 2, total: 2, message: 'Analyzing Initial Concept...' })
+        // STEP 2: Reference Proposals + Existing Work
+        console.log('📡 Step 2/3: Starting Reference Proposals + Existing Work analysis...')
+        setAnalysisProgress({ step: 2, total: 3, message: 'Analyzing Reference Proposals & Existing Work...' })
+
+        const step2Result = await proposalService.analyzeStep2(proposalId!)
+        console.log('📊 Step 2 (Reference Proposals + Existing Work) launched:', step2Result)
+
+        // Poll for Step 2 completion
+        await pollStep2Status(proposalService)
+
+        // STEP 3: Concept Analysis
+        console.log('📡 Step 3/3: Starting Concept analysis...')
+        setAnalysisProgress({ step: 3, total: 3, message: 'Analyzing Initial Concept...' })
 
         if (!conceptAnalysis) {
           const conceptResult = await proposalService.analyzeConcept(proposalId!)
@@ -812,7 +822,7 @@ export function ProposalWriterPage() {
     proceedToNextStep()
   }
 
-  // Helper function to poll Step 1 combined status (RFP + Reference Proposals)
+  // Helper function to poll Step 1 status (RFP ONLY)
   const pollStep1Status = async (proposalService: any): Promise<void> => {
     return new Promise((resolve, reject) => {
       let attempts = 0
@@ -823,15 +833,52 @@ export function ProposalWriterPage() {
           attempts++
           const status = await proposalService.getStep1Status(proposalId!)
 
-          console.log(`📊 Step 1 combined status (attempt ${attempts}):`, status.overall_status)
+          console.log(`📊 Step 1 status (attempt ${attempts}):`, status.overall_status)
           console.log('   RFP:', status.rfp_analysis.status)
-          console.log('   Reference Proposals:', status.reference_proposals_analysis.status)
 
-          // Update individual states as they complete
+          // Update RFP state when completed
           if (status.rfp_analysis.status === 'completed' && status.rfp_analysis.data) {
             setRfpAnalysis(status.rfp_analysis.data)
           }
 
+          // Check overall status (Step 1 = RFP only)
+          if (status.overall_status === 'completed') {
+            console.log('✅ Step 1 (RFP) completed!')
+            resolve()
+          } else if (status.overall_status === 'failed') {
+            const errorMsg = status.rfp_analysis.error || 'Step 1 (RFP) analysis failed'
+            reject(new Error(errorMsg))
+          } else if (attempts >= maxAttempts) {
+            reject(new Error('Step 1 (RFP) analysis timeout'))
+          } else {
+            // Continue polling
+            setTimeout(poll, 3000)
+          }
+        } catch (error) {
+          reject(error)
+        }
+      }
+
+      poll()
+    })
+  }
+
+  // Helper function to poll Step 2 combined status (Reference Proposals + Existing Work)
+  const pollStep2Status = async (proposalService: any): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      let attempts = 0
+      const maxAttempts = 100 // 5 minutes at 3 second intervals
+
+      const poll = async () => {
+        try {
+          attempts++
+          const status = await proposalService.getStep2Status(proposalId!)
+
+          console.log(`📊 Step 2 combined status (attempt ${attempts}):`, status.overall_status)
+          console.log('   Reference Proposals:', status.reference_proposals_analysis.status)
+          console.log('   Existing Work:', status.existing_work_analysis.status)
+
+          // Update individual states as they complete
           if (
             status.reference_proposals_analysis.status === 'completed' &&
             status.reference_proposals_analysis.data
@@ -841,15 +888,15 @@ export function ProposalWriterPage() {
 
           // Check overall status
           if (status.overall_status === 'completed') {
-            console.log('✅ Step 1 analyses completed!')
+            console.log('✅ Step 2 analyses completed!')
             resolve()
           } else if (status.overall_status === 'failed') {
-            const rfpError = status.rfp_analysis.error
             const refError = status.reference_proposals_analysis.error
-            const errorMsg = rfpError || refError || 'Step 1 analysis failed'
+            const existingWorkError = status.existing_work_analysis.error
+            const errorMsg = refError || existingWorkError || 'Step 2 analysis failed'
             reject(new Error(errorMsg))
           } else if (attempts >= maxAttempts) {
-            reject(new Error('Step 1 analysis timeout'))
+            reject(new Error('Step 2 analysis timeout'))
           } else {
             // Continue polling
             setTimeout(poll, 3000)

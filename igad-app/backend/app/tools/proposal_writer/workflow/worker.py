@@ -78,7 +78,7 @@ def _set_processing_status(
         db_client.update_item_sync(
             pk=f"PROPOSAL#{proposal_id}",
             sk="METADATA",
-            update_expression="SET analysis_status_reference = :status, reference_analysis_started_at = :started",
+            update_expression="SET analysis_status_reference_proposals = :status, reference_proposals_started_at = :started",
             expression_attribute_values={
                 ":status": "processing",
                 ":started": datetime.utcnow().isoformat(),
@@ -103,22 +103,39 @@ def _set_completed_status(
         Exception: If DynamoDB update fails
     """
     if analysis_type == "rfp":
-        db_client.update_item_sync(
-            pk=f"PROPOSAL#{proposal_id}",
-            sk="METADATA",
-            update_expression="""
-                SET rfp_analysis = :analysis,
-                    analysis_status_rfp = :status,
-                    rfp_analysis_completed_at = :completed,
-                    updated_at = :updated
-            """,
-            expression_attribute_values={
-                ":analysis": result,
-                ":status": "completed",
-                ":completed": datetime.utcnow().isoformat(),
-                ":updated": datetime.utcnow().isoformat(),
-            },
-        )
+        # Log result size for debugging
+        import json
+        result_json = json.dumps(result)
+        result_size_kb = len(result_json.encode('utf-8')) / 1024
+        print(f"📊 RFP analysis result size: {result_size_kb:.2f} KB")
+
+        if result_size_kb > 350:
+            print(f"⚠️  WARNING: Result size ({result_size_kb:.2f} KB) is close to DynamoDB 400KB limit!")
+
+        try:
+            db_client.update_item_sync(
+                pk=f"PROPOSAL#{proposal_id}",
+                sk="METADATA",
+                update_expression="""
+                    SET rfp_analysis = :analysis,
+                        analysis_status_rfp = :status,
+                        rfp_analysis_completed_at = :completed,
+                        updated_at = :updated
+                """,
+                expression_attribute_values={
+                    ":analysis": result,
+                    ":status": "completed",
+                    ":completed": datetime.utcnow().isoformat(),
+                    ":updated": datetime.utcnow().isoformat(),
+                },
+            )
+            print(f"✅ Successfully saved RFP analysis to DynamoDB")
+        except Exception as e:
+            print(f"❌ CRITICAL: Failed to save RFP analysis to DynamoDB!")
+            print(f"   Error: {str(e)}")
+            print(f"   Result size: {result_size_kb:.2f} KB")
+            print(f"   Result keys: {list(result.keys())}")
+            raise
     elif analysis_type == "concept":
         db_client.update_item_sync(
             pk=f"PROPOSAL#{proposal_id}",
@@ -169,7 +186,7 @@ def _set_completed_status(
                 SET reference_proposal_analysis = :analysis,
                     reference_documents_analyzed = :docs_count,
                     analysis_status_reference_proposals = :status,
-                    reference_analysis_completed_at = :completed,
+                    reference_proposals_completed_at = :completed,
                     updated_at = :updated
             """,
             expression_attribute_values={
@@ -254,9 +271,9 @@ def _set_failed_status(
             pk=f"PROPOSAL#{proposal_id}",
             sk="METADATA",
             update_expression="""
-                SET analysis_status_reference = :status,
-                    reference_analysis_error = :error,
-                    reference_analysis_failed_at = :failed,
+                SET analysis_status_reference_proposals = :status,
+                    reference_proposals_error = :error,
+                    reference_proposals_failed_at = :failed,
                     updated_at = :updated
             """,
             expression_attribute_values={
@@ -321,7 +338,11 @@ def _handle_rfp_analysis(proposal_id: str) -> Dict[str, Any]:
     logger.info("✅ RFP analysis completed successfully")
     logger.info(f"📊 Result keys: {list(result.keys())}")
 
-    _set_completed_status(proposal_id, "rfp", result)
+    # Extract just the analysis data (not the status wrapper)
+    analysis_data = result.get("rfp_analysis", result)
+    logger.info(f"📊 Analysis data keys: {list(analysis_data.keys())}")
+
+    _set_completed_status(proposal_id, "rfp", analysis_data)
     logger.info("💾 RFP result saved to DynamoDB")
 
     return result

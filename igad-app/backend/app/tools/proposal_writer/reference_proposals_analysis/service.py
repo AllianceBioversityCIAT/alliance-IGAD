@@ -70,7 +70,7 @@ class ReferenceProposalsAnalyzer:
             Exception: If no reference proposals found or analysis fails
         """
         try:
-            # Step 1: Verify proposal exists
+            # Step 1: Load proposal and verify RFP analysis completed
             print(f"📋 Loading proposal: {proposal_id}")
             proposal = db_client.get_item_sync(
                 pk=f"PROPOSAL#{proposal_id}", sk="METADATA"
@@ -79,13 +79,48 @@ class ReferenceProposalsAnalyzer:
             if not proposal:
                 raise Exception(f"Proposal {proposal_id} not found")
 
-            # Step 2: Retrieve and reconstruct reference documents from S3 Vectors
-            print(f"🔍 Retrieving reference proposals from S3 Vectors...")
+            # Step 2: Get semantic query from RFP analysis
+            rfp_analysis = proposal.get('rfp_analysis', {})
+
+            # Handle both flat and nested structure for semantic_query
+            # The RFP analysis might be stored as:
+            # 1. Flat: { "semantic_query": "...", ... }
+            # 2. Nested: { "data": { "rfp_analysis": { "semantic_query": "..." } } }
+            semantic_query = rfp_analysis.get('semantic_query')
+
+            if not semantic_query and "data" in rfp_analysis:
+                # Try nested structure: rfp_analysis.data.rfp_analysis.semantic_query
+                data = rfp_analysis.get("data", {})
+                nested_rfp = data.get("rfp_analysis", {})
+                semantic_query = nested_rfp.get("semantic_query")
+                if semantic_query:
+                    print(f"ℹ️  Found semantic_query in nested structure (data.rfp_analysis.semantic_query)")
+
+            if not semantic_query:
+                # Log the structure for debugging
+                print(f"❌ No semantic_query found in RFP analysis for proposal {proposal_id}")
+                print(f"   Available keys in rfp_analysis: {list(rfp_analysis.keys())}")
+                if "data" in rfp_analysis:
+                    data_keys = list(rfp_analysis.get("data", {}).keys())
+                    print(f"   Available keys in rfp_analysis.data: {data_keys}")
+                    if "rfp_analysis" in rfp_analysis.get("data", {}):
+                        nested_keys = list(rfp_analysis.get("data", {}).get("rfp_analysis", {}).keys())
+                        print(f"   Available keys in nested rfp_analysis: {nested_keys}")
+                raise Exception(
+                    "RFP analysis not completed or semantic_query missing. "
+                    "Please run RFP analysis first before searching reference proposals."
+                )
+
+            print(f"🔍 Using semantic query from RFP analysis:")
+            print(f"   Query: {semantic_query[:150]}...")
+
+            # Step 3: Semantic search in reference-proposals-index
+            print(f"🔎 Searching for similar reference proposals...")
             max_docs = REFERENCE_PROPOSALS_ANALYSIS_SETTINGS["max_documents"]
-            documents = self.vector_service.get_documents_by_proposal(
-                proposal_id=proposal_id,
-                index_name="reference-proposals-index",
-                max_docs=max_docs
+            documents = self.vector_service.search_and_reconstruct_proposals(
+                query_text=semantic_query,
+                top_k=max_docs,
+                index_name="reference-proposals-index"
             )
 
             if not documents:

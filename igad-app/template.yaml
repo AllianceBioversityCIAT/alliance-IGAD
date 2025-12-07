@@ -24,13 +24,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: /Users/jcadavid/Desktop/DEV/Desarrollos/alliance-IGAD/igad-app/backend/dist
-      Environment:
-        Variables:
-          TABLE_NAME: igad-testing-main-table
-          PROPOSALS_BUCKET: !Ref ProposalDocumentsBucket
-          COGNITO_CLIENT_ID: 7p11hp6gcklhctcr9qffne71vl
-          COGNITO_USER_POOL_ID: us-east-1_IMi3kSuB8
-          WORKER_FUNCTION_ARN: !GetAtt AnalysisWorkerFunction.Arn
       Handler: bootstrap
       Runtime: python3.9
       MemorySize: 512
@@ -46,7 +39,7 @@ Resources:
           TABLE_NAME: igad-testing-main-table
           PROPOSALS_BUCKET: !Ref ProposalDocumentsBucket
           AWS_STACK_NAME: !Ref AWS::StackName
-          WORKER_FUNCTION_ARN: !GetAtt AnalysisWorkerFunction.Arn
+          WORKER_FUNCTION_NAME: !Ref AnalysisWorkerFunction
           # VECTOR_BUCKET: !Ref VectorStorageBucket  # Uncomment when S3 Vector bucket is enabled
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -214,8 +207,9 @@ Resources:
             - Effect: Allow
               Action:
                 - lambda:InvokeFunction
+                - lambda:ListFunctions
               Resource:
-                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-AnalysisWorkerFunction'
+                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*'
 
   # S3 bucket for website content
   WebsiteBucket:

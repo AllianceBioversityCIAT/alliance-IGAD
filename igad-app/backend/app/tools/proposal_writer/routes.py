@@ -630,9 +630,9 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
         print(f"🚀 Invoking AnalysisWorkerFunction for proposal {proposal_code}")
         
         # Get worker function ARN from environment variable
-        worker_function_arn = os.environ.get("WORKER_FUNCTION_ARN")
+        worker_function_arn = os.environ.get("WORKER_FUNCTION_NAME")
         if not worker_function_arn:
-            raise Exception("WORKER_FUNCTION_ARN environment variable not set")
+            raise Exception("WORKER_FUNCTION_NAME environment variable not set")
         
         print(f"📝 Worker function ARN: {worker_function_arn}")
         
@@ -801,9 +801,9 @@ async def analyze_concept(proposal_id: str, user=Depends(get_current_user)):
         # Invoke Worker Lambda asynchronously
         print(f"🚀 Invoking AnalysisWorkerFunction for concept analysis: {proposal_code}")
         
-        worker_function_arn = os.environ.get("WORKER_FUNCTION_ARN")
+        worker_function_arn = os.environ.get("WORKER_FUNCTION_NAME")
         if not worker_function_arn:
-            raise Exception("WORKER_FUNCTION_ARN environment variable not set")
+            raise Exception("WORKER_FUNCTION_NAME environment variable not set")
         
         lambda_client.invoke(
             FunctionName=worker_function_arn,
@@ -974,7 +974,7 @@ async def generate_concept_document(
         )
         
         # Invoke Worker Lambda asynchronously
-        worker_function = os.getenv('WORKER_FUNCTION_ARN')
+        worker_function = os.getenv('WORKER_FUNCTION_NAME')
         
         # Get proposal code for Worker (same as Step 1)
         proposal_code = proposal.get('proposalCode')
@@ -1104,15 +1104,13 @@ async def get_concept_evaluation(
 @router.post("/{proposal_id}/analyze-step-1")
 async def analyze_step_1(proposal_id: str, user=Depends(get_current_user)):
     """
-    Start Step 1 analysis: RFP + Reference Proposals in parallel
+    Step 1: RFP Analysis ONLY
 
     This endpoint:
     1. Triggers RFP analysis
-    2. Triggers Reference Proposals analysis
-    3. Both run in parallel via separate Lambda invocations
-    4. Returns immediately with status
+    2. Returns immediately with status
 
-    Frontend should poll /step-1-status for completion
+    Frontend should poll /step-1-status for completion, then call /analyze-step-2
     """
     try:
         # Verify proposal ownership
@@ -1151,9 +1149,9 @@ async def analyze_step_1(proposal_id: str, user=Depends(get_current_user)):
             raise HTTPException(status_code=400, detail="Proposal code not found")
 
         # Get worker function ARN from environment variable
-        worker_function_arn = os.environ.get("WORKER_FUNCTION_ARN")
+        worker_function_arn = os.environ.get("WORKER_FUNCTION_NAME")
         if not worker_function_arn:
-            raise Exception("WORKER_FUNCTION_ARN environment variable not set")
+            raise Exception("WORKER_FUNCTION_NAME environment variable not set")
 
         # Track which analyses to start
         analyses_started = []
@@ -1205,58 +1203,11 @@ async def analyze_step_1(proposal_id: str, user=Depends(get_current_user)):
                     "started": True
                 })
 
-        # ========== REFERENCE PROPOSALS ANALYSIS ==========
-        # Check if Reference Proposals analysis already exists
-        if proposal.get("reference_proposal_analysis"):
-            print(f"✓ Reference Proposals analysis already completed for {proposal_code}")
-            analyses_started.append({
-                "type": "reference_proposals",
-                "status": "completed",
-                "cached": True
-            })
-        else:
-            # Check if Reference Proposals analysis is already in progress
-            ref_status = proposal.get("analysis_status_reference_proposals")
-            if ref_status == "processing":
-                print(f"⏳ Reference Proposals analysis already in progress for {proposal_code}")
-                analyses_started.append({
-                    "type": "reference_proposals",
-                    "status": "processing",
-                    "already_running": True
-                })
-            else:
-                # Start Reference Proposals analysis
-                await db_client.update_item(
-                    pk=pk,
-                    sk="METADATA",
-                    update_expression="SET analysis_status_reference_proposals = :status, reference_proposals_started_at = :started",
-                    expression_attribute_values={
-                        ":status": "processing",
-                        ":started": datetime.utcnow().isoformat()
-                    }
-                )
-
-                print(f"🚀 Invoking Reference Proposals analysis for {proposal_code}")
-                lambda_client.invoke(
-                    FunctionName=worker_function_arn,
-                    InvocationType='Event',  # Async invocation
-                    Payload=json.dumps({
-                        "proposal_id": proposal_code,
-                        "analysis_type": "reference_proposals"
-                    })
-                )
-
-                analyses_started.append({
-                    "type": "reference_proposals",
-                    "status": "processing",
-                    "started": True
-                })
-
-        print(f"✅ Step 1 analysis triggered successfully for {proposal_code}")
+        print(f"✅ Step 1 (RFP) analysis triggered successfully for {proposal_code}")
 
         return {
             "status": "processing",
-            "message": "Step 1 analyses started. Poll /step-1-status for completion.",
+            "message": "Step 1 (RFP) analysis started. Poll /step-1-status for completion, then call /analyze-step-2.",
             "analyses": analyses_started,
             "started_at": datetime.utcnow().isoformat()
         }
@@ -1274,11 +1225,177 @@ async def analyze_step_1(proposal_id: str, user=Depends(get_current_user)):
         )
 
 
+@router.post("/{proposal_id}/analyze-step-2")
+async def analyze_step_2(proposal_id: str, user=Depends(get_current_user)):
+    """
+    Step 2: Reference Proposals + Existing Work Analysis
+
+    Prerequisites: Step 1 (RFP) must be completed with semantic_query
+
+    This endpoint:
+    1. Verifies RFP analysis is completed
+    2. Triggers Reference Proposals analysis (semantic search)
+    3. Triggers Existing Work analysis (semantic search) - TODO
+    4. Returns immediately with status
+
+    Frontend should poll for completion before calling /analyze-step-3
+    """
+    try:
+        # Verify proposal ownership
+        if proposal_id.startswith("PROP-"):
+            pk = f"PROPOSAL#{proposal_id}"
+            proposal_code = proposal_id
+        else:
+            items = await db_client.query_items(
+                pk=f"USER#{user.get('user_id')}",
+                index_name="GSI1"
+            )
+
+            proposal_item = None
+            for item in items:
+                if item.get("id") == proposal_id:
+                    proposal_item = item
+                    break
+
+            if not proposal_item:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+
+            pk = proposal_item["PK"]
+            proposal_code = proposal_item.get("proposalCode", proposal_id)
+
+        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        if proposal.get("user_id") != user.get("user_id"):
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        proposal_code = proposal.get("proposalCode")
+        if not proposal_code:
+            raise HTTPException(status_code=400, detail="Proposal code not found")
+
+        # ========== PREREQUISITE CHECK: RFP MUST BE COMPLETED ==========
+        rfp_analysis = proposal.get("rfp_analysis")
+        if not rfp_analysis:
+            raise HTTPException(
+                status_code=400,
+                detail="Step 1 (RFP analysis) must be completed before Step 2."
+            )
+
+        # Handle nested structure (rfp_analysis.rfp_analysis.semantic_query)
+        # or flat structure (rfp_analysis.semantic_query)
+        semantic_query = rfp_analysis.get("semantic_query")
+        if not semantic_query and "rfp_analysis" in rfp_analysis:
+            # Try nested structure
+            nested_rfp = rfp_analysis.get("rfp_analysis", {})
+            semantic_query = nested_rfp.get("semantic_query")
+            if semantic_query:
+                print(f"ℹ️  Found semantic_query in nested structure for {proposal_code}")
+
+        if not semantic_query:
+            # Log the structure for debugging
+            print(f"❌ No semantic_query found in RFP analysis for {proposal_code}")
+            print(f"   Available keys in rfp_analysis: {list(rfp_analysis.keys())}")
+            if "rfp_analysis" in rfp_analysis:
+                nested_keys = list(rfp_analysis.get("rfp_analysis", {}).keys())
+                print(f"   Available keys in nested rfp_analysis: {nested_keys}")
+            raise HTTPException(
+                status_code=400,
+                detail="Step 1 (RFP analysis) must be completed with semantic_query before Step 2."
+            )
+
+        print(f"✓ RFP analysis completed with semantic_query for {proposal_code}")
+        print(f"  Semantic query: {semantic_query[:100]}...")
+
+        # Get worker function name
+        worker_function_name = os.environ.get("WORKER_FUNCTION_NAME")
+        if not worker_function_name:
+            raise Exception("WORKER_FUNCTION_NAME environment variable not set")
+
+        analyses_started = []
+
+        # ========== REFERENCE PROPOSALS ANALYSIS ==========
+        if proposal.get("reference_proposal_analysis"):
+            print(f"✓ Reference Proposals already completed for {proposal_code}")
+            analyses_started.append({
+                "type": "reference_proposals",
+                "status": "completed",
+                "cached": True
+            })
+        else:
+            ref_status = proposal.get("analysis_status_reference_proposals")
+            if ref_status == "processing":
+                print(f"⏳ Reference Proposals already in progress for {proposal_code}")
+                analyses_started.append({
+                    "type": "reference_proposals",
+                    "status": "processing",
+                    "already_running": True
+                })
+            else:
+                print(f"🚀 Invoking Reference Proposals analysis for {proposal_code}")
+
+                await db_client.update_item(
+                    pk=pk,
+                    sk="METADATA",
+                    update_expression="SET analysis_status_reference_proposals = :status, reference_proposals_started_at = :started",
+                    expression_attribute_values={
+                        ":status": "processing",
+                        ":started": datetime.utcnow().isoformat()
+                    }
+                )
+
+                lambda_client.invoke(
+                    FunctionName=worker_function_name,
+                    InvocationType='Event',
+                    Payload=json.dumps({
+                        "proposal_id": proposal_code,
+                        "analysis_type": "reference_proposals"
+                    })
+                )
+
+                analyses_started.append({
+                    "type": "reference_proposals",
+                    "status": "processing",
+                    "started": True
+                })
+
+        # ========== EXISTING WORK ANALYSIS ==========
+        # TODO: Implement existing work semantic search
+        # For now, just mark as not implemented
+        analyses_started.append({
+            "type": "existing_work",
+            "status": "not_implemented",
+            "note": "Coming soon"
+        })
+
+        print(f"✅ Step 2 analysis triggered successfully for {proposal_code}")
+
+        return {
+            "status": "processing",
+            "message": "Step 2 (Reference Proposals + Existing Work) analysis started. Poll for completion before calling /analyze-step-3.",
+            "analyses": analyses_started,
+            "started_at": datetime.utcnow().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"❌ ERROR in analyze_step_2 endpoint:")
+        print(error_details)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Step 2 analysis failed: {str(e)}"
+        )
+
+
 @router.get("/{proposal_id}/step-1-status")
 async def get_step_1_status(proposal_id: str, user=Depends(get_current_user)):
     """
     Poll for Step 1 analysis completion status
-    Returns combined status of RFP and Reference Proposals analyses
+    Returns ONLY RFP analysis status (Reference Proposals moved to Step 2)
     """
     try:
         # Verify proposal ownership
@@ -1309,17 +1426,13 @@ async def get_step_1_status(proposal_id: str, user=Depends(get_current_user)):
         if proposal.get("user_id") != user.get("user_id"):
             raise HTTPException(status_code=403, detail="Access denied")
 
-        # Get status of both analyses
+        # Get status of RFP analysis ONLY
         rfp_status = proposal.get("analysis_status_rfp", "not_started")
-        ref_status = proposal.get("analysis_status_reference_proposals", "not_started")
 
         # Build response
         response = {
             "rfp_analysis": {
                 "status": rfp_status
-            },
-            "reference_proposals_analysis": {
-                "status": ref_status
             }
         }
 
@@ -1332,6 +1445,69 @@ async def get_step_1_status(proposal_id: str, user=Depends(get_current_user)):
         elif rfp_status == "processing":
             response["rfp_analysis"]["started_at"] = proposal.get("rfp_analysis_started_at")
 
+        # Overall status is just RFP status (Step 1 = RFP only)
+        response["overall_status"] = rfp_status
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to check Step 1 status: {str(e)}")
+
+
+@router.get("/{proposal_id}/step-2-status")
+async def get_step_2_status(proposal_id: str, user=Depends(get_current_user)):
+    """
+    Poll for Step 2 analysis completion status
+    Returns combined status of Reference Proposals and Existing Work analyses
+
+    Note: Existing Work analysis is not yet implemented and will always return 'not_started'.
+    Overall status is determined by Reference Proposals analysis only.
+    """
+    try:
+        # Verify proposal ownership
+        if proposal_id.startswith("PROP-"):
+            pk = f"PROPOSAL#{proposal_id}"
+        else:
+            items = await db_client.query_items(
+                pk=f"USER#{user.get('user_id')}",
+                index_name="GSI1"
+            )
+
+            proposal_item = None
+            for item in items:
+                if item.get("id") == proposal_id:
+                    proposal_item = item
+                    break
+
+            if not proposal_item:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+
+            pk = proposal_item["PK"]
+
+        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        if proposal.get("user_id") != user.get("user_id"):
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Get status of Step 2 analyses
+        ref_status = proposal.get("analysis_status_reference_proposals", "not_started")
+        existing_work_status = proposal.get("analysis_status_existing_work", "not_started")
+
+        # Build response
+        response = {
+            "reference_proposals_analysis": {
+                "status": ref_status
+            },
+            "existing_work_analysis": {
+                "status": existing_work_status
+            }
+        }
+
         # Add Reference Proposals details
         if ref_status == "completed":
             response["reference_proposals_analysis"]["data"] = proposal.get("reference_proposal_analysis")
@@ -1341,12 +1517,22 @@ async def get_step_1_status(proposal_id: str, user=Depends(get_current_user)):
         elif ref_status == "processing":
             response["reference_proposals_analysis"]["started_at"] = proposal.get("reference_proposals_started_at")
 
+        # Add Existing Work details
+        if existing_work_status == "completed":
+            response["existing_work_analysis"]["data"] = proposal.get("existing_work_analysis")
+            response["existing_work_analysis"]["completed_at"] = proposal.get("existing_work_completed_at")
+        elif existing_work_status == "failed":
+            response["existing_work_analysis"]["error"] = proposal.get("existing_work_error", "Unknown error")
+        elif existing_work_status == "processing":
+            response["existing_work_analysis"]["started_at"] = proposal.get("existing_work_started_at")
+
         # Determine overall status
-        if rfp_status == "completed" and ref_status == "completed":
+        # Note: Existing Work is optional (not yet implemented), so overall status is based on Reference Proposals only
+        if ref_status == "completed":
             response["overall_status"] = "completed"
-        elif rfp_status == "failed" or ref_status == "failed":
+        elif ref_status == "failed":
             response["overall_status"] = "failed"
-        elif rfp_status == "processing" or ref_status == "processing":
+        elif ref_status == "processing":
             response["overall_status"] = "processing"
         else:
             response["overall_status"] = "not_started"
@@ -1356,7 +1542,7 @@ async def get_step_1_status(proposal_id: str, user=Depends(get_current_user)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to check Step 1 status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to check Step 2 status: {str(e)}")
 
 
 @router.post("/prompts/with-categories")

@@ -312,3 +312,163 @@ class VectorEmbeddingsService:
             traceback.print_exc()
             return []
 
+    def search_and_reconstruct_proposals(
+        self,
+        query_text: str,
+        top_k: int = 5,
+        index_name: str = "reference-proposals-index"
+    ) -> List[Dict[str, Any]]:
+        """
+        Search similar proposals using semantic query and reconstruct full documents.
+
+        This method:
+        1. Generates embedding from semantic query
+        2. Searches vector index for similar chunks
+        3. Groups chunks by document
+        4. Ranks documents by average similarity
+        5. Reconstructs top-K full documents from S3
+
+        Args:
+            query_text: Semantic query from RFP analysis
+            top_k: Number of top documents to return
+            index_name: Vector index to search (default: reference-proposals-index)
+
+        Returns:
+            List of reconstructed documents with full text, sorted by relevance
+            Each document contains:
+            - document_name: Filename
+            - full_text: Complete document text
+            - similarity_score: 0-1 score (1 = most similar)
+            - chunks_matched: Number of chunks that matched
+            - metadata: Decoded metadata from key
+        """
+        try:
+            print(f"🔍 Generating embedding for semantic search...")
+            # 1. Generate query embedding
+            query_embedding = self.generate_embedding(query_text)
+
+            # 2. Semantic search (get more chunks to ensure good document coverage)
+            print(f"🔎 Searching {index_name} for top {top_k * 10} relevant chunks...")
+            response = self.s3vectors.query_vectors(
+                vectorBucketName=self.bucket_name,
+                indexName=index_name,
+                queryVector={"float32": query_embedding},
+                topK=top_k * 10,  # Get 10x chunks to group into top_k documents
+                returnDistance=True,
+                returnMetadata=True
+            )
+
+            vectors = response.get('vectors', [])
+
+            if not vectors:
+                print("⚠️  No similar vectors found")
+                return []
+
+            print(f"✅ Found {len(vectors)} matching chunks")
+
+            # 3. Group chunks by document
+            docs_by_name = {}
+            for vector in vectors:
+                key = vector.get('key', '')
+                parts = key.split('|')
+
+                # Key format: proposal_id|donor|sector|year|document_name|chunk_index|total_chunks
+                if len(parts) >= 5:
+                    doc_name = parts[4]  # document_name
+
+                    if doc_name not in docs_by_name:
+                        docs_by_name[doc_name] = {
+                            'chunks': [],
+                            'avg_distance': 0,
+                            'metadata': {
+                                'proposal_id': parts[0],
+                                'donor': parts[1],
+                                'sector': parts[2],
+                                'year': parts[3],
+                                'document_name': doc_name
+                            }
+                        }
+
+                    docs_by_name[doc_name]['chunks'].append({
+                        'key': key,
+                        'distance': vector.get('distance', 1.0),
+                        'chunk_index': int(parts[5]) if len(parts) > 5 else 0
+                    })
+
+            print(f"📊 Grouped into {len(docs_by_name)} unique documents")
+
+            # 4. Calculate avg_distance per document (lower = more similar)
+            for doc in docs_by_name.values():
+                distances = [c['distance'] for c in doc['chunks']]
+                doc['avg_distance'] = sum(distances) / len(distances)
+
+            # 5. Sort by relevance (lowest distance = highest similarity)
+            sorted_docs = sorted(
+                docs_by_name.items(),
+                key=lambda x: x[1]['avg_distance']
+            )[:top_k]
+
+            print(f"🎯 Selected top {len(sorted_docs)} most relevant documents")
+
+            # 6. Reconstruct full documents from S3
+            reconstructed = []
+            for doc_name, doc_info in sorted_docs:
+                try:
+                    # Use first chunk metadata to find S3 path
+                    proposal_id = doc_info['metadata']['proposal_id']
+
+                    # S3 path for reference proposals
+                    s3_key = f"{proposal_id}/documents/references/{doc_name}"
+
+                    print(f"   📄 Reconstructing: {doc_name} (similarity: {1 - doc_info['avg_distance']:.2%})")
+
+                    s3_response = self.s3.get_object(
+                        Bucket=self.documents_bucket,
+                        Key=s3_key
+                    )
+
+                    # Extract text based on file format
+                    content = s3_response['Body'].read()
+                    ext = doc_name.lower().split('.')[-1] if '.' in doc_name else ''
+
+                    if ext == 'pdf':
+                        from PyPDF2 import PdfReader
+                        from io import BytesIO
+                        pdf_reader = PdfReader(BytesIO(content))
+                        full_text = "\n\n".join([page.extract_text() for page in pdf_reader.pages])
+                    elif ext == 'docx':
+                        from docx import Document
+                        from io import BytesIO
+                        doc = Document(BytesIO(content))
+                        full_text = "\n\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+                    elif ext == 'txt':
+                        full_text = content.decode('utf-8')
+                    else:
+                        print(f"      ⚠️  Unsupported format: {ext}")
+                        full_text = f"[Unsupported format: {ext}]"
+
+                    reconstructed.append({
+                        "document_name": doc_name,
+                        "full_text": full_text.strip(),
+                        "similarity_score": 1 - doc_info['avg_distance'],  # Convert distance to similarity
+                        "chunks_matched": len(doc_info['chunks']),
+                        "metadata": doc_info['metadata']
+                    })
+
+                    print(f"      ✅ Reconstructed ({len(full_text)} chars, {len(doc_info['chunks'])} chunks)")
+
+                except Exception as e:
+                    print(f"      ❌ Error reconstructing {doc_name}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    continue
+
+            print(f"✅ Successfully reconstructed {len(reconstructed)} documents")
+            return reconstructed
+
+        except Exception as e:
+            print(f"❌ Error in semantic search: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+

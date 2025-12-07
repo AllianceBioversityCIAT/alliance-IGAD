@@ -177,8 +177,8 @@ class ProposalService {
   }
 
   /**
-   * Get combined status of Step 1 analyses (RFP + Reference Proposals)
-   * Returns overall status and individual status for each analysis
+   * Get Step 1 analysis status (RFP ONLY)
+   * Returns overall status and RFP analysis status
    */
   async getStep1Status(proposalId: string): Promise<{
     overall_status: 'not_started' | 'processing' | 'completed' | 'failed'
@@ -189,6 +189,37 @@ class ProposalService {
       started_at?: string
       completed_at?: string
     }
+  }> {
+    const response = await apiClient.get(`/api/proposals/${proposalId}/step-1-status`)
+    return response.data
+  }
+
+  /**
+   * Start Step 2 analysis (Reference Proposals + Existing Work)
+   * Requires Step 1 (RFP) to be completed with semantic_query
+   */
+  async analyzeStep2(proposalId: string): Promise<{
+    status: string
+    message?: string
+    analyses: Array<{
+      type: string
+      status: string
+      started?: boolean
+      cached?: boolean
+      already_running?: boolean
+    }>
+    started_at: string
+  }> {
+    const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-step-2`)
+    return response.data
+  }
+
+  /**
+   * Get combined status of Step 2 analyses (Reference Proposals + Existing Work)
+   * Returns overall status and individual status for each analysis
+   */
+  async getStep2Status(proposalId: string): Promise<{
+    overall_status: 'not_started' | 'processing' | 'completed' | 'failed'
     reference_proposals_analysis: {
       status: string
       data?: any
@@ -196,8 +227,15 @@ class ProposalService {
       started_at?: string
       completed_at?: string
     }
+    existing_work_analysis: {
+      status: string
+      data?: any
+      error?: string
+      started_at?: string
+      completed_at?: string
+    }
   }> {
-    const response = await apiClient.get(`/api/proposals/${proposalId}/step-1-status`)
+    const response = await apiClient.get(`/api/proposals/${proposalId}/step-2-status`)
     return response.data
   }
 
