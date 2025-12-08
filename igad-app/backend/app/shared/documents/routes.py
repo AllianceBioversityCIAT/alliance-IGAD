@@ -776,9 +776,23 @@ async def delete_reference_file(
 async def upload_supporting_file(
     proposal_id: str,
     file: UploadFile = File(...),
+    organization: str = Form(default=""),
+    project_type: str = Form(default=""),
+    region: str = Form(default=""),
     user=Depends(get_current_user)
 ):
-    """Upload supporting document"""
+    """
+    Upload supporting document (existing work) with vectorization.
+
+    Process:
+    1. Validate PDF/DOCX file (max 10MB)
+    2. Upload to S3: {proposal_code}/documents/supporting/{filename}
+    3. Extract text from document
+    4. Chunk text (1000 chars, 200 overlap)
+    5. Vectorize each chunk with metadata
+    6. Store vectors in existing-work-index
+    7. Update DynamoDB uploaded_files.supporting-docs
+    """
     try:
         # Validate file
         allowed_extensions = ('.pdf', '.docx')
@@ -830,9 +844,69 @@ async def upload_supporting_file(
             Metadata={
                 'proposal-id': proposal_id,
                 'uploaded-by': user.get('user_id'),
-                'original-size': str(file_size)
+                'original-size': str(file_size),
+                'organization': organization,
+                'project-type': project_type,
+                'region': region
             }
         )
+
+        # Extract text from document using optimized helper function
+        print(f"Extracting text from {file.filename}...")
+        extracted_text = extract_text_from_file(file_bytes, file.filename)
+
+        # If extraction failed, use a fallback description
+        if not extracted_text or len(extracted_text.strip()) < 100:
+            print(f"Warning: Text extraction failed or too short for {file.filename}")
+            extracted_text = f"Existing work document: {file.filename}"
+            if organization:
+                extracted_text += f" from {organization}"
+            if project_type:
+                extracted_text += f" ({project_type})"
+            if region:
+                extracted_text += f" in {region}"
+
+        print(f"Extracted {len(extracted_text)} characters")
+
+        # Chunk text using optimized helper function (1000 chars with 200 overlap)
+        chunks = chunk_text(extracted_text, chunk_size=1000, overlap=200)
+        print(f"Created {len(chunks)} chunks")
+
+        # Vectorize each chunk
+        from app.shared.vectors.service import VectorEmbeddingsService
+        vector_service = VectorEmbeddingsService()
+
+        print(f"🔄 Starting vectorization for {len(chunks)} chunks...")
+        print(f"   Metadata: organization={organization}, project_type={project_type}, region={region}")
+
+        vector_result = True
+        for idx, chunk in enumerate(chunks):
+            chunk_metadata = {
+                "organization": organization,
+                "project_type": project_type,
+                "region": region,
+                "document_name": file.filename,
+                "chunk_index": str(idx),
+                "total_chunks": str(len(chunks))
+            }
+
+            print(f"   Vectorizing chunk {idx+1}/{len(chunks)}...")
+            result = vector_service.insert_existing_work(
+                proposal_id=proposal_code,
+                text=chunk,
+                metadata=chunk_metadata
+            )
+
+            if not result:
+                vector_result = False
+                print(f"❌ Vector storage failed for chunk {idx} of {file.filename}")
+            else:
+                print(f"✅ Chunk {idx+1} vectorized")
+
+        print(f"✅ Vectorization complete: {len(chunks)} chunks processed")
+
+        if not vector_result:
+            print(f"Warning: Vector storage failed for {file.filename}")
 
         # Update DynamoDB
         current_files = proposal.get("uploaded_files", {}).get("supporting-docs", [])
@@ -854,7 +928,14 @@ async def upload_supporting_file(
             "message": "Supporting document uploaded successfully",
             "filename": file.filename,
             "document_key": s3_key,
-            "size": file_size
+            "size": file_size,
+            "vectorized": vector_result,
+            "chunks_created": len(chunks),
+            "metadata": {
+                "organization": organization,
+                "project_type": project_type,
+                "region": region
+            }
         }
 
     except HTTPException:
@@ -872,7 +953,14 @@ async def delete_supporting_file(
     filename: str,
     user=Depends(get_current_user)
 ):
-    """Delete a supporting document file"""
+    """
+    Delete a supporting document file and its vectors.
+
+    Process:
+    1. Delete from S3
+    2. Delete all associated vectors from existing-work-index
+    3. Update DynamoDB uploaded_files.supporting-docs
+    """
     try:
         # Get proposal
         all_proposals = await db_client.query_items(
@@ -904,6 +992,22 @@ async def delete_supporting_file(
             print(f"S3 Delete Error: {str(s3_error)}")
             raise
 
+        # Delete vectors from existing-work-index
+        from app.shared.vectors.service import VectorEmbeddingsService
+        vector_service = VectorEmbeddingsService()
+
+        try:
+            vector_success = vector_service.delete_vectors_by_document_name(
+                document_name=filename,
+                index_name="existing-work-index"
+            )
+            if vector_success:
+                print(f"✅ Deleted vectors for {filename} from existing-work-index")
+            else:
+                print(f"⚠️  No vectors found for {filename}")
+        except Exception as vector_error:
+            print(f"⚠️  Vector deletion error (non-critical): {str(vector_error)}")
+
         # Update DynamoDB
         current_files = proposal.get("uploaded_files", {}).get("supporting-docs", [])
         updated_files = [f for f in current_files if f != filename]
@@ -921,7 +1025,7 @@ async def delete_supporting_file(
 
         return {
             "success": True,
-            "message": "Supporting file deleted successfully"
+            "message": "Supporting file and vectors deleted successfully"
         }
 
     except HTTPException:

@@ -329,17 +329,10 @@ async def delete_proposal(proposal_id: str, user=Depends(get_current_user)):
         
         # Get proposal code for S3 cleanup
         proposal_code = proposal.get("proposalCode", proposal_id)
-        
-        # TODO: Implement S3 folder deletion
-        # Delete S3 folder with all documents and vectors
-        # try:
-        #     doc_service = DocumentService()
-        #     doc_service.delete_proposal_folder(proposal_code)
-        #     print(f"Deleted S3 folder for proposal: {proposal_code}")
-        # except Exception as e:
-        #     print(f"Warning: Failed to delete S3 folder for {proposal_code}: {str(e)}")
-        #     # Continue with deletion even if S3 cleanup fails
-        
+
+        # Note: S3 folder deletion for proposal documents not yet implemented
+        # GitHub Issue: Track S3 cleanup implementation separately
+
         # Delete the proposal from DynamoDB
         await db_client.delete_item(pk=pk, sk="METADATA")
         
@@ -1361,13 +1354,49 @@ async def analyze_step_2(proposal_id: str, user=Depends(get_current_user)):
                 })
 
         # ========== EXISTING WORK ANALYSIS ==========
-        # TODO: Implement existing work semantic search
-        # For now, just mark as not implemented
-        analyses_started.append({
-            "type": "existing_work",
-            "status": "not_implemented",
-            "note": "Coming soon"
-        })
+        if proposal.get("existing_work_analysis"):
+            print(f"✓ Existing Work already completed for {proposal_code}")
+            analyses_started.append({
+                "type": "existing_work",
+                "status": "completed",
+                "cached": True
+            })
+        else:
+            existing_work_status = proposal.get("analysis_status_existing_work")
+            if existing_work_status == "processing":
+                print(f"⏳ Existing Work already in progress for {proposal_code}")
+                analyses_started.append({
+                    "type": "existing_work",
+                    "status": "processing",
+                    "already_running": True
+                })
+            else:
+                print(f"🚀 Invoking Existing Work analysis for {proposal_code}")
+
+                await db_client.update_item(
+                    pk=pk,
+                    sk="METADATA",
+                    update_expression="SET analysis_status_existing_work = :status, existing_work_started_at = :started",
+                    expression_attribute_values={
+                        ":status": "processing",
+                        ":started": datetime.utcnow().isoformat()
+                    }
+                )
+
+                lambda_client.invoke(
+                    FunctionName=worker_function_name,
+                    InvocationType='Event',
+                    Payload=json.dumps({
+                        "proposal_id": proposal_code,
+                        "analysis_type": "existing_work"
+                    })
+                )
+
+                analyses_started.append({
+                    "type": "existing_work",
+                    "status": "processing",
+                    "started": True
+                })
 
         print(f"✅ Step 2 analysis triggered successfully for {proposal_code}")
 
@@ -1462,8 +1491,8 @@ async def get_step_2_status(proposal_id: str, user=Depends(get_current_user)):
     Poll for Step 2 analysis completion status
     Returns combined status of Reference Proposals and Existing Work analyses
 
-    Note: Existing Work analysis is not yet implemented and will always return 'not_started'.
-    Overall status is determined by Reference Proposals analysis only.
+    Overall status is 'completed' only when BOTH analyses are done.
+    Both analyses run in parallel after Step 1 (RFP) completes.
     """
     try:
         # Verify proposal ownership
@@ -1527,12 +1556,12 @@ async def get_step_2_status(proposal_id: str, user=Depends(get_current_user)):
             response["existing_work_analysis"]["started_at"] = proposal.get("existing_work_started_at")
 
         # Determine overall status
-        # Note: Existing Work is optional (not yet implemented), so overall status is based on Reference Proposals only
-        if ref_status == "completed":
+        # Both Reference Proposals AND Existing Work must complete for Step 2 to be done
+        if ref_status == "completed" and existing_work_status == "completed":
             response["overall_status"] = "completed"
-        elif ref_status == "failed":
+        elif ref_status == "failed" or existing_work_status == "failed":
             response["overall_status"] = "failed"
-        elif ref_status == "processing":
+        elif ref_status == "processing" or existing_work_status == "processing":
             response["overall_status"] = "processing"
         else:
             response["overall_status"] = "not_started"

@@ -84,6 +84,16 @@ def _set_processing_status(
                 ":started": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "existing_work":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="SET analysis_status_existing_work = :status, existing_work_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 def _set_completed_status(
@@ -104,7 +114,6 @@ def _set_completed_status(
     """
     if analysis_type == "rfp":
         # Log result size for debugging
-        import json
         result_json = json.dumps(result)
         result_size_kb = len(result_json.encode('utf-8')) / 1024
         print(f"📊 RFP analysis result size: {result_size_kb:.2f} KB")
@@ -197,6 +206,29 @@ def _set_completed_status(
                 ":updated": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "existing_work":
+        # Extract just the analysis content (avoid duplication)
+        analysis_data = result.get("existing_work_analysis", {})
+        documents_analyzed = result.get("documents_analyzed", 0)
+
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET existing_work_analysis = :analysis,
+                    existing_work_documents_analyzed = :docs_count,
+                    analysis_status_existing_work = :status,
+                    existing_work_completed_at = :completed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":analysis": analysis_data,
+                ":docs_count": documents_analyzed,
+                ":status": "completed",
+                ":completed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 def _set_failed_status(
@@ -274,6 +306,23 @@ def _set_failed_status(
                 SET analysis_status_reference_proposals = :status,
                     reference_proposals_error = :error,
                     reference_proposals_failed_at = :failed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":status": "failed",
+                ":error": error_msg,
+                ":failed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
+    elif analysis_type == "existing_work":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET analysis_status_existing_work = :status,
+                    existing_work_error = :error,
+                    existing_work_failed_at = :failed,
                     updated_at = :updated
             """,
             expression_attribute_values={
@@ -382,6 +431,48 @@ def _handle_reference_proposals_analysis(proposal_id: str) -> Dict[str, Any]:
 
     _set_completed_status(proposal_id, "reference_proposals", result)
     logger.info("💾 Reference proposals result saved to DynamoDB")
+
+    return result
+
+
+# ==================== EXISTING WORK ANALYSIS ====================
+
+
+def _handle_existing_work_analysis(proposal_id: str) -> Dict[str, Any]:
+    """
+    Execute existing work and experience analysis from S3 Vectors.
+
+    Analyzes uploaded existing work documents/text to extract:
+    - Project implementation patterns
+    - Technical approaches and methodologies
+    - Organizational capabilities
+    - Lessons learned and best practices
+
+    Args:
+        proposal_id: Proposal identifier
+
+    Returns:
+        Analysis result from ExistingWorkAnalyzer
+
+    Raises:
+        Exception: If analysis fails
+    """
+    logger.info(f"📋 Processing existing work analysis for: {proposal_id}")
+    _set_processing_status(proposal_id, "existing_work")
+
+    logger.info("🔍 Starting existing work analysis...")
+    from app.tools.proposal_writer.existing_work_analysis.service import ExistingWorkAnalyzer
+    analyzer = ExistingWorkAnalyzer()
+    result = analyzer.analyze_existing_work(proposal_id)
+
+    logger.info("✅ Existing work analysis completed successfully")
+    logger.info(f"📊 Documents analyzed: {result.get('documents_analyzed', 0)}")
+
+    # Extract just the analysis content (avoid duplication)
+    analysis_data = result.get("existing_work_analysis", {})
+
+    _set_completed_status(proposal_id, "existing_work", result)
+    logger.info("💾 Existing work result saved to DynamoDB")
 
     return result
 
@@ -601,6 +692,8 @@ def handler(event, context):
             _handle_rfp_analysis(proposal_id)
         elif analysis_type == "reference_proposals":
             _handle_reference_proposals_analysis(proposal_id)
+        elif analysis_type == "existing_work":
+            _handle_existing_work_analysis(proposal_id)
         elif analysis_type == "concept":
             _handle_concept_analysis(proposal_id)
         elif analysis_type == "concept_document":

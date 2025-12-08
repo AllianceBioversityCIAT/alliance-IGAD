@@ -52,18 +52,25 @@ class VectorEmbeddingsService:
             return False
     
     def insert_existing_work(self, proposal_id: str, text: str, metadata: Dict[str, str]) -> bool:
-        """Insert existing work vector with metadata encoded in key"""
+        """
+        Insert existing work vector with metadata encoded in key.
+
+        Key format: proposal_id|organization|project_type|region|document_name|chunk_index|total_chunks
+        This matches the reference proposals format for consistency.
+        """
         try:
             embedding = self.generate_embedding(text)
-            
+
             # Encode metadata in key (bypass AWS metadata bug)
+            # Format: proposal_id|organization|project_type|region|document_name|chunk_index|total_chunks
             key = "|".join([
                 proposal_id,
                 metadata.get("organization", ""),
                 metadata.get("project_type", ""),
                 metadata.get("region", ""),
                 metadata.get("document_name", ""),
-                str(int(datetime.utcnow().timestamp()))
+                metadata.get("chunk_index", "0"),
+                metadata.get("total_chunks", "1")
             ])
             
             self.s3vectors.put_vectors(
@@ -417,8 +424,11 @@ class VectorEmbeddingsService:
                     # Use first chunk metadata to find S3 path
                     proposal_id = doc_info['metadata']['proposal_id']
 
-                    # S3 path for reference proposals
-                    s3_key = f"{proposal_id}/documents/references/{doc_name}"
+                    # S3 path depends on index type
+                    if index_name == "existing-work-index":
+                        s3_key = f"{proposal_id}/documents/supporting/{doc_name}"
+                    else:  # reference-proposals-index
+                        s3_key = f"{proposal_id}/documents/references/{doc_name}"
 
                     print(f"   📄 Reconstructing: {doc_name} (similarity: {1 - doc_info['avg_distance']:.2%})")
 

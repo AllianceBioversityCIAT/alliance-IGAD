@@ -439,18 +439,41 @@ class ProposalService {
     return response.data
   }
 
-  // Supporting documents file operations
+  // Supporting documents file operations (Existing Work and Experience)
   async uploadSupportingFile(
     proposalId: string,
-    file: File
+    file: File,
+    metadata?: {
+      organization?: string
+      project_type?: string
+      region?: string
+    }
   ): Promise<{
     success: boolean
     filename: string
     document_key: string
     size: number
+    chunks_created?: number
+    chunks_vectorized?: number
+    metadata?: {
+      organization: string
+      project_type: string
+      region: string
+    }
   }> {
     const formData = new FormData()
     formData.append('file', file)
+
+    // Add metadata fields if provided
+    if (metadata?.organization) {
+      formData.append('organization', metadata.organization)
+    }
+    if (metadata?.project_type) {
+      formData.append('project_type', metadata.project_type)
+    }
+    if (metadata?.region) {
+      formData.append('region', metadata.region)
+    }
 
     const response = await apiClient.post(
       `/api/proposals/${proposalId}/documents/upload-supporting-file`,
