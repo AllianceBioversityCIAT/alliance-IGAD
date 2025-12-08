@@ -5,8 +5,7 @@ import { ProposalLayout } from '../components/ProposalLayout'
 import { DraftConfirmationModal } from '../components/DraftConfirmationModal'
 import AnalysisProgressModal from '@/tools/proposal-writer/components/AnalysisProgressModal'
 import { Step1InformationConsolidation } from './Step1InformationConsolidation'
-import { Step2ContentGeneration } from './Step2ContentGeneration'
-import Step3ConceptDocument from './Step3ConceptDocument'
+import { Step2ConceptReview } from './Step2ConceptReview'
 import { ComingSoonPlaceholder } from './ComingSoonPlaceholder'
 import { useProposals } from '@/tools/proposal-writer/hooks/useProposal'
 import { useProposalDraft } from '@/tools/proposal-writer/hooks/useProposalDraft'
@@ -1312,19 +1311,11 @@ export function ProposalWriterPage() {
         return <Step1InformationConsolidation {...stepProps} />
       case 2:
         return (
-          <Step2ContentGeneration
+          <Step2ConceptReview
             {...stepProps}
             conceptDocument={conceptDocument}
-          />
-        )
-      case 3:
-        return (
-          <Step3ConceptDocument
-            {...stepProps}
-            onNextStep={handleNextStep}
-            onConceptEvaluationChange={handleConceptEvaluationChange}
+            proposalId={proposalId}
             onRegenerateDocument={async (selectedSections, userComments) => {
-              // Use the same logic as handleGenerateConceptDocument
               setIsGeneratingDocument(true)
               await handleGenerateConceptDocument({
                 selectedSections,
@@ -1333,8 +1324,30 @@ export function ProposalWriterPage() {
             }}
           />
         )
+      case 3:
+        return (
+          <ComingSoonPlaceholder
+            stepNumber={3}
+            stepTitle="Proposal Template Selection"
+            expectedFeatures={[
+              'Choose from donor-specific templates',
+              'Customize proposal structure',
+              'Map concept sections to proposal outline',
+            ]}
+          />
+        )
       case 4:
-        return <ComingSoonPlaceholder stepNumber={4} stepTitle="Structure & Workplan" />
+        return (
+          <ComingSoonPlaceholder
+            stepNumber={4}
+            stepTitle="Full Proposal Generation"
+            expectedFeatures={[
+              'AI-powered full proposal writing',
+              'Section-by-section generation',
+              'Download complete proposal',
+            ]}
+          />
+        )
       case 5:
         return <ComingSoonPlaceholder stepNumber={5} stepTitle="Review & Refinement" />
       case 6:
