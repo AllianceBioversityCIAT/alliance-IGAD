@@ -330,13 +330,71 @@ async def delete_proposal(proposal_id: str, user=Depends(get_current_user)):
         # Get proposal code for S3 cleanup
         proposal_code = proposal.get("proposalCode", proposal_id)
 
-        # Note: S3 folder deletion for proposal documents not yet implemented
-        # GitHub Issue: Track S3 cleanup implementation separately
+        print(f"🗑️  Starting cleanup for proposal: {proposal_code}")
 
-        # Delete the proposal from DynamoDB
+        # ========== 1. DELETE S3 VECTORS ==========
+        print("🔄 Deleting vectors from S3 Vectors...")
+        try:
+            from app.shared.vectors.service import VectorEmbeddingsService
+            vector_service = VectorEmbeddingsService()
+
+            vector_deleted = vector_service.delete_proposal_vectors(proposal_code)
+            if vector_deleted:
+                print(f"✅ Deleted vectors for {proposal_code}")
+            else:
+                print(f"⚠️  No vectors found or deletion failed for {proposal_code}")
+        except Exception as vector_error:
+            print(f"⚠️  Vector deletion error (non-critical): {str(vector_error)}")
+
+        # ========== 2. DELETE S3 FILES ==========
+        print("🔄 Deleting S3 documents...")
+        try:
+            from app.utils.aws_session import get_aws_session
+            import os
+
+            session = get_aws_session()
+            s3_client = session.client('s3')
+            bucket = os.environ.get('PROPOSALS_BUCKET')
+
+            if bucket:
+                # List all objects under the proposal folder
+                prefix = f"{proposal_code}/"
+                response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+
+                if 'Contents' in response:
+                    objects_to_delete = [{'Key': obj['Key']} for obj in response['Contents']]
+
+                    if objects_to_delete:
+                        s3_client.delete_objects(
+                            Bucket=bucket,
+                            Delete={'Objects': objects_to_delete}
+                        )
+                        print(f"✅ Deleted {len(objects_to_delete)} S3 objects for {proposal_code}")
+                    else:
+                        print(f"ℹ️  No S3 objects found for {proposal_code}")
+                else:
+                    print(f"ℹ️  No S3 objects found for {proposal_code}")
+            else:
+                print("⚠️  S3 bucket not configured")
+        except Exception as s3_error:
+            print(f"⚠️  S3 deletion error (non-critical): {str(s3_error)}")
+
+        # ========== 3. DELETE DYNAMODB METADATA ==========
+        print("🔄 Deleting DynamoDB metadata...")
         await db_client.delete_item(pk=pk, sk="METADATA")
-        
-        return {"message": "Proposal deleted successfully"}
+        print(f"✅ Deleted DynamoDB metadata for {proposal_code}")
+
+        print(f"✅ Proposal {proposal_code} deleted successfully with all resources")
+
+        return {
+            "message": "Proposal deleted successfully",
+            "proposal_code": proposal_code,
+            "cleanup_summary": {
+                "vectors_deleted": "attempted",
+                "s3_files_deleted": "attempted",
+                "dynamodb_deleted": "completed"
+            }
+        }
     except HTTPException:
         raise
     except Exception as e:

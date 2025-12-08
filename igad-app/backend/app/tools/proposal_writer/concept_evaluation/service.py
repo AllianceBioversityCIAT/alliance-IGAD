@@ -58,14 +58,20 @@ class SimpleConceptAnalyzer:
         self.table_name = os.environ.get("TABLE_NAME", "igad-testing-main-table")
 
     def analyze_concept(
-        self, proposal_id: str, rfp_analysis: Dict
+        self,
+        proposal_id: str,
+        rfp_analysis: Dict,
+        reference_proposals_analysis: Optional[Dict] = None,
+        existing_work_analysis: Optional[Dict] = None
     ) -> Dict[str, Any]:
         """
-        Evaluate concept against RFP requirements.
+        Evaluate concept against RFP requirements, reference proposals, and existing work.
 
         Args:
             proposal_id: Unique proposal identifier
             rfp_analysis: RFP analysis data from step 1
+            reference_proposals_analysis: Reference proposals analysis from step 2 (optional)
+            existing_work_analysis: Existing work analysis from step 2 (optional)
 
         Returns:
             Dict with structure:
@@ -120,9 +126,11 @@ class SimpleConceptAnalyzer:
             # Step 5: Prepare prompt with context
             prepared_concept = self._prepare_concept_text(concept_text)
             unwrapped_rfp = self._unwrap_rfp_analysis(rfp_analysis)
+            unwrapped_ref_proposals = self._unwrap_analysis(reference_proposals_analysis, "reference_proposals_analysis")
+            unwrapped_existing_work = self._unwrap_analysis(existing_work_analysis, "existing_work_analysis")
 
             final_user_prompt = self._build_user_prompt(
-                prompt_parts, prepared_concept, unwrapped_rfp
+                prompt_parts, prepared_concept, unwrapped_rfp, unwrapped_ref_proposals, unwrapped_existing_work
             )
 
             # Step 6: Call Bedrock for evaluation
@@ -277,8 +285,32 @@ class SimpleConceptAnalyzer:
 
         return rfp_analysis.get("rfp_analysis", rfp_analysis)
 
+    def _unwrap_analysis(self, analysis: Optional[Dict], key: str) -> Dict:
+        """
+        Unwrap nested analysis structure (for reference proposals or existing work).
+
+        Analysis may come wrapped as:
+        {key: {...}, 'status': '...'}
+
+        Args:
+            analysis: Analysis data (possibly nested or None)
+            key: The key to unwrap (e.g., "reference_proposals_analysis")
+
+        Returns:
+            Unwrapped analysis dict, or empty dict if None
+        """
+        if not analysis or not isinstance(analysis, dict):
+            return {}
+
+        return analysis.get(key, analysis)
+
     def _build_user_prompt(
-        self, prompt_parts: Dict, concept_text: str, rfp_analysis: Dict
+        self,
+        prompt_parts: Dict,
+        concept_text: str,
+        rfp_analysis: Dict,
+        reference_proposals_analysis: Dict,
+        existing_work_analysis: Dict
     ) -> str:
         """
         Build complete user prompt with injected context.
@@ -286,12 +318,16 @@ class SimpleConceptAnalyzer:
         Injects:
         - RFP summary ({{rfp_analysis.summary}})
         - RFP extracted data ({{rfp_analysis.extracted_data}})
+        - Reference proposals analysis ({{reference_proposal_analysis}} or {{reference_proposals_analysis}})
+        - Existing work analysis ({{existing_work_analysis}})
         - Concept text ({{initial_concept}})
 
         Args:
             prompt_parts: Prompt template parts from DynamoDB
             concept_text: Prepared concept text
             rfp_analysis: RFP analysis data
+            reference_proposals_analysis: Reference proposals analysis from step 2
+            existing_work_analysis: Existing work analysis from step 2
 
         Returns:
             Complete user prompt ready for Claude
@@ -304,6 +340,10 @@ class SimpleConceptAnalyzer:
             rfp_analysis.get("extracted_data", {}), indent=2
         )
 
+        # Prepare Step 2 analyses for injection
+        reference_proposals_json = json.dumps(reference_proposals_analysis, indent=2) if reference_proposals_analysis else "{}"
+        existing_work_json = json.dumps(existing_work_analysis, indent=2) if existing_work_analysis else "{}"
+
         # Inject all placeholders
         user_prompt = user_prompt.replace(
             "{{rfp_analysis.summary}}", rfp_summary_json
@@ -311,12 +351,25 @@ class SimpleConceptAnalyzer:
         user_prompt = user_prompt.replace(
             "{{rfp_analysis.extracted_data}}", rfp_extracted_json
         )
+        # Handle both singular and plural forms for reference proposals
+        user_prompt = user_prompt.replace(
+            "{{reference_proposal_analysis}}", reference_proposals_json
+        )
+        user_prompt = user_prompt.replace(
+            "{{reference_proposals_analysis}}", reference_proposals_json
+        )
+        user_prompt = user_prompt.replace(
+            "{{existing_work_analysis}}", existing_work_json
+        )
         user_prompt = user_prompt.replace("{{initial_concept}}", concept_text)
 
         # Append output format
         final_prompt = f"{user_prompt}\n\n{prompt_parts['output_format']}".strip()
 
         print(f"📝 Final prompt: {len(final_prompt)} characters")
+        print(f"   - RFP analysis: ✅")
+        print(f"   - Reference proposals: {'✅' if reference_proposals_analysis else '⚠️  (empty)'}")
+        print(f"   - Existing work: {'✅' if existing_work_analysis else '⚠️  (empty)'}")
         return final_prompt
 
     # ==================== FILE EXTRACTION ====================

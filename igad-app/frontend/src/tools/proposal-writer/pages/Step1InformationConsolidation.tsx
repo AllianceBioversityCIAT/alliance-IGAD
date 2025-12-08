@@ -4,10 +4,16 @@
 import { useEffect, useState } from 'react'
 import { FileText, AlertTriangle, Files, Briefcase, Lightbulb } from 'lucide-react'
 import { useProposal } from '@/tools/proposal-writer/hooks/useProposal'
+import { useToast } from '@/shared/hooks/useToast'
 import { StepProps } from './stepConfig'
 import styles from './Step1InformationConsolidation.module.css'
 import { apiClient } from '@/shared/services/apiClient'
 import ManualRFPInput from '@/tools/proposal-writer/components/ManualRFPInput'
+import {
+  SUCCESS_MESSAGES,
+  ERROR_MESSAGES,
+  WARNING_MESSAGES,
+} from '@/tools/proposal-writer/constants/notificationMessages'
 
 // ============================================================================
 // CONSTANTS
@@ -102,6 +108,7 @@ export function Step1InformationConsolidation({
   // ============================================================================
 
   const { proposal, updateFormData, isUpdating, isLoading } = useProposal(proposalId)
+  const { showSuccess, showError, showWarning } = useToast()
 
   // ============================================================================
   // STATE - Data Loading
@@ -338,7 +345,11 @@ export function Step1InformationConsolidation({
     // Validate file size
     const sizeError = validateFileSize(file)
     if (sizeError) {
-      setUploadError(sizeError)
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2)
+      const maxMB = MAX_FILE_SIZE / (1024 * 1024)
+      const error = ERROR_MESSAGES.FILE_TOO_LARGE(sizeMB, maxMB)
+      setUploadError(error.message)
+      showError(error.title, error.message)
       return
     }
 
@@ -375,6 +386,9 @@ export function Step1InformationConsolidation({
           textInputs: formData.textInputs,
         })
 
+        // Show success notification
+        showSuccess(SUCCESS_MESSAGES.RFP_UPLOADED.title, SUCCESS_MESSAGES.RFP_UPLOADED.message)
+
         // Invalidate analyses when documents are updated
         // This ensures the user re-analyzes with the new document
         console.log('🔄 [Document Updated] Dispatching documents-updated event for RFP')
@@ -385,6 +399,12 @@ export function Step1InformationConsolidation({
           (error as Error)?.message ||
           'Upload failed. Please try again.'
         setUploadError(String(errorMsg))
+
+        // Show error notification with retry action
+        showError(ERROR_MESSAGES.RFP_UPLOAD_FAILED.title, String(errorMsg), {
+          label: 'Retry',
+          onClick: () => handleFileUpload(section, files),
+        })
       } finally {
         setIsUploadingRFP(false)
       }
@@ -485,13 +505,18 @@ export function Step1InformationConsolidation({
         uploadedFiles: updatedFiles,
       })
 
+      // Show success notification
+      showSuccess(SUCCESS_MESSAGES.FILE_DELETED.title, SUCCESS_MESSAGES.FILE_DELETED.message)
+
       // Clear RFP analysis cache if deleting RFP document
       if (section === 'rfp-document') {
         localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
         window.dispatchEvent(new CustomEvent('rfp-deleted'))
       }
     } catch (error: Record<string, unknown>) {
-      setUploadError('Failed to delete file from server')
+      const errorMsg = 'Failed to delete file from server'
+      setUploadError(errorMsg)
+      showError(ERROR_MESSAGES.FILE_DELETE_FAILED.title, errorMsg)
     }
   }
 
@@ -515,14 +540,21 @@ export function Step1InformationConsolidation({
     // Validate file type
     const typeError = validateConceptFileType(file)
     if (typeError) {
-      setConceptUploadError(typeError)
+      const fileExtension = `.${file.name.split('.').pop()?.toLowerCase() || ''}`
+      const error = ERROR_MESSAGES.INVALID_FILE_TYPE(fileExtension, ALLOWED_CONCEPT_TYPES)
+      setConceptUploadError(error.message)
+      showError(error.title, error.message)
       return
     }
 
     // Validate file size
     const sizeError = validateFileSize(file)
     if (sizeError) {
-      setConceptUploadError(sizeError)
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2)
+      const maxMB = MAX_FILE_SIZE / (1024 * 1024)
+      const error = ERROR_MESSAGES.FILE_TOO_LARGE(sizeMB, maxMB)
+      setConceptUploadError(error.message)
+      showError(error.title, error.message)
       return
     }
 
@@ -542,6 +574,12 @@ export function Step1InformationConsolidation({
         },
       }))
 
+      // Show success notification
+      showSuccess(
+        SUCCESS_MESSAGES.CONCEPT_FILE_UPLOADED.title,
+        SUCCESS_MESSAGES.CONCEPT_FILE_UPLOADED.message
+      )
+
       // Invalidate analyses when concept document is updated
       // This ensures the user re-analyzes with the new document
       window.dispatchEvent(new CustomEvent('documents-updated'))
@@ -550,6 +588,10 @@ export function Step1InformationConsolidation({
         (error?.response as Record<string, unknown>)?.data?.detail ||
         'Failed to upload concept file'
       setConceptUploadError(String(errorMsg))
+      showError(ERROR_MESSAGES.CONCEPT_UPLOAD_FAILED.title, String(errorMsg), {
+        label: 'Retry',
+        onClick: () => handleConceptFileUpload(files),
+      })
     } finally {
       setIsUploadingConcept(false)
     }

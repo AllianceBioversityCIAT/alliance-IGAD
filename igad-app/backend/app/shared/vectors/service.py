@@ -128,14 +128,25 @@ class VectorEmbeddingsService:
             return []
     
     def delete_proposal_vectors(self, proposal_id: str) -> bool:
-        """Delete all vectors for a proposal (using key encoding)"""
+        """
+        Delete all vectors for a proposal from both indices (using key encoding).
+
+        Args:
+            proposal_id: Proposal code to delete vectors for
+
+        Returns:
+            True if deletion successful, False otherwise
+        """
         try:
+            total_deleted = 0
+
             for index in ["reference-proposals-index", "existing-work-index"]:
+                print(f"   Checking {index}...")
                 response = self.s3vectors.list_vectors(
                     vectorBucketName=self.bucket_name,
                     indexName=index
                 )
-                
+
                 # Parse keys and filter by proposal_id
                 keys = []
                 for v in response.get('vectors', []):
@@ -143,16 +154,29 @@ class VectorEmbeddingsService:
                     parts = key.split('|')
                     if len(parts) >= 1 and parts[0] == proposal_id:
                         keys.append(key)
-                
+
                 if keys:
                     self.s3vectors.delete_vectors(
                         vectorBucketName=self.bucket_name,
                         indexName=index,
                         keys=keys
                     )
-            return True
+                    print(f"   ✅ Deleted {len(keys)} vectors from {index}")
+                    total_deleted += len(keys)
+                else:
+                    print(f"   ℹ️  No vectors found in {index}")
+
+            if total_deleted > 0:
+                print(f"✅ Total vectors deleted: {total_deleted}")
+                return True
+            else:
+                print(f"ℹ️  No vectors found for proposal {proposal_id}")
+                return True  # Not an error, just nothing to delete
+
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"❌ Error deleting vectors: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def delete_vectors_by_document_name(self, document_name: str, index_name: str) -> bool:

@@ -507,11 +507,30 @@ def _handle_concept_analysis(proposal_id: str) -> Dict[str, Any]:
     if not rfp_analysis:
         raise Exception("RFP analysis must be completed first")
 
+    # Get Step 2 analyses (optional - may not be completed yet)
+    reference_proposals_analysis = proposal.get("reference_proposals_analysis")
+    existing_work_analysis = proposal.get("existing_work_analysis")
+
+    if reference_proposals_analysis:
+        logger.info("✅ Reference proposals analysis available for context")
+    else:
+        logger.info("⚠️  Reference proposals analysis not available (will proceed without it)")
+
+    if existing_work_analysis:
+        logger.info("✅ Existing work analysis available for context")
+    else:
+        logger.info("⚠️  Existing work analysis not available (will proceed without it)")
+
     _set_processing_status(proposal_id, "concept")
 
     logger.info("🔍 Starting concept analysis...")
     analyzer = SimpleConceptAnalyzer()
-    result = analyzer.analyze_concept(proposal_id, rfp_analysis)
+    result = analyzer.analyze_concept(
+        proposal_id,
+        rfp_analysis,
+        reference_proposals_analysis,
+        existing_work_analysis
+    )
 
     logger.info("✅ Concept analysis completed successfully")
     logger.info(f"📊 Result keys: {list(result.keys())}")

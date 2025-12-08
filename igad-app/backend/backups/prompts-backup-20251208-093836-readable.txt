@@ -1,0 +1,12 @@
+=== PROMPT#proposal_writer_step-1_rfp / proposal_writer#step-1#step-1#RFP / Call for Proposals ===
+Name: N/A
+Description: N/A
+Version: N/A
+Active: N/A
+
+=== PROMPT#step1_rfp_analysis / step1#rfp_upload#analysis#rfp_analysis ===
+Name: N/A
+Description: N/A
+Version: N/A
+Active: N/A
+

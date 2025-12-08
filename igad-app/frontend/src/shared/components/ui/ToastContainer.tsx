@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
-import { Toast, ToastProps } from './Toast'
+import { Toast, ToastProps, ToastAction } from './Toast'
 import styles from './ToastContainer.module.css'
 
 interface ToastContextType {
   showToast: (toast: Omit<ToastProps, 'id' | 'onClose'>) => void
-  showSuccess: (title: string, message?: string) => void
-  showError: (title: string, message?: string) => void
-  showInfo: (title: string, message?: string) => void
+  showSuccess: (title: string, message?: string, duration?: number) => void
+  showError: (title: string, message?: string, action?: ToastAction) => void
+  showInfo: (title: string, message?: string, duration?: number) => void
+  showWarning: (title: string, message?: string, duration?: number) => void
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
@@ -40,22 +41,29 @@ export function ToastProvider({ children }: ToastProviderProps) {
     setToasts(prev => [...prev, newToast])
   }
 
-  const showSuccess = (title: string, message?: string) => {
-    showToast({ type: 'success', title, message })
+  const showSuccess = (title: string, message?: string, duration = 4000) => {
+    showToast({ type: 'success', title, message, duration })
   }
 
-  const showError = (title: string, message?: string) => {
-    showToast({ type: 'error', title, message })
+  const showError = (title: string, message?: string, action?: ToastAction) => {
+    // Errors stay until dismissed (duration: 0)
+    showToast({ type: 'error', title, message, duration: 0, action })
   }
 
-  const showInfo = (title: string, message?: string) => {
-    showToast({ type: 'info', title, message })
+  const showInfo = (title: string, message?: string, duration = 5000) => {
+    showToast({ type: 'info', title, message, duration })
+  }
+
+  const showWarning = (title: string, message?: string, duration = 7000) => {
+    showToast({ type: 'warning', title, message, duration })
   }
 
   return (
-    <ToastContext.Provider value={{ showToast, showSuccess, showError, showInfo }}>
+    <ToastContext.Provider
+      value={{ showToast, showSuccess, showError, showInfo, showWarning }}
+    >
       {children}
-      <div className={styles.container}>
+      <div className={styles.container} aria-live="polite" aria-atomic="false">
         {toasts.map(toast => (
           <Toast key={toast.id} {...toast} />
         ))}

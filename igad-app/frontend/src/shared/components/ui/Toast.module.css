@@ -53,6 +53,11 @@
   border: 1px solid #bfdbfe;
 }
 
+.warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
 .content {
   display: flex;
   align-items: flex-start;
@@ -75,6 +80,10 @@
 
 .info .icon {
   color: #2563eb;
+}
+
+.warning .icon {
+  color: #d97706;
 }
 
 .text {
@@ -100,6 +109,10 @@
   color: #1e40af;
 }
 
+.warning .title {
+  color: #92400e;
+}
+
 .message {
   font-size: 0.875rem;
   line-height: 1.4;
@@ -115,6 +128,54 @@
 
 .info .message {
   color: #1d4ed8;
+}
+
+.warning .message {
+  color: #b45309;
+}
+
+.actionButton {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.success .actionButton {
+  color: #15803d;
+}
+
+.success .actionButton:hover {
+  background: rgba(21, 128, 61, 0.15);
+}
+
+.error .actionButton {
+  color: #b91c1c;
+}
+
+.error .actionButton:hover {
+  background: rgba(185, 28, 28, 0.15);
+}
+
+.info .actionButton {
+  color: #1d4ed8;
+}
+
+.info .actionButton:hover {
+  background: rgba(29, 78, 216, 0.15);
+}
+
+.warning .actionButton {
+  color: #b45309;
+}
+
+.warning .actionButton:hover {
+  background: rgba(180, 83, 9, 0.15);
 }
 
 .closeButton {
@@ -137,6 +198,10 @@
 
 .info .closeButton {
   color: #2563eb;
+}
+
+.warning .closeButton {
+  color: #d97706;
 }
 
 .closeButton:hover {
