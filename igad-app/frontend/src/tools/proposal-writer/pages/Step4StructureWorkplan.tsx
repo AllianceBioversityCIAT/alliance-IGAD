@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Layers, Check, ChevronDown, ChevronUp, FileText, Info } from 'lucide-react'
+import { Layers, Check, ChevronDown, ChevronUp, FileText, Info, Lightbulb, Edit3, BookOpen } from 'lucide-react'
 import styles from './step4-structure.module.css'
 import step2Styles from './step2.module.css'
 import step2ConceptStyles from './step2-concept-review.module.css'
@@ -434,39 +434,51 @@ export function Step4StructureWorkplan({
                       <div className={step2Styles.sectionItemContent}>
                         {section.purpose && (
                           <div className={step2Styles.detailsSection}>
-                            <h4 className={step2Styles.subsectionTitle}>Purpose</h4>
-                            <p className={step2Styles.subsectionText}>{section.purpose}</p>
+                            <Info className={step2Styles.subsectionIcon} size={16} />
+                            <div>
+                              <h4 className={step2Styles.subsectionTitle}>Purpose</h4>
+                              <p className={step2Styles.subsectionText}>{section.purpose}</p>
+                            </div>
                           </div>
                         )}
 
                         {section.content_guidance && (
                           <div className={step2Styles.detailsSection}>
-                            <h4 className={step2Styles.subsectionTitle}>Content Guidance</h4>
-                            <p className={step2Styles.subsectionText}>{section.content_guidance}</p>
+                            <BookOpen className={step2Styles.subsectionIcon} size={16} />
+                            <div>
+                              <h4 className={step2Styles.subsectionTitle}>Content Guidance</h4>
+                              <p className={step2Styles.subsectionText}>{section.content_guidance}</p>
+                            </div>
                           </div>
                         )}
 
                         {section.guiding_questions && section.guiding_questions.length > 0 && (
                           <div className={step2Styles.suggestionsSection}>
-                            <h4 className={step2Styles.subsectionTitle}>Guiding Questions</h4>
-                            <ul className={step2Styles.suggestionsList}>
-                              {section.guiding_questions.map((question, idx) => (
-                                <li key={idx}>{question}</li>
-                              ))}
-                            </ul>
+                            <Lightbulb className={step2Styles.subsectionIcon} size={16} />
+                            <div>
+                              <h4 className={step2Styles.subsectionTitle}>Guiding Questions</h4>
+                              <ul className={step2Styles.suggestionsList}>
+                                {section.guiding_questions.map((question, idx) => (
+                                  <li key={idx}>{question}</li>
+                                ))}
+                              </ul>
+                            </div>
                           </div>
                         )}
 
                         <div className={step2Styles.commentsSection}>
-                          <h4 className={step2Styles.subsectionTitle}>
-                            Your comments for this section
-                          </h4>
-                          <textarea
-                            className={step2Styles.commentTextarea}
-                            placeholder="Add specific guidance, data points, or context for this section..."
-                            value={userComments[section.section_title] || ''}
-                            onChange={e => handleCommentChange(section.section_title, e.target.value)}
-                          />
+                          <Edit3 className={step2Styles.subsectionIcon} size={16} />
+                          <div>
+                            <h4 className={step2Styles.subsectionTitle}>
+                              Your comments for this section
+                            </h4>
+                            <textarea
+                              className={step2Styles.commentTextarea}
+                              placeholder="Add specific guidance, data points, or context for this section..."
+                              value={userComments[section.section_title] || ''}
+                              onChange={e => handleCommentChange(section.section_title, e.target.value)}
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
