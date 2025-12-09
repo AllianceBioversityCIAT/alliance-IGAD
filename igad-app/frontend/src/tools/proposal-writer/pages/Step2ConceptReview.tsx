@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 // External Libraries - Icons
-import { Target, CheckCircle, Check, ChevronDown, ChevronUp, Info, X, Sparkles, Award, FileText, Download } from 'lucide-react'
+import { Target, CheckCircle, Check, ChevronDown, ChevronUp, Info, X, Sparkles, Award, FileText, Download, Lightbulb, Edit3 } from 'lucide-react'
 
 // Document generation
 import { Document, Packer, Paragraph, HeadingLevel } from 'docx'
@@ -422,29 +422,38 @@ function SectionItem({
         <div className={styles.sectionItemContent}>
           {/* Details and guidance */}
           <div className={styles.detailsSection}>
-            <h4 className={styles.subsectionTitle}>Details and Guidance</h4>
-            <p className={styles.subsectionText}>{section.issue}</p>
+            <Info className={styles.subsectionIcon} size={16} />
+            <div>
+              <h4 className={styles.subsectionTitle}>Details and Guidance</h4>
+              <p className={styles.subsectionText}>{section.issue}</p>
+            </div>
           </div>
 
           {/* Suggestions */}
           <div className={styles.suggestionsSection}>
-            <h4 className={styles.subsectionTitle}>Suggestions</h4>
-            <ul className={styles.suggestionsList}>
-              {suggestions.map((suggestion, idx) => (
-                <li key={idx}>{suggestion}</li>
-              ))}
-            </ul>
+            <Lightbulb className={styles.subsectionIcon} size={16} />
+            <div>
+              <h4 className={styles.subsectionTitle}>Suggestions</h4>
+              <ul className={styles.suggestionsList}>
+                {suggestions.map((suggestion, idx) => (
+                  <li key={idx}>{suggestion}</li>
+                ))}
+              </ul>
+            </div>
           </div>
 
-          {/* User Comments - NEW SECTION */}
+          {/* User Comments - UPDATED LABEL */}
           <div className={styles.commentsSection}>
-            <h4 className={styles.subsectionTitle}>Your Comments</h4>
-            <textarea
-              className={styles.commentTextarea}
-              placeholder="Add your thoughts, additional context, or specific requirements for this section..."
-              value={userComment || ''}
-              onChange={(e) => onCommentChange(e.target.value)}
-            />
+            <Edit3 className={styles.subsectionIcon} size={16} />
+            <div>
+              <h4 className={styles.subsectionTitle}>Provide additional details and context</h4>
+              <textarea
+                className={styles.commentTextarea}
+                placeholder="Add specific guidance, data points, or requirements for this section..."
+                value={userComment || ''}
+                onChange={(e) => onCommentChange(e.target.value)}
+              />
+            </div>
           </div>
         </div>
       )}
