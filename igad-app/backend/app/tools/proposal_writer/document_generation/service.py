@@ -71,6 +71,8 @@ class ConceptDocumentGenerator:
         rfp_analysis: Dict[str, Any],
         concept_evaluation: Dict[str, Any],
         proposal_outline: Optional[Dict[str, Any]] = None,
+        reference_proposals_analysis: Optional[Dict[str, Any]] = None,
+        existing_work_analysis: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Generate concept document using AI.
@@ -80,6 +82,8 @@ class ConceptDocumentGenerator:
             rfp_analysis: RFP analysis from step 1
             concept_evaluation: User selections from step 2
             proposal_outline: Optional proposal outline (loads from DB if not provided)
+            reference_proposals_analysis: Optional reference proposals analysis
+            existing_work_analysis: Optional existing work analysis
 
         Returns:
             Dict with 'generated_concept_document' and 'sections'
@@ -121,7 +125,8 @@ class ConceptDocumentGenerator:
             # Step 4: Prepare context
             logger.info("🔄 Preparing context...")
             context = self._prepare_context(
-                rfp_analysis, concept_evaluation, proposal_outline, initial_concept
+                rfp_analysis, concept_evaluation, proposal_outline, initial_concept,
+                reference_proposals_analysis, existing_work_analysis
             )
 
             # Step 5: Build final prompt
@@ -418,6 +423,8 @@ class ConceptDocumentGenerator:
         concept_evaluation: Dict[str, Any],
         proposal_outline: Optional[Dict[str, Any]] = None,
         initial_concept: Optional[str] = None,
+        reference_proposals_analysis: Optional[Dict[str, Any]] = None,
+        existing_work_analysis: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Prepare context for prompt injection.
@@ -433,9 +440,12 @@ class ConceptDocumentGenerator:
             concept_evaluation: Concept evaluation with selections
             proposal_outline: Optional proposal outline for enrichment
             initial_concept: Optional initial concept document text
+            reference_proposals_analysis: Optional reference proposals analysis
+            existing_work_analysis: Optional existing work analysis
 
         Returns:
-            Dict with 'rfp_analysis', 'concept_evaluation', and 'initial_concept'
+            Dict with 'rfp_analysis', 'concept_evaluation', 'initial_concept',
+            'reference_proposals_analysis', and 'existing_work_analysis'
         """
         # Filter to selected sections
         filtered_evaluation = self._filter_selected_sections(
@@ -458,11 +468,28 @@ class ConceptDocumentGenerator:
             prepared_concept = self._prepare_initial_concept(initial_concept)
             logger.info(f"📋 Initial concept prepared: {len(prepared_concept)} chars")
 
-        return {
+        # Build context dict
+        context = {
             "rfp_analysis": json.dumps(rfp_analysis, indent=2),
             "concept_evaluation": json.dumps(enriched_evaluation, indent=2),
             "initial_concept": prepared_concept,
         }
+
+        # Add reference proposals analysis if provided
+        if reference_proposals_analysis:
+            # Unwrap nested structure if present
+            analysis = reference_proposals_analysis.get("reference_proposals_analysis", reference_proposals_analysis)
+            context["reference_proposals_analysis"] = json.dumps(analysis, indent=2)
+            logger.info("✅ Reference proposals analysis added to context")
+
+        # Add existing work analysis if provided
+        if existing_work_analysis:
+            # Unwrap nested structure if present
+            analysis = existing_work_analysis.get("existing_work_analysis", existing_work_analysis)
+            context["existing_work_analysis"] = json.dumps(analysis, indent=2)
+            logger.info("✅ Existing work analysis added to context")
+
+        return context
 
     def _filter_selected_sections(
         self, concept_evaluation: Dict[str, Any]
@@ -574,7 +601,7 @@ class ConceptDocumentGenerator:
                     content_guidance = outline_data.get("content_guidance", "")
 
                     # Summarize long guidance
-                    if len(content_guidance) > 1000:
+                    if len(content_guidance) > 5000:
                         content_guidance = self._summarize_guidance(
                             content_guidance
                         )
