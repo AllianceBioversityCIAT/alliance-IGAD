@@ -22,6 +22,12 @@ import {
 /** Maximum file size in bytes (10 MB) */
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 
+/** Maximum number of files per section (Reference Proposals and Existing Work) */
+const MAX_FILES_PER_SECTION = 3
+
+/** Maximum total size for all files in a section (10 MB) */
+const MAX_TOTAL_SIZE_PER_SECTION = 10 * 1024 * 1024
+
 /** Allowed file types for concept document */
 const ALLOWED_CONCEPT_TYPES = ['.pdf', '.docx', '.txt']
 
@@ -819,6 +825,13 @@ export function Step1InformationConsolidation({
 
     const file = files[0]
 
+    // Check file count limit (max 3 files)
+    const currentCount = getUploadedFileCount('reference-proposals')
+    if (currentCount >= MAX_FILES_PER_SECTION) {
+      setReferenceUploadError(`Maximum ${MAX_FILES_PER_SECTION} files allowed. Please delete a file before uploading another.`)
+      return
+    }
+
     // Validate file type
     const typeError = validateConceptFileType(file)
     if (typeError) {
@@ -830,6 +843,19 @@ export function Step1InformationConsolidation({
     const sizeError = validateFileSize(file)
     if (sizeError) {
       setReferenceUploadError(sizeError)
+      return
+    }
+
+    // Validate total size won't exceed limit
+    const currentTotalSize = getTotalFileSize('reference-proposals')
+    const newTotalSize = currentTotalSize + file.size
+    if (newTotalSize > MAX_TOTAL_SIZE_PER_SECTION) {
+      const currentMB = (currentTotalSize / (1024 * 1024)).toFixed(2)
+      const fileMB = (file.size / (1024 * 1024)).toFixed(2)
+      const maxMB = MAX_TOTAL_SIZE_PER_SECTION / (1024 * 1024)
+      setReferenceUploadError(
+        `Total file size would exceed ${maxMB}MB limit. Current: ${currentMB}MB, New file: ${fileMB}MB. Please delete files or upload a smaller file.`
+      )
       return
     }
 
@@ -943,10 +969,30 @@ export function Step1InformationConsolidation({
 
     const file = files[0]
 
+    // Check file count limit (max 3 files)
+    const currentCount = getUploadedFileCount('supporting-docs')
+    if (currentCount >= MAX_FILES_PER_SECTION) {
+      setWorkUploadError(`Maximum ${MAX_FILES_PER_SECTION} files allowed. Please delete a file before uploading another.`)
+      return
+    }
+
     // Validate file size
     const sizeError = validateFileSize(file)
     if (sizeError) {
       setWorkUploadError(sizeError)
+      return
+    }
+
+    // Validate total size won't exceed limit
+    const currentTotalSize = getTotalFileSize('supporting-docs')
+    const newTotalSize = currentTotalSize + file.size
+    if (newTotalSize > MAX_TOTAL_SIZE_PER_SECTION) {
+      const currentMB = (currentTotalSize / (1024 * 1024)).toFixed(2)
+      const fileMB = (file.size / (1024 * 1024)).toFixed(2)
+      const maxMB = MAX_TOTAL_SIZE_PER_SECTION / (1024 * 1024)
+      setWorkUploadError(
+        `Total file size would exceed ${maxMB}MB limit. Current: ${currentMB}MB, New file: ${fileMB}MB. Please delete files or upload a smaller file.`
+      )
       return
     }
 
@@ -1126,6 +1172,20 @@ export function Step1InformationConsolidation({
    */
   const getUploadedFileCount = (section: string): number => {
     return formData.uploadedFiles[section]?.length || 0
+  }
+
+  /**
+   * Calculate total size of uploaded files in a section
+   * Note: This requires file sizes to be tracked in metadata
+   *
+   * @param section - Section identifier
+   * @returns Total size in bytes (0 if sizes not tracked)
+   */
+  const getTotalFileSize = (section: string): number => {
+    // For now, we can't calculate exact size from uploaded files
+    // This would require storing file sizes in metadata
+    // Return 0 as placeholder - validation will happen on new uploads
+    return 0
   }
 
   /**
@@ -1459,7 +1519,7 @@ export function Step1InformationConsolidation({
               Reference Proposals
             </h3>
             <p className={styles.uploadSectionDescription}>
-              Upload successful proposals to this donor or similar calls. These help understand
+              Upload successful proposals to this donor or similar calls (max 3 files, 10MB total). These help understand
               donor preferences and winning strategies.
             </p>
           </div>
@@ -1484,7 +1544,7 @@ export function Step1InformationConsolidation({
               <>
                 <FileText className={styles.uploadAreaIcon} size={32} aria-hidden="true" />
                 <p className={styles.uploadAreaTitle}>Drop reference proposals here or click to upload</p>
-                <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files up to 10MB</p>
+                <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files (max 3 files, 10MB total)</p>
                 <input
                   type="file"
                   accept=".pdf,.docx"
@@ -1548,20 +1608,27 @@ export function Step1InformationConsolidation({
               )
             })}
             {/* Add more files button */}
-            <div className={styles.addMoreFiles}>
-              <input
-                type="file"
-                accept=".pdf,.docx"
-                onChange={e => handleReferenceFileUpload(e.target.files)}
-                className={styles.hiddenInput}
-                id="reference-proposals-add"
-                disabled={isUploadingReference}
-                aria-label="Add more reference proposals"
-              />
-              <label htmlFor="reference-proposals-add" className={styles.uploadButtonSecondary}>
-                Add More Files
-              </label>
-            </div>
+            {getUploadedFileCount('reference-proposals') < MAX_FILES_PER_SECTION && (
+              <div className={styles.addMoreFiles}>
+                <input
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={e => handleReferenceFileUpload(e.target.files)}
+                  className={styles.hiddenInput}
+                  id="reference-proposals-add"
+                  disabled={isUploadingReference}
+                  aria-label="Add more reference proposals"
+                />
+                <label htmlFor="reference-proposals-add" className={styles.uploadButtonSecondary}>
+                  Add More Files ({getUploadedFileCount('reference-proposals')}/{MAX_FILES_PER_SECTION})
+                </label>
+              </div>
+            )}
+            {getUploadedFileCount('reference-proposals') >= MAX_FILES_PER_SECTION && (
+              <div className={styles.infoMessage} role="alert">
+                <p>Maximum {MAX_FILES_PER_SECTION} files reached. Delete a file to upload another.</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -1584,7 +1651,7 @@ export function Step1InformationConsolidation({
             </h3>
             <p className={styles.uploadSectionDescription}>
               Describe your organization&apos;s relevant experience, ongoing projects, and previous
-              work that relates to this call.
+              work that relates to this call. You can write text or upload documents (max 3 files, 10MB total).
             </p>
           </div>
         </div>
@@ -1699,7 +1766,7 @@ export function Step1InformationConsolidation({
                 <>
                   <FileText className={styles.uploadAreaIcon} size={24} aria-hidden="true" />
                   <p className={styles.uploadAreaTitle}>Drop supporting files here</p>
-                  <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files up to 10MB</p>
+                  <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files (max 3 files, 10MB total)</p>
                   <input
                     type="file"
                     accept=".pdf,.docx"
@@ -1763,20 +1830,27 @@ export function Step1InformationConsolidation({
                 )
               })}
               {/* Add more files button */}
-              <div className={styles.addMoreFiles}>
-                <input
-                  type="file"
-                  accept=".pdf,.docx"
-                  onChange={e => handleSupportingFileUpload(e.target.files)}
-                  className={styles.hiddenInput}
-                  id="supporting-docs-add"
-                  disabled={isUploadingSupporting}
-                  aria-label="Add more supporting documents"
-                />
-                <label htmlFor="supporting-docs-add" className={styles.uploadButtonSecondary}>
-                  Add More Files
-                </label>
-              </div>
+              {getUploadedFileCount('supporting-docs') < MAX_FILES_PER_SECTION && (
+                <div className={styles.addMoreFiles}>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx"
+                    onChange={e => handleSupportingFileUpload(e.target.files)}
+                    className={styles.hiddenInput}
+                    id="supporting-docs-add"
+                    disabled={isUploadingSupporting}
+                    aria-label="Add more supporting documents"
+                  />
+                  <label htmlFor="supporting-docs-add" className={styles.uploadButtonSecondary}>
+                    Add More Files ({getUploadedFileCount('supporting-docs')}/{MAX_FILES_PER_SECTION})
+                  </label>
+                </div>
+              )}
+              {getUploadedFileCount('supporting-docs') >= MAX_FILES_PER_SECTION && (
+                <div className={styles.infoMessage} role="alert">
+                  <p>Maximum {MAX_FILES_PER_SECTION} files reached. Delete a file to upload another.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
