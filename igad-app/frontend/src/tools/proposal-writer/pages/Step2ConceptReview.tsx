@@ -5,14 +5,25 @@
 import { useState, useEffect, useCallback } from 'react'
 
 // External Libraries - Icons
-import { Target, CheckCircle, Check, ChevronDown, ChevronUp, Info, X, Sparkles, Award, FileText, Download, Lightbulb, Edit3 } from 'lucide-react'
+import { Target, CheckCircle, Check, ChevronDown, ChevronUp, Info, X, Sparkles, Award, FileText, Download, Lightbulb, Edit3, RefreshCw } from 'lucide-react'
 
 // Document generation
-import { Document, Packer, Paragraph, HeadingLevel } from 'docx'
+import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType } from 'docx'
 
 // Local Imports
 import { StepProps } from './stepConfig'
 import styles from './step2-concept-review.module.css'
+
+// Reupload Modals
+import {
+  ReuploadConfirmationModal,
+  ConceptReuploadModal,
+  ReuploadProgressModal,
+  ReuploadProgress
+} from '../components/ReuploadModals'
+
+// Services
+import { proposalService } from '../services/proposalService'
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -39,6 +50,12 @@ interface Step2Props extends StepProps {
     selectedSections: string[]
     userComments?: { [key: string]: string }
   }) => void
+  /** Callback when concept is re-uploaded and re-analyzed */
+  onConceptReanalyzed?: (newConceptAnalysis: ConceptAnalysis) => void
+  /** Callback to clear the generated concept document */
+  onClearConceptDocument?: () => void
+  /** Current concept file name (for display in confirmation modal) */
+  currentConceptFileName?: string
 }
 
 /**
@@ -594,6 +611,7 @@ interface UpdatedConceptDocumentCardProps {
   userComments: { [key: string]: string }
   isDownloading: boolean
   onDownload: () => void
+  onReuploadClick: () => void
 }
 
 function UpdatedConceptDocumentCard({
@@ -604,6 +622,7 @@ function UpdatedConceptDocumentCard({
   userComments,
   isDownloading,
   onDownload,
+  onReuploadClick,
 }: UpdatedConceptDocumentCardProps) {
   const [isRegenerating, setIsRegenerating] = useState(false)
 
@@ -622,11 +641,6 @@ function UpdatedConceptDocumentCard({
     } finally {
       setIsRegenerating(false)
     }
-  }
-
-  const handleReupload = () => {
-    // TODO: Implement re-upload functionality
-    alert('Re-upload functionality coming soon!')
   }
 
   // Extract and parse document content
@@ -766,9 +780,9 @@ function UpdatedConceptDocumentCard({
 
         <button
           className={styles.reuploadButton}
-          onClick={handleReupload}
+          onClick={onReuploadClick}
         >
-          <FileText size={16} />
+          <RefreshCw size={16} />
           Re-upload
         </button>
 
@@ -820,6 +834,9 @@ export function Step2ConceptReview({
   conceptDocument,
   proposalId,
   onRegenerateDocument,
+  onConceptReanalyzed,
+  onClearConceptDocument,
+  currentConceptFileName,
 }: Step2Props) {
   // ========================================
   // HOOKS & STATE
@@ -844,6 +861,17 @@ export function Step2ConceptReview({
 
   // Document download state
   const [isDownloading, setIsDownloading] = useState(false)
+
+  // ========================================
+  // REUPLOAD STATE
+  // ========================================
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [showProgressModal, setShowProgressModal] = useState(false)
+  const [reuploadProgress, setReuploadProgress] = useState<ReuploadProgress>({
+    stage: 'idle',
+    message: 'Preparing...'
+  })
 
   // ========================================
   // EVENT HANDLERS
@@ -871,6 +899,157 @@ export function Step2ConceptReview({
   }
 
   // ========================================
+  // REUPLOAD HANDLERS
+  // ========================================
+
+  /**
+   * Opens the confirmation modal when user clicks Re-upload
+   */
+  const handleReuploadClick = useCallback(() => {
+    setShowConfirmationModal(true)
+  }, [])
+
+  /**
+   * Handles confirmation - closes confirmation modal and opens upload modal
+   */
+  const handleReuploadConfirm = useCallback(() => {
+    setShowConfirmationModal(false)
+    setShowUploadModal(true)
+  }, [])
+
+  /**
+   * Handles file selection and starts the re-upload process
+   */
+  const handleFileSelect = useCallback(async (file: File) => {
+    if (!proposalId) {
+      alert('No proposal ID found. Please try again.')
+      return
+    }
+
+    // Close upload modal and show progress modal
+    setShowUploadModal(false)
+    setShowProgressModal(true)
+
+    try {
+      // Stage 1: Uploading
+      setReuploadProgress({
+        stage: 'uploading',
+        message: 'Uploading your new concept document to storage...'
+      })
+
+      // Delete old concept file if exists
+      if (currentConceptFileName) {
+        try {
+          await proposalService.deleteConceptFile(proposalId, currentConceptFileName)
+        } catch (error) {
+          console.warn('Could not delete old concept file:', error)
+          // Continue anyway - the old file may not exist
+        }
+      }
+
+      // Upload new file
+      await proposalService.uploadConceptFile(proposalId, file)
+
+      // Stage 2: Replacing
+      setReuploadProgress({
+        stage: 'replacing',
+        message: 'Replacing concept document in the system...'
+      })
+
+      // Clear the generated concept document if it exists
+      if (onClearConceptDocument) {
+        onClearConceptDocument()
+      }
+
+      // Stage 3: Analyzing
+      setReuploadProgress({
+        stage: 'analyzing',
+        message: 'Running AI concept analysis... This may take a minute.'
+      })
+
+      // Start concept analysis
+      await proposalService.analyzeConcept(proposalId)
+
+      // Poll for analysis completion
+      let analysisComplete = false
+      let pollCount = 0
+      const maxPolls = 60 // 5 minutes max (5s intervals)
+
+      while (!analysisComplete && pollCount < maxPolls) {
+        await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
+        pollCount++
+
+        const status = await proposalService.getConceptStatus(proposalId)
+
+        if (status.status === 'completed' && status.concept_analysis) {
+          analysisComplete = true
+
+          // Stage 4: Finalizing
+          setReuploadProgress({
+            stage: 'finalizing',
+            message: 'Updating evaluation data...'
+          })
+
+          // Notify parent component of new analysis
+          if (onConceptReanalyzed) {
+            onConceptReanalyzed(status.concept_analysis)
+          }
+
+          // Reset selected sections to default (Critical priority)
+          const newAnalysis = status.concept_analysis
+          if (newAnalysis.sections_needing_elaboration) {
+            const criticalSections = newAnalysis.sections_needing_elaboration
+              .filter((s: any) => s.priority === 'Critical')
+              .map((s: any) => s.section)
+            setSelectedSections(criticalSections)
+          }
+
+          // Clear user comments
+          setUserComments({})
+
+        } else if (status.status === 'failed' || status.error) {
+          throw new Error(status.error || 'Concept analysis failed')
+        }
+      }
+
+      if (!analysisComplete) {
+        throw new Error('Analysis timed out. Please try again.')
+      }
+
+      // Complete
+      setReuploadProgress({
+        stage: 'completed',
+        message: 'Your concept document has been replaced and analyzed successfully!'
+      })
+
+    } catch (error) {
+      console.error('Re-upload error:', error)
+      setReuploadProgress({
+        stage: 'error',
+        message: 'An error occurred during the re-upload process.',
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      })
+    }
+  }, [proposalId, currentConceptFileName, onClearConceptDocument, onConceptReanalyzed, setSelectedSections])
+
+  /**
+   * Handles retry after error
+   */
+  const handleRetry = useCallback(() => {
+    setShowProgressModal(false)
+    setReuploadProgress({ stage: 'idle', message: 'Preparing...' })
+    setShowUploadModal(true)
+  }, [])
+
+  /**
+   * Handles closing the progress modal
+   */
+  const handleProgressModalClose = useCallback(() => {
+    setShowProgressModal(false)
+    setReuploadProgress({ stage: 'idle', message: 'Preparing...' })
+  }, [])
+
+  // ========================================
   // DOCUMENT UTILITIES
   // ========================================
 
@@ -886,12 +1065,12 @@ export function Step2ConceptReview({
     
     if (doc.proposal_outline && Array.isArray(doc.proposal_outline)) {
       return doc.proposal_outline
-        .map(section => {
+        .map((section: { section_title?: string; purpose?: string; recommended_word_count?: string; guiding_questions?: string[] }) => {
           const title = section.section_title || ''
           const purpose = section.purpose || ''
           const wordCount = section.recommended_word_count || ''
           const questions = Array.isArray(section.guiding_questions)
-            ? section.guiding_questions.map(q => `- ${q}`).join('\n')
+            ? section.guiding_questions.map((q: string) => `- ${q}`).join('\n')
             : ''
           return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
         })
@@ -1005,6 +1184,44 @@ export function Step2ConceptReview({
   /**
    * Converts markdown to DOCX Paragraph objects
    */
+  const parseInlineFormatting = useCallback((text: string): TextRun[] => {
+    const runs: TextRun[] = []
+    const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`|[^*`]+)/g
+    const matches = text.match(regex)
+
+    if (!matches) {
+      return [new TextRun({ text })]
+    }
+
+    matches.forEach(match => {
+      if (match.startsWith('**') && match.endsWith('**')) {
+        // Bold text
+        runs.push(new TextRun({
+          text: match.slice(2, -2),
+          bold: true,
+        }))
+      } else if (match.startsWith('*') && match.endsWith('*')) {
+        // Italic text
+        runs.push(new TextRun({
+          text: match.slice(1, -1),
+          italics: true,
+        }))
+      } else if (match.startsWith('`') && match.endsWith('`')) {
+        // Code text
+        runs.push(new TextRun({
+          text: match.slice(1, -1),
+          font: 'Courier New',
+          color: '166534',
+        }))
+      } else {
+        // Normal text
+        runs.push(new TextRun({ text: match }))
+      }
+    })
+
+    return runs
+  }, [])
+
   const markdownToParagraphs = useCallback((markdown: string): Paragraph[] => {
     const lines = markdown.split('\n')
     const paragraphs: Paragraph[] = []
@@ -1013,49 +1230,63 @@ export function Step2ConceptReview({
       if (line.startsWith('### ')) {
         paragraphs.push(
           new Paragraph({
-            text: line.substring(4),
+            children: parseInlineFormatting(line.substring(4)),
             heading: HeadingLevel.HEADING_3,
-            spacing: { before: 200, after: 100 },
+            spacing: { before: 240, after: 120 },
           })
         )
       } else if (line.startsWith('## ')) {
         paragraphs.push(
           new Paragraph({
-            text: line.substring(3),
+            children: parseInlineFormatting(line.substring(3)),
             heading: HeadingLevel.HEADING_2,
-            spacing: { before: 300, after: 100 },
+            spacing: { before: 360, after: 160 },
           })
         )
       } else if (line.startsWith('# ')) {
         paragraphs.push(
           new Paragraph({
-            text: line.substring(2),
+            children: parseInlineFormatting(line.substring(2)),
             heading: HeadingLevel.HEADING_1,
-            spacing: { before: 400, after: 200 },
+            spacing: { before: 480, after: 240 },
           })
         )
       } else if (line.match(/^[*-]\s+/)) {
+        const bulletText = line.replace(/^[*-]\s+/, '')
         paragraphs.push(
           new Paragraph({
-            text: line.replace(/^[*-]\s+/, ''),
+            children: parseInlineFormatting(bulletText),
             bullet: { level: 0 },
-            spacing: { after: 50 },
+            spacing: { after: 60, line: 276 },
+          })
+        )
+      } else if (line.match(/^\s{2,}[*-]\s+/)) {
+        // Nested bullet (sub-item)
+        const bulletText = line.replace(/^\s{2,}[*-]\s+/, '')
+        paragraphs.push(
+          new Paragraph({
+            children: parseInlineFormatting(bulletText),
+            bullet: { level: 1 },
+            spacing: { after: 60, line: 276 },
           })
         )
       } else if (line.trim() === '') {
-        paragraphs.push(new Paragraph({ text: '' }))
+        paragraphs.push(new Paragraph({
+          text: '',
+          spacing: { after: 120 }
+        }))
       } else if (line.trim()) {
         paragraphs.push(
           new Paragraph({
-            text: line.trim(),
-            spacing: { after: 100 },
+            children: parseInlineFormatting(line.trim()),
+            spacing: { after: 140, line: 276 },
           })
         )
       }
     })
 
     return paragraphs.length > 0 ? paragraphs : [new Paragraph({ text: 'No content available' })]
-  }, [])
+  }, [parseInlineFormatting])
 
   /**
    * Handles document download as DOCX file
@@ -1071,9 +1302,137 @@ export function Step2ConceptReview({
 
       try {
         const content = extractDocumentContent(conceptDocument)
-        const sections = markdownToParagraphs(content)
+        const currentDate = new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+
+        // Build document with header and formatted content
+        const documentParagraphs: Paragraph[] = []
+
+        // Add title
+        documentParagraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Updated Concept Document',
+                bold: true,
+                size: 32,
+                color: '166534',
+              })
+            ],
+            spacing: { after: 200 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
+
+        // Add metadata section
+        documentParagraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Generated: ${currentDate}`,
+                size: 20,
+                color: '6B7280',
+              })
+            ],
+            spacing: { after: 100 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
+
+        if (proposalId) {
+          documentParagraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Proposal ID: ${proposalId}`,
+                  size: 20,
+                  color: '6B7280',
+                })
+              ],
+              spacing: { after: 400 },
+              alignment: AlignmentType.CENTER,
+            })
+          )
+        } else {
+          documentParagraphs.push(
+            new Paragraph({
+              text: '',
+              spacing: { after: 200 }
+            })
+          )
+        }
+
+        // Add horizontal line separator
+        documentParagraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: '═══════════════════════════════════════════════════',
+                color: 'CCCCCC',
+              })
+            ],
+            spacing: { after: 400 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
+
+        // Add content sections
+        const contentSections = markdownToParagraphs(content)
+        documentParagraphs.push(...contentSections)
+
+        // Add footer separator
+        documentParagraphs.push(
+          new Paragraph({
+            text: '',
+            spacing: { before: 400, after: 200 }
+          })
+        )
+
+        documentParagraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: '═══════════════════════════════════════════════════',
+                color: 'CCCCCC',
+              })
+            ],
+            spacing: { after: 200 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
+
+        // Add footer
+        documentParagraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Generated by IGAD Proposal Writer',
+                size: 18,
+                color: '9CA3AF',
+                italics: true,
+              })
+            ],
+            alignment: AlignmentType.CENTER,
+          })
+        )
+
         const doc = new Document({
-          sections: [{ children: sections }],
+          sections: [{
+            children: documentParagraphs,
+            properties: {
+              page: {
+                margin: {
+                  top: 1440,  // 1 inch
+                  right: 1440,
+                  bottom: 1440,
+                  left: 1440,
+                }
+              }
+            }
+          }],
         })
 
         const blob = await Packer.toBlob(doc)
@@ -1090,7 +1449,7 @@ export function Step2ConceptReview({
         setIsDownloading(false)
       }
     },
-    [conceptDocument, extractDocumentContent, markdownToParagraphs]
+    [conceptDocument, extractDocumentContent, markdownToParagraphs, proposalId]
   )
 
   // ========================================
@@ -1160,6 +1519,7 @@ export function Step2ConceptReview({
             userComments={userComments}
             isDownloading={isDownloading}
             onDownload={handleDownloadDocument}
+            onReuploadClick={handleReuploadClick}
           />
         )}
 
@@ -1168,9 +1528,9 @@ export function Step2ConceptReview({
           <div className={styles.generateButtonContainer}>
             <button
               className={styles.generateConceptButton}
-              onClick={async () => {
+              onClick={() => {
                 if (onRegenerateDocument) {
-                  await onRegenerateDocument(selectedSections, userComments)
+                  onRegenerateDocument(selectedSections, userComments)
                 }
               }}
             >
@@ -1180,6 +1540,33 @@ export function Step2ConceptReview({
           </div>
         )}
       </div>
+
+      {/* ========================================
+          REUPLOAD MODALS
+          ======================================== */}
+
+      {/* Confirmation Modal */}
+      <ReuploadConfirmationModal
+        isOpen={showConfirmationModal}
+        onClose={() => setShowConfirmationModal(false)}
+        onConfirm={handleReuploadConfirm}
+        currentFileName={currentConceptFileName}
+      />
+
+      {/* Upload Modal */}
+      <ConceptReuploadModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onFileSelect={handleFileSelect}
+      />
+
+      {/* Progress Modal */}
+      <ReuploadProgressModal
+        isOpen={showProgressModal}
+        progress={reuploadProgress}
+        onClose={handleProgressModalClose}
+        onRetry={handleRetry}
+      />
     </div>
   )
 }

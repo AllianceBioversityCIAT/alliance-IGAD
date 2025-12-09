@@ -124,6 +124,43 @@
   margin-bottom: 0;
 }
 
+/* Narrative Subheadings (for ### headers) */
+.narrativeSubheading {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 16px 0 8px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.narrativeSubheading:first-child {
+  margin-top: 0;
+}
+
+/* Narrative Bullet Points */
+.narrativeBullet {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #374151;
+  margin: 0;
+  padding-left: 8px;
+  text-align: left;
+}
+
+/* Bold and Italic styling */
+.narrativeParagraph strong,
+.narrativeBullet strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.narrativeParagraph em,
+.narrativeBullet em {
+  font-style: italic;
+  color: #4B5563;
+}
+
 /* Preview State (Collapsed) */
 .narrativePreview {
   background: #F9FAFB;

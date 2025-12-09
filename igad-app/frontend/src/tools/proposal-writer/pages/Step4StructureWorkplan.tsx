@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Sparkles, Check, ChevronDown, ChevronUp, FileText, Info, Lightbulb, Edit3, BookOpen, Download } from 'lucide-react'
+import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType } from 'docx'
 import styles from './step4-structure.module.css'
 import step2Styles from './step2.module.css'
 import step2ConceptStyles from './step2-concept-review.module.css'
@@ -21,6 +22,7 @@ interface Step4Props extends StepProps {
     hcd_notes?: { note: string }[]
   }
   onGenerateTemplate?: (selectedSections: string[], userComments: { [key: string]: string }) => void
+  onTemplateGenerated?: () => void
 }
 
 interface ProposalSection {
@@ -47,15 +49,116 @@ interface NarrativeOverviewProps {
 }
 
 function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  // Start collapsed by default
+  const [isExpanded, setIsExpanded] = useState(false)
 
   if (!narrativeText || narrativeText.trim().length === 0) {
     return null
   }
 
-  // Split narrative into paragraphs for better readability
-  const paragraphs = narrativeText.split('\n').filter(p => p.trim().length > 0)
-  const isLongText = narrativeText.length > 500
+  // Parse markdown content into formatted elements
+  const parseMarkdownContent = (text: string): JSX.Element[] => {
+    const lines = text.split('\n')
+    const elements: JSX.Element[] = []
+    let currentParagraph: string[] = []
+    let inCodeBlock = false
+
+    const formatInlineMarkdown = (str: string): string => {
+      let formatted = str
+      formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
+      // Remove inline code backticks
+      formatted = formatted.replace(/`([^`]+)`/g, '$1')
+      return formatted
+    }
+
+    const flushParagraph = () => {
+      if (currentParagraph.length > 0) {
+        const text = currentParagraph.join(' ')
+        if (text.trim()) {
+          elements.push(
+            <p
+              key={`p-${elements.length}`}
+              className={styles.narrativeParagraph}
+              dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
+            />
+          )
+        }
+        currentParagraph = []
+      }
+    }
+
+    lines.forEach((line, index) => {
+      // Handle code block markers (``` or ```json, ```markdown, etc.)
+      if (line.trim().startsWith('```')) {
+        flushParagraph()
+        inCodeBlock = !inCodeBlock
+        return // Skip the ``` line itself
+      }
+
+      // Skip content inside code blocks
+      if (inCodeBlock) {
+        return
+      }
+
+      // Skip markdown headers like "## Narrative Overview"
+      if (line.startsWith('## ') || line.startsWith('# ')) {
+        flushParagraph()
+        // Don't render headers as they're redundant with the card title
+        return
+      } else if (line.startsWith('### ')) {
+        flushParagraph()
+        elements.push(
+          <h4 key={`h4-${index}`} className={styles.narrativeSubheading}>
+            {line.substring(4)}
+          </h4>
+        )
+      } else if (line.match(/^[*-]\s+/)) {
+        flushParagraph()
+        elements.push(
+          <p
+            key={`li-${index}`}
+            className={styles.narrativeBullet}
+            dangerouslySetInnerHTML={{ __html: '• ' + formatInlineMarkdown(line.replace(/^[*-]\s+/, '')) }}
+          />
+        )
+      } else if (line.trim() === '') {
+        flushParagraph()
+      } else {
+        currentParagraph.push(line.trim())
+      }
+    })
+
+    flushParagraph()
+    return elements
+  }
+
+  // Get first paragraph for preview (skip headers and code blocks)
+  const getPreviewText = (text: string): string => {
+    const lines = text.split('\n')
+    let inCodeBlock = false
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+
+      // Track code blocks
+      if (trimmed.startsWith('```')) {
+        inCodeBlock = !inCodeBlock
+        continue
+      }
+
+      // Skip content inside code blocks
+      if (inCodeBlock) {
+        continue
+      }
+
+      // Skip headers, bullets, and empty lines
+      if (trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('*') && !trimmed.startsWith('-') && !trimmed.startsWith('`')) {
+        return trimmed.length > 200 ? trimmed.substring(0, 200) + '...' : trimmed
+      }
+    }
+    return text.substring(0, 200) + '...'
+  }
 
   return (
     <div className={step2ConceptStyles.card}>
@@ -69,32 +172,27 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
             </p>
           </div>
         </div>
-        {isLongText && (
-          <button
-            className={step2ConceptStyles.expandButton}
-            onClick={() => setIsExpanded(!isExpanded)}
-            style={{ marginLeft: 'auto' }}
-          >
-            {isExpanded ? 'Collapse' : 'Expand'}
-            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-        )}
+        <button
+          type="button"
+          className={step2ConceptStyles.expandButton}
+          onClick={() => setIsExpanded(!isExpanded)}
+          style={{ marginLeft: 'auto' }}
+        >
+          {isExpanded ? 'Collapse' : 'Expand'}
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
       </div>
 
-      {(isExpanded || !isLongText) && (
+      {isExpanded && (
         <div className={styles.narrativeContent}>
-          {paragraphs.map((paragraph, index) => (
-            <p key={index} className={styles.narrativeParagraph}>
-              {paragraph}
-            </p>
-          ))}
+          {parseMarkdownContent(narrativeText)}
         </div>
       )}
 
-      {!isExpanded && isLongText && (
+      {!isExpanded && (
         <div className={styles.narrativePreview}>
           <p className={styles.narrativeParagraph}>
-            {narrativeText.substring(0, 300)}...
+            {getPreviewText(narrativeText)}
           </p>
         </div>
       )}
@@ -253,6 +351,7 @@ export function Step4StructureWorkplan({
   proposalId,
   structureWorkplanAnalysis,
   onGenerateTemplate,
+  onTemplateGenerated,
 }: Step4Props) {
   // Combine mandatory and outline sections
   const allSections = [
@@ -260,13 +359,21 @@ export function Step4StructureWorkplan({
     ...(structureWorkplanAnalysis?.proposal_outline || [])
   ]
 
-  const [selectedSections, setSelectedSections] = useState<string[]>(() => {
-    // Select all mandatory sections by default
-    return structureWorkplanAnalysis?.proposal_mandatory?.map(s => s.section_title) || []
-  })
+  const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [expandedSections, setExpandedSections] = useState<string[]>([])
   const [userComments, setUserComments] = useState<{ [key: string]: string }>({})
   const [isGenerating, setIsGenerating] = useState(false)
+  const [hasInitialized, setHasInitialized] = useState(false)
+
+  // Initialize selected sections when data becomes available
+  useEffect(() => {
+    if (structureWorkplanAnalysis?.proposal_mandatory && !hasInitialized) {
+      const mandatorySectionTitles = structureWorkplanAnalysis.proposal_mandatory.map(s => s.section_title)
+      setSelectedSections(mandatorySectionTitles)
+      setHasInitialized(true)
+      console.log('📋 Initialized selectedSections with mandatory sections:', mandatorySectionTitles)
+    }
+  }, [structureWorkplanAnalysis, hasInitialized])
 
   const toggleSection = (sectionName: string) => {
     setSelectedSections(prev =>
@@ -281,33 +388,417 @@ export function Step4StructureWorkplan({
   }
 
   const handleCommentChange = (sectionName: string, comment: string) => {
-    setUserComments(prev => ({ ...prev, [sectionName]: comment }))
+    console.log('📝 Comment changed for section:', sectionName, '| Comment:', comment.substring(0, 50) + '...')
+    setUserComments(prev => {
+      const updated = { ...prev, [sectionName]: comment }
+      console.log('📝 Updated userComments:', Object.keys(updated).map(k => `${k}: ${updated[k].substring(0, 20)}...`))
+      return updated
+    })
   }
 
-  const handleGenerateTemplate = async () => {
-    if (!proposalId) {
-      alert('Proposal ID not found')
+  const handleGenerateTemplate = async (e?: React.MouseEvent) => {
+    // Prevent default behavior and stop propagation
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    if (!proposalId || !structureWorkplanAnalysis) {
+      alert('Proposal data not found')
+      return
+    }
+
+    // Validate that at least one section is selected
+    if (selectedSections.length === 0) {
+      alert('Please select at least one section to include in the template.')
       return
     }
 
     setIsGenerating(true)
     try {
-      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-      
-      // Generate and download template
-      const blob = await proposalService.generateProposalTemplate(proposalId)
-      
-      // Create download link
-      const url = window.URL.createObjectURL(blob)
+      // Get all sections (mandatory + outline)
+      const mandatorySections = structureWorkplanAnalysis.proposal_mandatory || []
+      const outlineSections = structureWorkplanAnalysis.proposal_outline || []
+      const allAvailableSections = [...mandatorySections, ...outlineSections]
+
+      // ONLY include sections that are selected (checked)
+      const sectionsToInclude = allAvailableSections.filter(s =>
+        selectedSections.includes(s.section_title)
+      )
+
+      console.log('📋 Generating template with:', {
+        proposalId,
+        totalAvailable: allAvailableSections.length,
+        selectedSections: selectedSections,
+        sectionsToInclude: sectionsToInclude.map(s => s.section_title),
+        userComments: userComments
+      })
+
+      // Create Word document sections (using docx library on frontend)
+      const documentSections: Paragraph[] = []
+
+      // Get formatted date
+      const currentDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+
+      // Add title (centered, large, green)
+      documentSections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'Proposal Template',
+              bold: true,
+              size: 36,
+              color: '166534',
+            })
+          ],
+          spacing: { after: 200 },
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Add metadata (centered, gray)
+      documentSections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Generated: ${currentDate}`,
+              size: 20,
+              color: '6B7280',
+            })
+          ],
+          spacing: { after: 100 },
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      documentSections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Proposal ID: ${proposalId}`,
+              size: 20,
+              color: '6B7280',
+            })
+          ],
+          spacing: { after: 400 },
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Add horizontal line separator
+      documentSections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '═══════════════════════════════════════════════════',
+              color: 'CCCCCC',
+            })
+          ],
+          spacing: { after: 400 },
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Add each section
+      for (const section of sectionsToInclude) {
+        const sectionTitle = section.section_title || 'Untitled Section'
+        const isMandatory = mandatorySections.some(s => s.section_title === sectionTitle)
+
+        // Section title (styled)
+        documentSections.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: sectionTitle,
+                bold: true,
+                size: 28,
+                color: '1F2937',
+              })
+            ],
+            spacing: { before: 400, after: 200 },
+          })
+        )
+
+        // Mandatory badge
+        if (isMandatory) {
+          documentSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: '⚠️ MANDATORY SECTION',
+                  bold: true,
+                  color: '9F0712',
+                  size: 20,
+                }),
+              ],
+              spacing: { after: 120 },
+            })
+          )
+        }
+
+        // Word count
+        if (section.recommended_word_count) {
+          documentSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: '📝 Recommended length: ',
+                  bold: true,
+                  size: 20,
+                  color: '4B5563',
+                }),
+                new TextRun({
+                  text: section.recommended_word_count,
+                  size: 20,
+                  color: '6B7280',
+                }),
+              ],
+              spacing: { after: 200 },
+            })
+          )
+        }
+
+        // Purpose
+        if (section.purpose) {
+          documentSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: 'Purpose',
+                  bold: true,
+                  size: 22,
+                  color: '374151',
+                })
+              ],
+              spacing: { before: 240, after: 100 },
+            })
+          )
+          documentSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: section.purpose,
+                  size: 20,
+                })
+              ],
+              spacing: { after: 200, line: 276 },
+            })
+          )
+        }
+
+        // User comment (if provided)
+        const userComment = userComments[sectionTitle]
+        if (userComment) {
+          documentSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: '✏️ Your Notes & Context',
+                  bold: true,
+                  size: 22,
+                  color: '166534',
+                })
+              ],
+              spacing: { before: 240, after: 100 },
+            })
+          )
+          documentSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: userComment,
+                  italics: true,
+                  size: 20,
+                  color: '166534',
+                }),
+              ],
+              spacing: { after: 200, line: 276 },
+            })
+          )
+        }
+
+        // Content guidance
+        if (section.content_guidance) {
+          documentSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: 'What to Include',
+                  bold: true,
+                  size: 22,
+                  color: '374151',
+                })
+              ],
+              spacing: { before: 240, after: 100 },
+            })
+          )
+          documentSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: section.content_guidance,
+                  size: 20,
+                })
+              ],
+              spacing: { after: 200, line: 276 },
+            })
+          )
+        }
+
+        // Guiding questions
+        if (section.guiding_questions && section.guiding_questions.length > 0) {
+          documentSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: '💡 Guiding Questions',
+                  bold: true,
+                  size: 22,
+                  color: '374151',
+                })
+              ],
+              spacing: { before: 240, after: 100 },
+            })
+          )
+          section.guiding_questions.forEach(question => {
+            if (question) {
+              documentSections.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: question,
+                      size: 20,
+                    })
+                  ],
+                  bullet: { level: 0 },
+                  spacing: { after: 60, line: 276 },
+                })
+              )
+            }
+          })
+        }
+
+        // Writing space
+        documentSections.push(
+          new Paragraph({
+            text: '',
+            spacing: { before: 300, after: 100 },
+          })
+        )
+        documentSections.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: '📄 Your Content',
+                bold: true,
+                size: 22,
+                color: '2563EB',
+              })
+            ],
+            spacing: { after: 100 },
+          })
+        )
+        documentSections.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: '[Write your content here]',
+                size: 20,
+                color: '9CA3AF',
+                italics: true,
+              })
+            ],
+            spacing: { after: 400, line: 276 },
+          })
+        )
+
+        // Section separator
+        documentSections.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: '─────────────────────────────────────────────────────',
+                color: 'E5E7EB',
+              })
+            ],
+            spacing: { before: 200, after: 400 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
+      }
+
+      // Add footer separator
+      documentSections.push(
+        new Paragraph({
+          text: '',
+          spacing: { before: 400, after: 200 }
+        })
+      )
+
+      documentSections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '═══════════════════════════════════════════════════',
+              color: 'CCCCCC',
+            })
+          ],
+          spacing: { after: 200 },
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Add footer
+      documentSections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'Generated by IGAD Proposal Writer',
+              size: 18,
+              color: '9CA3AF',
+              italics: true,
+            })
+          ],
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Create the document with page margins
+      const doc = new Document({
+        sections: [{
+          children: documentSections,
+          properties: {
+            page: {
+              margin: {
+                top: 1440,    // 1 inch
+                right: 1440,
+                bottom: 1440,
+                left: 1440,
+              }
+            }
+          }
+        }],
+      })
+
+      // Generate blob and download
+      const blob = await Packer.toBlob(doc)
+      const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `proposal_template_${proposalId}.docx`
-      document.body.appendChild(a)
+      a.download = `proposal_template_${proposalId}_${new Date().toISOString().slice(0, 10)}.docx`
       a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-      
+      URL.revokeObjectURL(url)
+
       console.log('✅ Template downloaded successfully')
+
+      // Notify parent that template was generated
+      if (onTemplateGenerated) {
+        onTemplateGenerated()
+      }
     } catch (error: any) {
       console.error('❌ Error generating template:', error)
       alert(`Failed to generate template: ${error.message || 'Unknown error'}`)
@@ -422,6 +913,7 @@ export function Step4StructureWorkplan({
                         </div>
                       </div>
                       <button
+                        type="button"
                         className={step2Styles.expandButton}
                         onClick={() => toggleExpansion(section.section_title)}
                       >
@@ -502,12 +994,14 @@ export function Step4StructureWorkplan({
             </div>
           </div>
           <button
+            type="button"
             className={styles.generateButton}
-            onClick={handleGenerateTemplate}
-            disabled={isGenerating}
+            onClick={(e) => handleGenerateTemplate(e)}
+            disabled={isGenerating || selectedSections.length === 0}
+            title={selectedSections.length === 0 ? 'Select at least one section to generate template' : ''}
           >
             <Download size={16} />
-            {isGenerating ? 'Generating...' : 'Generate Template'}
+            {isGenerating ? 'Generating...' : selectedSections.length === 0 ? 'Select sections first' : `Generate Template (${selectedSections.length} sections)`}
           </button>
         </div>
       </div>

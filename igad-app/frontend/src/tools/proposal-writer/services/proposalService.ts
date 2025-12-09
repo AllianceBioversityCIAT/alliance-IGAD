@@ -427,12 +427,18 @@ class ProposalService {
    * - Step 3 (Structure Workplan) must be completed
    *
    * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @param selectedSections - Optional array of section titles to include
+   * @param userComments - Optional object mapping section titles to user comments
    * @returns Blob containing the Word document
    * @throws Error if structure workplan not completed or generation fails
    *
    * @example
    * ```typescript
-   * const blob = await proposalService.generateProposalTemplate('abc-123')
+   * const blob = await proposalService.generateProposalTemplate(
+   *   'abc-123',
+   *   ['Introduction', 'Methodology'],
+   *   { 'Introduction': 'Focus on innovation aspect' }
+   * )
    * const url = window.URL.createObjectURL(blob)
    * const a = document.createElement('a')
    * a.href = url
@@ -440,11 +446,18 @@ class ProposalService {
    * a.click()
    * ```
    */
-  async generateProposalTemplate(proposalId: string): Promise<Blob> {
+  async generateProposalTemplate(
+    proposalId: string,
+    selectedSections?: string[],
+    userComments?: Record<string, string>
+  ): Promise<Blob> {
     try {
       const response = await apiClient.post(
         `/api/proposals/${proposalId}/generate-proposal-template`,
-        {},
+        {
+          selected_sections: selectedSections || null,
+          user_comments: userComments || null,
+        },
         { responseType: 'blob' }
       )
       return response.data

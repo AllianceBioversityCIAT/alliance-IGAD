@@ -1,11 +1,10 @@
-import { Upload, Edit, Layers, Eye, Download } from 'lucide-react'
+import { Upload, Edit, Layers, FileCheck } from 'lucide-react'
 
 export const stepConfig = [
-  { id: 1, title: 'Information Consolidation', icon: Upload },
-  { id: 2, title: 'Concept Review & Generation', icon: Edit },
-  { id: 3, title: 'Structure & Workplan', icon: Layers },
-  { id: 4, title: 'Review & Refinement', icon: Eye },
-  { id: 5, title: 'Final Export', icon: Download },
+  { id: 1, title: 'Information Consolidation', icon: Upload, stage: 'Scoping', stageColor: '#6d97d5' },
+  { id: 2, title: 'Concept Review', icon: Edit, stage: 'Review', stageColor: '#d59e6d' },
+  { id: 3, title: 'Structure & Workplan', icon: Layers, stage: 'Planning', stageColor: '#8c6dd5' },
+  { id: 4, title: 'Proposal Review', icon: FileCheck, stage: 'Refining', stageColor: '#48cd65' },
 ]
 
 export interface StepProps {

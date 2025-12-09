@@ -450,9 +450,15 @@
   gap: 12px;
 }
 
+.commentsSection > div {
+  flex: 1;
+  min-width: 0;
+}
+
 .commentTextarea {
   width: 100%;
-  min-height: 124px;
+  min-height: 80px;
+  max-height: 200px;
   padding: 12px;
   font-size: 14px;
   line-height: 20px;

@@ -66,6 +66,11 @@ class ConceptEvaluationUpdate(BaseModel):
     user_comments: Optional[Dict[str, str]] = None
 
 
+class TemplateGenerationRequest(BaseModel):
+    selected_sections: Optional[List[str]] = None  # List of section titles to include
+    user_comments: Optional[Dict[str, str]] = None  # Dict of {section_title: comment}
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
@@ -1835,16 +1840,25 @@ async def get_structure_workplan_status(proposal_id: str, user=Depends(get_curre
 
 
 @router.post("/{proposal_id}/generate-proposal-template")
-async def generate_proposal_template(proposal_id: str, user=Depends(get_current_user)):
+async def generate_proposal_template(
+    proposal_id: str,
+    request: TemplateGenerationRequest,
+    user=Depends(get_current_user)
+):
     """
     Generate Word template from structure and workplan analysis.
 
     Prerequisites: Step 3 (Structure and Workplan) must be completed
 
+    Request body:
+    - selected_sections: Optional list of section titles to include (None = all sections)
+    - user_comments: Optional dict of user comments per section {section_title: comment}
+
     Returns Word document with:
     - Proposal title and metadata
     - Narrative overview
-    - All sections with purpose, guidance, and questions
+    - Selected sections with purpose, guidance, and questions
+    - User comments (if provided) displayed in blue italic text
     - Space for writing content
     """
     try:
@@ -1886,11 +1900,19 @@ async def generate_proposal_template(proposal_id: str, user=Depends(get_current_
             )
 
         print(f"✓ Generating template for {proposal_code}")
+        if request.selected_sections:
+            print(f"  Selected sections: {len(request.selected_sections)}")
+        if request.user_comments:
+            print(f"  User comments: {len(request.user_comments)}")
 
         # Generate template
         from fastapi.responses import StreamingResponse
         service = TemplateGenerationService()
-        buffer = service.generate_template(proposal_code)
+        buffer = service.generate_template(
+            proposal_id=proposal_code,
+            selected_sections=request.selected_sections,
+            user_comments=request.user_comments
+        )
 
         return StreamingResponse(
             buffer,

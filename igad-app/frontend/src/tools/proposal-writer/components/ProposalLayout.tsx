@@ -35,6 +35,11 @@ export function ProposalLayout({
       if (link && link instanceof HTMLAnchorElement) {
         const href = link.getAttribute('href')
 
+        // Ignore blob URLs (file downloads) and data URLs
+        if (href && (href.startsWith('blob:') || href.startsWith('data:'))) {
+          return
+        }
+
         // Check if navigating away from proposal writer
         if (href && !href.startsWith('/proposal-writer') && onNavigateAway) {
           e.preventDefault()

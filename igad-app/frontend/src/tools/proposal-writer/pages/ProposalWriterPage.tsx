@@ -7,7 +7,7 @@ import AnalysisProgressModal from '@/tools/proposal-writer/components/AnalysisPr
 import { Step1InformationConsolidation } from './Step1InformationConsolidation'
 import { Step2ConceptReview } from './Step2ConceptReview'
 import { Step4StructureWorkplan } from './Step4StructureWorkplan'
-import { ComingSoonPlaceholder } from './ComingSoonPlaceholder'
+import { Step4ProposalReview } from './Step4ProposalReview'
 import { useProposals } from '@/tools/proposal-writer/hooks/useProposal'
 import { useProposalDraft } from '@/tools/proposal-writer/hooks/useProposalDraft'
 import { authService } from '@/shared/services/authService'
@@ -571,7 +571,7 @@ export function ProposalWriterPage() {
     if (stepId) {
       if (stepId.startsWith('step-')) {
         const step = parseInt(stepId.replace('step-', ''))
-        if (step >= 1 && step <= 5) {
+        if (step >= 1 && step <= 4) {
           if (currentStep !== step) {
             setCurrentStep(step)
             // Scroll to top when changing steps
@@ -684,7 +684,7 @@ export function ProposalWriterPage() {
   const proceedToNextStep = useCallback(() => {
     console.log('⏭️ proceedToNextStep called - allowNavigation:', allowNavigation.current)
 
-    if (currentStep < 5) {
+    if (currentStep < 4) {
       const nextStep = currentStep + 1
       setCurrentStep(nextStep)
       navigate(`/proposal-writer/step-${nextStep}`)
@@ -1445,6 +1445,12 @@ export function ProposalWriterPage() {
       case 1:
         return <Step1InformationConsolidation {...stepProps} />
       case 2:
+        // Get current concept file name from formData
+        const conceptFiles = formData.uploadedFiles['concept-document'] || []
+        const currentConceptFileName = conceptFiles.length > 0
+          ? (typeof conceptFiles[0] === 'string' ? conceptFiles[0] : conceptFiles[0]?.name)
+          : undefined
+
         return (
           <Step2ConceptReview
             {...stepProps}
@@ -1457,6 +1463,26 @@ export function ProposalWriterPage() {
                 userComments,
               })
             }}
+            onConceptReanalyzed={(newConceptAnalysis) => {
+              console.log('🔄 Concept reanalyzed, updating state')
+              setConceptAnalysis(newConceptAnalysis)
+              // Save to localStorage
+              if (proposalId) {
+                localStorage.setItem(
+                  `proposal_concept_analysis_${proposalId}`,
+                  JSON.stringify(newConceptAnalysis)
+                )
+              }
+            }}
+            onClearConceptDocument={() => {
+              console.log('🗑️ Clearing concept document')
+              setConceptDocument(null)
+              // Clear from localStorage
+              if (proposalId) {
+                localStorage.removeItem(`proposal_concept_document_${proposalId}`)
+              }
+            }}
+            currentConceptFileName={currentConceptFileName}
           />
         )
       case 3:
@@ -1465,30 +1491,17 @@ export function ProposalWriterPage() {
             {...stepProps}
             proposalId={proposalId}
             structureWorkplanAnalysis={structureWorkplanAnalysis}
+            onTemplateGenerated={() => {
+              console.log('✅ Template generated, enabling Next button')
+              setProposalTemplate({ generated: true, timestamp: new Date().toISOString() })
+            }}
           />
         )
       case 4:
         return (
-          <ComingSoonPlaceholder
-            stepNumber={4}
-            stepTitle="Review & Refinement"
-            expectedFeatures={[
-              'Review complete proposal',
-              'AI-powered quality check',
-              'Refinement suggestions',
-            ]}
-          />
-        )
-      case 5:
-        return (
-          <ComingSoonPlaceholder
-            stepNumber={5}
-            stepTitle="Final Export"
-            expectedFeatures={[
-              'Export to multiple formats',
-              'Download complete proposal package',
-              'Generate submission checklist',
-            ]}
+          <Step4ProposalReview
+            {...stepProps}
+            proposalId={proposalId}
           />
         )
       default:
@@ -1515,19 +1528,22 @@ export function ProposalWriterPage() {
 
         console.log('🔘 Next button clicked - Step:', currentStep)
 
-        // Step 2 handles its own generation via internal button
-        // All other steps just proceed
-        if (currentStep === 3 || currentStep === 4) {
+        // Step 3 proceeds to next step
+        // Step 4 is the final step - handled by Finish process button
+        if (currentStep === 3) {
           console.log(`📥 Step ${currentStep}: Proceeding to next step`)
           proceedToNextStep()
+        } else if (currentStep === 4) {
+          // Final step - finish process
+          console.log('🏁 Finishing process')
+          // TODO: Handle finish process logic
+          alert('Proposal process completed! (Feature coming soon)')
         } else {
           handleNextStep()
         }
       }}
       disabled={
-        currentStep === 5 ||
-        currentStep === 3 ||
-        currentStep === 4 ||
+        (currentStep === 3 && !proposalTemplate) ||
         isAnalyzingRFP ||
         isGeneratingDocument ||
         (currentStep === 1 &&
@@ -1570,15 +1586,15 @@ export function ProposalWriterPage() {
             ? `${analysisProgress.message} (${analysisProgress.step}/${analysisProgress.total})`
             : 'Analyzing...'}
         </>
-      ) : currentStep === 5 ? (
-        'Complete'
       ) : currentStep === 4 ? (
         'Finish process'
-      ) : currentStep === 3 ? (
+      ) : currentStep === 3 && proposalTemplate ? (
         <>
-          Next
+          Continue to Proposal Review
           <ChevronRight size={16} />
         </>
+      ) : currentStep === 3 ? (
+        'Generate Template First'
       ) : currentStep === 2 ? (
         <>
           Continue to Structure & Workplan

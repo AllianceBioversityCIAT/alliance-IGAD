@@ -1,0 +1,596 @@
+/* ============================================================================
+   REUPLOAD MODALS STYLES
+   Modal components for concept document re-upload functionality
+   ============================================================================ */
+
+/* ============================================
+   MODAL OVERLAY & BASE
+   ============================================ */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  max-width: 480px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.closeButton {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #6B7280;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.closeButton:hover {
+  background: #F3F4F6;
+  color: #111827;
+}
+
+/* ============================================
+   MODAL HEADER
+   ============================================ */
+
+.modalHeader {
+  padding: 32px 32px 0 32px;
+  text-align: center;
+}
+
+.warningIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: #FEF3C7;
+  border-radius: 50%;
+  color: #D97706;
+  margin-bottom: 16px;
+}
+
+.uploadIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: #EFF6FF;
+  border-radius: 50%;
+  color: #2563EB;
+  margin-bottom: 16px;
+}
+
+.successIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  background: #DCFCE7;
+  border-radius: 50%;
+  color: #16A34A;
+  margin-bottom: 16px;
+}
+
+.errorIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  background: #FEE2E2;
+  border-radius: 50%;
+  color: #DC2626;
+  margin-bottom: 16px;
+}
+
+.processingIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  background: #EFF6FF;
+  border-radius: 50%;
+  color: #2563EB;
+  margin-bottom: 16px;
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.modalSubtitle {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ============================================
+   MODAL BODY
+   ============================================ */
+
+.modalBody {
+  padding: 24px 32px;
+}
+
+.warningText {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+}
+
+.warningText strong {
+  color: #111827;
+}
+
+.warningBox {
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.warningBox h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400E;
+  margin: 0 0 12px 0;
+}
+
+.warningBox ul {
+  margin: 0;
+  padding: 0 0 0 20px;
+  list-style-type: disc;
+}
+
+.warningBox li {
+  font-size: 13px;
+  color: #92400E;
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.warningBox li:last-child {
+  margin-bottom: 0;
+}
+
+.noteText {
+  font-size: 13px;
+  color: #6B7280;
+  line-height: 1.5;
+  margin: 0;
+  font-style: italic;
+}
+
+/* ============================================
+   DROP ZONE
+   ============================================ */
+
+.hiddenInput {
+  display: none;
+}
+
+.dropZone {
+  border: 2px dashed #D1D5DB;
+  border-radius: 12px;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #FAFAFA;
+}
+
+.dropZone:hover {
+  border-color: #2563EB;
+  background: #EFF6FF;
+}
+
+.dropZoneDragging {
+  border-color: #2563EB;
+  background: #DBEAFE;
+  border-style: solid;
+}
+
+.dropZoneIcon {
+  color: #9CA3AF;
+  margin-bottom: 16px;
+}
+
+.dropZoneText {
+  font-size: 16px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 4px 0;
+}
+
+.dropZoneSubtext {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0 0 16px 0;
+}
+
+.fileRequirements {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #9CA3AF;
+}
+
+/* ============================================
+   SELECTED FILE CARD
+   ============================================ */
+
+.selectedFileCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 10px;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.fileIcon {
+  color: #2563EB;
+  flex-shrink: 0;
+}
+
+.fileDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileSize {
+  font-size: 12px;
+  color: #6B7280;
+  margin: 0;
+}
+
+.removeFileButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: #6B7280;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.removeFileButton:hover {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+
+/* ============================================
+   ERROR & VALIDATION
+   ============================================ */
+
+.errorMessage {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.errorMessage svg {
+  color: #DC2626;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.errorMessage span {
+  font-size: 13px;
+  color: #991B1B;
+  line-height: 1.4;
+}
+
+.errorDetails {
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 16px;
+}
+
+.errorDetails p {
+  font-size: 13px;
+  color: #991B1B;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ============================================
+   PROGRESS STAGES
+   ============================================ */
+
+.progressStages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.progressStage {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.progressStageActive {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+}
+
+.progressStageError {
+  background: #FEE2E2;
+  border-color: #FECACA;
+}
+
+.stageIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.stageIconPending {
+  width: 12px;
+  height: 12px;
+  background: #D1D5DB;
+  border-radius: 50%;
+}
+
+.stageIconActive {
+  color: #2563EB;
+}
+
+.stageIconComplete {
+  color: #16A34A;
+}
+
+.stageIconError {
+  color: #DC2626;
+}
+
+.stageLabel {
+  font-size: 14px;
+  color: #374151;
+  flex: 1;
+}
+
+.progressStageActive .stageLabel {
+  color: #1E40AF;
+  font-weight: 500;
+}
+
+.progressStageError .stageLabel {
+  color: #991B1B;
+}
+
+/* Spinning animation */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   MODAL FOOTER
+   ============================================ */
+
+.modalFooter {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 32px 32px 32px;
+  border-top: 1px solid #E5E7EB;
+}
+
+.cancelButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.confirmButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #DC2626;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirmButton:hover {
+  background: #B91C1C;
+}
+
+.uploadButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #2563EB;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.uploadButton:hover:not(:disabled) {
+  background: #1D4ED8;
+}
+
+.uploadButton:disabled {
+  background: #93C5FD;
+  cursor: not-allowed;
+}
+
+.retryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.retryButton:hover {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 480px) {
+  .modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .modalHeader,
+  .modalBody,
+  .modalFooter {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .modalFooter {
+    flex-direction: column-reverse;
+  }
+
+  .modalFooter button {
+    width: 100%;
+  }
+
+  .fileRequirements {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
