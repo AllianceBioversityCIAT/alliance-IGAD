@@ -200,6 +200,7 @@ export function Step4StructureWorkplan({
   })
   const [expandedSections, setExpandedSections] = useState<string[]>([])
   const [userComments, setUserComments] = useState<{ [key: string]: string }>({})
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const toggleSection = (sectionName: string) => {
     setSelectedSections(prev =>
@@ -217,9 +218,35 @@ export function Step4StructureWorkplan({
     setUserComments(prev => ({ ...prev, [sectionName]: comment }))
   }
 
-  const handleGenerateTemplate = () => {
-    if (onGenerateTemplate) {
-      onGenerateTemplate(selectedSections, userComments)
+  const handleGenerateTemplate = async () => {
+    if (!proposalId) {
+      alert('Proposal ID not found')
+      return
+    }
+
+    setIsGenerating(true)
+    try {
+      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+      
+      // Generate and download template
+      const blob = await proposalService.generateProposalTemplate(proposalId)
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `proposal_template_${proposalId}.docx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      
+      console.log('✅ Template downloaded successfully')
+    } catch (error: any) {
+      console.error('❌ Error generating template:', error)
+      alert(`Failed to generate template: ${error.message || 'Unknown error'}`)
+    } finally {
+      setIsGenerating(false)
     }
   }
 
@@ -395,15 +422,11 @@ export function Step4StructureWorkplan({
           </div>
           <button
             className={styles.generateButton}
-            onClick={() => {
-              if (onGenerateTemplate) {
-                onGenerateTemplate(selectedSections, userComments)
-              }
-            }}
-            disabled={selectedSections.length === 0}
+            onClick={handleGenerateTemplate}
+            disabled={isGenerating}
           >
             <Layers size={16} />
-            Generate Template
+            {isGenerating ? 'Generating...' : 'Generate Template'}
           </button>
         </div>
       </div>

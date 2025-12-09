@@ -345,11 +345,33 @@ class ProposalService {
 
   // Structure and Workplan analysis (Step 3)
   async analyzeStep3(proposalId: string): Promise<{
-    success: boolean
+    status: string
     message: string
     data?: any
+    started_at?: string
   }> {
     const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-step-3`)
+    return response.data
+  }
+
+  async getStructureWorkplanStatus(proposalId: string): Promise<{
+    status: string
+    data?: any
+    error?: string
+    started_at?: string
+    completed_at?: string
+  }> {
+    const response = await apiClient.get(`/api/proposals/${proposalId}/structure-workplan-status`)
+    return response.data
+  }
+
+  // Generate proposal template (Step 3)
+  async generateProposalTemplate(proposalId: string): Promise<Blob> {
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/generate-proposal-template`,
+      {},
+      { responseType: 'blob' }
+    )
     return response.data
   }
 

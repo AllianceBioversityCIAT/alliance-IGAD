@@ -1,7 +1,10 @@
 """Structure and Workplan Analysis Service"""
 import json
+import os
+import boto3
 from typing import Dict, Any
-from app.services.bedrock_service import BedrockService
+from boto3.dynamodb.conditions import Attr
+from app.shared.ai.bedrock_service import BedrockService
 from app.database.client import db_client
 from app.tools.proposal_writer.structure_workplan.config import STRUCTURE_WORKPLAN_SETTINGS
 
@@ -9,13 +12,15 @@ from app.tools.proposal_writer.structure_workplan.config import STRUCTURE_WORKPL
 class StructureWorkplanService:
     def __init__(self):
         self.bedrock = BedrockService()
+        self.dynamodb = boto3.resource("dynamodb")
+        self.table_name = os.environ.get("TABLE_NAME", "igad-testing-main-table")
 
     def analyze_structure_workplan(self, proposal_id: str) -> Dict[str, Any]:
         """
         Generate proposal structure and workplan based on RFP and concept evaluation.
 
         Args:
-            proposal_id: Unique proposal identifier
+            proposal_id: Proposal code (PROP-YYYYMMDD-XXXX) or UUID
 
         Returns:
             Dict with structure:
@@ -30,22 +35,36 @@ class StructureWorkplanService:
             }
         """
         try:
-            # Step 1: Load proposal
+            # Step 1: Load proposal - handle both UUID and proposal code
             print(f"📋 Loading proposal: {proposal_id}")
-            proposal = db_client.get_item_sync(
-                pk=f"PROPOSAL#{proposal_id}", sk="METADATA"
-            )
+            
+            # Try as proposal code first
+            if proposal_id.startswith("PROP-"):
+                pk = f"PROPOSAL#{proposal_id}"
+            else:
+                # It's a UUID, need to find the proposal code
+                pk = f"PROPOSAL#{proposal_id}"
+            
+            proposal = db_client.get_item_sync(pk=pk, sk="METADATA")
 
             if not proposal:
                 raise Exception(f"Proposal {proposal_id} not found")
+
+            # Get proposal code for consistent usage
+            proposal_code = proposal.get("proposalCode", proposal_id)
+            print(f"📋 Using proposal_code: {proposal_code}")
 
             # Step 2: Get RFP analysis
             rfp_analysis = proposal.get('rfp_analysis', {})
             if not rfp_analysis:
                 raise Exception("RFP analysis not found. Please complete Step 1 first.")
 
-            # Step 3: Get concept evaluation
-            concept_evaluation = proposal.get('concept_evaluation', {})
+            # Step 3: Get concept evaluation (try both keys)
+            concept_evaluation = proposal.get('concept_evaluation')
+            if not concept_evaluation:
+                # Fallback to concept_analysis
+                concept_evaluation = proposal.get('concept_analysis')
+            
             if not concept_evaluation:
                 raise Exception("Concept evaluation not found. Please complete Step 2 first.")
 
@@ -53,9 +72,8 @@ class StructureWorkplanService:
 
             # Step 4: Get prompt from DynamoDB
             print(f"📝 Loading prompt from DynamoDB...")
-            from boto3.dynamodb.conditions import Attr
             
-            table = self.bedrock.dynamodb.Table(self.bedrock.table_name)
+            table = self.dynamodb.Table(self.table_name)
             response = table.scan(
                 FilterExpression=(
                     Attr("is_active").eq(True)
@@ -82,7 +100,7 @@ class StructureWorkplanService:
             print(f"🤖 Sending to Bedrock...")
 
             # Step 6: Call Bedrock
-            response = self.bedrock.invoke_model(
+            response = self.bedrock.invoke_claude(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 model_id=STRUCTURE_WORKPLAN_SETTINGS["model"],
@@ -116,7 +134,7 @@ class StructureWorkplanService:
             # Step 8: Save to DynamoDB
             print(f"💾 Saving structure workplan analysis...")
             db_client.update_item_sync(
-                pk=f"PROPOSAL#{proposal_id}",
+                pk=f"PROPOSAL#{proposal_code}",
                 sk="METADATA",
                 update_expression="SET structure_workplan_analysis = :analysis",
                 expression_attribute_values={":analysis": result}

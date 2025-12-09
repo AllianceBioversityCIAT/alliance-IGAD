@@ -844,34 +844,62 @@ export function ProposalWriterPage() {
       }
 
       setIsAnalyzingRFP(true)
-      setAnalysisProgress({ step: 1, total: 1, message: 'Generating proposal structure and workplan...' })
+      setAnalysisProgress({ 
+        step: 1, 
+        total: 1, 
+        message: 'Generating Proposal Structure & Workplan',
+        description: 'Our AI is analyzing your RFP and concept evaluation to create a customized proposal structure with sections, guidance, and questions. This process uses advanced AI and may take up to 2 minutes.',
+        steps: ['Analyzing RFP requirements and concept evaluation to generate tailored proposal structure']
+      })
 
       try {
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
         
         const result = await proposalService.analyzeStep3(proposalId!)
         
-        if (result.success && result.data) {
-          console.log('✅ Structure and Workplan analysis completed:', result.data)
-          setStructureWorkplanAnalysis(result.data.structure_workplan_analysis)
-          
-          // Save to localStorage
-          localStorage.setItem(
-            `proposal_structure_workplan_${proposalId}`,
-            JSON.stringify(result.data.structure_workplan_analysis)
+        if (result.status === 'processing') {
+          // Poll for completion
+          await pollAnalysisStatus(
+            () => proposalService.getStructureWorkplanStatus(proposalId!),
+            statusResult => {
+              if (statusResult.data) {
+                setStructureWorkplanAnalysis(statusResult.data)
+                localStorage.setItem(
+                  `proposal_structure_workplan_${proposalId}`,
+                  JSON.stringify(statusResult.data)
+                )
+              }
+              return statusResult.data
+            },
+            'Structure Workplan'
           )
           
           setIsAnalyzingRFP(false)
           setAnalysisProgress(null)
           proceedToNextStep()
+        } else if (result.status === 'completed') {
+          // Already completed
+          if (result.data) {
+            setStructureWorkplanAnalysis(result.data)
+            localStorage.setItem(
+              `proposal_structure_workplan_${proposalId}`,
+              JSON.stringify(result.data)
+            )
+          }
+          setIsAnalyzingRFP(false)
+          setAnalysisProgress(null)
+          proceedToNextStep()
         } else {
-          throw new Error('Failed to generate structure and workplan')
+          throw new Error('Failed to start structure and workplan analysis')
         }
       } catch (error: any) {
         console.error('❌ Structure and Workplan analysis failed:', error)
         setIsAnalyzingRFP(false)
         setAnalysisProgress(null)
-        alert(`Structure and Workplan analysis failed: ${error.message || 'Unknown error'}`)
+        
+        // Show detailed error message
+        const errorMsg = error.response?.data?.detail || error.message || 'Unknown error'
+        alert(`Structure and Workplan analysis failed:\n\n${errorMsg}\n\nPlease ensure Step 1 (RFP) and Step 2 (Concept) are completed.`)
       }
 
       return

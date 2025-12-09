@@ -19,6 +19,7 @@ from app.tools.admin.prompts_manager.service import PromptService
 from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer
 from app.tools.proposal_writer.document_generation.service import concept_generator
 from app.tools.proposal_writer.structure_workplan.service import StructureWorkplanService
+from app.tools.proposal_writer.template_generation.service import TemplateGenerationService
 from app.database.client import db_client
 
 router = APIRouter(prefix="/api/proposals", tags=["proposals"])
@@ -1689,7 +1690,9 @@ async def analyze_step_3(proposal_id: str, user=Depends(get_current_user)):
                 detail="Step 1 (RFP analysis) must be completed before Step 3."
             )
 
-        if not proposal.get("concept_evaluation"):
+        # Check for concept_evaluation or concept_analysis
+        concept_eval = proposal.get("concept_evaluation") or proposal.get("concept_analysis")
+        if not concept_eval:
             raise HTTPException(
                 status_code=400,
                 detail="Step 2 (Concept evaluation) must be completed before Step 3."
@@ -1697,14 +1700,56 @@ async def analyze_step_3(proposal_id: str, user=Depends(get_current_user)):
 
         print(f"✓ Prerequisites met for {proposal_code}")
 
-        # Run structure workplan analysis
-        service = StructureWorkplanService()
-        result = service.analyze_structure_workplan(proposal_code)
+        # Check if already completed
+        if proposal.get("structure_workplan_analysis"):
+            return {
+                "status": "completed",
+                "message": "Structure and workplan already analyzed",
+                "data": proposal.get("structure_workplan_analysis"),
+                "cached": True
+            }
+
+        # Check if already processing
+        if proposal.get("analysis_status_structure_workplan") == "processing":
+            return {
+                "status": "processing",
+                "message": "Structure and workplan analysis already in progress",
+                "started_at": proposal.get("structure_workplan_started_at")
+            }
+
+        # Update status to processing BEFORE invoking worker
+        await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="SET analysis_status_structure_workplan = :status, structure_workplan_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat()
+            }
+        )
+
+        # Invoke Worker Lambda asynchronously
+        print(f"🚀 Invoking AnalysisWorkerFunction for structure workplan: {proposal_code}")
+        
+        worker_function_arn = os.environ.get("WORKER_FUNCTION_NAME")
+        if not worker_function_arn:
+            raise Exception("WORKER_FUNCTION_NAME environment variable not set")
+        
+        lambda_client.invoke(
+            FunctionName=worker_function_arn,
+            InvocationType='Event',
+            Payload=json.dumps({
+                "proposal_id": proposal_code,
+                "analysis_type": "structure_workplan"
+            })
+        )
+        
+        print(f"✅ Structure workplan analysis worker invoked successfully")
 
         return {
-            "success": True,
-            "message": "Structure and workplan analysis completed",
-            "data": result
+            "status": "processing",
+            "message": "Structure and workplan analysis started. Poll for completion.",
+            "started_at": datetime.utcnow().isoformat()
         }
 
     except HTTPException:
@@ -1714,6 +1759,125 @@ async def analyze_step_3(proposal_id: str, user=Depends(get_current_user)):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to analyze Step 3: {str(e)}")
+
+
+@router.get("/{proposal_id}/structure-workplan-status")
+async def get_structure_workplan_status(proposal_id: str, user=Depends(get_current_user)):
+    """Poll for Structure Workplan analysis completion status"""
+    try:
+        if proposal_id.startswith("PROP-"):
+            pk = f"PROPOSAL#{proposal_id}"
+        else:
+            items = await db_client.query_items(
+                pk=f"USER#{user.get('user_id')}",
+                index_name="GSI1"
+            )
+            proposal_item = None
+            for item in items:
+                if item.get("id") == proposal_id:
+                    proposal_item = item
+                    break
+            if not proposal_item:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+            pk = proposal_item["PK"]
+
+        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        status = proposal.get("analysis_status_structure_workplan", "not_started")
+        
+        response = {
+            "status": status,
+            "started_at": proposal.get("structure_workplan_started_at"),
+            "completed_at": proposal.get("structure_workplan_completed_at"),
+            "error": proposal.get("structure_workplan_error")
+        }
+
+        if status == "completed":
+            response["data"] = proposal.get("structure_workplan_analysis")
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to check status: {str(e)}")
+
+
+@router.post("/{proposal_id}/generate-proposal-template")
+async def generate_proposal_template(proposal_id: str, user=Depends(get_current_user)):
+    """
+    Generate Word template from structure and workplan analysis.
+
+    Prerequisites: Step 3 (Structure and Workplan) must be completed
+
+    Returns Word document with:
+    - Proposal title and metadata
+    - Narrative overview
+    - All sections with purpose, guidance, and questions
+    - Space for writing content
+    """
+    try:
+        # Verify proposal ownership
+        if proposal_id.startswith("PROP-"):
+            pk = f"PROPOSAL#{proposal_id}"
+            proposal_code = proposal_id
+        else:
+            items = await db_client.query_items(
+                pk=f"USER#{user.get('user_id')}",
+                index_name="GSI1"
+            )
+
+            proposal_item = None
+            for item in items:
+                if item.get("id") == proposal_id:
+                    proposal_item = item
+                    break
+
+            if not proposal_item:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+
+            pk = proposal_item["PK"]
+            proposal_code = proposal_item.get("proposalCode", proposal_id)
+
+        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        if proposal.get("user_id") != user.get("user_id"):
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Check prerequisite
+        if not proposal.get("structure_workplan_analysis"):
+            raise HTTPException(
+                status_code=400,
+                detail="Structure and workplan analysis must be completed before generating template."
+            )
+
+        print(f"✓ Generating template for {proposal_code}")
+
+        # Generate template
+        from fastapi.responses import StreamingResponse
+        service = TemplateGenerationService()
+        buffer = service.generate_template(proposal_code)
+
+        return StreamingResponse(
+            buffer,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={
+                "Content-Disposition": f"attachment; filename=proposal_template_{proposal_code}.docx"
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error generating template: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate template: {str(e)}")
 
 
 @router.post("/prompts/with-categories")
