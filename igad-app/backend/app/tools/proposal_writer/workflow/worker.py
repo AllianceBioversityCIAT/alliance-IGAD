@@ -626,8 +626,7 @@ def _handle_structure_workplan_analysis(proposal_id: str) -> Dict[str, Any]:
 
     logger.info("✅ Prerequisites validated")
 
-    # Set processing status
-    _set_processing_status(proposal_id, "structure_workplan")
+    # Note: Processing status already set by routes.py before invoking worker
 
     logger.info("🔍 Starting structure workplan analysis...")
     service = StructureWorkplanService()
