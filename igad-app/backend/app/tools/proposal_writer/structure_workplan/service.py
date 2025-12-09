@@ -105,9 +105,16 @@ class StructureWorkplanService:
             prompt_item = response["Items"][0]
             system_prompt = prompt_item.get("system_prompt", "")
             user_prompt_template = prompt_item.get("user_prompt_template", "")
+            output_format = prompt_item.get("output_format", "")
 
-            # Step 5: Inject context into user prompt
-            user_prompt = user_prompt_template.replace(
+            # Step 5: Build complete user prompt with output format
+            # Combine template + output format instructions
+            complete_template = user_prompt_template
+            if output_format:
+                complete_template = f"{user_prompt_template}\n\n{output_format}"
+
+            # Step 6: Inject context into user prompt
+            user_prompt = complete_template.replace(
                 "{{rfp_analysis}}", json.dumps(rfp_analysis, indent=2)
             ).replace(
                 "{{concept_evaluation}}", json.dumps(concept_evaluation, indent=2)
@@ -118,10 +125,10 @@ class StructureWorkplanService:
             logger.info(f"   Max tokens: {STRUCTURE_WORKPLAN_SETTINGS['max_tokens']}")
             logger.info(f"   Temperature: {STRUCTURE_WORKPLAN_SETTINGS['temperature']}")
 
-            # Step 6: Call Bedrock with metrics
+            # Step 7: Call Bedrock with metrics
             start_time = time.time()
 
-            response = self.bedrock.invoke_claude(
+            response_text = self.bedrock.invoke_claude(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 model_id=STRUCTURE_WORKPLAN_SETTINGS["model"],
@@ -130,25 +137,22 @@ class StructureWorkplanService:
             )
 
             elapsed_time = time.time() - start_time
-
-            # Log Bedrock metrics
-            usage = response.get('usage', {})
-            input_tokens = usage.get('input_tokens', 0)
-            output_tokens = usage.get('output_tokens', 0)
-
             logger.info(f"✅ Bedrock response received in {elapsed_time:.2f}s")
-            logger.info(f"📊 Input tokens: {input_tokens}")
-            logger.info(f"📊 Output tokens: {output_tokens}")
-            logger.info(f"📊 Total tokens: {input_tokens + output_tokens}")
 
-            # Step 7: Parse response
-            analysis_text = response.get("content", [{}])[0].get("text", "")
+            # Step 8: Parse response
+            analysis_text = response_text
+
+            # Log first 500 chars for debugging
+            logger.info(f"📄 Bedrock response preview (first 500 chars):")
+            logger.info(f"{analysis_text[:500]}")
 
             # Extract JSON from response
             json_start = analysis_text.find("{")
             json_end = analysis_text.rfind("}") + 1
 
             if json_start == -1 or json_end == 0:
+                logger.error(f"❌ No JSON found. Full response length: {len(analysis_text)}")
+                logger.error(f"📄 Full response: {analysis_text[:1000]}")  # First 1000 chars
                 raise Exception("No JSON found in Bedrock response")
 
             analysis_json = json.loads(analysis_text[json_start:json_end])
@@ -164,7 +168,7 @@ class StructureWorkplanService:
                 "status": "completed"
             }
 
-            # Step 8: Save to DynamoDB
+            # Step 9: Save to DynamoDB
             logger.info(f"💾 Saving structure workplan analysis...")
 
             try:
