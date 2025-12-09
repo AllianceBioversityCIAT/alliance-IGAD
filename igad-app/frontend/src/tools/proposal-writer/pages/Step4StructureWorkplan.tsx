@@ -13,8 +13,21 @@ interface Section {
 
 interface Step4Props extends StepProps {
   proposalId?: string
-  conceptDocument?: any
+  structureWorkplanAnalysis?: {
+    narrative_overview?: string
+    proposal_mandatory?: ProposalSection[]
+    proposal_outline?: ProposalSection[]
+    hcd_notes?: { note: string }[]
+  }
   onGenerateTemplate?: (selectedSections: string[], userComments: { [key: string]: string }) => void
+}
+
+interface ProposalSection {
+  section_title: string
+  recommended_word_count: string
+  purpose: string
+  content_guidance: string
+  guiding_questions: string[]
 }
 
 const PRIORITY_COLORS = {
@@ -172,12 +185,18 @@ const PROPOSAL_SECTIONS: Section[] = [
 
 export function Step4StructureWorkplan({
   proposalId,
-  conceptDocument,
+  structureWorkplanAnalysis,
   onGenerateTemplate,
 }: Step4Props) {
+  // Combine mandatory and outline sections
+  const allSections = [
+    ...(structureWorkplanAnalysis?.proposal_mandatory || []),
+    ...(structureWorkplanAnalysis?.proposal_outline || [])
+  ]
+
   const [selectedSections, setSelectedSections] = useState<string[]>(() => {
-    // By default, select all Critical sections
-    return PROPOSAL_SECTIONS.filter(s => s.priority === 'Critical').map(s => s.section)
+    // Select all mandatory sections by default
+    return structureWorkplanAnalysis?.proposal_mandatory?.map(s => s.section_title) || []
   })
   const [expandedSections, setExpandedSections] = useState<string[]>([])
   const [userComments, setUserComments] = useState<{ [key: string]: string }>({})
@@ -204,22 +223,40 @@ export function Step4StructureWorkplan({
     }
   }
 
-  const totalSections = PROPOSAL_SECTIONS.length
+  const totalSections = allSections.length
   const reviewedCount = Object.keys(userComments).filter(key => userComments[key].trim()).length
+
+  // Show loading state if no analysis yet
+  if (!structureWorkplanAnalysis) {
+    return (
+      <div className={styles.mainContent}>
+        <div className={styles.stepHeader}>
+          <h1 className={styles.stepMainTitle}>
+            Step 3: Structure & Workplan
+            <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeProposal}`}>
+              Proposal
+            </span>
+          </h1>
+          <p className={styles.stepMainDescription}>
+            Loading proposal structure and workplan...
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.mainContent}>
       {/* Page Header */}
       <div className={styles.stepHeader}>
         <h1 className={styles.stepMainTitle}>
-          Step 4: Structure & Workplan
+          Step 3: Structure & Workplan
           <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeProposal}`}>
             Proposal
           </span>
         </h1>
         <p className={styles.stepMainDescription}>
-          Select the sections you'd like to include in your proposal template. Add comments to
-          provide additional context for AI generation.
+          {structureWorkplanAnalysis.narrative_overview || 'Review the proposed structure for your proposal.'}
         </p>
       </div>
 
@@ -232,8 +269,7 @@ export function Step4StructureWorkplan({
               <div>
                 <h2 className={step2Styles.sectionTitle}>Proposal Sections</h2>
                 <p className={step2Styles.sectionSubtitle}>
-                  Select sections to include in your proposal template. Critical sections are
-                  pre-selected.
+                  Review the proposed structure. Mandatory sections are pre-selected.
                 </p>
               </div>
             </div>
@@ -244,10 +280,12 @@ export function Step4StructureWorkplan({
             </div>
 
             <div className={step2Styles.sectionsList}>
-              {PROPOSAL_SECTIONS.map((section, index) => {
-                const isSelected = selectedSections.includes(section.section)
-                const isExpanded = expandedSections.includes(section.section)
-                const priorityColor = PRIORITY_COLORS[section.priority]
+              {allSections.map((section, index) => {
+                const isSelected = selectedSections.includes(section.section_title)
+                const isExpanded = expandedSections.includes(section.section_title)
+                const isMandatory = structureWorkplanAnalysis?.proposal_mandatory?.some(
+                  s => s.section_title === section.section_title
+                )
 
                 return (
                   <div key={index} className={step2Styles.sectionItem}>
@@ -255,27 +293,41 @@ export function Step4StructureWorkplan({
                       <div className={step2Styles.sectionItemHeaderLeft}>
                         <div
                           className={`${step2Styles.checkbox} ${isSelected ? step2Styles.checkboxChecked : ''}`}
-                          onClick={() => toggleSection(section.section)}
+                          onClick={() => toggleSection(section.section_title)}
                         >
                           {isSelected && <Check size={14} color="white" />}
                         </div>
                         <div className={step2Styles.sectionItemInfo}>
-                          <h3 className={step2Styles.sectionItemTitle}>{section.section}</h3>
-                          <span
-                            className={step2Styles.badge}
-                            style={{
-                              backgroundColor: priorityColor.bg,
-                              border: `1px solid ${priorityColor.border}`,
-                              color: priorityColor.text,
-                            }}
-                          >
-                            {section.priority}
-                          </span>
+                          <h3 className={step2Styles.sectionItemTitle}>{section.section_title}</h3>
+                          {isMandatory && (
+                            <span
+                              className={step2Styles.badge}
+                              style={{
+                                backgroundColor: '#FFE2E2',
+                                border: '1px solid #FFC9C9',
+                                color: '#9F0712',
+                              }}
+                            >
+                              Mandatory
+                            </span>
+                          )}
+                          {section.recommended_word_count && (
+                            <span
+                              className={step2Styles.badge}
+                              style={{
+                                backgroundColor: '#F3F4F6',
+                                border: '1px solid #E5E7EB',
+                                color: '#6B7280',
+                              }}
+                            >
+                              {section.recommended_word_count}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <button
                         className={step2Styles.expandButton}
-                        onClick={() => toggleExpansion(section.section)}
+                        onClick={() => toggleExpansion(section.section_title)}
                       >
                         {isExpanded ? 'See less' : 'See more'}
                         {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -284,19 +336,30 @@ export function Step4StructureWorkplan({
 
                     {isExpanded && (
                       <div className={step2Styles.sectionItemContent}>
-                        <div className={step2Styles.detailsSection}>
-                          <h4 className={step2Styles.subsectionTitle}>Details and Guidance</h4>
-                          <p className={step2Styles.subsectionText}>{section.description}</p>
-                        </div>
+                        {section.purpose && (
+                          <div className={step2Styles.detailsSection}>
+                            <h4 className={step2Styles.subsectionTitle}>Purpose</h4>
+                            <p className={step2Styles.subsectionText}>{section.purpose}</p>
+                          </div>
+                        )}
 
-                        <div className={step2Styles.suggestionsSection}>
-                          <h4 className={step2Styles.subsectionTitle}>Suggestions</h4>
-                          <ul className={step2Styles.suggestionsList}>
-                            {section.suggestions.map((suggestion, idx) => (
-                              <li key={idx}>{suggestion}</li>
-                            ))}
-                          </ul>
-                        </div>
+                        {section.content_guidance && (
+                          <div className={step2Styles.detailsSection}>
+                            <h4 className={step2Styles.subsectionTitle}>Content Guidance</h4>
+                            <p className={step2Styles.subsectionText}>{section.content_guidance}</p>
+                          </div>
+                        )}
+
+                        {section.guiding_questions && section.guiding_questions.length > 0 && (
+                          <div className={step2Styles.suggestionsSection}>
+                            <h4 className={step2Styles.subsectionTitle}>Guiding Questions</h4>
+                            <ul className={step2Styles.suggestionsList}>
+                              {section.guiding_questions.map((question, idx) => (
+                                <li key={idx}>{question}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
 
                         <div className={step2Styles.commentsSection}>
                           <h4 className={step2Styles.subsectionTitle}>
@@ -305,8 +368,8 @@ export function Step4StructureWorkplan({
                           <textarea
                             className={step2Styles.commentTextarea}
                             placeholder="Add specific guidance, data points, or context for this section..."
-                            value={userComments[section.section] || ''}
-                            onChange={e => handleCommentChange(section.section, e.target.value)}
+                            value={userComments[section.section_title] || ''}
+                            onChange={e => handleCommentChange(section.section_title, e.target.value)}
                           />
                         </div>
                       </div>

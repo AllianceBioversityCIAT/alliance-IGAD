@@ -6,6 +6,7 @@ import { DraftConfirmationModal } from '../components/DraftConfirmationModal'
 import AnalysisProgressModal from '@/tools/proposal-writer/components/AnalysisProgressModal'
 import { Step1InformationConsolidation } from './Step1InformationConsolidation'
 import { Step2ConceptReview } from './Step2ConceptReview'
+import { Step4StructureWorkplan } from './Step4StructureWorkplan'
 import { ComingSoonPlaceholder } from './ComingSoonPlaceholder'
 import { useProposals } from '@/tools/proposal-writer/hooks/useProposal'
 import { useProposalDraft } from '@/tools/proposal-writer/hooks/useProposalDraft'
@@ -26,6 +27,7 @@ export function ProposalWriterPage() {
   const [rfpAnalysis, setRfpAnalysis] = useState<any>(null)
   const [referenceProposalsAnalysis, setReferenceProposalsAnalysis] = useState<any>(null)
   const [conceptAnalysis, setConceptAnalysis] = useState<any>(null)
+  const [structureWorkplanAnalysis, setStructureWorkplanAnalysis] = useState<any>(null)
   const [analysisProgress, setAnalysisProgress] = useState<{
     step: number
     total: number
@@ -830,6 +832,51 @@ export function ProposalWriterPage() {
       return
     }
 
+    // Step 2: Execute Step 3 analysis (Structure and Workplan) before proceeding
+    if (currentStep === 2) {
+      console.log('🔵 Step 2: Executing Structure and Workplan analysis...')
+      
+      // Check if analysis already exists
+      if (structureWorkplanAnalysis) {
+        console.log('✅ Structure and Workplan analysis already complete, proceeding')
+        proceedToNextStep()
+        return
+      }
+
+      setIsAnalyzingRFP(true)
+      setAnalysisProgress({ step: 1, total: 1, message: 'Generating proposal structure and workplan...' })
+
+      try {
+        const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+        
+        const result = await proposalService.analyzeStep3(proposalId!)
+        
+        if (result.success && result.data) {
+          console.log('✅ Structure and Workplan analysis completed:', result.data)
+          setStructureWorkplanAnalysis(result.data.structure_workplan_analysis)
+          
+          // Save to localStorage
+          localStorage.setItem(
+            `proposal_structure_workplan_${proposalId}`,
+            JSON.stringify(result.data.structure_workplan_analysis)
+          )
+          
+          setIsAnalyzingRFP(false)
+          setAnalysisProgress(null)
+          proceedToNextStep()
+        } else {
+          throw new Error('Failed to generate structure and workplan')
+        }
+      } catch (error: any) {
+        console.error('❌ Structure and Workplan analysis failed:', error)
+        setIsAnalyzingRFP(false)
+        setAnalysisProgress(null)
+        alert(`Structure and Workplan analysis failed: ${error.message || 'Unknown error'}`)
+      }
+
+      return
+    }
+
     // Step 2: Download document before proceeding
     if (currentStep === 2 && conceptDocument) {
       console.log('📥 Step 2: Downloading document before proceeding')
@@ -1351,14 +1398,10 @@ export function ProposalWriterPage() {
         )
       case 3:
         return (
-          <ComingSoonPlaceholder
-            stepNumber={3}
-            stepTitle="Structure & Workplan"
-            expectedFeatures={[
-              'Define proposal structure',
-              'Create work plan and timeline',
-              'Set milestones and deliverables',
-            ]}
+          <Step4StructureWorkplan
+            {...stepProps}
+            proposalId={proposalId}
+            structureWorkplanAnalysis={structureWorkplanAnalysis}
           />
         )
       case 4:

@@ -343,6 +343,16 @@ class ProposalService {
     return response.data
   }
 
+  // Structure and Workplan analysis (Step 3)
+  async analyzeStep3(proposalId: string): Promise<{
+    success: boolean
+    message: string
+    data?: any
+  }> {
+    const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-step-3`)
+    return response.data
+  }
+
   async getUploadedDocuments(proposalId: string): Promise<{
     rfp_documents: string[]
     concept_documents: string[]

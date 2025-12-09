@@ -18,6 +18,7 @@ from app.shared.ai.bedrock_service import BedrockService
 from app.tools.admin.prompts_manager.service import PromptService
 from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer
 from app.tools.proposal_writer.document_generation.service import concept_generator
+from app.tools.proposal_writer.structure_workplan.service import StructureWorkplanService
 from app.database.client import db_client
 
 router = APIRouter(prefix="/api/proposals", tags=["proposals"])
@@ -1630,6 +1631,89 @@ async def get_step_2_status(proposal_id: str, user=Depends(get_current_user)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to check Step 2 status: {str(e)}")
+
+
+@router.post("/{proposal_id}/analyze-step-3")
+async def analyze_step_3(proposal_id: str, user=Depends(get_current_user)):
+    """
+    Step 3: Structure and Workplan Analysis
+
+    Prerequisites: Step 1 (RFP) and Step 2 (Concept Evaluation) must be completed
+
+    This endpoint:
+    1. Verifies RFP analysis and concept evaluation are completed
+    2. Generates proposal structure and workplan
+    3. Returns analysis result
+
+    Returns structure with:
+    - narrative_overview: Text summary
+    - proposal_mandatory: Required sections (Executive Summary, Problem Context, Proposed Approach)
+    - proposal_outline: Full proposal structure
+    - hcd_notes: Human-centered design notes
+    """
+    try:
+        # Verify proposal ownership
+        if proposal_id.startswith("PROP-"):
+            pk = f"PROPOSAL#{proposal_id}"
+            proposal_code = proposal_id
+        else:
+            items = await db_client.query_items(
+                pk=f"USER#{user.get('user_id')}",
+                index_name="GSI1"
+            )
+
+            proposal_item = None
+            for item in items:
+                if item.get("id") == proposal_id:
+                    proposal_item = item
+                    break
+
+            if not proposal_item:
+                raise HTTPException(status_code=404, detail="Proposal not found")
+
+            pk = proposal_item["PK"]
+            proposal_code = proposal_item.get("proposalCode", proposal_id)
+
+        proposal = await db_client.get_item(pk=pk, sk="METADATA")
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        if proposal.get("user_id") != user.get("user_id"):
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Check prerequisites
+        if not proposal.get("rfp_analysis"):
+            raise HTTPException(
+                status_code=400,
+                detail="Step 1 (RFP analysis) must be completed before Step 3."
+            )
+
+        if not proposal.get("concept_evaluation"):
+            raise HTTPException(
+                status_code=400,
+                detail="Step 2 (Concept evaluation) must be completed before Step 3."
+            )
+
+        print(f"✓ Prerequisites met for {proposal_code}")
+
+        # Run structure workplan analysis
+        service = StructureWorkplanService()
+        result = service.analyze_structure_workplan(proposal_code)
+
+        return {
+            "success": True,
+            "message": "Structure and workplan analysis completed",
+            "data": result
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in Step 3 analysis: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to analyze Step 3: {str(e)}")
 
 
 @router.post("/prompts/with-categories")
