@@ -438,7 +438,7 @@ export function ProposalWriterPage() {
   // Load concept document from proposal when available
   useEffect(() => {
     const loadConceptDocument = async () => {
-      if (proposalId && currentStep === 3 && !conceptDocument) {
+      if (proposalId && currentStep === 2 && !conceptDocument) {
         try {
           console.log('🔍 Loading concept document for proposalId:', proposalId)
           const { proposalService } = await import(
@@ -499,12 +499,12 @@ export function ProposalWriterPage() {
     loadProposalTemplate()
   }, [proposalId, currentStep, proposalTemplate])
 
-  // Load concept evaluation from DynamoDB when entering Step 3
+  // Load concept evaluation from DynamoDB when entering Step 2
   useEffect(() => {
     const loadConceptEvaluation = async () => {
-      if (proposalId && currentStep === 3) {
+      if (proposalId && currentStep === 2) {
         try {
-          console.log('🔍 Loading concept evaluation for Step 3:', proposalId)
+          console.log('🔍 Loading concept evaluation for Step 2:', proposalId)
           const { proposalService } = await import(
             '@/tools/proposal-writer/services/proposalService'
           )
@@ -810,9 +810,9 @@ export function ProposalWriterPage() {
       return
     }
 
-    // Step 3: Download document before proceeding
-    if (currentStep === 3 && conceptDocument) {
-      console.log('📥 Step 3: Downloading document before proceeding')
+    // Step 2: Download document before proceeding
+    if (currentStep === 2 && conceptDocument) {
+      console.log('📥 Step 2: Downloading document before proceeding')
       await handleDownloadConceptDocument()
     }
 
@@ -1328,11 +1328,11 @@ export function ProposalWriterPage() {
         return (
           <ComingSoonPlaceholder
             stepNumber={3}
-            stepTitle="Proposal Template Selection"
+            stepTitle="Structure & Workplan"
             expectedFeatures={[
-              'Choose from donor-specific templates',
-              'Customize proposal structure',
-              'Map concept sections to proposal outline',
+              'Define proposal structure',
+              'Create work plan and timeline',
+              'Set milestones and deliverables',
             ]}
           />
         )
@@ -1340,18 +1340,26 @@ export function ProposalWriterPage() {
         return (
           <ComingSoonPlaceholder
             stepNumber={4}
-            stepTitle="Full Proposal Generation"
+            stepTitle="Review & Refinement"
             expectedFeatures={[
-              'AI-powered full proposal writing',
-              'Section-by-section generation',
-              'Download complete proposal',
+              'Review complete proposal',
+              'AI-powered quality check',
+              'Refinement suggestions',
             ]}
           />
         )
       case 5:
-        return <ComingSoonPlaceholder stepNumber={5} stepTitle="Review & Refinement" />
-      case 6:
-        return <ComingSoonPlaceholder stepNumber={6} stepTitle="Final Export" />
+        return (
+          <ComingSoonPlaceholder
+            stepNumber={5}
+            stepTitle="Final Export"
+            expectedFeatures={[
+              'Export to multiple formats',
+              'Download complete proposal package',
+              'Generate submission checklist',
+            ]}
+          />
+        )
       default:
         return <Step1InformationConsolidation {...stepProps} />
     }
@@ -1376,22 +1384,19 @@ export function ProposalWriterPage() {
 
         console.log('🔘 Next button clicked - Step:', currentStep)
 
-        if (currentStep === 2) {
-          handleGenerateConceptDocument()
-        } else if (currentStep === 3) {
-          console.log('📥 Step 3: Proceeding to next step')
-          proceedToNextStep()
-        } else if (currentStep === 4) {
-          console.log('📥 Step 4: Proceeding to next step')
+        // Step 2 handles its own generation via internal button
+        // All other steps just proceed
+        if (currentStep === 3 || currentStep === 4) {
+          console.log(`📥 Step ${currentStep}: Proceeding to next step`)
           proceedToNextStep()
         } else {
           handleNextStep()
         }
       }}
       disabled={
-        currentStep === 6 ||
-        currentStep === 4 ||
         currentStep === 5 ||
+        currentStep === 3 ||
+        currentStep === 4 ||
         isAnalyzingRFP ||
         isGeneratingDocument ||
         (currentStep === 1 &&
@@ -1426,28 +1431,18 @@ export function ProposalWriterPage() {
             ? `${analysisProgress.message} (${analysisProgress.step}/${analysisProgress.total})`
             : 'Analyzing...'}
         </>
-      ) : currentStep === 6 ? (
-        'Complete'
       ) : currentStep === 5 ? (
-        'Finish process'
+        'Complete'
       ) : currentStep === 4 ? (
+        'Finish process'
+      ) : currentStep === 3 ? (
         <>
           Next
           <ChevronRight size={16} />
         </>
-      ) : currentStep === 3 ? (
-        <>
-          Continue to Structure & Workplan
-          <ChevronRight size={16} />
-        </>
-      ) : currentStep === 2 && conceptDocument ? (
-        <>
-          Continue to Concept Document
-          <ChevronRight size={16} />
-        </>
       ) : currentStep === 2 ? (
         <>
-          Generate Updated Concept
+          Continue to Structure & Workplan
           <ChevronRight size={16} />
         </>
       ) : currentStep === 1 && rfpAnalysis && conceptAnalysis ? (

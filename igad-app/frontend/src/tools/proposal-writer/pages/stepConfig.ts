@@ -1,12 +1,11 @@
-import { Upload, Edit, FileText, Layers, Eye, Download } from 'lucide-react'
+import { Upload, Edit, Layers, Eye, Download } from 'lucide-react'
 
 export const stepConfig = [
   { id: 1, title: 'Information Consolidation', icon: Upload },
-  { id: 2, title: 'Concept Review', icon: Edit },
-  { id: 3, title: 'Concept Generation', icon: FileText },
-  { id: 4, title: 'Structure & Workplan', icon: Layers },
-  { id: 5, title: 'Review & Refinement', icon: Eye },
-  { id: 6, title: 'Final Export', icon: Download },
+  { id: 2, title: 'Concept Review & Generation', icon: Edit },
+  { id: 3, title: 'Structure & Workplan', icon: Layers },
+  { id: 4, title: 'Review & Refinement', icon: Eye },
+  { id: 5, title: 'Final Export', icon: Download },
 ]
 
 export interface StepProps {
