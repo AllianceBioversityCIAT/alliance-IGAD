@@ -91,3 +91,81 @@
   cursor: not-allowed;
   box-shadow: none;
 }
+
+/* ============================================
+   NARRATIVE OVERVIEW STYLES
+   ============================================ */
+
+/* Narrative Content Container */
+.narrativeContent {
+  background: #F9FAFB;
+  border-radius: 10px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Narrative Paragraphs */
+.narrativeParagraph {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #374151;
+  margin: 0;
+  text-align: left;
+}
+
+.narrativeParagraph:first-child {
+  margin-top: 0;
+}
+
+.narrativeParagraph:last-child {
+  margin-bottom: 0;
+}
+
+/* Preview State (Collapsed) */
+.narrativePreview {
+  background: #F9FAFB;
+  border-radius: 10px;
+  padding: 20px 24px;
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.narrativePreview::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, #F9FAFB);
+  border-radius: 0 0 10px 10px;
+  pointer-events: none;
+}
+
+/* Fade-in Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .narrativeContent,
+  .narrativePreview {
+    padding: 16px;
+  }
+
+  .narrativeParagraph {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+}

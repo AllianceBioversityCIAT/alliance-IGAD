@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Layers, Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { Layers, Check, ChevronDown, ChevronUp, FileText, Info } from 'lucide-react'
 import styles from './step4-structure.module.css'
 import step2Styles from './step2.module.css'
+import step2ConceptStyles from './step2-concept-review.module.css'
 import { StepProps } from './stepConfig'
 
 interface Section {
@@ -34,6 +35,71 @@ const PRIORITY_COLORS = {
   Critical: { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' },
   Recommended: { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
   Optional: { bg: '#E0E7FF', border: '#C7D2FE', text: '#193CB8' },
+}
+
+/**
+ * NarrativeOverview Component
+ * Displays AI-generated narrative overview of the proposal structure
+ * Features collapsible content for better UX with long text
+ */
+interface NarrativeOverviewProps {
+  narrativeText?: string
+}
+
+function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
+  const [isExpanded, setIsExpanded] = useState(true)
+
+  if (!narrativeText || narrativeText.trim().length === 0) {
+    return null
+  }
+
+  // Split narrative into paragraphs for better readability
+  const paragraphs = narrativeText.split('\n').filter(p => p.trim().length > 0)
+  const isLongText = narrativeText.length > 500
+
+  return (
+    <div className={step2ConceptStyles.card}>
+      <div className={step2ConceptStyles.cardHeader}>
+        <div className={step2ConceptStyles.sectionHeader}>
+          <FileText className={step2ConceptStyles.sectionIcon} size={24} />
+          <div>
+            <h2 className={step2ConceptStyles.sectionTitle}>Proposal Structure Overview</h2>
+            <p className={step2ConceptStyles.sectionSubtitle}>
+              AI-generated analysis of your proposal structure and recommendations
+            </p>
+          </div>
+        </div>
+        {isLongText && (
+          <button
+            className={step2ConceptStyles.expandButton}
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{ marginLeft: 'auto' }}
+          >
+            {isExpanded ? 'Collapse' : 'Expand'}
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+        )}
+      </div>
+
+      {(isExpanded || !isLongText) && (
+        <div className={styles.narrativeContent}>
+          {paragraphs.map((paragraph, index) => (
+            <p key={index} className={styles.narrativeParagraph}>
+              {paragraph}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {!isExpanded && isLongText && (
+        <div className={styles.narrativePreview}>
+          <p className={styles.narrativeParagraph}>
+            {narrativeText.substring(0, 300)}...
+          </p>
+        </div>
+      )}
+    </div>
+  )
 }
 
 const PROPOSAL_SECTIONS: Section[] = [
@@ -283,11 +349,14 @@ export function Step4StructureWorkplan({
           </span>
         </h1>
         <p className={styles.stepMainDescription}>
-          {structureWorkplanAnalysis.narrative_overview || 'Review the proposed structure for your proposal.'}
+          Review and customize your proposal structure based on RFP requirements and donor guidelines
         </p>
       </div>
 
       <div className={step2Styles.step2Container}>
+        {/* Narrative Overview Card */}
+        <NarrativeOverview narrativeText={structureWorkplanAnalysis.narrative_overview} />
+
         {/* Sections Card */}
         <div className={step2Styles.sectionsCard}>
           <div className={step2Styles.sectionsCardInner}>

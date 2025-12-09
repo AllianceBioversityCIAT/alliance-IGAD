@@ -532,6 +532,41 @@ export function ProposalWriterPage() {
     loadConceptEvaluation()
   }, [proposalId, currentStep])
 
+  // Load structure workplan analysis from DynamoDB when entering Step 3
+  useEffect(() => {
+    const loadStructureWorkplan = async () => {
+      if (proposalId && currentStep === 3 && !structureWorkplanAnalysis) {
+        try {
+          console.log('🔍 Loading structure workplan for Step 3:', proposalId)
+          const { proposalService } = await import(
+            '@/tools/proposal-writer/services/proposalService'
+          )
+          const response = await proposalService.getStructureWorkplanStatus(proposalId)
+
+          if (response?.data) {
+            console.log('✅ Loaded structure workplan from DynamoDB')
+            setStructureWorkplanAnalysis(response.data)
+            // Also update localStorage
+            localStorage.setItem(
+              `proposal_structure_workplan_${proposalId}`,
+              JSON.stringify(response.data)
+            )
+          }
+        } catch (error) {
+          console.log('⚠️ No saved structure workplan found, checking localStorage')
+          // Try localStorage fallback
+          const cached = localStorage.getItem(`proposal_structure_workplan_${proposalId}`)
+          if (cached) {
+            console.log('✅ Found structure workplan in localStorage')
+            setStructureWorkplanAnalysis(JSON.parse(cached))
+          }
+        }
+      }
+    }
+
+    loadStructureWorkplan()
+  }, [proposalId, currentStep, structureWorkplanAnalysis])
+
   useEffect(() => {
     if (stepId) {
       if (stepId.startsWith('step-')) {
