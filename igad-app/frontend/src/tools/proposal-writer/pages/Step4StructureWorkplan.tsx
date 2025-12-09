@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Layers, Check, ChevronDown, ChevronUp, FileText, Info, Lightbulb, Edit3, BookOpen } from 'lucide-react'
+import { Sparkles, Check, ChevronDown, ChevronUp, FileText, Info, Lightbulb, Edit3, BookOpen, Download } from 'lucide-react'
 import styles from './step4-structure.module.css'
 import step2Styles from './step2.module.css'
 import step2ConceptStyles from './step2-concept-review.module.css'
@@ -361,7 +361,7 @@ export function Step4StructureWorkplan({
         <div className={step2Styles.sectionsCard}>
           <div className={step2Styles.sectionsCardInner}>
             <div className={step2Styles.sectionHeader}>
-              <Layers className={step2Styles.sectionIcon} size={24} />
+              <Sparkles className={step2Styles.sectionIcon} size={24} />
               <div>
                 <h2 className={step2Styles.sectionTitle}>Proposal Sections</h2>
                 <p className={step2Styles.sectionSubtitle}>
@@ -492,7 +492,7 @@ export function Step4StructureWorkplan({
         {/* Generate Template Section */}
         <div className={step2Styles.card}>
           <div className={step2Styles.sectionHeader}>
-            <Layers className={step2Styles.sectionIcon} size={20} />
+            <FileText className={step2Styles.sectionIcon} size={20} />
             <div>
               <h3 className={step2Styles.sectionTitle}>Generate Proposal Template</h3>
               <p className={step2Styles.sectionSubtitle}>
@@ -506,7 +506,7 @@ export function Step4StructureWorkplan({
             onClick={handleGenerateTemplate}
             disabled={isGenerating}
           >
-            <Layers size={16} />
+            <Download size={16} />
             {isGenerating ? 'Generating...' : 'Generate Template'}
           </button>
         </div>
