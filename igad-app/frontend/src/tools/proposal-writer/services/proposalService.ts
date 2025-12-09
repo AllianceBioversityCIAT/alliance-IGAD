@@ -343,17 +343,64 @@ class ProposalService {
     return response.data
   }
 
-  // Structure and Workplan analysis (Step 3)
+  // ==================== Structure and Workplan (Step 3) ====================
+
+  /**
+   * Start Structure Workplan analysis (Step 3)
+   *
+   * Generates a tailored proposal structure and workplan based on RFP analysis
+   * and concept evaluation. Uses AI to create sections, guidance, and questions.
+   *
+   * Prerequisites:
+   * - Step 1 (RFP Analysis) must be completed
+   * - Step 2 (Concept Evaluation) must be completed
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @returns Analysis status and metadata
+   * @throws Error if prerequisites not met or analysis fails to start
+   *
+   * @example
+   * ```typescript
+   * const result = await proposalService.analyzeStep3('abc-123')
+   * if (result.status === 'processing') {
+   *   // Poll for completion using getStructureWorkplanStatus()
+   * }
+   * ```
+   */
   async analyzeStep3(proposalId: string): Promise<{
     status: string
     message: string
     data?: any
     started_at?: string
   }> {
-    const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-step-3`)
-    return response.data
+    try {
+      const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-step-3`)
+      return response.data
+    } catch (error) {
+      console.error('❌ Failed to start Step 3 analysis:', error)
+      throw error
+    }
   }
 
+  /**
+   * Poll Structure Workplan analysis status
+   *
+   * Check the completion status of an ongoing Structure Workplan analysis.
+   * Call this repeatedly (with polling) until status is 'completed' or 'failed'.
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @returns Current analysis status, data (if completed), or error (if failed)
+   * @throws Error if unable to check status
+   *
+   * @example
+   * ```typescript
+   * const status = await proposalService.getStructureWorkplanStatus('abc-123')
+   * if (status.status === 'completed') {
+   *   const structure = status.data.structure_workplan_analysis
+   *   // Use structure data...
+   * }
+   * ```
+   */
   async getStructureWorkplanStatus(proposalId: string): Promise<{
     status: string
     data?: any
@@ -361,18 +408,50 @@ class ProposalService {
     started_at?: string
     completed_at?: string
   }> {
-    const response = await apiClient.get(`/api/proposals/${proposalId}/structure-workplan-status`)
-    return response.data
+    try {
+      const response = await apiClient.get(`/api/proposals/${proposalId}/structure-workplan-status`)
+      return response.data
+    } catch (error) {
+      console.error('❌ Failed to check Structure Workplan status:', error)
+      throw error
+    }
   }
 
-  // Generate proposal template (Step 3)
+  /**
+   * Generate Word template from structure workplan
+   *
+   * Creates a Microsoft Word document (.docx) containing the proposal structure
+   * with sections, guidance, questions, and space for content entry.
+   *
+   * Prerequisites:
+   * - Step 3 (Structure Workplan) must be completed
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @returns Blob containing the Word document
+   * @throws Error if structure workplan not completed or generation fails
+   *
+   * @example
+   * ```typescript
+   * const blob = await proposalService.generateProposalTemplate('abc-123')
+   * const url = window.URL.createObjectURL(blob)
+   * const a = document.createElement('a')
+   * a.href = url
+   * a.download = 'proposal-template.docx'
+   * a.click()
+   * ```
+   */
   async generateProposalTemplate(proposalId: string): Promise<Blob> {
-    const response = await apiClient.post(
-      `/api/proposals/${proposalId}/generate-proposal-template`,
-      {},
-      { responseType: 'blob' }
-    )
-    return response.data
+    try {
+      const response = await apiClient.post(
+        `/api/proposals/${proposalId}/generate-proposal-template`,
+        {},
+        { responseType: 'blob' }
+      )
+      return response.data
+    } catch (error) {
+      console.error('❌ Failed to generate proposal template:', error)
+      throw error
+    }
   }
 
   async getUploadedDocuments(proposalId: string): Promise<{

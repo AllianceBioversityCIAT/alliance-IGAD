@@ -1634,6 +1634,79 @@ async def get_step_2_status(proposal_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to check Step 2 status: {str(e)}")
 
 
+# ==================== HELPER FUNCTIONS ====================
+
+
+async def _verify_proposal_access(
+    proposal_id: str,
+    user: Dict[str, Any]
+) -> tuple[str, str, Dict[str, Any]]:
+    """
+    Verify user has access to proposal and return metadata.
+
+    This helper function reduces code duplication across endpoints by centralizing
+    the logic for:
+    1. Resolving proposal_id (UUID vs PROP-CODE)
+    2. Verifying proposal ownership
+    3. Loading proposal metadata
+
+    Args:
+        proposal_id: Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+        user: Authenticated user dict from get_current_user()
+
+    Returns:
+        Tuple of (pk, proposal_code, proposal_data):
+            - pk: DynamoDB partition key (PROPOSAL#{code})
+            - proposal_code: Resolved proposal code (PROP-YYYYMMDD-XXXX)
+            - proposal_data: Full proposal metadata dict
+
+    Raises:
+        HTTPException(404): If proposal not found
+        HTTPException(403): If user doesn't own the proposal
+
+    Example:
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+        # Now you can use pk, proposal_code, and proposal
+    """
+    # Resolve proposal ID (UUID vs code)
+    if proposal_id.startswith("PROP-"):
+        pk = f"PROPOSAL#{proposal_id}"
+        proposal_code = proposal_id
+    else:
+        # It's a UUID, need to query to find proposal code
+        items = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+
+        proposal_item = None
+        for item in items:
+            if item.get("id") == proposal_id:
+                proposal_item = item
+                break
+
+        if not proposal_item:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        pk = proposal_item["PK"]
+        proposal_code = proposal_item.get("proposalCode", proposal_id)
+
+    # Load proposal metadata
+    proposal = await db_client.get_item(pk=pk, sk="METADATA")
+
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+
+    # Verify ownership
+    if proposal.get("user_id") != user.get("user_id"):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    return pk, proposal_code, proposal
+
+
+# ==================== STEP 3: STRUCTURE & WORKPLAN ====================
+
+
 @router.post("/{proposal_id}/analyze-step-3")
 async def analyze_step_3(proposal_id: str, user=Depends(get_current_user)):
     """
@@ -1653,35 +1726,8 @@ async def analyze_step_3(proposal_id: str, user=Depends(get_current_user)):
     - hcd_notes: Human-centered design notes
     """
     try:
-        # Verify proposal ownership
-        if proposal_id.startswith("PROP-"):
-            pk = f"PROPOSAL#{proposal_id}"
-            proposal_code = proposal_id
-        else:
-            items = await db_client.query_items(
-                pk=f"USER#{user.get('user_id')}",
-                index_name="GSI1"
-            )
-
-            proposal_item = None
-            for item in items:
-                if item.get("id") == proposal_id:
-                    proposal_item = item
-                    break
-
-            if not proposal_item:
-                raise HTTPException(status_code=404, detail="Proposal not found")
-
-            pk = proposal_item["PK"]
-            proposal_code = proposal_item.get("proposalCode", proposal_id)
-
-        proposal = await db_client.get_item(pk=pk, sk="METADATA")
-
-        if not proposal:
-            raise HTTPException(status_code=404, detail="Proposal not found")
-
-        if proposal.get("user_id") != user.get("user_id"):
-            raise HTTPException(status_code=403, detail="Access denied")
+        # Verify proposal ownership using helper
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
 
         # Check prerequisites
         if not proposal.get("rfp_analysis"):
@@ -1765,25 +1811,8 @@ async def analyze_step_3(proposal_id: str, user=Depends(get_current_user)):
 async def get_structure_workplan_status(proposal_id: str, user=Depends(get_current_user)):
     """Poll for Structure Workplan analysis completion status"""
     try:
-        if proposal_id.startswith("PROP-"):
-            pk = f"PROPOSAL#{proposal_id}"
-        else:
-            items = await db_client.query_items(
-                pk=f"USER#{user.get('user_id')}",
-                index_name="GSI1"
-            )
-            proposal_item = None
-            for item in items:
-                if item.get("id") == proposal_id:
-                    proposal_item = item
-                    break
-            if not proposal_item:
-                raise HTTPException(status_code=404, detail="Proposal not found")
-            pk = proposal_item["PK"]
-
-        proposal = await db_client.get_item(pk=pk, sk="METADATA")
-        if not proposal:
-            raise HTTPException(status_code=404, detail="Proposal not found")
+        # Verify proposal ownership using helper
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
 
         status = proposal.get("analysis_status_structure_workplan", "not_started")
         
