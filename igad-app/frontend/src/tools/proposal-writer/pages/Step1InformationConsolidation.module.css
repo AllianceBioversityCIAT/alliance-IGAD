@@ -541,12 +541,312 @@
   display: none;
 }
 
-/* Uploaded File Card */
-.uploadedFileCard {
-  border: 1px solid #D1D5DC;
-  border-radius: 10px;
+/* Uploaded Files List Container */
+.uploadedFilesList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Uploading File Card */
+.uploadingFileCard {
+  border: 2px dashed #D1D5DB;
+  border-radius: 12px;
   padding: 20px;
   background: #F9FAFB;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.uploadingText {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+}
+
+/* Uploaded File Card */
+.uploadedFileCard {
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 16px;
+  background: #FFFFFF;
+  transition: all 0.2s ease;
+}
+
+.uploadedFileCard:hover {
+  border-color: #D1D5DB;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.uploadedFileContent {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.fileIconBadge {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #00A63E 0%, #008833 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 166, 62, 0.2);
+}
+
+.fileIconBadge[data-extension="DOCX"] {
+  background: linear-gradient(135deg, #2B579A 0%, #1E3A6D 100%);
+  box-shadow: 0 2px 8px rgba(43, 87, 154, 0.2);
+}
+
+.fileDetails {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.uploadedFileName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.fileMetadata {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+.fileStatus {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.fileDivider {
+  color: #D1D5DB;
+  font-weight: 300;
+}
+
+.fileType {
+  color: #6B7280;
+}
+
+.deleteFileButtonCompact {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: #9CA3AF;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deleteFileButtonCompact:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.deleteFileButtonCompact:active {
+  transform: scale(0.95);
+}
+
+/* Delete Confirmation Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modalContent {
+  background: white;
+  border-radius: 16px;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modalHeader {
+  padding: 24px 24px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.modalIconWrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #FEE2E2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.modalIcon {
+  color: #DC2626;
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.modalBody {
+  padding: 0 24px 24px;
+}
+
+.modalText {
+  font-size: 15px;
+  color: #374151;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.modalText strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+.modalSubtext {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.modalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid #E5E7EB;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.modalButtonSecondary {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #D1D5DB;
+  background: white;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modalButtonSecondary:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.modalButtonSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modalButtonDanger {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #DC2626;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modalButtonDanger:hover:not(:disabled) {
+  background: #B91C1C;
+}
+
+.modalButtonDanger:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.buttonSpinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .uploadedFileHeader {

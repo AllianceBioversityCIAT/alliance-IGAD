@@ -79,6 +79,12 @@ class ReferenceProposalsAnalyzer:
             if not proposal:
                 raise Exception(f"Proposal {proposal_id} not found")
 
+            proposal_code = proposal.get("proposalCode")
+            if not proposal_code:
+                raise Exception(f"Proposal code not found for {proposal_id}")
+
+            print(f"📋 Using proposal_code: {proposal_code}")
+
             # Step 2: Get semantic query from RFP analysis
             rfp_analysis = proposal.get('rfp_analysis', {})
 
@@ -120,7 +126,8 @@ class ReferenceProposalsAnalyzer:
             documents = self.vector_service.search_and_reconstruct_proposals(
                 query_text=semantic_query,
                 top_k=max_docs,
-                index_name="reference-proposals-index"
+                index_name="reference-proposals-index",
+                proposal_id=proposal_code  # Use proposal_code, not UUID
             )
 
             if not documents:

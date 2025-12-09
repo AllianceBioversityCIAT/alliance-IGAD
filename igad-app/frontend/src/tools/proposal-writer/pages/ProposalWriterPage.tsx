@@ -47,6 +47,12 @@ export function ProposalWriterPage() {
     textInputs: {} as { [key: string]: string },
   })
 
+  // Upload states for validation
+  const [isUploadingRFP, setIsUploadingRFP] = useState(false)
+  const [isUploadingReference, setIsUploadingReference] = useState(false)
+  const [isUploadingSupporting, setIsUploadingSupporting] = useState(false)
+  const [isUploadingConcept, setIsUploadingConcept] = useState(false)
+
   const allowNavigation = useRef(false)
   const formDataLoadedFromDB = useRef(false)
   const localStorageLoaded = useRef(false)
@@ -763,7 +769,21 @@ export function ProposalWriterPage() {
 
         // STEP 2: Reference Proposals + Existing Work
         console.log('📡 Step 2/3: Starting Reference Proposals + Existing Work analysis...')
-        setAnalysisProgress({ step: 2, total: 3, message: 'Analyzing Reference Proposals & Existing Work...' })
+        
+        // Check if there are documents to analyze
+        const hasReferenceProposals = (formData.uploadedFiles['reference-proposals'] || []).length > 0
+        const hasSupportingDocs = (formData.uploadedFiles['supporting-docs'] || []).length > 0
+        
+        let step2Message = 'Analyzing Reference Proposals & Existing Work...'
+        if (!hasReferenceProposals && !hasSupportingDocs) {
+          step2Message = 'Skipping optional analyses (no documents uploaded)...'
+        } else if (!hasReferenceProposals) {
+          step2Message = 'Analyzing Existing Work (no reference proposals)...'
+        } else if (!hasSupportingDocs) {
+          step2Message = 'Analyzing Reference Proposals (no existing work)...'
+        }
+        
+        setAnalysisProgress({ step: 2, total: 3, message: step2Message })
 
         const step2Result = await proposalService.analyzeStep2(proposalId!)
         console.log('📊 Step 2 (Reference Proposals + Existing Work) launched:', step2Result)
@@ -1304,6 +1324,11 @@ export function ProposalWriterPage() {
       onConceptEvaluationChange: handleConceptEvaluationChange,
       conceptDocument,
       conceptEvaluationData,
+      // Upload state setters for Step 1
+      setIsUploadingRFP,
+      setIsUploadingReference,
+      setIsUploadingSupporting,
+      setIsUploadingConcept,
     }
 
     switch (currentStep) {
@@ -1405,16 +1430,24 @@ export function ProposalWriterPage() {
             formData.uploadedFiles['rfp-document'].length === 0 ||
             ((formData.textInputs['initial-concept'] || '').length < 100 &&
               (!formData.uploadedFiles['concept-document'] ||
-                formData.uploadedFiles['concept-document'].length === 0))))
+                formData.uploadedFiles['concept-document'].length === 0)) ||
+            // Disable if any uploads are in progress
+            isUploadingRFP ||
+            isUploadingReference ||
+            isUploadingSupporting ||
+            isUploadingConcept))
       }
       title={
         currentStep === 1 &&
-        (!(formData.textInputs['proposal-title'] || '').trim() ||
-          !formData.uploadedFiles['rfp-document'] ||
-          formData.uploadedFiles['rfp-document'].length === 0 ||
-          ((formData.textInputs['initial-concept'] || '').length < 100 &&
-            (!formData.uploadedFiles['concept-document'] ||
-              formData.uploadedFiles['concept-document'].length === 0)))
+        (isUploadingRFP || isUploadingReference || isUploadingSupporting || isUploadingConcept)
+          ? 'Please wait for file uploads to complete'
+          : currentStep === 1 &&
+            (!(formData.textInputs['proposal-title'] || '').trim() ||
+              !formData.uploadedFiles['rfp-document'] ||
+              formData.uploadedFiles['rfp-document'].length === 0 ||
+              ((formData.textInputs['initial-concept'] || '').length < 100 &&
+                (!formData.uploadedFiles['concept-document'] ||
+                  formData.uploadedFiles['concept-document'].length === 0)))
           ? 'Please provide a title, upload an RFP document, and provide an initial concept'
           : ''
       }

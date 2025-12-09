@@ -421,7 +421,7 @@ class ProposalService {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000, // 2 minutes for file upload + vectorization
+        timeout: 300000, // 5 minutes for large file upload + vectorization
       }
     )
     return response.data
@@ -483,7 +483,7 @@ class ProposalService {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000, // 2 minutes for file upload + vectorization
+        timeout: 300000, // 5 minutes for large file upload + vectorization
       }
     )
     return response.data

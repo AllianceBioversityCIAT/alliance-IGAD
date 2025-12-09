@@ -19,14 +19,14 @@ import {
 // CONSTANTS
 // ============================================================================
 
-/** Maximum file size in bytes (10 MB) */
-const MAX_FILE_SIZE = 10 * 1024 * 1024
+/** Maximum file size in bytes (2 MB) */
+const MAX_FILE_SIZE = 2 * 1024 * 1024
 
 /** Maximum number of files per section (Reference Proposals and Existing Work) */
 const MAX_FILES_PER_SECTION = 3
 
-/** Maximum total size for all files in a section (10 MB) */
-const MAX_TOTAL_SIZE_PER_SECTION = 10 * 1024 * 1024
+/** Maximum total size for all files in a section (6 MB total = 3 files x 2MB) */
+const MAX_TOTAL_SIZE_PER_SECTION = 6 * 1024 * 1024
 
 /** Allowed file types for concept document */
 const ALLOWED_CONCEPT_TYPES = ['.pdf', '.docx', '.txt']
@@ -46,6 +46,14 @@ interface Step1Props extends StepProps {
   rfpAnalysis?: Record<string, unknown>
   /** Concept analysis data from AI processing */
   conceptAnalysis?: Record<string, unknown>
+  /** Setter for RFP upload state */
+  setIsUploadingRFP?: (isUploading: boolean) => void
+  /** Setter for reference proposals upload state */
+  setIsUploadingReference?: (isUploading: boolean) => void
+  /** Setter for supporting docs upload state */
+  setIsUploadingSupporting?: (isUploading: boolean) => void
+  /** Setter for concept upload state */
+  setIsUploadingConcept?: (isUploading: boolean) => void
 }
 
 // ============================================================================
@@ -108,6 +116,10 @@ export function Step1InformationConsolidation({
   proposalId,
   rfpAnalysis,
   conceptAnalysis,
+  setIsUploadingRFP: setParentIsUploadingRFP,
+  setIsUploadingReference: setParentIsUploadingReference,
+  setIsUploadingSupporting: setParentIsUploadingSupporting,
+  setIsUploadingConcept: setParentIsUploadingConcept,
 }: Step1Props) {
   // ============================================================================
   // STATE - Hooks
@@ -115,6 +127,23 @@ export function Step1InformationConsolidation({
 
   const { proposal, updateFormData, isUpdating, isLoading } = useProposal(proposalId)
   const { showSuccess, showError, showWarning } = useToast()
+
+  // ============================================================================
+  // UPLOAD STATE SYNC HELPERS
+  // ============================================================================
+
+  /**
+   * Sync upload states with parent component
+   * Updates both local and parent states
+   */
+  const syncUploadState = (
+    localSetter: (value: boolean) => void,
+    parentSetter: ((value: boolean) => void) | undefined,
+    value: boolean
+  ) => {
+    localSetter(value)
+    parentSetter?.(value)
+  }
 
   // ============================================================================
   // STATE - Data Loading
@@ -167,6 +196,10 @@ export function Step1InformationConsolidation({
   const [isUploadingReference, setIsUploadingReference] = useState(false)
   /** Error message for reference proposals operations */
   const [referenceUploadError, setReferenceUploadError] = useState('')
+  /** File pending deletion */
+  const [fileToDelete, setFileToDelete] = useState<{ filename: string; type: string } | null>(null)
+  /** Loading state for file deletion */
+  const [isDeletingFile, setIsDeletingFile] = useState(false)
 
   // ============================================================================
   // STATE - Existing Work & Experience
@@ -361,7 +394,7 @@ export function Step1InformationConsolidation({
 
     // RFP documents require special processing (S3 + vectorization)
     if (proposalId && section === 'rfp-document') {
-      setIsUploadingRFP(true)
+      syncUploadState(setIsUploadingRFP, setParentIsUploadingRFP, true)
       setUploadError('')
 
       try {
@@ -412,7 +445,7 @@ export function Step1InformationConsolidation({
           onClick: () => handleFileUpload(section, files),
         })
       } finally {
-        setIsUploadingRFP(false)
+        syncUploadState(setIsUploadingRFP, setParentIsUploadingRFP, false)
       }
     } else {
       // Other sections: simple metadata update (no S3 upload yet)
@@ -453,7 +486,7 @@ export function Step1InformationConsolidation({
       return
     }
 
-    setIsUploadingRFP(true)
+    syncUploadState(setIsUploadingRFP, setParentIsUploadingRFP, true)
     setShowManualInput(false)
     setUploadError('')
 
@@ -473,7 +506,7 @@ export function Step1InformationConsolidation({
         'Unknown error'
       setUploadError(String(errorMessage))
     } finally {
-      setIsUploadingRFP(false)
+      syncUploadState(setIsUploadingRFP, setParentIsUploadingRFP, false)
     }
   }
 
@@ -564,7 +597,7 @@ export function Step1InformationConsolidation({
       return
     }
 
-    setIsUploadingConcept(true)
+    syncUploadState(setIsUploadingConcept, setParentIsUploadingConcept, true)
     setConceptUploadError('')
 
     try {
@@ -599,7 +632,7 @@ export function Step1InformationConsolidation({
         onClick: () => handleConceptFileUpload(files),
       })
     } finally {
-      setIsUploadingConcept(false)
+      syncUploadState(setIsUploadingConcept, setParentIsUploadingConcept, false)
     }
   }
 
@@ -859,7 +892,7 @@ export function Step1InformationConsolidation({
       return
     }
 
-    setIsUploadingReference(true)
+    syncUploadState(setIsUploadingReference, setParentIsUploadingReference, true)
     setReferenceUploadError('')
 
     try {
@@ -882,9 +915,25 @@ export function Step1InformationConsolidation({
       const errorMsg =
         (error as Record<string, unknown>)?.response?.data?.detail ||
         'Failed to upload reference file'
-      setReferenceUploadError(String(errorMsg))
+      
+      // Check if it's a timeout error
+      const isTimeout = String(errorMsg).toLowerCase().includes('timeout') || 
+                       (error as any)?.code === 'ECONNABORTED'
+      
+      if (isTimeout) {
+        setReferenceUploadError(
+          `⏱️ Upload timed out\n\n` +
+          `Large files may take too long to process.\n\n` +
+          `Solutions:\n` +
+          `• Compress your PDF at: ilovepdf.com/compress_pdf\n` +
+          `• Split into smaller documents\n` +
+          `• Use only the most relevant pages`
+        )
+      } else {
+        setReferenceUploadError(String(errorMsg))
+      }
     } finally {
-      setIsUploadingReference(false)
+      syncUploadState(setIsUploadingReference, setParentIsUploadingReference, false)
     }
   }
 
@@ -894,29 +943,57 @@ export function Step1InformationConsolidation({
    * @param filename - Name of file to delete
    */
   const handleDeleteReferenceFile = async (filename: string) => {
-    if (!confirm(`Delete ${filename}?`) || !proposalId) {
-      return
-    }
+    setFileToDelete({ filename, type: 'reference' })
+  }
+
+  /**
+   * Confirm and execute file deletion
+   */
+  const confirmDeleteFile = async () => {
+    if (!fileToDelete || !proposalId) return
+
+    setIsDeletingFile(true)
 
     try {
       const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-      await proposalService.deleteReferenceFile(proposalId, filename)
+      
+      if (fileToDelete.type === 'reference') {
+        await proposalService.deleteReferenceFile(proposalId, fileToDelete.filename)
+        
+        const currentFiles = formData.uploadedFiles['reference-proposals'] || []
+        const updatedFiles = currentFiles.filter(f => f !== fileToDelete.filename)
+        
+        setFormData(prev => ({
+          ...prev,
+          uploadedFiles: {
+            ...prev.uploadedFiles,
+            'reference-proposals': updatedFiles,
+          },
+        }))
+      } else if (fileToDelete.type === 'supporting') {
+        await proposalService.deleteSupportingFile(proposalId, fileToDelete.filename)
+        
+        const currentFiles = formData.uploadedFiles['supporting-docs'] || []
+        const updatedFiles = currentFiles.filter(f => f !== fileToDelete.filename)
+        
+        setFormData(prev => ({
+          ...prev,
+          uploadedFiles: {
+            ...prev.uploadedFiles,
+            'supporting-docs': updatedFiles,
+          },
+        }))
+      }
 
-      const currentFiles = formData.uploadedFiles['reference-proposals'] || []
-      const updatedFiles = currentFiles.filter(f => f !== filename)
-
-      setFormData(prev => ({
-        ...prev,
-        uploadedFiles: {
-          ...prev.uploadedFiles,
-          'reference-proposals': updatedFiles,
-        },
-      }))
+      showSuccess('File deleted successfully')
     } catch (error: unknown) {
       const errorMsg =
         (error as Record<string, unknown>)?.response?.data?.detail ||
-        'Failed to delete reference file'
-      setReferenceUploadError(String(errorMsg))
+        'Failed to delete file'
+      showError('Delete Failed', String(errorMsg))
+    } finally {
+      setIsDeletingFile(false)
+      setFileToDelete(null)
     }
   }
 
@@ -996,7 +1073,7 @@ export function Step1InformationConsolidation({
       return
     }
 
-    setIsUploadingSupporting(true)
+    syncUploadState(setIsUploadingSupporting, setParentIsUploadingSupporting, true)
     setWorkUploadError('')
 
     try {
@@ -1019,9 +1096,25 @@ export function Step1InformationConsolidation({
       const errorMsg =
         (error as Record<string, unknown>)?.response?.data?.detail ||
         'Failed to upload supporting file'
-      setWorkUploadError(String(errorMsg))
+      
+      // Check if it's a timeout error
+      const isTimeout = String(errorMsg).toLowerCase().includes('timeout') || 
+                       (error as any)?.code === 'ECONNABORTED'
+      
+      if (isTimeout) {
+        setWorkUploadError(
+          `⏱️ Upload timed out\n\n` +
+          `Large files may take too long to process.\n\n` +
+          `Solutions:\n` +
+          `• Compress at: ilovepdf.com/compress_pdf\n` +
+          `• Split into smaller documents\n` +
+          `• Use only the most relevant pages`
+        )
+      } else {
+        setWorkUploadError(String(errorMsg))
+      }
     } finally {
-      setIsUploadingSupporting(false)
+      syncUploadState(setIsUploadingSupporting, setParentIsUploadingSupporting, false)
     }
   }
 
@@ -1031,30 +1124,7 @@ export function Step1InformationConsolidation({
    * @param filename - Name of file to delete
    */
   const handleDeleteSupportingFile = async (filename: string) => {
-    if (!confirm(`Delete ${filename}?`) || !proposalId) {
-      return
-    }
-
-    try {
-      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-      await proposalService.deleteSupportingFile(proposalId, filename)
-
-      const currentFiles = formData.uploadedFiles['supporting-docs'] || []
-      const updatedFiles = currentFiles.filter(f => f !== filename)
-
-      setFormData(prev => ({
-        ...prev,
-        uploadedFiles: {
-          ...prev.uploadedFiles,
-          'supporting-docs': updatedFiles,
-        },
-      }))
-    } catch (error: unknown) {
-      const errorMsg =
-        (error as Record<string, unknown>)?.response?.data?.detail ||
-        'Failed to delete supporting file'
-      setWorkUploadError(String(errorMsg))
-    }
+    setFileToDelete({ filename, type: 'supporting' })
   }
 
   /**
@@ -1519,7 +1589,7 @@ export function Step1InformationConsolidation({
               Reference Proposals
             </h3>
             <p className={styles.uploadSectionDescription}>
-              Upload successful proposals to this donor or similar calls (max 3 files, 10MB total). These help understand
+              Upload successful proposals to this donor or similar calls (max 3 files, 2MB each). These help understand
               donor preferences and winning strategies.
             </p>
           </div>
@@ -1544,7 +1614,7 @@ export function Step1InformationConsolidation({
               <>
                 <FileText className={styles.uploadAreaIcon} size={32} aria-hidden="true" />
                 <p className={styles.uploadAreaTitle}>Drop reference proposals here or click to upload</p>
-                <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files (max 3 files, 10MB total)</p>
+                <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files (max 3 files, 2MB each)</p>
                 <input
                   type="file"
                   accept=".pdf,.docx"
@@ -1562,45 +1632,47 @@ export function Step1InformationConsolidation({
           </div>
         ) : (
           <div className={styles.uploadedFilesList}>
+            {/* Show uploading indicator when adding more files */}
+            {isUploadingReference && (
+              <div className={styles.uploadingFileCard}>
+                <div className={styles.uploadingSpinner} aria-live="polite">
+                  <div className={styles.spinner}></div>
+                </div>
+                <p className={styles.uploadingText}>Uploading and processing file...</p>
+              </div>
+            )}
+            
             {(formData.uploadedFiles['reference-proposals'] || []).map((file, index) => {
               const filename = typeof file === 'string' ? file : file.name
+              const fileExtension = filename.split('.').pop()?.toUpperCase() || 'FILE'
               return (
                 <div key={index} className={styles.uploadedFileCard}>
-                  <div className={styles.uploadedFileHeader}>
-                    <div className={styles.uploadedFileInfo}>
-                      <div className={styles.uploadedFileIconWrapper}>
-                        <FileText className={styles.uploadedFileIcon} size={24} aria-hidden="true" />
-                        <div className={styles.uploadedFileCheck} aria-label="Upload successful">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <circle cx="8" cy="8" r="8" fill="#10b981" />
-                            <path
-                              d="M5 8l2 2 4-4"
-                              stroke="white"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
+                  <div className={styles.uploadedFileContent}>
+                    <div className={styles.fileIconBadge} data-extension={fileExtension}>
+                      {fileExtension}
+                    </div>
+                    <div className={styles.fileDetails}>
+                      <p className={styles.uploadedFileName} title={filename}>{filename}</p>
+                      <div className={styles.fileMetadata}>
+                        <span className={styles.fileStatus}>
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <circle cx="6" cy="6" r="6" fill="#10b981" />
+                            <path d="M3.5 6l1.5 1.5 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
-                        </div>
-                      </div>
-                      <div>
-                        <p className={styles.uploadedFileName}>{filename}</p>
-                        <p className={styles.uploadedFileDescription}>Reference document uploaded</p>
+                          Uploaded
+                        </span>
+                        <span className={styles.fileDivider}>•</span>
+                        <span className={styles.fileType}>Reference document</span>
                       </div>
                     </div>
                     <button
                       onClick={() => handleDeleteReferenceFile(filename)}
-                      className={styles.deleteFileButton}
+                      className={styles.deleteFileButtonCompact}
                       title="Delete file"
                       aria-label={`Delete ${filename}`}
                     >
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path
-                          d="M6 8v8m4-8v8m4-8v8M4 6h12M9 4h2a1 1 0 011 1v1H8V5a1 1 0 011-1z"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M5 7v7m3-7v7m3-7v7M3 5h12M8 3h2a1 1 0 011 1v1H7V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                       </svg>
                     </button>
                   </div>
@@ -1651,7 +1723,7 @@ export function Step1InformationConsolidation({
             </h3>
             <p className={styles.uploadSectionDescription}>
               Describe your organization&apos;s relevant experience, ongoing projects, and previous
-              work that relates to this call. You can write text or upload documents (max 3 files, 10MB total).
+              work that relates to this call. You can write text or upload documents (max 3 files, 2MB each).
             </p>
           </div>
         </div>
@@ -1766,7 +1838,7 @@ export function Step1InformationConsolidation({
                 <>
                   <FileText className={styles.uploadAreaIcon} size={24} aria-hidden="true" />
                   <p className={styles.uploadAreaTitle}>Drop supporting files here</p>
-                  <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files (max 3 files, 10MB total)</p>
+                  <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files (max 3 files, 2MB each)</p>
                   <input
                     type="file"
                     accept=".pdf,.docx"
@@ -1784,45 +1856,47 @@ export function Step1InformationConsolidation({
             </div>
           ) : (
             <div className={styles.uploadedFilesList}>
+              {/* Show uploading indicator when adding more files */}
+              {isUploadingSupporting && (
+                <div className={styles.uploadingFileCard}>
+                  <div className={styles.uploadingSpinner} aria-live="polite">
+                    <div className={styles.spinner}></div>
+                  </div>
+                  <p className={styles.uploadingText}>Uploading and processing file...</p>
+                </div>
+              )}
+              
               {(formData.uploadedFiles['supporting-docs'] || []).map((file, index) => {
                 const filename = typeof file === 'string' ? file : file.name
+                const fileExtension = filename.split('.').pop()?.toUpperCase() || 'FILE'
                 return (
                   <div key={index} className={styles.uploadedFileCard}>
-                    <div className={styles.uploadedFileHeader}>
-                      <div className={styles.uploadedFileInfo}>
-                        <div className={styles.uploadedFileIconWrapper}>
-                          <FileText className={styles.uploadedFileIcon} size={24} aria-hidden="true" />
-                          <div className={styles.uploadedFileCheck} aria-label="Upload successful">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <circle cx="8" cy="8" r="8" fill="#10b981" />
-                              <path
-                                d="M5 8l2 2 4-4"
-                                stroke="white"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
+                    <div className={styles.uploadedFileContent}>
+                      <div className={styles.fileIconBadge} data-extension={fileExtension}>
+                        {fileExtension}
+                      </div>
+                      <div className={styles.fileDetails}>
+                        <p className={styles.uploadedFileName} title={filename}>{filename}</p>
+                        <div className={styles.fileMetadata}>
+                          <span className={styles.fileStatus}>
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <circle cx="6" cy="6" r="6" fill="#10b981" />
+                              <path d="M3.5 6l1.5 1.5 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                          </div>
-                        </div>
-                        <div>
-                          <p className={styles.uploadedFileName}>{filename}</p>
-                          <p className={styles.uploadedFileDescription}>Supporting document uploaded</p>
+                            Uploaded
+                          </span>
+                          <span className={styles.fileDivider}>•</span>
+                          <span className={styles.fileType}>Supporting document</span>
                         </div>
                       </div>
                       <button
                         onClick={() => handleDeleteSupportingFile(filename)}
-                        className={styles.deleteFileButton}
+                        className={styles.deleteFileButtonCompact}
                         title="Delete file"
                         aria-label={`Delete ${filename}`}
                       >
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                          <path
-                            d="M6 8v8m4-8v8m4-8v8M4 6h12M9 4h2a1 1 0 011 1v1H8V5a1 1 0 011-1z"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                          />
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                          <path d="M5 7v7m3-7v7m3-7v7M3 5h12M8 3h2a1 1 0 011 1v1H7V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                       </button>
                     </div>
@@ -2090,6 +2164,55 @@ export function Step1InformationConsolidation({
         onSubmit={handleManualTextSubmit}
         isProcessing={isUploadingRFP}
       />
+
+      {/* ===== Delete Confirmation Modal ===== */}
+      {fileToDelete && (
+        <div className={styles.modalOverlay} onClick={() => !isDeletingFile && setFileToDelete(null)}>
+          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalIconWrapper}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={styles.modalIcon}>
+                  <path d="M7 10v8m4-8v8m4-8v8M5 6h14M10 4h4a1 1 0 011 1v1H9V5a1 1 0 011-1z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+              <h3 className={styles.modalTitle}>Delete File</h3>
+            </div>
+            
+            <div className={styles.modalBody}>
+              <p className={styles.modalText}>
+                Are you sure you want to delete <strong>{fileToDelete.filename}</strong>?
+              </p>
+              <p className={styles.modalSubtext}>
+                This action cannot be undone. The file will be permanently removed from your proposal.
+              </p>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button
+                onClick={() => setFileToDelete(null)}
+                className={styles.modalButtonSecondary}
+                disabled={isDeletingFile}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteFile}
+                className={styles.modalButtonDanger}
+                disabled={isDeletingFile}
+              >
+                {isDeletingFile ? (
+                  <>
+                    <div className={styles.buttonSpinner}></div>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete File'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

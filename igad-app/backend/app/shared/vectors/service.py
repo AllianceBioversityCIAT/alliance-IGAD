@@ -347,7 +347,8 @@ class VectorEmbeddingsService:
         self,
         query_text: str,
         top_k: int = 5,
-        index_name: str = "reference-proposals-index"
+        index_name: str = "reference-proposals-index",
+        proposal_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         Search similar proposals using semantic query and reconstruct full documents.
@@ -363,6 +364,7 @@ class VectorEmbeddingsService:
             query_text: Semantic query from RFP analysis
             top_k: Number of top documents to return
             index_name: Vector index to search (default: reference-proposals-index)
+            proposal_id: Optional proposal ID to filter results (only return docs from this proposal)
 
         Returns:
             List of reconstructed documents with full text, sorted by relevance
@@ -405,6 +407,12 @@ class VectorEmbeddingsService:
 
                 # Key format: proposal_id|donor|sector|year|document_name|chunk_index|total_chunks
                 if len(parts) >= 5:
+                    vector_proposal_id = parts[0]
+                    
+                    # Filter by proposal_id if specified
+                    if proposal_id and vector_proposal_id != proposal_id:
+                        continue
+                    
                     doc_name = parts[4]  # document_name
 
                     if doc_name not in docs_by_name:
@@ -412,7 +420,7 @@ class VectorEmbeddingsService:
                             'chunks': [],
                             'avg_distance': 0,
                             'metadata': {
-                                'proposal_id': parts[0],
+                                'proposal_id': vector_proposal_id,
                                 'donor': parts[1],
                                 'sector': parts[2],
                                 'year': parts[3],

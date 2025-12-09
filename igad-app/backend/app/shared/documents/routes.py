@@ -555,8 +555,8 @@ async def upload_reference_file(
         if file_size == 0:
             raise HTTPException(status_code=400, detail="File is empty")
 
-        if file_size > 10 * 1024 * 1024:  # 10MB limit
-            raise HTTPException(status_code=400, detail="File size must be less than 10MB")
+        if file_size > 2 * 1024 * 1024:  # 2MB limit
+            raise HTTPException(status_code=400, detail="File size must be less than 2MB. Note: Files larger than 500KB may timeout during processing.")
 
         # Get proposal
         all_proposals = await db_client.query_items(
@@ -806,8 +806,8 @@ async def upload_supporting_file(
         if file_size == 0:
             raise HTTPException(status_code=400, detail="File is empty")
 
-        if file_size > 10 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="File size must be less than 10MB")
+        if file_size > 2 * 1024 * 1024:  # 2MB limit
+            raise HTTPException(status_code=400, detail="File size must be less than 2MB. Note: Files larger than 500KB may timeout during processing.")
 
         # Get proposal
         all_proposals = await db_client.query_items(
