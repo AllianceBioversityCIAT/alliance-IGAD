@@ -616,7 +616,14 @@ class ConceptDocumentGenerator:
                         "guiding_questions": outline_data.get(
                             "guiding_questions", []
                         ),
+                        # Preserve user_comment if it exists
+                        "user_comment": section.get("user_comment", ""),
                     }
+
+                    # Log if user comment is present
+                    if enriched_section["user_comment"]:
+                        logger.info(f"      📝 User comment included ({len(enriched_section['user_comment'])} chars)")
+
                     enriched_sections.append(enriched_section)
                 else:
                     logger.info(f"   ⚠️  No outline for {section_title}")
