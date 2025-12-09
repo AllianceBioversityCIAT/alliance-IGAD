@@ -21,6 +21,7 @@ from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer
 from app.tools.proposal_writer.concept_evaluation.service import SimpleConceptAnalyzer
 from app.tools.proposal_writer.document_generation.service import concept_generator
 from app.tools.proposal_writer.reference_proposals_analysis.service import ReferenceProposalsAnalyzer
+from app.tools.proposal_writer.structure_workplan.service import StructureWorkplanService
 from app.database.client import db_client
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ def _set_processing_status(
 
     Args:
         proposal_id: Proposal identifier
-        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document', 'reference_proposals')
+        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document', 'reference_proposals', 'structure_workplan')
 
     Raises:
         Exception: If DynamoDB update fails
@@ -94,6 +95,16 @@ def _set_processing_status(
                 ":started": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "structure_workplan":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="SET analysis_status_structure_workplan = :status, structure_workplan_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 def _set_completed_status(
@@ -106,7 +117,7 @@ def _set_completed_status(
 
     Args:
         proposal_id: Proposal identifier
-        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document', 'reference_proposals')
+        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document', 'reference_proposals', 'structure_workplan')
         result: Analysis result to save
 
     Raises:
@@ -229,6 +240,26 @@ def _set_completed_status(
                 ":updated": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "structure_workplan":
+        # Extract just the analysis content (avoid duplication)
+        analysis_data = result.get("structure_workplan_analysis", {})
+
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET structure_workplan_analysis = :analysis,
+                    analysis_status_structure_workplan = :status,
+                    structure_workplan_completed_at = :completed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":analysis": analysis_data,
+                ":status": "completed",
+                ":completed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 def _set_failed_status(
@@ -241,7 +272,7 @@ def _set_failed_status(
 
     Args:
         proposal_id: Proposal identifier
-        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document', 'reference_proposals')
+        analysis_type: Type of analysis ('rfp', 'concept', 'concept_document', 'reference_proposals', 'structure_workplan')
         error_msg: Error message to save
 
     Raises:
@@ -323,6 +354,23 @@ def _set_failed_status(
                 SET analysis_status_existing_work = :status,
                     existing_work_error = :error,
                     existing_work_failed_at = :failed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":status": "failed",
+                ":error": error_msg,
+                ":failed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
+    elif analysis_type == "structure_workplan":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET analysis_status_structure_workplan = :status,
+                    structure_workplan_error = :error,
+                    structure_workplan_failed_at = :failed,
                     updated_at = :updated
             """,
             expression_attribute_values={
@@ -541,6 +589,59 @@ def _handle_concept_analysis(proposal_id: str) -> Dict[str, Any]:
     return result
 
 
+# ==================== STRUCTURE WORKPLAN ANALYSIS ====================
+
+
+def _handle_structure_workplan_analysis(proposal_id: str) -> Dict[str, Any]:
+    """
+    Execute structure and workplan analysis.
+
+    Args:
+        proposal_id: Proposal identifier
+
+    Returns:
+        Analysis result from StructureWorkplanService
+
+    Raises:
+        Exception: If proposal/RFP/concept not found or analysis fails
+    """
+    logger.info(f"📋 Processing structure workplan analysis for: {proposal_id}")
+
+    # Retrieve proposal and validate dependencies (same as concept analysis)
+    proposal = db_client.get_item_sync(
+        pk=f"PROPOSAL#{proposal_id}", sk="METADATA"
+    )
+
+    if not proposal:
+        raise Exception(f"Proposal {proposal_id} not found")
+
+    rfp_analysis = proposal.get("rfp_analysis")
+    if not rfp_analysis:
+        raise Exception("RFP analysis must be completed first")
+
+    # Check for concept_evaluation or concept_analysis
+    concept_eval = proposal.get("concept_evaluation") or proposal.get("concept_analysis")
+    if not concept_eval:
+        raise Exception("Concept evaluation must be completed first")
+
+    logger.info("✅ Prerequisites validated")
+
+    # Set processing status
+    _set_processing_status(proposal_id, "structure_workplan")
+
+    logger.info("🔍 Starting structure workplan analysis...")
+    service = StructureWorkplanService()
+    result = service.analyze_structure_workplan(proposal_id)
+
+    logger.info("✅ Structure workplan analysis completed successfully")
+    logger.info(f"📊 Result keys: {list(result.keys())}")
+
+    _set_completed_status(proposal_id, "structure_workplan", result)
+    logger.info("💾 Structure workplan result saved to DynamoDB")
+
+    return result
+
+
 # ==================== CONCEPT DOCUMENT GENERATION ====================
 
 
@@ -673,16 +774,18 @@ def handler(event, context):
     """
     Lambda handler for asynchronous proposal analysis.
 
-    Coordinates four types of analysis workflows:
+    Coordinates five types of analysis workflows:
     1. RFP Analysis: Extracts structured data from RFP documents
     2. Reference Proposals Analysis: Analyzes reference proposals from S3 Vectors
-    3. Concept Analysis: Evaluates concept alignment with RFP
-    4. Document Generation: Creates refined concept document
+    3. Existing Work Analysis: Analyzes existing work from S3 Vectors
+    4. Concept Analysis: Evaluates concept alignment with RFP
+    5. Structure Workplan: Generates proposal structure and workplan
+    6. Document Generation: Creates refined concept document
 
     Expected event format:
     {
         "proposal_id": "uuid-string",
-        "analysis_type": "rfp" | "reference_proposals" | "concept" | "concept_document",
+        "analysis_type": "rfp" | "reference_proposals" | "existing_work" | "concept" | "structure_workplan" | "concept_document",
         "concept_evaluation": {...}  # Required for concept_document
     }
 
@@ -715,6 +818,8 @@ def handler(event, context):
             _handle_existing_work_analysis(proposal_id)
         elif analysis_type == "concept":
             _handle_concept_analysis(proposal_id)
+        elif analysis_type == "structure_workplan":
+            _handle_structure_workplan_analysis(proposal_id)
         elif analysis_type == "concept_document":
             _handle_concept_document_generation(proposal_id, event)
         else:
