@@ -380,8 +380,8 @@
 /* Details Section */
 .detailsSection {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .subsectionTitle {
@@ -390,18 +390,11 @@
   line-height: 24px;
   color: #101828;
   margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
-.subsectionTitle::before {
-  content: '';
-  width: 16px;
-  height: 16px;
-  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 8L7 11L12 5' stroke='%23166534' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-size: contain;
-  background-repeat: no-repeat;
+.subsectionIcon {
+  color: #166534;
+  flex-shrink: 0;
 }
 
 .subsectionText {
@@ -416,7 +409,7 @@
   border-top: 1px solid rgba(0, 0, 0, 0.1);
   padding-top: 21px;
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   gap: 12px;
 }
 
@@ -453,8 +446,8 @@
   border-top: 1px solid rgba(0, 0, 0, 0.1);
   padding-top: 21px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .commentTextarea {
