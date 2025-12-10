@@ -11,18 +11,22 @@ import { Step4ProposalReview } from './Step4ProposalReview'
 import { useProposals } from '@/tools/proposal-writer/hooks/useProposal'
 import { useProposalDraft } from '@/tools/proposal-writer/hooks/useProposalDraft'
 import { authService } from '@/shared/services/authService'
+import { proposalService } from '../services/proposalService'
+import { useToast } from '@/shared/components/ui/ToastContainer'
 import styles from './proposalWriter.module.css'
 
 export function ProposalWriterPage() {
   const { stepId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const { showSuccess, showError } = useToast()
   const [currentStep, setCurrentStep] = useState(1)
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
   const [proposalId, setProposalId] = useState<string>()
   const [proposalCode, setProposalCode] = useState<string>()
   const [showExitModal, setShowExitModal] = useState(false)
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
   const [isAnalyzingRFP, setIsAnalyzingRFP] = useState(false)
   const [rfpAnalysis, setRfpAnalysis] = useState<any>(null)
   const [referenceProposalsAnalysis, setReferenceProposalsAnalysis] = useState<any>(null)
@@ -665,6 +669,35 @@ export function ProposalWriterPage() {
           alert('Failed to delete draft. Please try again.')
         },
       })
+    }
+  }
+
+  const handleSaveAndClose = async () => {
+    if (!proposalId || isSavingDraft) {
+      return
+    }
+
+    setIsSavingDraft(true)
+
+    try {
+      // Update proposal with current timestamp
+      await proposalService.updateProposal(proposalId, {
+        updated_at: new Date().toISOString(),
+      })
+
+      showSuccess('Proposal saved successfully', 'Your progress has been saved.')
+
+      // Close modal and navigate to dashboard
+      setShowExitModal(false)
+      setPendingNavigation(null)
+
+      setTimeout(() => {
+        navigate('/dashboard')
+      }, 500)
+    } catch (error) {
+      console.error('Failed to save proposal:', error)
+      showError('Failed to save proposal', 'Please try again.')
+      setIsSavingDraft(false)
     }
   }
 
@@ -1656,8 +1689,10 @@ export function ProposalWriterPage() {
       <DraftConfirmationModal
         isOpen={showExitModal}
         proposalCode={proposalCode}
+        onSaveAndClose={handleSaveAndClose}
         onKeepDraft={handleKeepDraft}
         onDeleteDraft={handleDeleteDraft}
+        isSaving={isSavingDraft}
         isDeleting={isDeleting}
       />
       <ProposalLayout
@@ -1665,6 +1700,7 @@ export function ProposalWriterPage() {
         completedSteps={completedSteps}
         navigationButtons={navigationButtons}
         proposalCode={proposalCode}
+        proposalId={proposalId}
         isLoadingProposal={isCreating}
         onNavigateAway={handleNavigateAway}
       >

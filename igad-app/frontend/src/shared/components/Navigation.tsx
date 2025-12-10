@@ -120,8 +120,9 @@ export function Navigation() {
             gap: '16px',
           }}
         >
-          {/* Dashboard Button - Disabled */}
-          <div
+          {/* Dashboard Button */}
+          <Link
+            to="/dashboard"
             style={{
               display: 'flex',
               flexDirection: 'row',
@@ -130,8 +131,9 @@ export function Navigation() {
               gap: '14px',
               padding: '6px 12px',
               borderRadius: '8px',
-              opacity: 0.5,
-              cursor: 'not-allowed',
+              textDecoration: 'none',
+              background: location.pathname === '/dashboard' ? '#DCFCE7' : 'transparent',
+              transition: 'background 0.2s ease',
             }}
           >
             <svg
@@ -139,7 +141,7 @@ export function Navigation() {
               height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#364153"
+              stroke={location.pathname === '/dashboard' ? '#016630' : '#364153'}
               strokeWidth="1.33"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -154,12 +156,13 @@ export function Navigation() {
                 fontFamily: 'Arial',
                 fontSize: '14px',
                 lineHeight: '20px',
-                color: '#364153',
+                color: location.pathname === '/dashboard' ? '#016630' : '#364153',
+                fontWeight: location.pathname === '/dashboard' ? '600' : 'normal',
               }}
             >
               Dashboard
             </span>
-          </div>
+          </Link>
 
           {/* Notifications Button - Disabled */}
           <div

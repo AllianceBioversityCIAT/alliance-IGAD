@@ -4,11 +4,15 @@ import styles from '../pages/proposalWriter.module.css'
 interface ProposalSecondaryNavbarProps {
   proposalCode?: string
   isLoading?: boolean
+  onSaveAndClose?: () => void
+  isSaving?: boolean
 }
 
 export function ProposalSecondaryNavbar({
   proposalCode,
   isLoading = false,
+  onSaveAndClose,
+  isSaving = false,
 }: ProposalSecondaryNavbarProps) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -21,6 +25,15 @@ export function ProposalSecondaryNavbar({
     // Navigate to prompt manager with context
     navigate(`/admin/prompt-manager?from=${encodeURIComponent(currentPath)}&section=${section}`)
   }
+
+  const handleSaveAndClose = () => {
+    if (onSaveAndClose && !isSaving) {
+      onSaveAndClose()
+    }
+  }
+
+  // Button is disabled if: loading, no callback provided, currently saving, or no proposal exists
+  const isSaveDisabled = isLoading || !onSaveAndClose || isSaving || !proposalCode
 
   return (
     <div className={styles.secondaryNavbar}>
@@ -40,8 +53,19 @@ export function ProposalSecondaryNavbar({
           <button className={styles.promptManagerButton} onClick={handlePromptManagerClick}>
             Prompt Manager
           </button>
-          <button className={styles.saveAndCloseButton} disabled={true}>
-            Save and close
+          <button
+            className={styles.saveAndCloseButton}
+            disabled={isSaveDisabled}
+            onClick={handleSaveAndClose}
+          >
+            {isSaving ? (
+              <>
+                <span className={styles.buttonSpinner}></span>
+                Saving...
+              </>
+            ) : (
+              'Save and close'
+            )}
           </button>
         </div>
       </div>

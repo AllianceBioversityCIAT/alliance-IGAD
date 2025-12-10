@@ -109,13 +109,16 @@
   gap: 12px;
 }
 
-.infoDot {
-  width: 6px;
-  height: 6px;
-  background: #00A63E;
-  border-radius: 50%;
-  margin-top: 7px;
+.infoIcon {
+  color: #00A63E;
   flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.infoIconDanger {
+  color: #DC2626;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .infoText {
@@ -137,16 +140,17 @@
 }
 
 .buttonPrimary,
-.buttonSecondary {
+.buttonSecondary,
+.buttonDanger {
   font-family: Arial, sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
-  padding: 12px 24px;
+  padding: 10px 16px;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 160px;
+  white-space: nowrap;
 }
 
 .buttonPrimary {
@@ -162,17 +166,29 @@
 
 .buttonSecondary {
   background: #FFFFFF;
+  color: #374151;
+  border: 1px solid #D1D5DB;
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.buttonDanger {
+  background: #FFFFFF;
   color: #DC2626;
   border: 1px solid #FCA5A5;
 }
 
-.buttonSecondary:hover:not(:disabled) {
+.buttonDanger:hover:not(:disabled) {
   background: #FEF2F2;
   border-color: #DC2626;
 }
 
 .buttonPrimary:disabled,
-.buttonSecondary:disabled {
+.buttonSecondary:disabled,
+.buttonDanger:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -188,7 +204,8 @@
   }
 
   .buttonPrimary,
-  .buttonSecondary {
+  .buttonSecondary,
+  .buttonDanger {
     width: 100%;
   }
 }

@@ -129,10 +129,19 @@ class ProposalService {
       }
     }
 
-    return this.updateProposal(proposalId, {
+    // Build update payload
+    const updates: Partial<Proposal> = {
       uploaded_files: uploadedFiles,
       text_inputs: formData.textInputs,
-    })
+    }
+
+    // Sync proposal-title from text_inputs to title field
+    // This ensures the Dashboard shows the correct user-entered title
+    if (formData.textInputs?.['proposal-title']) {
+      updates.title = formData.textInputs['proposal-title']
+    }
+
+    return this.updateProposal(proposalId, updates)
   }
 
   async analyzeRFP(proposalId: string): Promise<{
