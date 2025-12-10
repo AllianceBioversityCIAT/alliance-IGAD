@@ -540,7 +540,13 @@ async def upload_reference_file(
     user=Depends(get_current_user)
 ):
     """
-    Upload reference proposal and store as vectors in S3 Vectors
+    Upload reference proposal and trigger async vectorization.
+
+    Process:
+    1. Validate and upload file to S3 (fast)
+    2. Update DynamoDB with file info and "vectorizing" status
+    3. Trigger Lambda worker for async vectorization
+    4. Return immediately - client polls for vectorization status
     """
     try:
         # Validate file
@@ -555,8 +561,8 @@ async def upload_reference_file(
         if file_size == 0:
             raise HTTPException(status_code=400, detail="File is empty")
 
-        if file_size > 2 * 1024 * 1024:  # 2MB limit
-            raise HTTPException(status_code=400, detail="File size must be less than 2MB. Note: Files larger than 500KB may timeout during processing.")
+        if file_size > 5 * 1024 * 1024:  # 5MB limit (increased from 2MB)
+            raise HTTPException(status_code=400, detail="File size must be less than 5MB")
 
         # Get proposal
         all_proposals = await db_client.query_items(
@@ -575,7 +581,7 @@ async def upload_reference_file(
 
         proposal_code = proposal.get("proposalCode")
 
-        # Upload to S3 (regular storage)
+        # Upload to S3 (fast operation)
         session = get_aws_session()
         s3_client = session.client('s3')
         bucket = os.environ.get('PROPOSALS_BUCKET')
@@ -585,6 +591,7 @@ async def upload_reference_file(
 
         s3_key = f"{proposal_code}/documents/references/{file.filename}"
 
+        print(f"📤 Uploading {file.filename} to S3...")
         s3_client.put_object(
             Bucket=bucket,
             Key=s3_key,
@@ -600,87 +607,71 @@ async def upload_reference_file(
                 'status': status
             }
         )
+        print(f"✅ File uploaded to S3: {s3_key}")
 
-        # Extract text from file
-        print(f"Extracting text from {file.filename}...")
-        extracted_text = extract_text_from_file(file_bytes, file.filename)
-
-        # If extraction failed, use a fallback description
-        if not extracted_text or len(extracted_text.strip()) < 100:
-            print(f"Warning: Text extraction failed or too short for {file.filename}")
-            extracted_text = f"Reference proposal: {file.filename}"
-            if donor:
-                extracted_text += f" from {donor}"
-            if sector:
-                extracted_text += f" in {sector} sector"
-            if year:
-                extracted_text += f" ({year})"
-
-        print(f"Extracted {len(extracted_text)} characters")
-
-        # Chunk text if it's too long (>1000 chars)
-        text_chunks = chunk_text(extracted_text, chunk_size=1000, overlap=200)
-        print(f"Created {len(text_chunks)} chunks")
-
-        # Store in S3 Vectors (each chunk as separate vector)
-        from app.shared.vectors.service import VectorEmbeddingsService
-        vector_service = VectorEmbeddingsService()
-
-        print(f"🔄 Starting vectorization for {len(text_chunks)} chunks...")
-        print(f"   Metadata: donor={donor}, sector={sector}, year={year}")
-        
-        vector_result = True
-        for idx, chunk in enumerate(text_chunks):
-            chunk_metadata = {
-                "donor": donor,
-                "sector": sector,
-                "year": year,
-                "status": status,
-                "document_name": file.filename,
-                "chunk_index": str(idx),
-                "total_chunks": str(len(text_chunks))
-            }
-
-            print(f"   Vectorizing chunk {idx+1}/{len(text_chunks)}...")
-            result = vector_service.insert_reference_proposal(
-                proposal_id=proposal_code,  # Base proposal code without chunk suffix
-                text=chunk,
-                metadata=chunk_metadata
-            )
-
-            if not result:
-                vector_result = False
-                print(f"❌ Vector storage failed for chunk {idx} of {file.filename}")
-            else:
-                print(f"✅ Chunk {idx+1} vectorized")
-        
-        print(f"✅ Vectorization complete: {len(text_chunks)} chunks processed")
-
-        if not vector_result:
-            print(f"Warning: Vector storage failed for {file.filename}")
-
-        # Update DynamoDB
+        # Update DynamoDB with file info and vectorization status
         current_files = proposal.get("uploaded_files", {}).get("reference-proposals", [])
         updated_files = current_files + [file.filename]
+
+        # Initialize vectorization_status map if not exists
+        vectorization_status = proposal.get("vectorization_status", {})
+        vectorization_status[file.filename] = {
+            "status": "pending",
+            "started_at": datetime.utcnow().isoformat(),
+            "chunks_processed": 0,
+            "total_chunks": 0
+        }
 
         await db_client.update_item(
             pk=f"PROPOSAL#{proposal_code}",
             sk="METADATA",
-            update_expression="SET uploaded_files.#ref = :files, updated_at = :updated",
+            update_expression="SET uploaded_files.#ref = :files, vectorization_status = :vec_status, updated_at = :updated",
             expression_attribute_names={"#ref": "reference-proposals"},
             expression_attribute_values={
                 ":files": updated_files,
+                ":vec_status": vectorization_status,
                 ":updated": datetime.utcnow().isoformat()
             }
         )
+        print(f"✅ DynamoDB updated with file info")
+
+        # Trigger async vectorization via Lambda
+        import json
+        import boto3
+        lambda_client = boto3.client('lambda')
+
+        worker_event = {
+            "proposal_id": proposal_id,
+            "proposal_code": proposal_code,
+            "analysis_type": "vectorize_document",
+            "document_type": "reference",
+            "filename": file.filename,
+            "s3_key": s3_key,
+            "metadata": {
+                "donor": donor,
+                "sector": sector,
+                "year": year,
+                "status": status
+            }
+        }
+
+        lambda_function_name = os.environ.get('WORKER_FUNCTION_NAME', 'proposal-writer-worker')
+        print(f"🚀 Triggering async vectorization: {lambda_function_name}")
+
+        lambda_client.invoke(
+            FunctionName=lambda_function_name,
+            InvocationType='Event',  # Async invocation
+            Payload=json.dumps(worker_event)
+        )
+        print(f"✅ Lambda invoked asynchronously for vectorization")
 
         return {
             "success": True,
-            "message": "Reference proposal uploaded successfully",
+            "message": "Reference proposal uploaded, vectorization in progress",
             "filename": file.filename,
             "document_key": s3_key,
             "size": file_size,
-            "vectorized": vector_result
+            "vectorization_status": "pending"
         }
 
     except HTTPException:
@@ -782,16 +773,13 @@ async def upload_supporting_file(
     user=Depends(get_current_user)
 ):
     """
-    Upload supporting document (existing work) with vectorization.
+    Upload supporting document (existing work) and trigger async vectorization.
 
     Process:
-    1. Validate PDF/DOCX file (max 10MB)
-    2. Upload to S3: {proposal_code}/documents/supporting/{filename}
-    3. Extract text from document
-    4. Chunk text (1000 chars, 200 overlap)
-    5. Vectorize each chunk with metadata
-    6. Store vectors in existing-work-index
-    7. Update DynamoDB uploaded_files.supporting-docs
+    1. Validate and upload file to S3 (fast)
+    2. Update DynamoDB with file info and "vectorizing" status
+    3. Trigger Lambda worker for async vectorization
+    4. Return immediately - client polls for vectorization status
     """
     try:
         # Validate file
@@ -806,8 +794,8 @@ async def upload_supporting_file(
         if file_size == 0:
             raise HTTPException(status_code=400, detail="File is empty")
 
-        if file_size > 2 * 1024 * 1024:  # 2MB limit
-            raise HTTPException(status_code=400, detail="File size must be less than 2MB. Note: Files larger than 500KB may timeout during processing.")
+        if file_size > 5 * 1024 * 1024:  # 5MB limit (increased from 2MB)
+            raise HTTPException(status_code=400, detail="File size must be less than 5MB")
 
         # Get proposal
         all_proposals = await db_client.query_items(
@@ -826,7 +814,7 @@ async def upload_supporting_file(
 
         proposal_code = proposal.get("proposalCode")
 
-        # Upload to S3
+        # Upload to S3 (fast operation)
         session = get_aws_session()
         s3_client = session.client('s3')
         bucket = os.environ.get('PROPOSALS_BUCKET')
@@ -836,6 +824,7 @@ async def upload_supporting_file(
 
         s3_key = f"{proposal_code}/documents/supporting/{file.filename}"
 
+        print(f"📤 Uploading {file.filename} to S3...")
         s3_client.put_object(
             Bucket=bucket,
             Key=s3_key,
@@ -850,87 +839,70 @@ async def upload_supporting_file(
                 'region': region
             }
         )
+        print(f"✅ File uploaded to S3: {s3_key}")
 
-        # Extract text from document using optimized helper function
-        print(f"Extracting text from {file.filename}...")
-        extracted_text = extract_text_from_file(file_bytes, file.filename)
-
-        # If extraction failed, use a fallback description
-        if not extracted_text or len(extracted_text.strip()) < 100:
-            print(f"Warning: Text extraction failed or too short for {file.filename}")
-            extracted_text = f"Existing work document: {file.filename}"
-            if organization:
-                extracted_text += f" from {organization}"
-            if project_type:
-                extracted_text += f" ({project_type})"
-            if region:
-                extracted_text += f" in {region}"
-
-        print(f"Extracted {len(extracted_text)} characters")
-
-        # Chunk text using optimized helper function (1000 chars with 200 overlap)
-        chunks = chunk_text(extracted_text, chunk_size=1000, overlap=200)
-        print(f"Created {len(chunks)} chunks")
-
-        # Vectorize each chunk
-        from app.shared.vectors.service import VectorEmbeddingsService
-        vector_service = VectorEmbeddingsService()
-
-        print(f"🔄 Starting vectorization for {len(chunks)} chunks...")
-        print(f"   Metadata: organization={organization}, project_type={project_type}, region={region}")
-
-        vector_result = True
-        for idx, chunk in enumerate(chunks):
-            chunk_metadata = {
-                "organization": organization,
-                "project_type": project_type,
-                "region": region,
-                "document_name": file.filename,
-                "chunk_index": str(idx),
-                "total_chunks": str(len(chunks))
-            }
-
-            print(f"   Vectorizing chunk {idx+1}/{len(chunks)}...")
-            result = vector_service.insert_existing_work(
-                proposal_id=proposal_code,
-                text=chunk,
-                metadata=chunk_metadata
-            )
-
-            if not result:
-                vector_result = False
-                print(f"❌ Vector storage failed for chunk {idx} of {file.filename}")
-            else:
-                print(f"✅ Chunk {idx+1} vectorized")
-
-        print(f"✅ Vectorization complete: {len(chunks)} chunks processed")
-
-        if not vector_result:
-            print(f"Warning: Vector storage failed for {file.filename}")
-
-        # Update DynamoDB
+        # Update DynamoDB with file info and vectorization status
         current_files = proposal.get("uploaded_files", {}).get("supporting-docs", [])
         updated_files = current_files + [file.filename]
+
+        # Initialize vectorization_status map if not exists
+        vectorization_status = proposal.get("vectorization_status", {})
+        vectorization_status[file.filename] = {
+            "status": "pending",
+            "started_at": datetime.utcnow().isoformat(),
+            "chunks_processed": 0,
+            "total_chunks": 0
+        }
 
         await db_client.update_item(
             pk=f"PROPOSAL#{proposal_code}",
             sk="METADATA",
-            update_expression="SET uploaded_files.#sup = :files, updated_at = :updated",
+            update_expression="SET uploaded_files.#sup = :files, vectorization_status = :vec_status, updated_at = :updated",
             expression_attribute_names={"#sup": "supporting-docs"},
             expression_attribute_values={
                 ":files": updated_files,
+                ":vec_status": vectorization_status,
                 ":updated": datetime.utcnow().isoformat()
             }
         )
+        print(f"✅ DynamoDB updated with file info")
+
+        # Trigger async vectorization via Lambda
+        import json
+        import boto3
+        lambda_client = boto3.client('lambda')
+
+        worker_event = {
+            "proposal_id": proposal_id,
+            "proposal_code": proposal_code,
+            "analysis_type": "vectorize_document",
+            "document_type": "supporting",
+            "filename": file.filename,
+            "s3_key": s3_key,
+            "metadata": {
+                "organization": organization,
+                "project_type": project_type,
+                "region": region
+            }
+        }
+
+        lambda_function_name = os.environ.get('WORKER_FUNCTION_NAME', 'proposal-writer-worker')
+        print(f"🚀 Triggering async vectorization: {lambda_function_name}")
+
+        lambda_client.invoke(
+            FunctionName=lambda_function_name,
+            InvocationType='Event',  # Async invocation
+            Payload=json.dumps(worker_event)
+        )
+        print(f"✅ Lambda invoked asynchronously for vectorization")
 
         return {
             "success": True,
-            "message": "Supporting document uploaded successfully",
+            "message": "Supporting document uploaded, vectorization in progress",
             "filename": file.filename,
             "document_key": s3_key,
             "size": file_size,
-            "vectorized": vector_result,
-            "chunks_created": len(chunks),
+            "vectorization_status": "pending",
             "metadata": {
                 "organization": organization,
                 "project_type": project_type,
@@ -1035,6 +1007,137 @@ async def delete_supporting_file(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to delete supporting file: {str(e)}")
+
+
+@router.get("/vectorization-status")
+async def get_vectorization_status(
+    proposal_id: str,
+    user=Depends(get_current_user)
+):
+    """
+    Get vectorization status for all files in a proposal.
+
+    Returns:
+        {
+            "vectorization_status": {
+                "filename.pdf": {
+                    "status": "completed" | "processing" | "failed" | "pending",
+                    "chunks_processed": 10,
+                    "total_chunks": 15,
+                    "error": "..." (if failed)
+                },
+                ...
+            },
+            "all_completed": true | false,
+            "has_pending": true | false
+        }
+    """
+    try:
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        vectorization_status = proposal.get("vectorization_status", {})
+
+        # Calculate aggregate status
+        all_completed = True
+        has_pending = False
+        has_failed = False
+
+        for filename, file_status in vectorization_status.items():
+            status = file_status.get("status", "unknown")
+            if status in ["pending", "processing"]:
+                all_completed = False
+                has_pending = True
+            elif status == "failed":
+                has_failed = True
+
+        return {
+            "success": True,
+            "vectorization_status": vectorization_status,
+            "all_completed": all_completed,
+            "has_pending": has_pending,
+            "has_failed": has_failed
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Get vectorization status error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to get vectorization status: {str(e)}")
+
+
+@router.get("/vectorization-status/{filename}")
+async def get_file_vectorization_status(
+    proposal_id: str,
+    filename: str,
+    user=Depends(get_current_user)
+):
+    """
+    Get vectorization status for a specific file.
+
+    Returns:
+        {
+            "filename": "document.pdf",
+            "status": "completed" | "processing" | "failed" | "pending",
+            "chunks_processed": 10,
+            "total_chunks": 15,
+            "error": "..." (if failed)
+        }
+    """
+    try:
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}",
+            index_name="GSI1"
+        )
+
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        vectorization_status = proposal.get("vectorization_status", {})
+        file_status = vectorization_status.get(filename)
+
+        if not file_status:
+            return {
+                "success": True,
+                "filename": filename,
+                "status": "unknown",
+                "message": "No vectorization status found for this file"
+            }
+
+        return {
+            "success": True,
+            "filename": filename,
+            **file_status
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Get file vectorization status error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to get file vectorization status: {str(e)}")
 
 
 @router.post("/save-work-text")

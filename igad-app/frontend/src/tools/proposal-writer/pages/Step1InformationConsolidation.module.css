@@ -455,7 +455,7 @@
   padding: 12px;
 }
 
-.spinner {
+.uploadSpinner {
   width: 40px;
   height: 40px;
   border: 3px solid #E5E7EB;
@@ -468,6 +468,11 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Spinning icon for vectorization */
+.spinningIcon {
+  animation: spin 1s linear infinite;
 }
 
 /* Skeleton Loading */

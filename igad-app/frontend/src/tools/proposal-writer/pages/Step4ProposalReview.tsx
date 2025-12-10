@@ -461,7 +461,7 @@ export function Step4ProposalReview({ proposalId }: Step4Props) {
 
             {isAnalyzing ? (
               <div className={styles.analyzingState}>
-                <div className={styles.spinner}></div>
+                <div className={styles.uploadSpinner}></div>
                 <p>Analyzing your proposal...</p>
               </div>
             ) : (

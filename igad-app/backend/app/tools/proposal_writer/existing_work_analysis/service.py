@@ -120,14 +120,15 @@ class ExistingWorkAnalyzer:
             print(f"🔍 Using semantic query from RFP analysis:")
             print(f"   Query: {semantic_query[:150]}...")
 
-            # Step 3: Semantic search in existing-work-index
-            print(f"🔎 Searching for relevant existing work...")
+            # Step 3: Get all existing work documents for this proposal
+            # Note: Using get_documents_by_proposal instead of semantic search
+            # to ensure we retrieve ALL uploaded documents regardless of similarity
+            print(f"🔎 Retrieving existing work documents for {proposal_code}...")
             max_docs = EXISTING_WORK_ANALYSIS_SETTINGS["max_documents"]
-            documents = self.vector_service.search_and_reconstruct_proposals(
-                query_text=semantic_query,
-                top_k=max_docs,
+            documents = self.vector_service.get_documents_by_proposal(
+                proposal_id=proposal_code,
                 index_name="existing-work-index",
-                proposal_id=proposal_code  # Use proposal_code, not UUID
+                max_docs=max_docs
             )
 
             if not documents:
@@ -166,9 +167,15 @@ class ExistingWorkAnalyzer:
             start_time = time.time()
 
             for idx, doc in enumerate(documents, 1):
+                doc_text = doc.get("full_text", "")
                 print(f"  📄 Analyzing document {idx}/{len(documents)}: {doc['document_name']}")
+                print(f"     Document text length: {len(doc_text)} characters")
+
+                if not doc_text or len(doc_text.strip()) < 50:
+                    print(f"     ⚠️  Warning: Document text is empty or very short!")
+
                 analysis = self._analyze_single_document(
-                    document_text=doc["full_text"],
+                    document_text=doc_text,
                     document_name=doc["document_name"],
                     prompt_template=prompt_template,
                 )
@@ -263,10 +270,20 @@ class ExistingWorkAnalyzer:
             Parsed analysis result
         """
         # Inject document text into user prompt
-        # The prompt expects {{existing_work_text}} placeholder
-        user_prompt = prompt_template["user_prompt"].replace(
-            "{{existing_work_text}}", document_text
-        )
+        # Support multiple placeholder formats for flexibility
+        user_prompt = prompt_template["user_prompt"]
+
+        # Try different placeholder formats (DynamoDB prompts may use different conventions)
+        placeholder_replacements = [
+            ("{{existing_work_text}}", document_text),
+            ("<EXISTING_WORK_TEXT>", document_text),
+            ("{{document_text}}", document_text),
+        ]
+
+        for placeholder, value in placeholder_replacements:
+            if placeholder in user_prompt:
+                user_prompt = user_prompt.replace(placeholder, value)
+                print(f"   Replaced placeholder: {placeholder}")
 
         # Add output format if provided
         if prompt_template["output_format"]:

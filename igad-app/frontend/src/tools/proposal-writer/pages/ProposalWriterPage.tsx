@@ -54,6 +54,8 @@ export function ProposalWriterPage() {
   const [isUploadingReference, setIsUploadingReference] = useState(false)
   const [isUploadingSupporting, setIsUploadingSupporting] = useState(false)
   const [isUploadingConcept, setIsUploadingConcept] = useState(false)
+  // Vectorization state - tracks if any files are being vectorized
+  const [isVectorizingFiles, setIsVectorizingFiles] = useState(false)
 
   const allowNavigation = useRef(false)
   const formDataLoadedFromDB = useRef(false)
@@ -1439,6 +1441,8 @@ export function ProposalWriterPage() {
       setIsUploadingReference,
       setIsUploadingSupporting,
       setIsUploadingConcept,
+      // Vectorization state setter for Step 1
+      setIsVectorizingFiles,
     }
 
     switch (currentStep) {
@@ -1557,11 +1561,15 @@ export function ProposalWriterPage() {
             isUploadingRFP ||
             isUploadingReference ||
             isUploadingSupporting ||
-            isUploadingConcept))
+            isUploadingConcept ||
+            // Disable if files are being vectorized
+            isVectorizingFiles))
       }
       title={
-        currentStep === 1 &&
-        (isUploadingRFP || isUploadingReference || isUploadingSupporting || isUploadingConcept)
+        currentStep === 1 && isVectorizingFiles
+          ? 'Please wait for document vectorization to complete'
+          : currentStep === 1 &&
+            (isUploadingRFP || isUploadingReference || isUploadingSupporting || isUploadingConcept)
           ? 'Please wait for file uploads to complete'
           : currentStep === 1 &&
             (!(formData.textInputs['proposal-title'] || '').trim() ||
@@ -1585,6 +1593,11 @@ export function ProposalWriterPage() {
           {analysisProgress
             ? `${analysisProgress.message} (${analysisProgress.step}/${analysisProgress.total})`
             : 'Analyzing...'}
+        </>
+      ) : currentStep === 1 && isVectorizingFiles ? (
+        <>
+          <span className={styles.spinner}></span>
+          Vectorizing documents...
         </>
       ) : currentStep === 4 ? (
         'Finish process'

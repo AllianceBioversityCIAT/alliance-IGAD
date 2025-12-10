@@ -23,6 +23,7 @@ from app.tools.proposal_writer.document_generation.service import concept_genera
 from app.tools.proposal_writer.reference_proposals_analysis.service import ReferenceProposalsAnalyzer
 from app.tools.proposal_writer.structure_workplan.service import StructureWorkplanService
 from app.database.client import db_client
+from app.shared.vectors.service import VectorEmbeddingsService
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -105,6 +106,9 @@ def _set_processing_status(
                 ":started": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "vectorize_document":
+        # Vectorization status is tracked per-file in vectorization_status map
+        pass  # Status is handled in _handle_document_vectorization
 
 
 def _set_completed_status(
@@ -641,6 +645,200 @@ def _handle_structure_workplan_analysis(proposal_id: str) -> Dict[str, Any]:
     return result
 
 
+# ==================== DOCUMENT VECTORIZATION ====================
+
+
+def _update_vectorization_status(
+    proposal_code: str,
+    filename: str,
+    status: str,
+    error: Optional[str] = None,
+    chunks_processed: int = 0,
+    total_chunks: int = 0,
+) -> None:
+    """
+    Update vectorization status for a specific file in DynamoDB.
+
+    Status values: 'processing', 'completed', 'failed'
+    """
+    status_data = {
+        "status": status,
+        "updated_at": datetime.utcnow().isoformat(),
+        "chunks_processed": chunks_processed,
+        "total_chunks": total_chunks,
+    }
+
+    if error:
+        status_data["error"] = error
+
+    if status == "completed":
+        status_data["completed_at"] = datetime.utcnow().isoformat()
+
+    # Update the vectorization_status map for this file
+    db_client.update_item_sync(
+        pk=f"PROPOSAL#{proposal_code}",
+        sk="METADATA",
+        update_expression="SET vectorization_status.#filename = :status, updated_at = :updated",
+        expression_attribute_names={"#filename": filename},
+        expression_attribute_values={
+            ":status": status_data,
+            ":updated": datetime.utcnow().isoformat(),
+        },
+    )
+
+
+def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle async document vectorization for reference proposals and supporting documents.
+
+    Expected event format:
+    {
+        "proposal_id": "uuid-string",
+        "proposal_code": "PROP-XXXX",
+        "analysis_type": "vectorize_document",
+        "document_type": "reference" | "supporting",
+        "filename": "document.pdf",
+        "s3_key": "PROP-XXXX/documents/references/document.pdf",
+        "metadata": {
+            "donor": "...",  # for reference
+            "sector": "...",
+            "year": "...",
+            "status": "...",
+            # OR for supporting:
+            "organization": "...",
+            "project_type": "...",
+            "region": "..."
+        }
+    }
+    """
+    import os
+    import boto3
+    from io import BytesIO
+
+    proposal_id = event.get("proposal_id")
+    proposal_code = event.get("proposal_code")
+    document_type = event.get("document_type")
+    filename = event.get("filename")
+    s3_key = event.get("s3_key")
+    metadata = event.get("metadata", {})
+
+    logger.info(f"📋 Processing vectorization for: {filename}")
+    logger.info(f"   Proposal: {proposal_code}")
+    logger.info(f"   Document type: {document_type}")
+    logger.info(f"   S3 key: {s3_key}")
+
+    try:
+        # Update status to processing
+        _update_vectorization_status(proposal_code, filename, "processing")
+
+        # Download file from S3
+        bucket = os.environ.get('PROPOSALS_BUCKET', 'igad-proposals-testing')
+        s3_client = boto3.client('s3')
+
+        logger.info(f"📥 Downloading file from S3: {s3_key}")
+        response = s3_client.get_object(Bucket=bucket, Key=s3_key)
+        file_bytes = response['Body'].read()
+        logger.info(f"   Downloaded {len(file_bytes)} bytes")
+
+        # Extract text from file
+        from app.shared.documents.routes import extract_text_from_file, chunk_text
+
+        logger.info(f"📄 Extracting text from {filename}...")
+        extracted_text = extract_text_from_file(file_bytes, filename)
+
+        # Fallback if extraction failed
+        if not extracted_text or len(extracted_text.strip()) < 100:
+            logger.warning(f"Text extraction failed or too short for {filename}")
+            if document_type == "reference":
+                extracted_text = f"Reference proposal: {filename}"
+                if metadata.get("donor"):
+                    extracted_text += f" from {metadata['donor']}"
+                if metadata.get("sector"):
+                    extracted_text += f" in {metadata['sector']} sector"
+            else:
+                extracted_text = f"Existing work document: {filename}"
+                if metadata.get("organization"):
+                    extracted_text += f" from {metadata['organization']}"
+
+        logger.info(f"   Extracted {len(extracted_text)} characters")
+
+        # Chunk text
+        text_chunks = chunk_text(extracted_text, chunk_size=1000, overlap=200)
+        total_chunks = len(text_chunks)
+        logger.info(f"   Created {total_chunks} chunks")
+
+        # Update status with total chunks
+        _update_vectorization_status(proposal_code, filename, "processing",
+                                    chunks_processed=0, total_chunks=total_chunks)
+
+        # Vectorize each chunk
+        vector_service = VectorEmbeddingsService()
+
+        logger.info(f"🔄 Starting vectorization for {total_chunks} chunks...")
+
+        for idx, chunk in enumerate(text_chunks):
+            if document_type == "reference":
+                chunk_metadata = {
+                    "donor": metadata.get("donor", ""),
+                    "sector": metadata.get("sector", ""),
+                    "year": metadata.get("year", ""),
+                    "status": metadata.get("status", ""),
+                    "document_name": filename,
+                    "chunk_index": str(idx),
+                    "total_chunks": str(total_chunks)
+                }
+                result = vector_service.insert_reference_proposal(
+                    proposal_id=proposal_code,
+                    text=chunk,
+                    metadata=chunk_metadata
+                )
+            else:  # supporting
+                chunk_metadata = {
+                    "organization": metadata.get("organization", ""),
+                    "project_type": metadata.get("project_type", ""),
+                    "region": metadata.get("region", ""),
+                    "document_name": filename,
+                    "chunk_index": str(idx),
+                    "total_chunks": str(total_chunks)
+                }
+                result = vector_service.insert_existing_work(
+                    proposal_id=proposal_code,
+                    text=chunk,
+                    metadata=chunk_metadata
+                )
+
+            if not result:
+                raise Exception(f"Vector storage failed for chunk {idx}")
+
+            logger.info(f"   ✅ Chunk {idx+1}/{total_chunks} vectorized")
+
+            # Update progress every 5 chunks or on last chunk
+            if (idx + 1) % 5 == 0 or idx == total_chunks - 1:
+                _update_vectorization_status(proposal_code, filename, "processing",
+                                            chunks_processed=idx + 1, total_chunks=total_chunks)
+
+        # Mark as completed
+        _update_vectorization_status(proposal_code, filename, "completed",
+                                    chunks_processed=total_chunks, total_chunks=total_chunks)
+
+        logger.info(f"✅ Vectorization completed for {filename}: {total_chunks} chunks")
+
+        return {
+            "status": "completed",
+            "filename": filename,
+            "chunks_vectorized": total_chunks
+        }
+
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"❌ Vectorization failed for {filename}: {error_msg}")
+
+        # Update status to failed
+        _update_vectorization_status(proposal_code, filename, "failed", error=error_msg)
+
+        raise
+
+
 # ==================== CONCEPT DOCUMENT GENERATION ====================
 
 
@@ -821,6 +1019,8 @@ def handler(event, context):
             _handle_structure_workplan_analysis(proposal_id)
         elif analysis_type == "concept_document":
             _handle_concept_document_generation(proposal_id, event)
+        elif analysis_type == "vectorize_document":
+            _handle_document_vectorization(event)
         else:
             raise ValueError(f"Invalid analysis_type: {analysis_type}")
 

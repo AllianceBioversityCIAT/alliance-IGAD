@@ -225,54 +225,74 @@ class VectorEmbeddingsService:
     def get_documents_by_proposal(self, proposal_id: str, index_name: str = "reference-proposals-index", max_docs: int = 5) -> List[Dict[str, Any]]:
         """
         Retrieve documents for a proposal from S3 Vectors (using key encoding)
-        
+
         Args:
             proposal_id: Proposal ID to filter by
-            index_name: Index to search in
+            index_name: Index to search in (reference-proposals-index or existing-work-index)
             max_docs: Maximum number of documents to return
-            
+
         Returns:
             List of documents with their full text reconstructed from S3
         """
         try:
+            print(f"📂 Listing vectors from {index_name} for proposal {proposal_id}...")
             response = self.s3vectors.list_vectors(
                 vectorBucketName=self.bucket_name,
                 indexName=index_name
             )
-            
+
             vectors = response.get('vectors', [])
-            
+            print(f"   Found {len(vectors)} total vectors in index")
+
             # Parse keys and filter by proposal_id
+            # Key format for reference-proposals: proposal_id|donor|sector|year|document_name|chunk_index|total_chunks
+            # Key format for existing-work: proposal_id|organization|project_type|region|document_name|chunk_index|total_chunks
             proposal_vectors = []
             for vector in vectors:
                 key = vector.get('key', '')
                 parts = key.split('|')
                 if len(parts) >= 7 and parts[0] == proposal_id:
-                    vector['decoded_metadata'] = {
-                        'proposal_id': parts[0],
-                        'donor': parts[1],
-                        'sector': parts[2],
-                        'year': parts[3],
-                        'document_name': parts[4],
-                        'chunk_index': int(parts[5]),
-                        'total_chunks': parts[6]
-                    }
+                    # Decode metadata based on index type
+                    if index_name == "existing-work-index":
+                        vector['decoded_metadata'] = {
+                            'proposal_id': parts[0],
+                            'organization': parts[1],
+                            'project_type': parts[2],
+                            'region': parts[3],
+                            'document_name': parts[4],
+                            'chunk_index': int(parts[5]),
+                            'total_chunks': parts[6]
+                        }
+                    else:  # reference-proposals-index
+                        vector['decoded_metadata'] = {
+                            'proposal_id': parts[0],
+                            'donor': parts[1],
+                            'sector': parts[2],
+                            'year': parts[3],
+                            'document_name': parts[4],
+                            'chunk_index': int(parts[5]),
+                            'total_chunks': parts[6]
+                        }
                     proposal_vectors.append(vector)
-            
+
+            print(f"   Filtered to {len(proposal_vectors)} vectors for this proposal")
+
             if not proposal_vectors:
                 return []
-            
+
             # Group by document_name
             docs_by_name = {}
             for vector in proposal_vectors:
                 metadata = vector['decoded_metadata']
                 doc_name = metadata['document_name']
-                
+
                 if doc_name not in docs_by_name:
                     docs_by_name[doc_name] = []
-                
+
                 docs_by_name[doc_name].append(vector)
-            
+
+            print(f"   Grouped into {len(docs_by_name)} unique documents")
+
             # Reconstruct each document with full text from S3
             reconstructed_docs = []
             for doc_name, doc_vectors in docs_by_name.items():
@@ -281,8 +301,13 @@ class VectorEmbeddingsService:
 
                 # Retrieve full text from S3
                 try:
-                    # Correct S3 key path for reference proposals
-                    s3_key = f"{proposal_id}/documents/references/{doc_name}"
+                    # S3 path depends on index type
+                    if index_name == "existing-work-index":
+                        s3_key = f"{proposal_id}/documents/supporting/{doc_name}"
+                    else:  # reference-proposals-index
+                        s3_key = f"{proposal_id}/documents/references/{doc_name}"
+
+                    print(f"   📄 Reading {doc_name} from S3: {s3_key}")
                     s3_response = self.s3.get_object(
                         Bucket=self.documents_bucket,
                         Key=s3_key

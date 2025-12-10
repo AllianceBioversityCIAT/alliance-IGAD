@@ -657,6 +657,46 @@ class ProposalService {
     const response = await apiClient.delete(`/api/proposals/${proposalId}/documents/work-text`)
     return response.data
   }
+
+  // Vectorization status operations
+  async getVectorizationStatus(proposalId: string): Promise<{
+    success: boolean
+    vectorization_status: {
+      [filename: string]: {
+        status: 'pending' | 'processing' | 'completed' | 'failed'
+        chunks_processed: number
+        total_chunks: number
+        error?: string
+        started_at?: string
+        completed_at?: string
+      }
+    }
+    all_completed: boolean
+    has_pending: boolean
+    has_failed: boolean
+  }> {
+    const response = await apiClient.get(
+      `/api/proposals/${proposalId}/documents/vectorization-status`
+    )
+    return response.data
+  }
+
+  async getFileVectorizationStatus(
+    proposalId: string,
+    filename: string
+  ): Promise<{
+    success: boolean
+    filename: string
+    status: 'pending' | 'processing' | 'completed' | 'failed' | 'unknown'
+    chunks_processed?: number
+    total_chunks?: number
+    error?: string
+  }> {
+    const response = await apiClient.get(
+      `/api/proposals/${proposalId}/documents/vectorization-status/${encodeURIComponent(filename)}`
+    )
+    return response.data
+  }
 }
 
 export const proposalService = new ProposalService()

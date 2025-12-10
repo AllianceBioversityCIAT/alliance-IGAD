@@ -1,13 +1,14 @@
 // ============================================================================
 // IMPORTS
 // ============================================================================
-import { useEffect, useState } from 'react'
-import { FileText, AlertTriangle, Files, Briefcase, Lightbulb } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { FileText, AlertTriangle, Files, Briefcase, Lightbulb, Loader2 } from 'lucide-react'
 import { useProposal } from '@/tools/proposal-writer/hooks/useProposal'
 import { useToast } from '@/shared/hooks/useToast'
 import { StepProps } from './stepConfig'
 import styles from './Step1InformationConsolidation.module.css'
 import { apiClient } from '@/shared/services/apiClient'
+import { proposalService } from '@/tools/proposal-writer/services/proposalService'
 import ManualRFPInput from '@/tools/proposal-writer/components/ManualRFPInput'
 import {
   SUCCESS_MESSAGES,
@@ -19,17 +20,20 @@ import {
 // CONSTANTS
 // ============================================================================
 
-/** Maximum file size in bytes (2 MB) */
-const MAX_FILE_SIZE = 2 * 1024 * 1024
+/** Maximum file size in bytes (5 MB) - increased from 2MB for larger documents */
+const MAX_FILE_SIZE = 5 * 1024 * 1024
 
 /** Maximum number of files per section (Reference Proposals and Existing Work) */
 const MAX_FILES_PER_SECTION = 3
 
-/** Maximum total size for all files in a section (6 MB total = 3 files x 2MB) */
-const MAX_TOTAL_SIZE_PER_SECTION = 6 * 1024 * 1024
+/** Maximum total size for all files in a section (15 MB total = 3 files x 5MB) */
+const MAX_TOTAL_SIZE_PER_SECTION = 15 * 1024 * 1024
 
 /** Allowed file types for concept document */
 const ALLOWED_CONCEPT_TYPES = ['.pdf', '.docx', '.txt']
+
+/** Polling interval for vectorization status (in milliseconds) */
+const VECTORIZATION_POLL_INTERVAL = 3000
 
 // ============================================================================
 // TYPES
@@ -54,6 +58,8 @@ interface Step1Props extends StepProps {
   setIsUploadingSupporting?: (isUploading: boolean) => void
   /** Setter for concept upload state */
   setIsUploadingConcept?: (isUploading: boolean) => void
+  /** Setter for vectorization state - notifies parent when files are being vectorized */
+  setIsVectorizingFiles?: (isVectorizing: boolean) => void
 }
 
 // ============================================================================
@@ -120,6 +126,7 @@ export function Step1InformationConsolidation({
   setIsUploadingReference: setParentIsUploadingReference,
   setIsUploadingSupporting: setParentIsUploadingSupporting,
   setIsUploadingConcept: setParentIsUploadingConcept,
+  setIsVectorizingFiles: setParentIsVectorizingFiles,
 }: Step1Props) {
   // ============================================================================
   // STATE - Hooks
@@ -217,6 +224,26 @@ export function Step1InformationConsolidation({
   const [isEditingWorkText, setIsEditingWorkText] = useState(false)
   /** Error message for existing work operations */
   const [workUploadError, setWorkUploadError] = useState('')
+
+  // ============================================================================
+  // STATE - Vectorization Status
+  // ============================================================================
+
+  /** Vectorization status for all files (reference proposals and supporting docs) */
+  const [vectorizationStatus, setVectorizationStatus] = useState<{
+    [filename: string]: {
+      status: 'pending' | 'processing' | 'completed' | 'failed'
+      chunks_processed: number
+      total_chunks: number
+      error?: string
+    }
+  }>({})
+
+  /** Whether any files are currently being vectorized */
+  const [hasVectorizingFiles, setHasVectorizingFiles] = useState(false)
+
+  /** Ref to track if polling is active */
+  const vectorizationPollRef = useRef<NodeJS.Timeout | null>(null)
 
   // ============================================================================
   // EFFECTS - Data Loading
@@ -362,6 +389,86 @@ export function Step1InformationConsolidation({
       localStorage.setItem(storageKey, JSON.stringify(formData))
     }
   }, [formData, proposalId])
+
+  // ============================================================================
+  // EFFECTS - Vectorization Status Polling
+  // ============================================================================
+
+  /**
+   * Poll for vectorization status when there are pending vectorization tasks
+   */
+  const pollVectorizationStatus = useCallback(async () => {
+    if (!proposalId) return
+
+    try {
+      const response = await proposalService.getVectorizationStatus(proposalId)
+
+      if (response.success) {
+        setVectorizationStatus(response.vectorization_status)
+        setHasVectorizingFiles(response.has_pending)
+
+        // If all completed, stop polling
+        if (response.all_completed) {
+          if (vectorizationPollRef.current) {
+            clearInterval(vectorizationPollRef.current)
+            vectorizationPollRef.current = null
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error polling vectorization status:', error)
+    }
+  }, [proposalId])
+
+  /**
+   * Start polling when component mounts and we have vectorizing files
+   */
+  useEffect(() => {
+    if (!proposalId) return
+
+    // Initial fetch
+    pollVectorizationStatus()
+
+    // Cleanup on unmount
+    return () => {
+      if (vectorizationPollRef.current) {
+        clearInterval(vectorizationPollRef.current)
+        vectorizationPollRef.current = null
+      }
+    }
+  }, [proposalId, pollVectorizationStatus])
+
+  /**
+   * Start/stop polling based on hasVectorizingFiles state
+   */
+  useEffect(() => {
+    if (hasVectorizingFiles && !vectorizationPollRef.current) {
+      // Start polling
+      vectorizationPollRef.current = setInterval(
+        pollVectorizationStatus,
+        VECTORIZATION_POLL_INTERVAL
+      )
+    } else if (!hasVectorizingFiles && vectorizationPollRef.current) {
+      // Stop polling
+      clearInterval(vectorizationPollRef.current)
+      vectorizationPollRef.current = null
+    }
+
+    return () => {
+      if (vectorizationPollRef.current) {
+        clearInterval(vectorizationPollRef.current)
+        vectorizationPollRef.current = null
+      }
+    }
+  }, [hasVectorizingFiles, pollVectorizationStatus])
+
+  /**
+   * Notify parent component when vectorization state changes
+   * This enables the parent to disable navigation buttons while vectorizing
+   */
+  useEffect(() => {
+    setParentIsVectorizingFiles?.(hasVectorizingFiles)
+  }, [hasVectorizingFiles, setParentIsVectorizingFiles])
 
   // ============================================================================
   // HANDLERS - RFP Document
@@ -896,7 +1003,6 @@ export function Step1InformationConsolidation({
     setReferenceUploadError('')
 
     try {
-      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
       await proposalService.uploadReferenceFile(proposalId, file)
 
       // Update local state
@@ -908,6 +1014,12 @@ export function Step1InformationConsolidation({
           'reference-proposals': [...currentFiles, file.name],
         },
       }))
+
+      // Start vectorization status polling
+      setHasVectorizingFiles(true)
+
+      // Show success message
+      showSuccess('File uploaded! Vectorization in progress...')
 
       // Invalidate analyses when reference documents are updated
       window.dispatchEvent(new CustomEvent('documents-updated'))
@@ -1077,7 +1189,6 @@ export function Step1InformationConsolidation({
     setWorkUploadError('')
 
     try {
-      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
       await proposalService.uploadSupportingFile(proposalId, file)
 
       // Update local state
@@ -1089,6 +1200,12 @@ export function Step1InformationConsolidation({
           'supporting-docs': [...currentFiles, file.name],
         },
       }))
+
+      // Start vectorization status polling
+      setHasVectorizingFiles(true)
+
+      // Show success message
+      showSuccess('File uploaded! Vectorization in progress...')
 
       // Invalidate analyses when supporting documents are updated
       window.dispatchEvent(new CustomEvent('documents-updated'))
@@ -1473,7 +1590,7 @@ export function Step1InformationConsolidation({
             {isUploadingRFP ? (
               <>
                 <div className={styles.uploadingSpinner} aria-live="polite">
-                  <div className={styles.spinner}></div>
+                  <div className={styles.uploadSpinner}></div>
                 </div>
                 <p className={styles.uploadAreaTitle}>Uploading and processing...</p>
                 <p className={styles.uploadAreaDescription}>
@@ -1606,7 +1723,7 @@ export function Step1InformationConsolidation({
             {isUploadingReference ? (
               <>
                 <div className={styles.uploadingSpinner} aria-live="polite">
-                  <div className={styles.spinner}></div>
+                  <div className={styles.uploadSpinner}></div>
                 </div>
                 <p className={styles.uploadAreaTitle}>Uploading reference file...</p>
               </>
@@ -1614,7 +1731,7 @@ export function Step1InformationConsolidation({
               <>
                 <FileText className={styles.uploadAreaIcon} size={32} aria-hidden="true" />
                 <p className={styles.uploadAreaTitle}>Drop reference proposals here or click to upload</p>
-                <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files (max 3 files, 2MB each)</p>
+                <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files (max 3 files, 5MB each)</p>
                 <input
                   type="file"
                   accept=".pdf,.docx"
@@ -1636,7 +1753,7 @@ export function Step1InformationConsolidation({
             {isUploadingReference && (
               <div className={styles.uploadingFileCard}>
                 <div className={styles.uploadingSpinner} aria-live="polite">
-                  <div className={styles.spinner}></div>
+                  <div className={styles.uploadSpinner}></div>
                 </div>
                 <p className={styles.uploadingText}>Uploading and processing file...</p>
               </div>
@@ -1645,6 +1762,11 @@ export function Step1InformationConsolidation({
             {(formData.uploadedFiles['reference-proposals'] || []).map((file, index) => {
               const filename = typeof file === 'string' ? file : file.name
               const fileExtension = filename.split('.').pop()?.toUpperCase() || 'FILE'
+              const fileVecStatus = vectorizationStatus[filename]
+              const isVectorizing = fileVecStatus?.status === 'pending' || fileVecStatus?.status === 'processing'
+              const vectorizationFailed = fileVecStatus?.status === 'failed'
+              const vectorizationCompleted = fileVecStatus?.status === 'completed'
+
               return (
                 <div key={index} className={styles.uploadedFileCard}>
                   <div className={styles.uploadedFileContent}>
@@ -1654,13 +1776,30 @@ export function Step1InformationConsolidation({
                     <div className={styles.fileDetails}>
                       <p className={styles.uploadedFileName} title={filename}>{filename}</p>
                       <div className={styles.fileMetadata}>
-                        <span className={styles.fileStatus}>
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <circle cx="6" cy="6" r="6" fill="#10b981" />
-                            <path d="M3.5 6l1.5 1.5 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          Uploaded
-                        </span>
+                        {isVectorizing ? (
+                          <span className={styles.fileStatus} style={{ color: '#2563eb' }}>
+                            <Loader2 size={12} className={styles.spinningIcon} />
+                            Vectorizing...
+                            {fileVecStatus?.total_chunks > 0 && (
+                              <span style={{ marginLeft: '4px', fontSize: '11px' }}>
+                                ({fileVecStatus.chunks_processed}/{fileVecStatus.total_chunks})
+                              </span>
+                            )}
+                          </span>
+                        ) : vectorizationFailed ? (
+                          <span className={styles.fileStatus} style={{ color: '#dc2626' }}>
+                            <AlertTriangle size={12} />
+                            Vectorization failed
+                          </span>
+                        ) : (
+                          <span className={styles.fileStatus}>
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <circle cx="6" cy="6" r="6" fill="#10b981" />
+                              <path d="M3.5 6l1.5 1.5 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            {vectorizationCompleted ? 'Ready' : 'Uploaded'}
+                          </span>
+                        )}
                         <span className={styles.fileDivider}>•</span>
                         <span className={styles.fileType}>Reference document</span>
                       </div>
@@ -1670,6 +1809,7 @@ export function Step1InformationConsolidation({
                       className={styles.deleteFileButtonCompact}
                       title="Delete file"
                       aria-label={`Delete ${filename}`}
+                      disabled={isVectorizing}
                     >
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                         <path d="M5 7v7m3-7v7m3-7v7M3 5h12M8 3h2a1 1 0 011 1v1H7V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -1723,7 +1863,7 @@ export function Step1InformationConsolidation({
             </h3>
             <p className={styles.uploadSectionDescription}>
               Describe your organization&apos;s relevant experience, ongoing projects, and previous
-              work that relates to this call. You can write text or upload documents (max 3 files, 2MB each).
+              work that relates to this call. You can write text or upload documents (max 3 files, 5MB each).
             </p>
           </div>
         </div>
@@ -1830,7 +1970,7 @@ export function Step1InformationConsolidation({
               {isUploadingSupporting ? (
                 <>
                   <div className={styles.uploadingSpinner} aria-live="polite">
-                    <div className={styles.spinner}></div>
+                    <div className={styles.uploadSpinner}></div>
                   </div>
                   <p className={styles.uploadAreaTitle}>Uploading supporting file...</p>
                 </>
@@ -1838,7 +1978,7 @@ export function Step1InformationConsolidation({
                 <>
                   <FileText className={styles.uploadAreaIcon} size={24} aria-hidden="true" />
                   <p className={styles.uploadAreaTitle}>Drop supporting files here</p>
-                  <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files (max 3 files, 2MB each)</p>
+                  <p className={styles.uploadAreaDescription}>Supports PDF, DOCX files (max 3 files, 5MB each)</p>
                   <input
                     type="file"
                     accept=".pdf,.docx"
@@ -1860,7 +2000,7 @@ export function Step1InformationConsolidation({
               {isUploadingSupporting && (
                 <div className={styles.uploadingFileCard}>
                   <div className={styles.uploadingSpinner} aria-live="polite">
-                    <div className={styles.spinner}></div>
+                    <div className={styles.uploadSpinner}></div>
                   </div>
                   <p className={styles.uploadingText}>Uploading and processing file...</p>
                 </div>
@@ -1869,6 +2009,11 @@ export function Step1InformationConsolidation({
               {(formData.uploadedFiles['supporting-docs'] || []).map((file, index) => {
                 const filename = typeof file === 'string' ? file : file.name
                 const fileExtension = filename.split('.').pop()?.toUpperCase() || 'FILE'
+                const fileVecStatus = vectorizationStatus[filename]
+                const isVectorizing = fileVecStatus?.status === 'pending' || fileVecStatus?.status === 'processing'
+                const vectorizationFailed = fileVecStatus?.status === 'failed'
+                const vectorizationCompleted = fileVecStatus?.status === 'completed'
+
                 return (
                   <div key={index} className={styles.uploadedFileCard}>
                     <div className={styles.uploadedFileContent}>
@@ -1878,13 +2023,30 @@ export function Step1InformationConsolidation({
                       <div className={styles.fileDetails}>
                         <p className={styles.uploadedFileName} title={filename}>{filename}</p>
                         <div className={styles.fileMetadata}>
-                          <span className={styles.fileStatus}>
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                              <circle cx="6" cy="6" r="6" fill="#10b981" />
-                              <path d="M3.5 6l1.5 1.5 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            Uploaded
-                          </span>
+                          {isVectorizing ? (
+                            <span className={styles.fileStatus} style={{ color: '#2563eb' }}>
+                              <Loader2 size={12} className={styles.spinningIcon} />
+                              Vectorizing...
+                              {fileVecStatus?.total_chunks > 0 && (
+                                <span style={{ marginLeft: '4px', fontSize: '11px' }}>
+                                  ({fileVecStatus.chunks_processed}/{fileVecStatus.total_chunks})
+                                </span>
+                              )}
+                            </span>
+                          ) : vectorizationFailed ? (
+                            <span className={styles.fileStatus} style={{ color: '#dc2626' }}>
+                              <AlertTriangle size={12} />
+                              Vectorization failed
+                            </span>
+                          ) : (
+                            <span className={styles.fileStatus}>
+                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                <circle cx="6" cy="6" r="6" fill="#10b981" />
+                                <path d="M3.5 6l1.5 1.5 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                              {vectorizationCompleted ? 'Ready' : 'Uploaded'}
+                            </span>
+                          )}
                           <span className={styles.fileDivider}>•</span>
                           <span className={styles.fileType}>Supporting document</span>
                         </div>
@@ -1894,6 +2056,7 @@ export function Step1InformationConsolidation({
                         className={styles.deleteFileButtonCompact}
                         title="Delete file"
                         aria-label={`Delete ${filename}`}
+                        disabled={isVectorizing}
                       >
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                           <path d="M5 7v7m3-7v7m3-7v7M3 5h12M8 3h2a1 1 0 011 1v1H7V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -2046,7 +2209,7 @@ export function Step1InformationConsolidation({
               {isUploadingConcept ? (
                 <>
                   <div className={styles.uploadingSpinner} aria-live="polite">
-                    <div className={styles.spinner}></div>
+                    <div className={styles.uploadSpinner}></div>
                   </div>
                   <p className={styles.uploadAreaTitle}>Uploading concept file...</p>
                 </>

@@ -120,14 +120,15 @@ class ReferenceProposalsAnalyzer:
             print(f"🔍 Using semantic query from RFP analysis:")
             print(f"   Query: {semantic_query[:150]}...")
 
-            # Step 3: Semantic search in reference-proposals-index
-            print(f"🔎 Searching for similar reference proposals...")
+            # Step 3: Get all reference proposals for this proposal
+            # Note: Using get_documents_by_proposal instead of semantic search
+            # to ensure we retrieve ALL uploaded documents regardless of similarity
+            print(f"🔎 Retrieving reference proposals for {proposal_code}...")
             max_docs = REFERENCE_PROPOSALS_ANALYSIS_SETTINGS["max_documents"]
-            documents = self.vector_service.search_and_reconstruct_proposals(
-                query_text=semantic_query,
-                top_k=max_docs,
+            documents = self.vector_service.get_documents_by_proposal(
+                proposal_id=proposal_code,
                 index_name="reference-proposals-index",
-                proposal_id=proposal_code  # Use proposal_code, not UUID
+                max_docs=max_docs
             )
 
             if not documents:
