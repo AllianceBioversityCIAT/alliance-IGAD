@@ -24,6 +24,12 @@ export interface Proposal {
   created_at: string
   updated_at: string
   version?: number
+  // Step completion tracking fields (from DynamoDB)
+  concept_document_v2?: any  // Generated concept document from Step 2
+  proposal_template_generated?: string  // ISO timestamp when template was generated in Step 3
+  structure_workplan_completed_at?: string  // ISO timestamp when structure workplan analysis was completed
+  structure_workplan_analysis?: any  // Structure workplan analysis data from Step 3
+  draft_feedback_analysis?: any  // Draft feedback analysis data from Step 4
 }
 
 export interface ProposalSection {
@@ -665,6 +671,160 @@ class ProposalService {
   }> {
     const response = await apiClient.delete(`/api/proposals/${proposalId}/documents/work-text`)
     return response.data
+  }
+
+  // ==================== Draft Proposal Feedback (Step 4) ====================
+
+  /**
+   * Upload draft proposal document to S3
+   *
+   * Uploads the user's draft proposal for feedback analysis in Step 4.
+   * Only one draft can be uploaded per proposal.
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @param file - The draft proposal file (PDF, DOC, DOCX)
+   * @returns Upload result with filename and S3 key
+   * @throws Error if upload fails
+   *
+   * @example
+   * ```typescript
+   * const result = await proposalService.uploadDraftProposal('abc-123', draftFile)
+   * // Then start analysis
+   * await proposalService.analyzeDraftFeedback('abc-123')
+   * ```
+   */
+  async uploadDraftProposal(
+    proposalId: string,
+    file: File
+  ): Promise<{
+    success: boolean
+    filename: string
+    document_key: string
+    size: number
+  }> {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/upload-draft-proposal`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 120000, // 2 minutes for large file upload
+      }
+    )
+    return response.data
+  }
+
+  /**
+   * Delete draft proposal document from S3
+   *
+   * Removes the uploaded draft proposal document.
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @param filename - Name of the file to delete
+   * @returns Delete result
+   * @throws Error if delete fails
+   */
+  async deleteDraftProposal(
+    proposalId: string,
+    filename: string
+  ): Promise<{
+    success: boolean
+    message: string
+  }> {
+    const response = await apiClient.delete(
+      `/api/proposals/${proposalId}/documents/draft-proposal/${encodeURIComponent(filename)}`
+    )
+    return response.data
+  }
+
+  /**
+   * Start Draft Feedback analysis (Step 4)
+   *
+   * Triggers AI analysis of the uploaded draft proposal against RFP requirements.
+   * Returns section-by-section feedback with status ratings and improvement suggestions.
+   *
+   * Prerequisites:
+   * - Step 1 (RFP Analysis) must be completed
+   * - Draft proposal must be uploaded
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @returns Analysis status (processing, already_running, or error)
+   * @throws Error if prerequisites not met or analysis fails to start
+   *
+   * @example
+   * ```typescript
+   * const result = await proposalService.analyzeDraftFeedback('abc-123')
+   * if (result.status === 'processing') {
+   *   // Poll for completion using getDraftFeedbackStatus()
+   * }
+   * ```
+   */
+  async analyzeDraftFeedback(proposalId: string): Promise<{
+    status: string
+    message: string
+    started_at?: string
+  }> {
+    try {
+      const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-draft-feedback`)
+      return response.data
+    } catch (error) {
+      console.error('❌ Failed to start Draft Feedback analysis:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Poll Draft Feedback analysis status
+   *
+   * Check the completion status of an ongoing Draft Feedback analysis.
+   * Call this repeatedly (with polling) until status is 'completed' or 'failed'.
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @returns Current analysis status, data (if completed), or error (if failed)
+   * @throws Error if unable to check status
+   *
+   * @example
+   * ```typescript
+   * const status = await proposalService.getDraftFeedbackStatus('abc-123')
+   * if (status.status === 'completed') {
+   *   const feedback = status.data.draft_feedback_analysis
+   *   // Display section-by-section feedback
+   * }
+   * ```
+   */
+  async getDraftFeedbackStatus(proposalId: string): Promise<{
+    status: string
+    data?: {
+      draft_feedback_analysis?: {
+        overall_assessment?: string
+        sections?: Array<{
+          title: string
+          status: 'EXCELLENT' | 'GOOD' | 'NEEDS_IMPROVEMENT'
+          feedback: string
+          suggestions: string[]
+        }>
+        summary_stats?: {
+          excellent_count: number
+          good_count: number
+          needs_improvement_count: number
+        }
+      }
+    }
+    error?: string
+    started_at?: string
+    completed_at?: string
+  }> {
+    try {
+      const response = await apiClient.get(`/api/proposals/${proposalId}/draft-feedback-status`)
+      return response.data
+    } catch (error) {
+      console.error('❌ Failed to check Draft Feedback status:', error)
+      throw error
+    }
   }
 
   // Vectorization status operations

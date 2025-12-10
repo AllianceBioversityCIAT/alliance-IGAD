@@ -429,6 +429,146 @@
    RESPONSIVE DESIGN
    ============================================ */
 
+/* ============================================
+   SPINNING ANIMATION
+   ============================================ */
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================
+   UPLOAD ZONE DISABLED STATE
+   ============================================ */
+
+.uploadZoneDisabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ============================================
+   FEEDBACK HEADER LAYOUT
+   ============================================ */
+
+.feedbackHeaderLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feedbackHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ============================================
+   RE-ANALYZE BUTTON
+   ============================================ */
+
+.reanalyzeButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #FFFFFF;
+  border: 1px solid #E6E6E6;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reanalyzeButton:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #D1D5DC;
+}
+
+.reanalyzeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   NO FEEDBACK STATE
+   ============================================ */
+
+.noFeedbackState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 16px;
+  text-align: center;
+}
+
+.noFeedbackState p {
+  font-size: 16px;
+  color: #717182;
+  margin: 0;
+}
+
+.noFeedbackIcon {
+  color: #D1D5DC;
+}
+
+.startAnalysisButton {
+  padding: 10px 20px;
+  background: #00A63E;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.startAnalysisButton:hover {
+  background: #008F35;
+}
+
+/* ============================================
+   SUMMARY STATS
+   ============================================ */
+
+.summaryStats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 0;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ============================================
+   DISABLED BUTTON STATES
+   ============================================ */
+
+.removeButton:disabled,
+.uploadNewVersionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.removeButton:disabled:hover,
+.uploadNewVersionButton:disabled:hover {
+  background: transparent;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
 @media (max-width: 768px) {
   .mainContent {
     padding: 24px 20px;
@@ -438,6 +578,18 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+
+  .feedbackHeaderActions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .feedbackHeaderActions button {
+    width: 100%;
+    justify-content: center;
   }
 
   .feedbackItemHeader {
@@ -463,5 +615,10 @@
 
   .uploadText {
     font-size: 16px;
+  }
+
+  .summaryStats {
+    flex-wrap: wrap;
+    gap: 12px;
   }
 }

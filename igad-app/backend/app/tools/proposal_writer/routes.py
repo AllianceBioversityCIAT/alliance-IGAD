@@ -20,6 +20,7 @@ from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer
 from app.tools.proposal_writer.document_generation.service import concept_generator
 from app.tools.proposal_writer.structure_workplan.service import StructureWorkplanService
 from app.tools.proposal_writer.template_generation.service import TemplateGenerationService
+from app.tools.proposal_writer.draft_feedback.service import DraftFeedbackService
 from app.database.client import db_client
 
 router = APIRouter(prefix="/api/proposals", tags=["proposals"])
@@ -1929,6 +1930,272 @@ async def generate_proposal_template(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to generate template: {str(e)}")
+
+
+# ==================== STEP 4: DRAFT PROPOSAL FEEDBACK ====================
+
+
+@router.post("/{proposal_id}/upload-draft-proposal")
+async def upload_draft_proposal_file(
+    proposal_id: str,
+    file: UploadFile = File(...),
+    user=Depends(get_current_user)
+):
+    """
+    Upload draft proposal document to S3.
+
+    Stores in {proposal_code}/documents/draft_proposal/{filename}
+    Accepts PDF, DOC, and DOCX files up to 20MB.
+    """
+    from io import BytesIO
+
+    try:
+        # Validate file type
+        allowed_extensions = ('.pdf', '.doc', '.docx')
+        if not file.filename or not file.filename.lower().endswith(allowed_extensions):
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF, DOC, and DOCX files are supported"
+            )
+
+        # Read and validate file
+        file_bytes = await file.read()
+        file_size = len(file_bytes)
+
+        if file_size == 0:
+            raise HTTPException(status_code=400, detail="File is empty")
+        if file_size > 20 * 1024 * 1024:  # 20MB limit
+            raise HTTPException(status_code=400, detail="File size must be less than 20MB")
+
+        # Verify proposal ownership
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        # Upload to S3
+        s3_client = boto3.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+
+        s3_key = f"{proposal_code}/documents/draft_proposal/{file.filename}"
+
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=s3_key,
+            Body=BytesIO(file_bytes),
+            ContentType=file.content_type or 'application/octet-stream',
+            Metadata={
+                'proposal-id': proposal_id,
+                'uploaded-by': user.get('user_id'),
+                'original-size': str(file_size)
+            }
+        )
+
+        print(f"✓ Draft proposal uploaded to S3: {s3_key}")
+
+        # Update DynamoDB - store single file (replace previous)
+        await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="SET uploaded_files.#draft = :files, updated_at = :updated",
+            expression_attribute_names={"#draft": "draft-proposal"},
+            expression_attribute_values={
+                ":files": [file.filename],
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+
+        return {
+            "success": True,
+            "message": "Draft proposal uploaded successfully",
+            "filename": file.filename,
+            "document_key": s3_key,
+            "size": file_size
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error uploading draft proposal: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to upload draft proposal: {str(e)}")
+
+
+@router.delete("/{proposal_id}/documents/draft-proposal/{filename}")
+async def delete_draft_proposal(
+    proposal_id: str,
+    filename: str,
+    user=Depends(get_current_user)
+):
+    """
+    Delete draft proposal document and clear feedback analysis.
+    """
+    try:
+        # Verify proposal ownership
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        # Delete from S3
+        s3_client = boto3.client('s3')
+        bucket = os.environ.get('PROPOSALS_BUCKET')
+        s3_key = f"{proposal_code}/documents/draft_proposal/{filename}"
+
+        try:
+            s3_client.delete_object(Bucket=bucket, Key=s3_key)
+            print(f"✓ Deleted draft proposal from S3: {s3_key}")
+        except Exception as s3_error:
+            print(f"⚠️ Warning: Could not delete from S3: {s3_error}")
+
+        # Clear from DynamoDB (file reference and any feedback analysis)
+        await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="""
+                SET uploaded_files.#draft = :empty,
+                    updated_at = :updated
+                REMOVE draft_feedback_analysis,
+                       analysis_status_draft_feedback,
+                       draft_feedback_started_at,
+                       draft_feedback_completed_at,
+                       draft_feedback_error
+            """,
+            expression_attribute_names={"#draft": "draft-proposal"},
+            expression_attribute_values={
+                ":empty": [],
+                ":updated": datetime.utcnow().isoformat()
+            }
+        )
+
+        return {
+            "success": True,
+            "message": "Draft proposal deleted successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error deleting draft proposal: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete draft proposal: {str(e)}")
+
+
+@router.post("/{proposal_id}/analyze-draft-feedback")
+async def analyze_draft_feedback(proposal_id: str, user=Depends(get_current_user)):
+    """
+    Start Draft Feedback analysis (Step 4).
+
+    Analyzes the uploaded draft proposal against RFP requirements
+    and provides section-by-section feedback.
+
+    Prerequisites:
+    - Step 1 (RFP Analysis) must be completed
+    - Draft proposal document must be uploaded
+
+    Returns immediately with status, poll /draft-feedback-status for completion.
+    """
+    try:
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        # Check prerequisites
+        if not proposal.get("rfp_analysis"):
+            raise HTTPException(
+                status_code=400,
+                detail="Step 1 (RFP analysis) must be completed before draft feedback analysis."
+            )
+
+        draft_docs = proposal.get("uploaded_files", {}).get("draft-proposal", [])
+        if not draft_docs:
+            raise HTTPException(
+                status_code=400,
+                detail="Please upload your draft proposal first."
+            )
+
+        # Check if already completed
+        if proposal.get("draft_feedback_analysis"):
+            return {
+                "status": "completed",
+                "message": "Draft feedback already analyzed",
+                "data": proposal.get("draft_feedback_analysis"),
+                "cached": True
+            }
+
+        # Check if already processing
+        if proposal.get("analysis_status_draft_feedback") == "processing":
+            return {
+                "status": "processing",
+                "message": "Draft feedback analysis already in progress",
+                "started_at": proposal.get("draft_feedback_started_at")
+            }
+
+        # Update status to processing
+        await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="SET analysis_status_draft_feedback = :status, draft_feedback_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat()
+            }
+        )
+
+        # Invoke Worker Lambda asynchronously
+        worker_function_arn = os.environ.get("WORKER_FUNCTION_NAME")
+        if not worker_function_arn:
+            raise Exception("WORKER_FUNCTION_NAME environment variable not set")
+
+        print(f"🚀 Invoking Lambda worker for draft feedback analysis: {proposal_code}")
+
+        lambda_client.invoke(
+            FunctionName=worker_function_arn,
+            InvocationType='Event',  # Async invocation
+            Payload=json.dumps({
+                "proposal_id": proposal_code,
+                "analysis_type": "draft_feedback"
+            })
+        )
+
+        return {
+            "status": "processing",
+            "message": "Draft feedback analysis started. Poll /draft-feedback-status for completion.",
+            "started_at": datetime.utcnow().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error starting draft feedback analysis: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to start draft feedback analysis: {str(e)}")
+
+
+@router.get("/{proposal_id}/draft-feedback-status")
+async def get_draft_feedback_status(proposal_id: str, user=Depends(get_current_user)):
+    """
+    Poll for Draft Feedback analysis completion status.
+
+    Returns:
+    - status: "not_started" | "processing" | "completed" | "failed"
+    - data: Feedback analysis result (if completed)
+    - error: Error message (if failed)
+    """
+    try:
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        status = proposal.get("analysis_status_draft_feedback", "not_started")
+
+        response = {
+            "status": status,
+            "started_at": proposal.get("draft_feedback_started_at"),
+            "completed_at": proposal.get("draft_feedback_completed_at"),
+            "error": proposal.get("draft_feedback_error")
+        }
+
+        if status == "completed":
+            response["data"] = proposal.get("draft_feedback_analysis")
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to check draft feedback status: {str(e)}")
 
 
 @router.post("/prompts/with-categories")

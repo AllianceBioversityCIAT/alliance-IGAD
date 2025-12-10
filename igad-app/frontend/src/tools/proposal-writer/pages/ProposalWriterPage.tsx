@@ -32,6 +32,7 @@ export function ProposalWriterPage() {
   const [referenceProposalsAnalysis, setReferenceProposalsAnalysis] = useState<any>(null)
   const [conceptAnalysis, setConceptAnalysis] = useState<any>(null)
   const [structureWorkplanAnalysis, setStructureWorkplanAnalysis] = useState<any>(null)
+  const [draftFeedbackAnalysis, setDraftFeedbackAnalysis] = useState<any>(null)
   const [analysisProgress, setAnalysisProgress] = useState<{
     step: number
     total: number
@@ -220,6 +221,37 @@ export function ProposalWriterPage() {
             uploadedFiles: uploadedFiles as any,
           })
           formDataLoadedFromDB.current = true
+
+          // Load concept_document_v2 from DynamoDB for step completion tracking
+          if (proposal.concept_document_v2 && !conceptDocument) {
+            console.log('📄 Loading concept_document_v2 from DynamoDB on initial mount')
+            setConceptDocument(proposal.concept_document_v2)
+          }
+
+          // Load proposal_template_generated flag from DynamoDB for step completion tracking
+          // Also check structure_workplan_completed_at as fallback for older proposals
+          if (!proposalTemplate) {
+            if (proposal.proposal_template_generated) {
+              console.log('📄 Loading proposal_template_generated from DynamoDB on initial mount')
+              setProposalTemplate({ generated: true, timestamp: proposal.proposal_template_generated })
+            } else if (proposal.structure_workplan_completed_at && proposal.structure_workplan_analysis) {
+              // Fallback: If structure workplan is completed, mark Step 3 as done
+              console.log('📄 Loading structure_workplan_completed_at as fallback for Step 3 completion')
+              setProposalTemplate({ generated: true, timestamp: proposal.structure_workplan_completed_at })
+            }
+          }
+
+          // Also load structure workplan analysis if available
+          if (proposal.structure_workplan_analysis && !structureWorkplanAnalysis) {
+            console.log('📄 Loading structure_workplan_analysis from DynamoDB on initial mount')
+            setStructureWorkplanAnalysis(proposal.structure_workplan_analysis)
+          }
+
+          // Also load draft feedback analysis if available (Step 4)
+          if (proposal.draft_feedback_analysis && !draftFeedbackAnalysis) {
+            console.log('📄 Loading draft_feedback_analysis from DynamoDB on initial mount')
+            setDraftFeedbackAnalysis(proposal.draft_feedback_analysis)
+          }
         } else {
           formDataLoadedFromDB.current = true
         }
@@ -230,7 +262,7 @@ export function ProposalWriterPage() {
     }
 
     loadFormDataFromDynamoDB()
-  }, [proposalId])
+  }, [proposalId, conceptDocument, proposalTemplate, structureWorkplanAnalysis, draftFeedbackAnalysis])
 
   // Save to localStorage whenever state changes
   useEffect(() => {
@@ -358,26 +390,26 @@ export function ProposalWriterPage() {
       completed.push(1)
     }
 
-    // Step 2 is completed if we have concept analysis
-    if (conceptAnalysis) {
+    // Step 2 is completed if we have concept document generated
+    // (conceptDocument is generated in Step 2 - Concept Review)
+    if (conceptDocument) {
       completed.push(2)
     }
 
-    // Step 3 is completed if we have concept document
-    if (conceptDocument) {
+    // Step 3 is completed if we have proposal template generated
+    // (proposalTemplate is generated in Step 3 - Structure & Workplan)
+    if (proposalTemplate) {
       completed.push(3)
     }
 
-    // Step 4 is completed if we have proposal template
-    if (proposalTemplate) {
-      completed.push(4)
-    }
+    // Step 4 (Proposal Review) - future implementation
+    // No automatic completion criteria yet
 
     // Only update if different to avoid infinite loops
     if (JSON.stringify(completed) !== JSON.stringify(completedSteps)) {
       setCompletedSteps(completed)
     }
-  }, [formData.uploadedFiles, conceptAnalysis, conceptDocument, proposalTemplate])
+  }, [formData.uploadedFiles, conceptDocument, proposalTemplate, completedSteps])
 
   // Detect RFP/document changes and invalidate analyses
   useEffect(() => {
@@ -1528,9 +1560,22 @@ export function ProposalWriterPage() {
             {...stepProps}
             proposalId={proposalId}
             structureWorkplanAnalysis={structureWorkplanAnalysis}
-            onTemplateGenerated={() => {
+            onTemplateGenerated={async () => {
+              const timestamp = new Date().toISOString()
               console.log('✅ Template generated, enabling Next button')
-              setProposalTemplate({ generated: true, timestamp: new Date().toISOString() })
+              setProposalTemplate({ generated: true, timestamp })
+
+              // Save to DynamoDB for persistence across sessions
+              if (proposalId) {
+                try {
+                  await proposalService.updateProposal(proposalId, {
+                    proposal_template_generated: timestamp,
+                  } as any)
+                  console.log('💾 Saved proposal_template_generated to DynamoDB')
+                } catch (error) {
+                  console.error('❌ Failed to save template status to DynamoDB:', error)
+                }
+              }
             }}
           />
         )
@@ -1539,6 +1584,22 @@ export function ProposalWriterPage() {
           <Step4ProposalReview
             {...stepProps}
             proposalId={proposalId}
+            uploadedDraftFiles={formData.uploadedFiles['draft-proposal'] as unknown as string[] || []}
+            draftFeedbackAnalysis={draftFeedbackAnalysis?.draft_feedback_analysis || draftFeedbackAnalysis}
+            onFeedbackAnalyzed={(analysis) => {
+              console.log('✅ Draft feedback analysis received:', analysis)
+              setDraftFeedbackAnalysis(analysis)
+            }}
+            onFilesChanged={(files) => {
+              console.log('📄 Draft files changed:', files)
+              setFormData(prev => ({
+                ...prev,
+                uploadedFiles: {
+                  ...prev.uploadedFiles,
+                  'draft-proposal': files as any
+                }
+              }))
+            }}
           />
         )
       default:
@@ -1580,7 +1641,10 @@ export function ProposalWriterPage() {
         }
       }}
       disabled={
+        // Step 3: Disable until template is generated
         (currentStep === 3 && !proposalTemplate) ||
+        // Step 2: Disable until concept document is generated
+        (currentStep === 2 && !conceptDocument) ||
         isAnalyzingRFP ||
         isGeneratingDocument ||
         (currentStep === 1 &&

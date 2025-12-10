@@ -22,6 +22,7 @@ from app.tools.proposal_writer.concept_evaluation.service import SimpleConceptAn
 from app.tools.proposal_writer.document_generation.service import concept_generator
 from app.tools.proposal_writer.reference_proposals_analysis.service import ReferenceProposalsAnalyzer
 from app.tools.proposal_writer.structure_workplan.service import StructureWorkplanService
+from app.tools.proposal_writer.draft_feedback.service import DraftFeedbackService
 from app.database.client import db_client
 from app.shared.vectors.service import VectorEmbeddingsService
 
@@ -101,6 +102,16 @@ def _set_processing_status(
             pk=f"PROPOSAL#{proposal_id}",
             sk="METADATA",
             update_expression="SET analysis_status_structure_workplan = :status, structure_workplan_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat(),
+            },
+        )
+    elif analysis_type == "draft_feedback":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="SET analysis_status_draft_feedback = :status, draft_feedback_started_at = :started",
             expression_attribute_values={
                 ":status": "processing",
                 ":started": datetime.utcnow().isoformat(),
@@ -264,6 +275,26 @@ def _set_completed_status(
                 ":updated": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "draft_feedback":
+        # Extract just the analysis content (avoid duplication)
+        analysis_data = result.get("draft_feedback_analysis", {})
+
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET draft_feedback_analysis = :analysis,
+                    analysis_status_draft_feedback = :status,
+                    draft_feedback_completed_at = :completed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":analysis": analysis_data,
+                ":status": "completed",
+                ":completed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 def _set_failed_status(
@@ -375,6 +406,23 @@ def _set_failed_status(
                 SET analysis_status_structure_workplan = :status,
                     structure_workplan_error = :error,
                     structure_workplan_failed_at = :failed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":status": "failed",
+                ":error": error_msg,
+                ":failed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
+    elif analysis_type == "draft_feedback":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET analysis_status_draft_feedback = :status,
+                    draft_feedback_error = :error,
+                    draft_feedback_failed_at = :failed,
                     updated_at = :updated
             """,
             expression_attribute_values={
@@ -641,6 +689,62 @@ def _handle_structure_workplan_analysis(proposal_id: str) -> Dict[str, Any]:
 
     _set_completed_status(proposal_id, "structure_workplan", result)
     logger.info("💾 Structure workplan result saved to DynamoDB")
+
+    return result
+
+
+# ==================== DRAFT FEEDBACK ANALYSIS ====================
+
+
+def _handle_draft_feedback_analysis(proposal_id: str) -> Dict[str, Any]:
+    """
+    Execute draft proposal feedback analysis.
+
+    Analyzes user's draft proposal against RFP requirements to provide:
+    - Section-by-section feedback with status ratings (EXCELLENT, GOOD, NEEDS_IMPROVEMENT)
+    - Specific improvement suggestions for each section
+    - Overall assessment and alignment with RFP requirements
+
+    Args:
+        proposal_id: Proposal identifier
+
+    Returns:
+        Analysis result from DraftFeedbackService
+
+    Raises:
+        Exception: If proposal/RFP/draft not found or analysis fails
+    """
+    logger.info(f"📋 Processing draft feedback analysis for: {proposal_id}")
+
+    # Retrieve proposal and validate dependencies
+    proposal = db_client.get_item_sync(
+        pk=f"PROPOSAL#{proposal_id}", sk="METADATA"
+    )
+
+    if not proposal:
+        raise Exception(f"Proposal {proposal_id} not found")
+
+    rfp_analysis = proposal.get("rfp_analysis")
+    if not rfp_analysis:
+        raise Exception("RFP analysis must be completed first")
+
+    draft_documents = proposal.get("uploaded_files", {}).get("draft-proposal", [])
+    if not draft_documents:
+        raise Exception("Draft proposal must be uploaded first")
+
+    logger.info("✅ Prerequisites validated")
+
+    _set_processing_status(proposal_id, "draft_feedback")
+
+    logger.info("🔍 Starting draft feedback analysis...")
+    service = DraftFeedbackService()
+    result = service.analyze_draft_feedback(proposal_id)
+
+    logger.info("✅ Draft feedback analysis completed successfully")
+    logger.info(f"📊 Result keys: {list(result.keys())}")
+
+    _set_completed_status(proposal_id, "draft_feedback", result)
+    logger.info("💾 Draft feedback result saved to DynamoDB")
 
     return result
 
@@ -971,18 +1075,19 @@ def handler(event, context):
     """
     Lambda handler for asynchronous proposal analysis.
 
-    Coordinates five types of analysis workflows:
+    Coordinates seven types of analysis workflows:
     1. RFP Analysis: Extracts structured data from RFP documents
     2. Reference Proposals Analysis: Analyzes reference proposals from S3 Vectors
     3. Existing Work Analysis: Analyzes existing work from S3 Vectors
     4. Concept Analysis: Evaluates concept alignment with RFP
     5. Structure Workplan: Generates proposal structure and workplan
-    6. Document Generation: Creates refined concept document
+    6. Draft Feedback: Analyzes draft proposal and provides section-by-section feedback
+    7. Document Generation: Creates refined concept document
 
     Expected event format:
     {
         "proposal_id": "uuid-string",
-        "analysis_type": "rfp" | "reference_proposals" | "existing_work" | "concept" | "structure_workplan" | "concept_document",
+        "analysis_type": "rfp" | "reference_proposals" | "existing_work" | "concept" | "structure_workplan" | "draft_feedback" | "concept_document",
         "concept_evaluation": {...}  # Required for concept_document
     }
 
@@ -1017,6 +1122,8 @@ def handler(event, context):
             _handle_concept_analysis(proposal_id)
         elif analysis_type == "structure_workplan":
             _handle_structure_workplan_analysis(proposal_id)
+        elif analysis_type == "draft_feedback":
+            _handle_draft_feedback_analysis(proposal_id)
         elif analysis_type == "concept_document":
             _handle_concept_document_generation(proposal_id, event)
         elif analysis_type == "vectorize_document":
