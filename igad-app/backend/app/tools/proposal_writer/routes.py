@@ -2075,8 +2075,16 @@ async def delete_draft_proposal(
         raise HTTPException(status_code=500, detail=f"Failed to delete draft proposal: {str(e)}")
 
 
+class DraftFeedbackRequest(BaseModel):
+    force: bool = False
+
+
 @router.post("/{proposal_id}/analyze-draft-feedback")
-async def analyze_draft_feedback(proposal_id: str, user=Depends(get_current_user)):
+async def analyze_draft_feedback(
+    proposal_id: str,
+    request: Optional[DraftFeedbackRequest] = None,
+    user=Depends(get_current_user)
+):
     """
     Start Draft Feedback analysis (Step 4).
 
@@ -2087,10 +2095,16 @@ async def analyze_draft_feedback(proposal_id: str, user=Depends(get_current_user
     - Step 1 (RFP Analysis) must be completed
     - Draft proposal document must be uploaded
 
+    Args:
+        force: If True, forces a new analysis even if one already exists.
+
     Returns immediately with status, poll /draft-feedback-status for completion.
     """
     try:
         pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        # Get force flag from request body
+        force = request.force if request else False
 
         # Check prerequisites
         if not proposal.get("rfp_analysis"):
@@ -2106,8 +2120,8 @@ async def analyze_draft_feedback(proposal_id: str, user=Depends(get_current_user
                 detail="Please upload your draft proposal first."
             )
 
-        # Check if already completed
-        if proposal.get("draft_feedback_analysis"):
+        # Check if already completed (unless force=True)
+        if proposal.get("draft_feedback_analysis") and not force:
             return {
                 "status": "completed",
                 "message": "Draft feedback already analyzed",
@@ -2115,8 +2129,27 @@ async def analyze_draft_feedback(proposal_id: str, user=Depends(get_current_user
                 "cached": True
             }
 
-        # Check if already processing
-        if proposal.get("analysis_status_draft_feedback") == "processing":
+        # If force=True, clear existing analysis data
+        if force and proposal.get("draft_feedback_analysis"):
+            print(f"🔄 Force re-analysis requested, clearing existing data for {proposal_code}")
+            await db_client.update_item(
+                pk=pk,
+                sk="METADATA",
+                update_expression="""
+                    REMOVE draft_feedback_analysis,
+                           draft_feedback_completed_at,
+                           draft_feedback_error
+                    SET analysis_status_draft_feedback = :not_started,
+                        updated_at = :updated
+                """,
+                expression_attribute_values={
+                    ":not_started": "not_started",
+                    ":updated": datetime.utcnow().isoformat()
+                }
+            )
+
+        # Check if already processing (unless force=True)
+        if proposal.get("analysis_status_draft_feedback") == "processing" and not force:
             return {
                 "status": "processing",
                 "message": "Draft feedback analysis already in progress",

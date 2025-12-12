@@ -940,6 +940,129 @@
 }
 
 /* ============================================
+   BOTTOM ACTION BAR (after sections)
+   ============================================ */
+
+.bottomActionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  margin-top: 20px;
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  gap: 16px;
+}
+
+.bottomActionBarText {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.bottomActionBarIcon {
+  color: #16A34A;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   SKELETON STYLES
+   ============================================ */
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeletonTitle {
+  height: 32px;
+  width: 280px;
+  margin-bottom: 12px;
+}
+
+.skeletonText {
+  height: 18px;
+  width: 450px;
+  max-width: 100%;
+}
+
+.skeletonCardTitle {
+  height: 22px;
+  width: 200px;
+  margin-bottom: 8px;
+}
+
+.skeletonTextShort {
+  height: 16px;
+  width: 320px;
+  max-width: 100%;
+  margin-bottom: 16px;
+}
+
+.skeletonUploadZone {
+  height: 180px;
+  width: 100%;
+  border-radius: 12px;
+}
+
+.skeletonStats {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 20px;
+  background: #FAFBFC;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.skeletonStatCircle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeletonStatBars {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeletonStatBar {
+  height: 36px;
+  width: 100%;
+  border-radius: 8px;
+}
+
+.skeletonSections {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeletonSectionItem {
+  height: 64px;
+  width: 100%;
+  border-radius: 10px;
+}
+
+/* ============================================
    ENHANCED BUTTONS
    ============================================ */
 
@@ -993,6 +1116,92 @@
   color: #9CA3AF;
   box-shadow: none;
   cursor: not-allowed;
+}
+
+/* ============================================
+   FINISH PROCESS SECTION
+   ============================================ */
+
+.finishProcessSection {
+  background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+  border: 1px solid #BBF7D0;
+  border-radius: 14px;
+  padding: 28px;
+}
+
+.finishProcessContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.finishProcessInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.finishProcessTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #166534;
+  margin: 0;
+}
+
+.finishProcessDescription {
+  font-size: 14px;
+  color: #15803D;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 500px;
+}
+
+.finishProcessButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+  flex-shrink: 0;
+}
+
+.finishProcessButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #15803D 0%, #166534 100%);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4);
+  transform: translateY(-2px);
+}
+
+.finishProcessButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.completedBadge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: #DCFCE7;
+  border: 2px solid #16A34A;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #166534;
+  flex-shrink: 0;
+}
+
+.completedBadge svg {
+  color: #16A34A;
 }
 
 /* ============================================
@@ -1227,5 +1436,70 @@
   .actionBarRight button {
     width: 100%;
     justify-content: center;
+  }
+
+  .bottomActionBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .bottomActionBarText {
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .bottomActionBar .downloadFeedbackButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .finishProcessSection {
+    padding: 20px;
+  }
+
+  .finishProcessContent {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .finishProcessInfo {
+    align-items: center;
+  }
+
+  .finishProcessButton {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 24px;
+  }
+
+  .completedBadge {
+    justify-content: center;
+    width: 100%;
+    padding: 14px 24px;
+  }
+
+  /* Skeleton responsive */
+  .skeletonTitle {
+    width: 200px;
+    height: 26px;
+  }
+
+  .skeletonText {
+    width: 100%;
+  }
+
+  .skeletonStats {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .skeletonStatCircle {
+    width: 80px;
+    height: 80px;
   }
 }

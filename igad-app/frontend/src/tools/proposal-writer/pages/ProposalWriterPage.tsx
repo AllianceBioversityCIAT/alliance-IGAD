@@ -33,6 +33,7 @@ export function ProposalWriterPage() {
   const [conceptAnalysis, setConceptAnalysis] = useState<any>(null)
   const [structureWorkplanAnalysis, setStructureWorkplanAnalysis] = useState<any>(null)
   const [draftFeedbackAnalysis, setDraftFeedbackAnalysis] = useState<any>(null)
+  const [proposalStatus, setProposalStatus] = useState<'draft' | 'in_progress' | 'review' | 'completed' | 'archived'>('draft')
   const [analysisProgress, setAnalysisProgress] = useState<{
     step: number
     total: number
@@ -176,6 +177,91 @@ export function ProposalWriterPage() {
 
     console.log('📊 Initial load complete - rfpAnalysis:', !!draft.rfpAnalysis)
   }, [])
+
+  // Track if step completion data has been loaded for this session
+  const stepCompletionLoadedRef = useRef(false)
+
+  // Loading state for step data (used by Step 4 to show skeleton)
+  const [isLoadingStepData, setIsLoadingStepData] = useState(true)
+
+  // Load step completion data from DynamoDB on initial mount (always runs regardless of localStorage)
+  // This ensures Step 3 and Step 4 checkmarks show correctly when loading from dashboard
+  useEffect(() => {
+    const loadStepCompletionData = async () => {
+      if (!proposalId) {
+        setIsLoadingStepData(false)
+        return
+      }
+
+      // Only run once per session
+      if (stepCompletionLoadedRef.current) {
+        setIsLoadingStepData(false)
+        return
+      }
+      stepCompletionLoadedRef.current = true
+
+      try {
+        setIsLoadingStepData(true)
+        console.log('🔄 Loading step completion data from DynamoDB...')
+        const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+        const proposal = await proposalService.getProposal(proposalId)
+
+        if (proposal) {
+          // Load structure workplan analysis (Step 3 completion)
+          if (proposal.structure_workplan_analysis) {
+            console.log('✅ Loaded structure_workplan_analysis for Step 3 completion')
+            setStructureWorkplanAnalysis(proposal.structure_workplan_analysis)
+          }
+
+          // Load draft feedback analysis (Step 4 completion)
+          if (proposal.draft_feedback_analysis) {
+            console.log('✅ Loaded draft_feedback_analysis for Step 4 completion')
+            setDraftFeedbackAnalysis(proposal.draft_feedback_analysis)
+          }
+
+          // Load proposal template generated flag
+          if (proposal.proposal_template_generated) {
+            console.log('✅ Loaded proposal_template_generated for Step 3 completion')
+            setProposalTemplate({ generated: true, timestamp: proposal.proposal_template_generated })
+          } else if (proposal.structure_workplan_completed_at && proposal.structure_workplan_analysis) {
+            console.log('✅ Using structure_workplan_completed_at as fallback for Step 3')
+            setProposalTemplate({ generated: true, timestamp: proposal.structure_workplan_completed_at })
+          }
+
+          // Load concept document (Step 2 completion)
+          if (proposal.concept_document_v2) {
+            console.log('✅ Loaded concept_document_v2 for Step 2 completion')
+            setConceptDocument(proposal.concept_document_v2)
+          }
+
+          // Load uploaded draft files
+          const draftFiles = proposal.uploaded_files?.['draft-proposal'] || []
+          if (draftFiles.length > 0) {
+            console.log('✅ Loaded draft-proposal files:', draftFiles)
+            setFormData(prev => ({
+              ...prev,
+              uploadedFiles: {
+                ...prev.uploadedFiles,
+                'draft-proposal': draftFiles
+              }
+            }))
+          }
+
+          // Load proposal status
+          if (proposal.status) {
+            console.log('✅ Loaded proposal status:', proposal.status)
+            setProposalStatus(proposal.status)
+          }
+        }
+      } catch (error) {
+        console.log('⚠️ Error loading step completion data:', error)
+      } finally {
+        setIsLoadingStepData(false)
+      }
+    }
+
+    loadStepCompletionData()
+  }, [proposalId])
 
   // Load formData from DynamoDB if localStorage is empty
   useEffect(() => {
@@ -1636,6 +1722,7 @@ export function ProposalWriterPage() {
           <Step4ProposalReview
             {...stepProps}
             proposalId={proposalId}
+            isLoading={isLoadingStepData}
             uploadedDraftFiles={formData.uploadedFiles['draft-proposal'] as unknown as string[] || []}
             draftFeedbackAnalysis={draftFeedbackAnalysis?.draft_feedback_analysis || draftFeedbackAnalysis}
             onFeedbackAnalyzed={(analysis) => {
@@ -1686,8 +1773,16 @@ export function ProposalWriterPage() {
         } else if (currentStep === 4) {
           // Final step - finish process
           console.log('🏁 Finishing process')
-          // TODO: Handle finish process logic
-          alert('Proposal process completed! (Feature coming soon)')
+          if (proposalId) {
+            try {
+              await proposalService.updateProposalStatus(proposalId, 'completed')
+              setProposalStatus('completed')
+              showSuccess('Process Complete', 'Your proposal has been marked as completed!')
+            } catch (error) {
+              console.error('Error finishing process:', error)
+              showError('Error', 'Failed to complete process. Please try again.')
+            }
+          }
         } else {
           handleNextStep()
         }
@@ -1817,7 +1912,9 @@ export function ProposalWriterPage() {
         navigationButtons={navigationButtons}
         proposalCode={proposalCode}
         proposalId={proposalId}
+        proposalStatus={proposalStatus}
         isLoadingProposal={isCreating}
+        isLoadingStepData={isLoadingStepData}
         onNavigateAway={handleNavigateAway}
       >
         {renderCurrentStep()}

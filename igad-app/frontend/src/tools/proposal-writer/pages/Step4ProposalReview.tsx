@@ -51,6 +51,7 @@ interface DraftFeedbackAnalysis {
 
 interface Step4Props extends StepProps {
   proposalId?: string
+  isLoading?: boolean
   uploadedDraftFiles?: string[]
   draftFeedbackAnalysis?: DraftFeedbackAnalysis
   onFeedbackAnalyzed?: (analysis: DraftFeedbackAnalysis) => void
@@ -109,6 +110,58 @@ const STATUS_CONFIG: Record<FeedbackStatus, {
 
 const POLLING_INTERVAL = 3000 // 3 seconds
 const MAX_POLLING_TIME = 300000 // 5 minutes
+
+// ============================================================================
+// SKELETON COMPONENT
+// ============================================================================
+
+/**
+ * Loading skeleton displayed while data is being fetched
+ * Provides visual feedback during initial load
+ */
+function Step4Skeleton() {
+  return (
+    <div className={styles.mainContent}>
+      {/* Header Skeleton */}
+      <div className={styles.stepHeader}>
+        <div className={`${styles.skeleton} ${styles.skeletonTitle}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonText}`}></div>
+      </div>
+
+      {/* Upload Card Skeleton */}
+      <div className={styles.contentContainer}>
+        <div className={styles.card}>
+          <div className={`${styles.skeleton} ${styles.skeletonCardTitle}`}></div>
+          <div className={`${styles.skeleton} ${styles.skeletonTextShort}`}></div>
+          <div className={`${styles.skeleton} ${styles.skeletonUploadZone}`}></div>
+        </div>
+
+        {/* Feedback Card Skeleton */}
+        <div className={styles.card}>
+          <div className={`${styles.skeleton} ${styles.skeletonCardTitle}`}></div>
+          <div className={`${styles.skeleton} ${styles.skeletonTextShort}`}></div>
+
+          {/* Summary Stats Skeleton */}
+          <div className={styles.skeletonStats}>
+            <div className={`${styles.skeleton} ${styles.skeletonStatCircle}`}></div>
+            <div className={styles.skeletonStatBars}>
+              <div className={`${styles.skeleton} ${styles.skeletonStatBar}`}></div>
+              <div className={`${styles.skeleton} ${styles.skeletonStatBar}`}></div>
+              <div className={`${styles.skeleton} ${styles.skeletonStatBar}`}></div>
+            </div>
+          </div>
+
+          {/* Section Items Skeleton */}
+          <div className={styles.skeletonSections}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className={`${styles.skeleton} ${styles.skeletonSectionItem}`}></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -576,6 +629,7 @@ function OverallAssessmentCard({ assessment }: OverallAssessmentCardProps) {
 
 export function Step4ProposalReview({
   proposalId,
+  isLoading = false,
   uploadedDraftFiles = [],
   draftFeedbackAnalysis,
   onFeedbackAnalyzed,
@@ -583,6 +637,11 @@ export function Step4ProposalReview({
 }: Step4Props) {
   // Toast notifications
   const { showSuccess, showError, showWarning } = useToast()
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return <Step4Skeleton />
+  }
 
   // State
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null)
@@ -846,9 +905,57 @@ export function Step4ProposalReview({
     )
   }, [])
 
-  const handleReanalyze = useCallback(() => {
-    startAnalysis()
-  }, [startAnalysis])
+  const handleReanalyze = useCallback(async () => {
+    if (!proposalId) {
+      showError('Error', 'No proposal ID available')
+      return
+    }
+
+    try {
+      // Clear existing feedback data to show fresh analysis
+      setFeedbackData([])
+
+      // Start new analysis with force flag
+      setIsAnalyzing(true)
+      setAnalysisProgress({
+        step: 1,
+        total: 2,
+        message: 'Re-analyzing Your Draft Proposal',
+        description: 'Running a fresh AI analysis on your draft proposal. This will generate new feedback based on the current document.',
+        steps: DRAFT_FEEDBACK_STEPS,
+      })
+
+      // Call API with force=true to bypass cache
+      const result = await proposalService.analyzeDraftFeedback(proposalId, true)
+
+      if (result.status === 'processing' || result.status === 'already_running') {
+        // Start polling
+        pollingStartTimeRef.current = Date.now()
+        pollingRef.current = setInterval(pollAnalysisStatus, POLLING_INTERVAL)
+
+        // Initial poll
+        setTimeout(pollAnalysisStatus, 1000)
+      } else if (result.status === 'completed') {
+        setIsAnalyzing(false)
+        setAnalysisProgress(null)
+
+        // Fetch the new data
+        const status = await proposalService.getDraftFeedbackStatus(proposalId)
+        const analysis = status.data?.draft_feedback_analysis ||
+                        (status.data?.section_feedback ? status.data : null)
+        if (analysis) {
+          setFeedbackData(mapAnalysisToFeedback(analysis))
+          onFeedbackAnalyzed?.(analysis)
+        }
+        showSuccess('Re-analysis Complete', 'Fresh feedback has been generated!')
+      }
+    } catch (error: any) {
+      console.error('Error re-analyzing:', error)
+      setIsAnalyzing(false)
+      setAnalysisProgress(null)
+      showError('Re-analysis Failed', error.response?.data?.message || 'Failed to re-analyze')
+    }
+  }, [proposalId, pollAnalysisStatus, onFeedbackAnalyzed])
 
   const handleDownloadWithFeedback = useCallback(() => {
     // TODO: Implement download with AI feedback
@@ -975,19 +1082,38 @@ export function Step4ProposalReview({
                 </button>
               </div>
             ) : (
-              <div className={styles.feedbackList}>
-                {feedbackData.map(section => (
-                  <SectionFeedbackItem
-                    key={section.id}
-                    section={section}
-                    isExpanded={expandedSections.includes(section.id)}
-                    onToggle={() => toggleSection(section.id)}
-                  />
-                ))}
-              </div>
+              <>
+                <div className={styles.feedbackList}>
+                  {feedbackData.map(section => (
+                    <SectionFeedbackItem
+                      key={section.id}
+                      section={section}
+                      isExpanded={expandedSections.includes(section.id)}
+                      onToggle={() => toggleSection(section.id)}
+                    />
+                  ))}
+                </div>
+
+                {/* Bottom action bar after reviewing all sections */}
+                <div className={styles.bottomActionBar}>
+                  <div className={styles.bottomActionBarText}>
+                    <CheckCircle2 size={20} className={styles.bottomActionBarIcon} />
+                    <span>Reviewed all {feedbackData.length} sections</span>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.downloadFeedbackButton}
+                    onClick={handleDownloadWithFeedback}
+                  >
+                    <Download size={16} />
+                    Download with AI feedback
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}
+
       </div>
     </div>
   )

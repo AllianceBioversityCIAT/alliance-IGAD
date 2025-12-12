@@ -761,15 +761,20 @@ class ProposalService {
    * if (result.status === 'processing') {
    *   // Poll for completion using getDraftFeedbackStatus()
    * }
+   *
+   * // Force re-analysis (bypass cache)
+   * const freshResult = await proposalService.analyzeDraftFeedback('abc-123', true)
    * ```
    */
-  async analyzeDraftFeedback(proposalId: string): Promise<{
+  async analyzeDraftFeedback(proposalId: string, force: boolean = false): Promise<{
     status: string
     message: string
     started_at?: string
   }> {
     try {
-      const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-draft-feedback`)
+      const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-draft-feedback`, {
+        force: force
+      })
       return response.data
     } catch (error) {
       console.error('❌ Failed to start Draft Feedback analysis:', error)
@@ -872,6 +877,38 @@ class ProposalService {
       `/api/proposals/${proposalId}/documents/vectorization-status/${encodeURIComponent(filename)}`
     )
     return response.data
+  }
+
+  /**
+   * Update proposal status
+   *
+   * Changes proposal status (e.g., from "draft" to "completed")
+   * Used when user completes Step 4 and clicks "Finish Process"
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @param status - New status ('draft' | 'completed' | 'in_progress' | 'review' | 'archived')
+   * @returns Updated proposal data
+   * @throws Error if update fails
+   *
+   * @example
+   * ```typescript
+   * await proposalService.updateProposalStatus('abc-123', 'completed')
+   * ```
+   */
+  async updateProposalStatus(
+    proposalId: string,
+    status: 'draft' | 'in_progress' | 'review' | 'completed' | 'archived'
+  ): Promise<Proposal> {
+    try {
+      const response = await apiClient.put(`/api/proposals/${proposalId}`, {
+        status,
+        completed_at: status === 'completed' ? new Date().toISOString() : undefined
+      })
+      return response.data.proposal || response.data
+    } catch (error) {
+      console.error('❌ Failed to update proposal status:', error)
+      throw error
+    }
   }
 }
 

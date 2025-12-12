@@ -13,7 +13,9 @@ interface ProposalLayoutProps {
   navigationButtons: React.ReactNode
   proposalCode?: string
   proposalId?: string
+  proposalStatus?: 'draft' | 'in_progress' | 'review' | 'completed' | 'archived'
   isLoadingProposal?: boolean
+  isLoadingStepData?: boolean
   onNavigateAway?: () => void
 }
 
@@ -24,7 +26,9 @@ export function ProposalLayout({
   navigationButtons,
   proposalCode,
   proposalId,
+  proposalStatus = 'draft',
   isLoadingProposal = false,
+  isLoadingStepData = false,
   onNavigateAway,
 }: ProposalLayoutProps) {
   const navigate = useNavigate()
@@ -87,19 +91,20 @@ export function ProposalLayout({
     <>
       <ProposalSecondaryNavbar
         proposalCode={proposalCode}
+        proposalStatus={proposalStatus}
         isLoading={isLoadingProposal}
         onSaveAndClose={proposalId ? handleSaveAndClose : undefined}
         isSaving={isSaving}
       />
       <div className={styles.proposalWriterContainer}>
-        <ProposalSidebar currentStep={currentStep} completedSteps={completedSteps} />
+        <ProposalSidebar currentStep={currentStep} completedSteps={completedSteps} isLoading={isLoadingStepData} />
         <div className={styles.contentArea}>
           {children}
           <div className={styles.navigationButtons}>
             <div className={styles.navButtonLeft}>
               {navigationButtons && React.Children.toArray(navigationButtons)[0]}
             </div>
-            <div className={styles.stepIndicator}>Step {currentStep} of 6</div>
+            <div className={styles.stepIndicator}>Step {currentStep} of 4</div>
             <div className={styles.navButtonRight}>
               {navigationButtons && React.Children.toArray(navigationButtons)[1]}
             </div>
