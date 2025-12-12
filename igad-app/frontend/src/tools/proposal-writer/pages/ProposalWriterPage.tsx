@@ -396,20 +396,24 @@ export function ProposalWriterPage() {
       completed.push(2)
     }
 
-    // Step 3 is completed if we have proposal template generated
+    // Step 3 is completed if we have proposal template generated OR structure workplan analysis
     // (proposalTemplate is generated in Step 3 - Structure & Workplan)
-    if (proposalTemplate) {
+    // Also check structureWorkplanAnalysis as fallback for when proposalTemplate isn't loaded yet
+    // Also check draftFeedbackAnalysis - if Step 4 is done, Step 3 must have been completed
+    if (proposalTemplate || structureWorkplanAnalysis || draftFeedbackAnalysis) {
       completed.push(3)
     }
 
-    // Step 4 (Proposal Review) - future implementation
-    // No automatic completion criteria yet
+    // Step 4 is completed if we have draft feedback analysis
+    if (draftFeedbackAnalysis) {
+      completed.push(4)
+    }
 
     // Only update if different to avoid infinite loops
     if (JSON.stringify(completed) !== JSON.stringify(completedSteps)) {
       setCompletedSteps(completed)
     }
-  }, [formData.uploadedFiles, conceptDocument, proposalTemplate, completedSteps])
+  }, [formData.uploadedFiles, conceptDocument, proposalTemplate, structureWorkplanAnalysis, draftFeedbackAnalysis, completedSteps])
 
   // Detect RFP/document changes and invalidate analyses
   useEffect(() => {
@@ -604,6 +608,54 @@ export function ProposalWriterPage() {
 
     loadStructureWorkplan()
   }, [proposalId, currentStep, structureWorkplanAnalysis])
+
+  // Load draft feedback analysis from DynamoDB when entering Step 4
+  useEffect(() => {
+    const loadDraftFeedback = async () => {
+      if (proposalId && currentStep === 4) {
+        try {
+          console.log('🔍 Loading draft feedback for Step 4:', proposalId)
+          const { proposalService } = await import(
+            '@/tools/proposal-writer/services/proposalService'
+          )
+
+          // Load proposal to get both draft files and feedback analysis
+          const proposal = await proposalService.getProposal(proposalId)
+
+          if (proposal) {
+            // Load draft feedback analysis
+            if (proposal.draft_feedback_analysis && !draftFeedbackAnalysis) {
+              console.log('✅ Loaded draft_feedback_analysis from DynamoDB')
+              setDraftFeedbackAnalysis(proposal.draft_feedback_analysis)
+            }
+
+            // Load structure workplan analysis (to show Step 3 as completed)
+            if (proposal.structure_workplan_analysis && !structureWorkplanAnalysis) {
+              console.log('✅ Loaded structure_workplan_analysis from DynamoDB (for Step 3 completion)')
+              setStructureWorkplanAnalysis(proposal.structure_workplan_analysis)
+            }
+
+            // Load uploaded draft files
+            const draftFiles = proposal.uploaded_files?.['draft-proposal'] || []
+            if (draftFiles.length > 0) {
+              console.log('✅ Loaded draft-proposal files from DynamoDB:', draftFiles)
+              setFormData(prev => ({
+                ...prev,
+                uploadedFiles: {
+                  ...prev.uploadedFiles,
+                  'draft-proposal': draftFiles
+                }
+              }))
+            }
+          }
+        } catch (error) {
+          console.log('⚠️ Error loading draft feedback data:', error)
+        }
+      }
+    }
+
+    loadDraftFeedback()
+  }, [proposalId, currentStep])
 
   useEffect(() => {
     if (stepId) {

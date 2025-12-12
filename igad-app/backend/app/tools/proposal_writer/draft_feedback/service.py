@@ -109,6 +109,13 @@ class DraftFeedbackService:
 
             logger.info(f"✅ Found RFP analysis")
 
+            # Step 4b: Get Step 2 analyses (optional context)
+            reference_proposals_analysis = proposal.get("reference_proposals_analysis", {})
+            existing_work_analysis = proposal.get("existing_work_analysis", {})
+
+            logger.info(f"📚 Reference proposals analysis: {'✅' if reference_proposals_analysis else '⚠️  (empty)'}")
+            logger.info(f"📂 Existing work analysis: {'✅' if existing_work_analysis else '⚠️  (empty)'}")
+
             # Step 5: Load prompt from DynamoDB
             logger.info(f"📝 Loading prompt from DynamoDB...")
 
@@ -137,7 +144,9 @@ class DraftFeedbackService:
                 user_prompt_template=user_prompt_template,
                 output_format=output_format,
                 draft_proposal=draft_text,
-                rfp_analysis=rfp_analysis
+                rfp_analysis=rfp_analysis,
+                reference_proposals_analysis=reference_proposals_analysis,
+                existing_work_analysis=existing_work_analysis
             )
 
             logger.info(f"🤖 Sending to Bedrock...")
@@ -165,20 +174,27 @@ class DraftFeedbackService:
 
             analysis_result = self._parse_response(response_text)
 
-            result = {
-                "draft_feedback_analysis": analysis_result,
-                "status": "completed"
-            }
-
-            # Step 9: Save to DynamoDB
+            # Step 9: Save to DynamoDB (including status update)
+            # Save the analysis result directly (not nested inside another object)
             logger.info(f"💾 Saving draft feedback analysis...")
+            completed_at = time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
 
             try:
                 db_client.update_item_sync(
                     pk=f"PROPOSAL#{proposal_code}",
                     sk="METADATA",
-                    update_expression="SET draft_feedback_analysis = :analysis",
-                    expression_attribute_values={":analysis": result}
+                    update_expression="""
+                        SET draft_feedback_analysis = :analysis,
+                            analysis_status_draft_feedback = :status,
+                            draft_feedback_completed_at = :completed,
+                            updated_at = :updated
+                    """,
+                    expression_attribute_values={
+                        ":analysis": analysis_result,
+                        ":status": "completed",
+                        ":completed": completed_at,
+                        ":updated": completed_at
+                    }
                 )
                 logger.info(f"✅ Draft feedback analysis saved successfully")
             except Exception as db_error:
@@ -186,7 +202,10 @@ class DraftFeedbackService:
                 raise
 
             logger.info(f"✅ Draft feedback analysis completed")
-            return result
+            return {
+                "draft_feedback_analysis": analysis_result,
+                "status": "completed"
+            }
 
         except ValueError as ve:
             logger.error(f"❌ Validation error: {ve}")
@@ -242,7 +261,9 @@ class DraftFeedbackService:
         user_prompt_template: str,
         output_format: str,
         draft_proposal: str,
-        rfp_analysis: Dict[str, Any]
+        rfp_analysis: Dict[str, Any],
+        reference_proposals_analysis: Optional[Dict[str, Any]] = None,
+        existing_work_analysis: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Build complete user prompt with all data injected.
@@ -250,12 +271,16 @@ class DraftFeedbackService:
         Injects:
         - Draft proposal text ({{draft_proposal}})
         - RFP analysis JSON ({{rfp_analysis}})
+        - Reference proposals analysis ({{reference_proposals_analysis}})
+        - Existing work analysis ({{existing_work_analysis}})
 
         Args:
             user_prompt_template: User prompt template from DynamoDB
             output_format: Output format instructions from DynamoDB
             draft_proposal: Extracted text from draft proposal document
             rfp_analysis: RFP analysis from Step 1
+            reference_proposals_analysis: Reference proposals analysis from Step 2
+            existing_work_analysis: Existing work analysis from Step 2
 
         Returns:
             Complete user prompt ready for Claude
@@ -269,13 +294,26 @@ class DraftFeedbackService:
         unwrapped_rfp = self._unwrap_analysis(rfp_analysis, "rfp_analysis")
         rfp_json = json.dumps(unwrapped_rfp, indent=2)
 
+        # Unwrap Step 2 analyses if nested
+        unwrapped_ref_proposals = self._unwrap_analysis(reference_proposals_analysis, "reference_proposals_analysis")
+        unwrapped_existing_work = self._unwrap_analysis(existing_work_analysis, "existing_work_analysis")
+
+        reference_proposals_json = json.dumps(unwrapped_ref_proposals, indent=2) if unwrapped_ref_proposals else "{}"
+        existing_work_json = json.dumps(unwrapped_existing_work, indent=2) if unwrapped_existing_work else "{}"
+
         # Inject placeholders
         user_prompt = complete_template.replace("{{draft_proposal}}", draft_proposal)
         user_prompt = user_prompt.replace("{{rfp_analysis}}", rfp_json)
+        # Handle both singular and plural forms for reference proposals
+        user_prompt = user_prompt.replace("{{reference_proposal_analysis}}", reference_proposals_json)
+        user_prompt = user_prompt.replace("{{reference_proposals_analysis}}", reference_proposals_json)
+        user_prompt = user_prompt.replace("{{existing_work_analysis}}", existing_work_json)
 
         logger.info(f"📝 Built user prompt: {len(user_prompt)} characters")
         logger.info(f"   - Draft proposal: {len(draft_proposal)} chars")
         logger.info(f"   - RFP analysis: {len(rfp_json)} chars")
+        logger.info(f"   - Reference proposals: {'✅' if unwrapped_ref_proposals else '⚠️  (empty)'}")
+        logger.info(f"   - Existing work: {'✅' if unwrapped_existing_work else '⚠️  (empty)'}")
 
         return user_prompt
 
@@ -318,18 +356,33 @@ class DraftFeedbackService:
         """
         Parse Claude's response into structured feedback.
 
-        Expected response format:
-        - Narrative text (overall assessment)
-        - JSON with sections array
+        Expected response format (JSON):
+        {
+            "overall_assessment": {
+                "overall_tag": "Excellent | Good | Needs improvement",
+                "overall_summary": "...",
+                "key_strengths": ["..."],
+                "key_issues": ["..."],
+                "global_suggestions": ["..."]
+            },
+            "section_feedback": [
+                {
+                    "section_title": "...",
+                    "tag": "Excellent | Good | Needs improvement",
+                    "ai_feedback": "...",
+                    "suggestions": ["..."]
+                }
+            ]
+        }
 
         Args:
             response: Raw response from Claude
 
         Returns:
-            Structured feedback dict with sections and summary stats
+            Structured feedback dict with overall_assessment, section_feedback, and summary_stats
         """
         try:
-            # Extract JSON from response
+            # Extract JSON from response (may have markdown or text before/after)
             json_start = response.find("{")
             json_end = response.rfind("}") + 1
 
@@ -338,38 +391,59 @@ class DraftFeedbackService:
                 logger.error(f"📄 Full response: {response[:1000]}")
                 raise Exception("No JSON found in Bedrock response")
 
-            analysis_json = json.loads(response[json_start:json_end])
+            json_str = response[json_start:json_end]
+            analysis_json = json.loads(json_str)
 
-            # Extract overall assessment (text before JSON)
-            overall_assessment = response[:json_start].strip()
+            # Get overall_assessment object (not text before JSON)
+            overall_assessment = analysis_json.get("overall_assessment", {})
 
-            # Get sections array
-            sections = analysis_json.get("sections", [])
+            # Get section_feedback array (not "sections")
+            section_feedback = analysis_json.get("section_feedback", [])
 
-            # Calculate summary stats
+            # Calculate summary stats based on "tag" field (not "status")
+            # Normalize tag values for counting (case-insensitive)
+            def normalize_tag(tag: str) -> str:
+                if not tag:
+                    return ""
+                tag_lower = tag.lower().strip()
+                if "excellent" in tag_lower:
+                    return "Excellent"
+                elif "good" in tag_lower:
+                    return "Good"
+                elif "needs" in tag_lower or "improvement" in tag_lower:
+                    return "Needs improvement"
+                return tag
+
             summary_stats = {
-                "excellent_count": sum(1 for s in sections if s.get("status") == "EXCELLENT"),
-                "good_count": sum(1 for s in sections if s.get("status") == "GOOD"),
-                "needs_improvement_count": sum(1 for s in sections if s.get("status") == "NEEDS_IMPROVEMENT")
+                "excellent_count": sum(1 for s in section_feedback if normalize_tag(s.get("tag", "")) == "Excellent"),
+                "good_count": sum(1 for s in section_feedback if normalize_tag(s.get("tag", "")) == "Good"),
+                "needs_improvement_count": sum(1 for s in section_feedback if normalize_tag(s.get("tag", "")) == "Needs improvement")
             }
 
-            logger.info(f"📊 Parsed {len(sections)} sections")
+            logger.info(f"📊 Parsed {len(section_feedback)} sections")
             logger.info(f"   - Excellent: {summary_stats['excellent_count']}")
             logger.info(f"   - Good: {summary_stats['good_count']}")
             logger.info(f"   - Needs Improvement: {summary_stats['needs_improvement_count']}")
 
             return {
                 "overall_assessment": overall_assessment,
-                "sections": sections,
+                "section_feedback": section_feedback,
                 "summary_stats": summary_stats
             }
 
         except json.JSONDecodeError as e:
             logger.error(f"❌ JSON parsing failed: {e}")
+            logger.error(f"📄 Response that failed to parse: {response[:500]}")
             # Return fallback with raw response
             return {
-                "overall_assessment": response,
-                "sections": [],
+                "overall_assessment": {
+                    "overall_tag": "Unknown",
+                    "overall_summary": response[:500] if response else "Parse error",
+                    "key_strengths": [],
+                    "key_issues": ["Failed to parse AI response"],
+                    "global_suggestions": []
+                },
+                "section_feedback": [],
                 "summary_stats": {
                     "excellent_count": 0,
                     "good_count": 0,

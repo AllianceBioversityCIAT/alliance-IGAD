@@ -5,8 +5,8 @@ and providing section-by-section feedback.
 
 DynamoDB Prompt Lookup:
     - section: "proposal_writer"
-    - sub_section: "step-5"
-    - category: "Draft Feedback"
+    - sub_section: "step-4"
+    - category: "Proposal Review"
 
 Placeholders injected:
     - {{draft_proposal}} - Extracted text from uploaded document
@@ -25,6 +25,6 @@ DRAFT_FEEDBACK_SETTINGS = {
 
     # DynamoDB prompt lookup keys
     "section": "proposal_writer",
-    "sub_section": "step-5",
-    "category": "Draft Feedback"
+    "sub_section": "step-4",
+    "category": "Proposal Review"
 }

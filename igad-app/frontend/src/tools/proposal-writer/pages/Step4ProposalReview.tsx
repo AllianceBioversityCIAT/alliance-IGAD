@@ -8,11 +8,16 @@ import {
   ChevronUp,
   Download,
   AlertTriangle,
+  AlertCircle,
   CheckCircle,
+  CheckCircle2,
   Sparkles,
   Lightbulb,
   RefreshCw,
-  Loader2
+  Loader2,
+  TrendingUp,
+  ArrowRight,
+  Check
 } from 'lucide-react'
 import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
@@ -24,11 +29,17 @@ import styles from './step4-review.module.css'
 // ============================================================================
 
 interface DraftFeedbackAnalysis {
-  overall_assessment?: string
-  sections?: Array<{
-    title: string
-    status: 'EXCELLENT' | 'GOOD' | 'NEEDS_IMPROVEMENT'
-    feedback: string
+  overall_assessment?: {
+    overall_tag?: string
+    overall_summary?: string
+    key_strengths?: string[]
+    key_issues?: string[]
+    global_suggestions?: string[]
+  }
+  section_feedback?: Array<{
+    section_title: string
+    tag: string // 'Excellent' | 'Good' | 'Needs improvement'
+    ai_feedback: string
     suggestions: string[]
   }>
   summary_stats?: {
@@ -111,14 +122,22 @@ function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-function mapAnalysisToFeedback(analysis: DraftFeedbackAnalysis): SectionFeedback[] {
-  if (!analysis?.sections) return []
+function normalizeTag(tag: string): FeedbackStatus {
+  if (!tag) return 'NEEDS_IMPROVEMENT'
+  const tagLower = tag.toLowerCase().trim()
+  if (tagLower.includes('excellent')) return 'EXCELLENT'
+  if (tagLower.includes('good')) return 'GOOD'
+  return 'NEEDS_IMPROVEMENT'
+}
 
-  return analysis.sections.map((section, index) => ({
+function mapAnalysisToFeedback(analysis: DraftFeedbackAnalysis): SectionFeedback[] {
+  if (!analysis?.section_feedback) return []
+
+  return analysis.section_feedback.map((section, index) => ({
     id: String(index + 1),
-    title: section.title,
-    status: section.status,
-    aiFeedback: section.feedback,
+    title: section.section_title,
+    status: normalizeTag(section.tag),
+    aiFeedback: section.ai_feedback,
     suggestions: section.suggestions || [],
   }))
 }
@@ -333,7 +352,7 @@ function SectionFeedbackItem({ section, isExpanded, onToggle }: SectionFeedbackI
 }
 
 /**
- * Summary Stats Card - Shows counts of section statuses
+ * Summary Stats Card - Shows counts with visual progress bars
  */
 interface SummaryStatsProps {
   stats: {
@@ -344,20 +363,209 @@ interface SummaryStatsProps {
 }
 
 function SummaryStats({ stats }: SummaryStatsProps) {
+  const total = stats.excellent_count + stats.good_count + stats.needs_improvement_count
+  const excellentPercent = total > 0 ? (stats.excellent_count / total) * 100 : 0
+  const goodPercent = total > 0 ? (stats.good_count / total) * 100 : 0
+  const needsImprovementPercent = total > 0 ? (stats.needs_improvement_count / total) * 100 : 0
+
   return (
-    <div className={styles.summaryStats}>
-      <div className={styles.statItem} style={{ color: STATUS_CONFIG.EXCELLENT.textColor }}>
-        <CheckCircle size={16} />
-        <span>{stats.excellent_count} Excellent</span>
+    <div className={styles.summaryStatsEnhanced}>
+      {/* Circular Score */}
+      <div className={styles.overallScore}>
+        <div
+          className={styles.scoreCircle}
+          style={{
+            background: `conic-gradient(
+              ${STATUS_CONFIG.EXCELLENT.textColor} 0deg ${excellentPercent * 3.6}deg,
+              ${STATUS_CONFIG.GOOD.textColor} ${excellentPercent * 3.6}deg ${(excellentPercent + goodPercent) * 3.6}deg,
+              ${STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor} ${(excellentPercent + goodPercent) * 3.6}deg 360deg
+            )`
+          }}
+        >
+          <div className={styles.scoreInner}>
+            <span className={styles.scoreNumber}>{total}</span>
+            <span className={styles.scoreLabel}>Sections</span>
+          </div>
+        </div>
       </div>
-      <div className={styles.statItem} style={{ color: STATUS_CONFIG.GOOD.textColor }}>
-        <CheckCircle size={16} />
-        <span>{stats.good_count} Good</span>
+
+      {/* Stats Breakdown */}
+      <div className={styles.statsBreakdown}>
+        <div className={styles.statRow}>
+          <div className={styles.statLabel}>
+            <div className={styles.statDot} style={{ background: STATUS_CONFIG.EXCELLENT.textColor }} />
+            <span>Excellent</span>
+          </div>
+          <div className={styles.statBar}>
+            <div
+              className={styles.statBarFill}
+              style={{
+                width: `${excellentPercent}%`,
+                background: STATUS_CONFIG.EXCELLENT.bgColor,
+                borderLeft: stats.excellent_count > 0 ? `3px solid ${STATUS_CONFIG.EXCELLENT.textColor}` : 'none'
+              }}
+            />
+          </div>
+          <span className={styles.statCount}>{stats.excellent_count}</span>
+        </div>
+
+        <div className={styles.statRow}>
+          <div className={styles.statLabel}>
+            <div className={styles.statDot} style={{ background: STATUS_CONFIG.GOOD.textColor }} />
+            <span>Good</span>
+          </div>
+          <div className={styles.statBar}>
+            <div
+              className={styles.statBarFill}
+              style={{
+                width: `${goodPercent}%`,
+                background: STATUS_CONFIG.GOOD.bgColor,
+                borderLeft: stats.good_count > 0 ? `3px solid ${STATUS_CONFIG.GOOD.textColor}` : 'none'
+              }}
+            />
+          </div>
+          <span className={styles.statCount}>{stats.good_count}</span>
+        </div>
+
+        <div className={styles.statRow}>
+          <div className={styles.statLabel}>
+            <div className={styles.statDot} style={{ background: STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor }} />
+            <span>Needs Improvement</span>
+          </div>
+          <div className={styles.statBar}>
+            <div
+              className={styles.statBarFill}
+              style={{
+                width: `${needsImprovementPercent}%`,
+                background: STATUS_CONFIG.NEEDS_IMPROVEMENT.bgColor,
+                borderLeft: stats.needs_improvement_count > 0 ? `3px solid ${STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor}` : 'none'
+              }}
+            />
+          </div>
+          <span className={styles.statCount}>{stats.needs_improvement_count}</span>
+        </div>
       </div>
-      <div className={styles.statItem} style={{ color: STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor }}>
-        <AlertTriangle size={16} />
-        <span>{stats.needs_improvement_count} Needs Improvement</span>
+    </div>
+  )
+}
+
+/**
+ * Overall Assessment Card - Shows high-level feedback summary
+ */
+interface OverallAssessmentCardProps {
+  assessment: {
+    overall_tag?: string
+    overall_summary?: string
+    key_strengths?: string[]
+    key_issues?: string[]
+    global_suggestions?: string[]
+  }
+}
+
+function OverallAssessmentCard({ assessment }: OverallAssessmentCardProps) {
+  const { overall_tag, overall_summary, key_strengths, key_issues, global_suggestions } = assessment
+
+  // Normalize overall tag for styling
+  const getTagStyle = () => {
+    if (!overall_tag) return { bg: '#F3F4F6', text: '#6B7280', border: '#E5E7EB' }
+    const tagLower = overall_tag.toLowerCase()
+    if (tagLower.includes('excellent')) return { bg: STATUS_CONFIG.EXCELLENT.bgColor, text: STATUS_CONFIG.EXCELLENT.textColor, border: STATUS_CONFIG.EXCELLENT.borderColor }
+    if (tagLower.includes('good')) return { bg: STATUS_CONFIG.GOOD.bgColor, text: STATUS_CONFIG.GOOD.textColor, border: STATUS_CONFIG.GOOD.borderColor }
+    return { bg: STATUS_CONFIG.NEEDS_IMPROVEMENT.bgColor, text: STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor, border: STATUS_CONFIG.NEEDS_IMPROVEMENT.borderColor }
+  }
+
+  const tagStyle = getTagStyle()
+
+  return (
+    <div className={styles.overallAssessmentCard}>
+      <div className={styles.overallHeader}>
+        <div className={styles.overallHeaderLeft}>
+          <div className={styles.overallIconWrapper}>
+            <TrendingUp size={24} />
+          </div>
+          <div>
+            <h2 className={styles.overallTitle}>Overall Assessment</h2>
+            <p className={styles.overallSubtitle}>AI-powered analysis of your draft proposal</p>
+          </div>
+        </div>
+        {overall_tag && (
+          <span
+            className={styles.overallTagBadge}
+            style={{
+              backgroundColor: tagStyle.bg,
+              color: tagStyle.text,
+              borderColor: tagStyle.border
+            }}
+          >
+            {overall_tag}
+          </span>
+        )}
       </div>
+
+      {overall_summary && (
+        <div className={styles.overallSummaryBox}>
+          <p>{overall_summary}</p>
+        </div>
+      )}
+
+      <div className={styles.overallGrid}>
+        {/* Key Strengths */}
+        {key_strengths && key_strengths.length > 0 && (
+          <div className={styles.overallSection}>
+            <div className={styles.overallSectionHeader}>
+              <CheckCircle2 size={20} className={styles.strengthIcon} />
+              <h3>Key Strengths</h3>
+              <span className={styles.countBadge}>{key_strengths.length}</span>
+            </div>
+            <ul className={styles.strengthsList}>
+              {key_strengths.map((strength, idx) => (
+                <li key={idx}>
+                  <Check size={16} />
+                  <span>{strength}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Key Issues */}
+        {key_issues && key_issues.length > 0 && (
+          <div className={styles.overallSection}>
+            <div className={styles.overallSectionHeader}>
+              <AlertCircle size={20} className={styles.issueIcon} />
+              <h3>Key Issues</h3>
+              <span className={styles.countBadge}>{key_issues.length}</span>
+            </div>
+            <ul className={styles.issuesList}>
+              {key_issues.map((issue, idx) => (
+                <li key={idx}>
+                  <AlertTriangle size={16} />
+                  <span>{issue}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Global Suggestions */}
+      {global_suggestions && global_suggestions.length > 0 && (
+        <div className={styles.globalSuggestionsSection}>
+          <div className={styles.overallSectionHeader}>
+            <Lightbulb size={20} className={styles.globalSuggestionIcon} />
+            <h3>Recommendations</h3>
+            <span className={styles.countBadge}>{global_suggestions.length}</span>
+          </div>
+          <ul className={styles.globalSuggestionsList}>
+            {global_suggestions.map((suggestion, idx) => (
+              <li key={idx}>
+                <ArrowRight size={16} />
+                <span>{suggestion}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
@@ -386,10 +594,18 @@ export function Step4ProposalReview({
   const [feedbackData, setFeedbackData] = useState<SectionFeedback[]>([])
   const [analysisProgress, setAnalysisProgress] = useState<{
     step: number
-    totalSteps: number
-    currentStepLabel: string
-    overallProgress: number
+    total: number
+    message: string
+    description?: string
+    steps?: string[]
   } | null>(null)
+
+  // Custom steps for draft feedback analysis
+  const DRAFT_FEEDBACK_STEPS = [
+    'Step 1: Extracting document content',
+    'Step 2: Analyzing proposal sections'
+  ]
+  const DRAFT_FEEDBACK_DESCRIPTION = 'Our AI is analyzing your draft proposal against RFP requirements to provide section-by-section feedback. This may take 2-3 minutes.'
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
@@ -406,7 +622,7 @@ export function Step4ProposalReview({
     }
 
     // Set feedback data from props
-    if (draftFeedbackAnalysis?.sections) {
+    if (draftFeedbackAnalysis?.section_feedback) {
       setFeedbackData(mapAnalysisToFeedback(draftFeedbackAnalysis))
     }
   }, [uploadedDraftFiles, draftFeedbackAnalysis])
@@ -433,9 +649,10 @@ export function Step4ProposalReview({
 
       setAnalysisProgress({
         step: 2,
-        totalSteps: 3,
-        currentStepLabel: 'Analyzing proposal sections...',
-        overallProgress: progressPercent,
+        total: 2,
+        message: 'Analyzing Your Draft Proposal',
+        description: DRAFT_FEEDBACK_DESCRIPTION,
+        steps: DRAFT_FEEDBACK_STEPS,
       })
 
       if (status.status === 'completed') {
@@ -449,7 +666,9 @@ export function Step4ProposalReview({
         setAnalysisProgress(null)
 
         // Extract and set feedback data
-        const analysis = status.data?.draft_feedback_analysis
+        // Handle both nested (draft_feedback_analysis) and direct (section_feedback) structures
+        const analysis = status.data?.draft_feedback_analysis ||
+                        (status.data?.section_feedback ? status.data : null)
         if (analysis) {
           setFeedbackData(mapAnalysisToFeedback(analysis))
           onFeedbackAnalyzed?.(analysis)
@@ -493,9 +712,10 @@ export function Step4ProposalReview({
       setIsAnalyzing(true)
       setAnalysisProgress({
         step: 1,
-        totalSteps: 3,
-        currentStepLabel: 'Starting analysis...',
-        overallProgress: 10,
+        total: 2,
+        message: 'Analyzing Your Draft Proposal',
+        description: DRAFT_FEEDBACK_DESCRIPTION,
+        steps: DRAFT_FEEDBACK_STEPS,
       })
 
       const result = await proposalService.analyzeDraftFeedback(proposalId)
@@ -514,7 +734,9 @@ export function Step4ProposalReview({
 
         // Fetch the completed data
         const status = await proposalService.getDraftFeedbackStatus(proposalId)
-        const analysis = status.data?.draft_feedback_analysis
+        // Handle both nested (draft_feedback_analysis) and direct (section_feedback) structures
+        const analysis = status.data?.draft_feedback_analysis ||
+                        (status.data?.section_feedback ? status.data : null)
         if (analysis) {
           setFeedbackData(mapAnalysisToFeedback(analysis))
           onFeedbackAnalyzed?.(analysis)
@@ -690,49 +912,65 @@ export function Step4ProposalReview({
           )}
         </div>
 
+        {/* Action Bar - Show when we have uploaded file and feedback data */}
+        {uploadedFile && feedbackData.length > 0 && (
+          <div className={styles.actionBar}>
+            <div className={styles.actionBarLeft}>
+              <Sparkles size={20} className={styles.actionBarIcon} />
+              <span className={styles.actionBarText}>AI Analysis Complete</span>
+            </div>
+            <div className={styles.actionBarRight}>
+              <button
+                type="button"
+                className={styles.reanalyzeButton}
+                onClick={handleReanalyze}
+                disabled={isAnalyzing}
+              >
+                <RefreshCw size={16} className={isAnalyzing ? styles.spinning : ''} />
+                Re-analyze
+              </button>
+              <button
+                type="button"
+                className={styles.downloadFeedbackButton}
+                onClick={handleDownloadWithFeedback}
+              >
+                <Download size={16} />
+                Download with AI feedback
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Overall Assessment Card - Show when we have analysis data */}
+        {uploadedFile && draftFeedbackAnalysis?.overall_assessment && feedbackData.length > 0 && (
+          <OverallAssessmentCard assessment={draftFeedbackAnalysis.overall_assessment} />
+        )}
+
         {/* Section Feedback Card - Only show after file upload */}
         {uploadedFile && (
           <div className={styles.card}>
             <div className={styles.feedbackCardHeader}>
-              <div className={styles.feedbackHeaderLeft}>
-                <h2 className={styles.cardTitle}>Section-by-Section Feedback</h2>
-                {draftFeedbackAnalysis?.summary_stats && (
-                  <SummaryStats stats={draftFeedbackAnalysis.summary_stats} />
-                )}
-              </div>
-              <div className={styles.feedbackHeaderActions}>
-                {feedbackData.length > 0 && (
-                  <button
-                    type="button"
-                    className={styles.reanalyzeButton}
-                    onClick={handleReanalyze}
-                    disabled={isAnalyzing}
-                  >
-                    <RefreshCw size={16} className={isAnalyzing ? styles.spinning : ''} />
-                    Re-analyze
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className={styles.downloadFeedbackButton}
-                  onClick={handleDownloadWithFeedback}
-                  disabled={feedbackData.length === 0}
-                >
-                  <Download size={16} />
-                  Download with AI feedback
-                </button>
-              </div>
+              <h2 className={styles.cardTitle}>Section-by-Section Feedback</h2>
+              {draftFeedbackAnalysis?.summary_stats && feedbackData.length > 0 && (
+                <SummaryStats stats={draftFeedbackAnalysis.summary_stats} />
+              )}
             </div>
 
             {feedbackData.length === 0 && !isAnalyzing ? (
               <div className={styles.noFeedbackState}>
-                <Sparkles size={48} className={styles.noFeedbackIcon} />
-                <p>Analysis will begin automatically after upload</p>
+                <div className={styles.emptyStateIcon}>
+                  <Sparkles size={48} />
+                </div>
+                <h3 className={styles.emptyStateTitle}>Ready to Analyze</h3>
+                <p className={styles.emptyStateMessage}>
+                  Upload your draft proposal to receive AI-powered section-by-section feedback
+                </p>
                 <button
                   type="button"
                   className={styles.startAnalysisButton}
                   onClick={startAnalysis}
                 >
+                  <Sparkles size={16} />
                   Start Analysis
                 </button>
               </div>

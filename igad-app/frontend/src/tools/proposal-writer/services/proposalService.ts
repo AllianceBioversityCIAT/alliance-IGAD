@@ -791,7 +791,8 @@ class ProposalService {
    * ```typescript
    * const status = await proposalService.getDraftFeedbackStatus('abc-123')
    * if (status.status === 'completed') {
-   *   const feedback = status.data.draft_feedback_analysis
+   *   const sections = status.data.section_feedback
+   *   const overall = status.data.overall_assessment
    *   // Display section-by-section feedback
    * }
    * ```
@@ -799,20 +800,26 @@ class ProposalService {
   async getDraftFeedbackStatus(proposalId: string): Promise<{
     status: string
     data?: {
-      draft_feedback_analysis?: {
-        overall_assessment?: string
-        sections?: Array<{
-          title: string
-          status: 'EXCELLENT' | 'GOOD' | 'NEEDS_IMPROVEMENT'
-          feedback: string
-          suggestions: string[]
-        }>
-        summary_stats?: {
-          excellent_count: number
-          good_count: number
-          needs_improvement_count: number
-        }
+      overall_assessment?: {
+        overall_tag?: string
+        overall_summary?: string
+        key_strengths?: string[]
+        key_issues?: string[]
+        global_suggestions?: string[]
       }
+      section_feedback?: Array<{
+        section_title: string
+        tag: string
+        ai_feedback: string
+        suggestions: string[]
+      }>
+      summary_stats?: {
+        excellent_count: number
+        good_count: number
+        needs_improvement_count: number
+      }
+      // Legacy nested structure support
+      draft_feedback_analysis?: any
     }
     error?: string
     started_at?: string

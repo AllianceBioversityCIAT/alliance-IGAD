@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { Toast, ToastProps, ToastAction } from './Toast'
+import { registerToastHandler, unregisterToastHandler } from '../../services/globalToast'
 import styles from './ToastContainer.module.css'
 
 interface ToastContextType {
@@ -40,6 +41,25 @@ export function ToastProvider({ children }: ToastProviderProps) {
     }
     setToasts(prev => [...prev, newToast])
   }
+
+  // Register global toast handler for non-React contexts (e.g., API interceptors)
+  useEffect(() => {
+    registerToastHandler({
+      show: (type, options) => {
+        showToast({
+          type,
+          title: options.title,
+          message: options.message,
+          duration: options.duration,
+          action: options.action,
+        })
+      },
+    })
+
+    return () => {
+      unregisterToastHandler()
+    }
+  }, [])
 
   const showSuccess = (title: string, message?: string, duration = 4000) => {
     showToast({ type: 'success', title, message, duration })
