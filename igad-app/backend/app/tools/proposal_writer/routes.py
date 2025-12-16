@@ -787,11 +787,23 @@ async def get_analysis_status(proposal_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to check status: {str(e)}")
 
 
+class ConceptAnalysisRequest(BaseModel):
+    force: bool = False
+
+
 @router.post("/{proposal_id}/analyze-concept")
-async def analyze_concept(proposal_id: str, user=Depends(get_current_user)):
+async def analyze_concept(
+    proposal_id: str,
+    request: Optional[ConceptAnalysisRequest] = None,
+    user=Depends(get_current_user)
+):
     """
     Start Concept analysis (async - returns immediately with status)
-    Requires RFP analysis to be completed first
+    Requires RFP analysis to be completed first.
+
+    Args:
+        force: If True, forces a new analysis even if one already exists.
+              Use this when the concept document has been re-uploaded.
     """
     try:
         # Get proposal
@@ -827,19 +839,46 @@ async def analyze_concept(proposal_id: str, user=Depends(get_current_user)):
         # Check if RFP analysis exists
         if not proposal.get("rfp_analysis"):
             raise HTTPException(status_code=400, detail="RFP analysis must be completed first")
-        
-        # Check if concept analysis already exists
-        if proposal.get("concept_analysis"):
+
+        # Get force flag from request body
+        force = request.force if request else False
+
+        # Check if concept analysis already exists (unless force=True)
+        if proposal.get("concept_analysis") and not force:
             return {
                 "status": "completed",
                 "concept_analysis": proposal.get("concept_analysis"),
                 "message": "Concept already analyzed",
                 "cached": True
             }
-        
-        # Check if analysis is already in progress
+
+        # If force=True, clear existing analysis data
+        if force and proposal.get("concept_analysis"):
+            print(f"🔄 Force re-analysis requested, clearing existing concept analysis for {proposal_code}")
+            await db_client.update_item(
+                pk=pk,
+                sk="METADATA",
+                update_expression="""
+                    REMOVE concept_analysis,
+                           concept_analysis_completed_at,
+                           concept_analysis_error,
+                           concept_evaluation,
+                           concept_document_v2,
+                           structure_workplan_analysis,
+                           structure_workplan_completed_at,
+                           structure_workplan_error
+                    SET analysis_status_concept = :not_started,
+                        updated_at = :updated
+                """,
+                expression_attribute_values={
+                    ":not_started": "not_started",
+                    ":updated": datetime.utcnow().isoformat()
+                }
+            )
+
+        # Check if analysis is already in progress (unless force=True)
         analysis_status = proposal.get("analysis_status_concept")
-        if analysis_status == "processing":
+        if analysis_status == "processing" and not force:
             return {
                 "status": "processing",
                 "message": "Concept analysis already in progress",

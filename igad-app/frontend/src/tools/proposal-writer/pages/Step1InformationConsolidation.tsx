@@ -1706,7 +1706,7 @@ export function Step1InformationConsolidation({
               Reference Proposals
             </h3>
             <p className={styles.uploadSectionDescription}>
-              Upload successful proposals to this donor or similar calls (max 3 files, 2MB each). These help understand
+              Upload successful proposals to this donor or similar calls (max 3 files, 5MB each). These help understand
               donor preferences and winning strategies.
             </p>
           </div>

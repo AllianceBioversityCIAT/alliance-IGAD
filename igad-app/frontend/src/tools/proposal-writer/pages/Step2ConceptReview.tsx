@@ -967,8 +967,8 @@ export function Step2ConceptReview({
         message: 'Running AI concept analysis... This may take a minute.'
       })
 
-      // Start concept analysis
-      await proposalService.analyzeConcept(proposalId)
+      // Start concept analysis with force=true to bypass cache and recalculate
+      await proposalService.analyzeConcept(proposalId, { force: true })
 
       // Poll for analysis completion
       let analysisComplete = false

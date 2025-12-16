@@ -144,12 +144,12 @@ fi
 if [ "$DEPLOY_BACKEND" = true ]; then
     echo "🔨 Building backend..."
     cd backend
+    rm -rf dist
     mkdir -p dist
     cp -r app dist/
     cp requirements.txt dist/
     cp bootstrap dist/
-    cp .env dist/
-    pip3 install -r requirements.txt -t dist/
+    cp .env dist/ 2>/dev/null || true
     cd ..
 else
     echo "⏭️  Skipping backend build"
@@ -158,12 +158,9 @@ fi
 # Deploy using Lambda Web Adapter
 if [ "$DEPLOY_BACKEND" = true ]; then
     echo "🚀 Deploying backend..."
-    
-    # Try container build first, fallback to local build
-    if ! sam build --use-container; then
-        echo "⚠️  Container build failed, trying local build..."
-        sam build
-    fi
+
+    # Use local build (faster on ARM64 Macs)
+    sam build --skip-pull-image
     
     # Deploy with error handling
     if sam deploy --stack-name igad-backend-testing; then

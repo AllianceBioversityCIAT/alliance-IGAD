@@ -36,7 +36,7 @@ STRUCTURE_WORKPLAN_SETTINGS = {
     # Bedrock configuration
     "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",  # Claude Sonnet 4
     "max_tokens": 16000,          # ~12,000 words of output
-    "temperature": 0.3,           # Balanced creativity (0.0 = deterministic, 1.0 = creative)
+    "temperature": 0.2,           # Balanced creativity (0.0 = deterministic, 1.0 = creative)
 
     # DynamoDB prompt lookup keys
     "section": "proposal_writer",      # Top-level section

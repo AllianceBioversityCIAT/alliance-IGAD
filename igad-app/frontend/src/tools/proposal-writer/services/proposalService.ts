@@ -336,14 +336,19 @@ class ProposalService {
   }
 
   // Concept analysis operations
-  async analyzeConcept(proposalId: string): Promise<{
+  async analyzeConcept(
+    proposalId: string,
+    options?: { force?: boolean }
+  ): Promise<{
     status: string
     concept_analysis?: any
     message?: string
     cached?: boolean
     started_at?: string
   }> {
-    const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-concept`)
+    const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-concept`, {
+      force: options?.force ?? false
+    })
     return response.data
   }
 
@@ -354,7 +359,8 @@ class ProposalService {
     started_at?: string
     completed_at?: string
   }> {
-    const response = await apiClient.get(`/api/proposals/${proposalId}/concept-status`)
+    // Add timestamp to prevent caching
+    const response = await apiClient.get(`/api/proposals/${proposalId}/concept-status?_t=${Date.now()}`)
     return response.data
   }
 

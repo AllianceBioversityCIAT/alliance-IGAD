@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Sparkles, Check, ChevronDown, ChevronUp, FileText, Info, Lightbulb, Edit3, BookOpen, Download } from 'lucide-react'
+import { Sparkles, Check, ChevronDown, ChevronUp, FileText, Info, Lightbulb, BookOpen, Download } from 'lucide-react'
 import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType } from 'docx'
-import styles from './step4-structure.module.css'
+import styles from './step3-structure.module.css'
 import step2Styles from './step2.module.css'
 import step2ConceptStyles from './step2-concept-review.module.css'
 import { StepProps } from './stepConfig'
@@ -13,7 +13,7 @@ interface Section {
   suggestions: string[]
 }
 
-interface Step4Props extends StepProps {
+interface Step3Props extends StepProps {
   proposalId?: string
   structureWorkplanAnalysis?: {
     narrative_overview?: string
@@ -21,7 +21,7 @@ interface Step4Props extends StepProps {
     proposal_outline?: ProposalSection[]
     hcd_notes?: { note: string }[]
   }
-  onGenerateTemplate?: (selectedSections: string[], userComments: { [key: string]: string }) => void
+  onGenerateTemplate?: (selectedSections: string[]) => void
   onTemplateGenerated?: () => void
 }
 
@@ -347,12 +347,12 @@ const PROPOSAL_SECTIONS: Section[] = [
   },
 ]
 
-export function Step4StructureWorkplan({
+export function Step3StructureWorkplan({
   proposalId,
   structureWorkplanAnalysis,
   onGenerateTemplate,
   onTemplateGenerated,
-}: Step4Props) {
+}: Step3Props) {
   // Combine mandatory and outline sections
   const allSections = [
     ...(structureWorkplanAnalysis?.proposal_mandatory || []),
@@ -361,7 +361,6 @@ export function Step4StructureWorkplan({
 
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [expandedSections, setExpandedSections] = useState<string[]>([])
-  const [userComments, setUserComments] = useState<{ [key: string]: string }>({})
   const [isGenerating, setIsGenerating] = useState(false)
   const [hasInitialized, setHasInitialized] = useState(false)
 
@@ -385,15 +384,6 @@ export function Step4StructureWorkplan({
     setExpandedSections(prev =>
       prev.includes(sectionName) ? prev.filter(s => s !== sectionName) : [...prev, sectionName]
     )
-  }
-
-  const handleCommentChange = (sectionName: string, comment: string) => {
-    console.log('📝 Comment changed for section:', sectionName, '| Comment:', comment.substring(0, 50) + '...')
-    setUserComments(prev => {
-      const updated = { ...prev, [sectionName]: comment }
-      console.log('📝 Updated userComments:', Object.keys(updated).map(k => `${k}: ${updated[k].substring(0, 20)}...`))
-      return updated
-    })
   }
 
   const handleGenerateTemplate = async (e?: React.MouseEvent) => {
@@ -430,8 +420,7 @@ export function Step4StructureWorkplan({
         proposalId,
         totalAvailable: allAvailableSections.length,
         selectedSections: selectedSections,
-        sectionsToInclude: sectionsToInclude.map(s => s.section_title),
-        userComments: userComments
+        sectionsToInclude: sectionsToInclude.map(s => s.section_title)
       })
 
       // Create Word document sections (using docx library on frontend)
@@ -584,37 +573,6 @@ export function Step4StructureWorkplan({
                   text: section.purpose,
                   size: 20,
                 })
-              ],
-              spacing: { after: 200, line: 276 },
-            })
-          )
-        }
-
-        // User comment (if provided)
-        const userComment = userComments[sectionTitle]
-        if (userComment) {
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: '✏️ Your Notes & Context',
-                  bold: true,
-                  size: 22,
-                  color: '166534',
-                })
-              ],
-              spacing: { before: 240, after: 100 },
-            })
-          )
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: userComment,
-                  italics: true,
-                  size: 20,
-                  color: '166534',
-                }),
               ],
               spacing: { after: 200, line: 276 },
             })
@@ -808,7 +766,6 @@ export function Step4StructureWorkplan({
   }
 
   const totalSections = allSections.length
-  const reviewedCount = Object.keys(userComments).filter(key => userComments[key].trim()).length
 
   // Show loading state if no analysis yet
   if (!structureWorkplanAnalysis) {
@@ -816,7 +773,7 @@ export function Step4StructureWorkplan({
       <div className={styles.mainContent}>
         <div className={styles.stepHeader}>
           <h1 className={styles.stepMainTitle}>
-            Step 3: Structure & Workplan
+            Step 3: Structure
             <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeProposal}`}>
               Proposal
             </span>
@@ -834,7 +791,7 @@ export function Step4StructureWorkplan({
       {/* Page Header */}
       <div className={styles.stepHeader}>
         <h1 className={styles.stepMainTitle}>
-          Step 3: Structure & Workplan
+          Step 3: Structure
           <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeProposal}`}>
             Proposal
           </span>
@@ -862,8 +819,7 @@ export function Step4StructureWorkplan({
             </div>
 
             <div className={step2Styles.selectionCount}>
-              <strong>{selectedSections.length}</strong> sections selected •{' '}
-              <strong>{reviewedCount}</strong> of {totalSections} sections reviewed
+              <strong>{selectedSections.length}</strong> sections selected
             </div>
 
             <div className={step2Styles.sectionsList}>
@@ -957,21 +913,6 @@ export function Step4StructureWorkplan({
                             </div>
                           </div>
                         )}
-
-                        <div className={step2Styles.commentsSection}>
-                          <Edit3 className={step2Styles.subsectionIcon} size={16} />
-                          <div>
-                            <h4 className={step2Styles.subsectionTitle}>
-                              Your comments for this section
-                            </h4>
-                            <textarea
-                              className={step2Styles.commentTextarea}
-                              placeholder="Add specific guidance, data points, or context for this section..."
-                              value={userComments[section.section_title] || ''}
-                              onChange={e => handleCommentChange(section.section_title, e.target.value)}
-                            />
-                          </div>
-                        </div>
                       </div>
                     )}
                   </div>
@@ -1009,4 +950,4 @@ export function Step4StructureWorkplan({
   )
 }
 
-export default Step4StructureWorkplan
+export default Step3StructureWorkplan

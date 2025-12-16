@@ -6,7 +6,7 @@ import { DraftConfirmationModal } from '../components/DraftConfirmationModal'
 import AnalysisProgressModal from '@/tools/proposal-writer/components/AnalysisProgressModal'
 import { Step1InformationConsolidation } from './Step1InformationConsolidation'
 import { Step2ConceptReview } from './Step2ConceptReview'
-import { Step4StructureWorkplan } from './Step4StructureWorkplan'
+import { Step3StructureWorkplan } from './Step3StructureWorkplan'
 import { Step4ProposalReview } from './Step4ProposalReview'
 import { useProposals } from '@/tools/proposal-writer/hooks/useProposal'
 import { useProposalDraft } from '@/tools/proposal-writer/hooks/useProposalDraft'
@@ -1665,20 +1665,144 @@ export function ProposalWriterPage() {
             proposalId={proposalId}
             onRegenerateDocument={async (selectedSections, userComments) => {
               setIsGeneratingDocument(true)
-              await handleGenerateConceptDocument({
-                selectedSections,
-                userComments,
-              })
+              setGenerationProgressStep(1)
+
+              try {
+                // Step 1: Re-run concept analysis with force=true to get fresh results
+                console.log('🔄 Regenerate: Re-running concept analysis with force=true...')
+                setAnalysisProgress({
+                  step: 1,
+                  total: 2,
+                  message: 'Re-analyzing concept...'
+                })
+
+                const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+
+                // Clear existing concept document first
+                setConceptDocument(null)
+                if (proposalId) {
+                  localStorage.removeItem(`proposal_concept_document_${proposalId}`)
+                }
+
+                // Start fresh concept analysis
+                const analyzeResult = await proposalService.analyzeConcept(proposalId!, { force: true })
+                console.log('📡 analyzeConcept response:', analyzeResult)
+
+                // Check if it returned cached (shouldn't happen with force=true)
+                if (analyzeResult.cached) {
+                  console.warn('⚠️ Backend returned cached result despite force=true!')
+                }
+
+                // Poll for concept analysis completion
+                let analysisComplete = false
+                let pollCount = 0
+                const maxPolls = 60
+
+                while (!analysisComplete && pollCount < maxPolls) {
+                  await new Promise(resolve => setTimeout(resolve, 3000))
+                  pollCount++
+
+                  const status = await proposalService.getConceptStatus(proposalId!)
+                  console.log(`🔄 Poll #${pollCount}: status=${status.status}`)
+
+                  if (status.status === 'completed' && status.concept_analysis) {
+                    analysisComplete = true
+                    console.log('✅ Regenerate: Fresh concept analysis completed')
+                    console.log('📊 Raw concept_analysis from status:', status.concept_analysis)
+
+                    // Unwrap nested concept_analysis if needed
+                    let unwrappedAnalysis = status.concept_analysis
+                    if (unwrappedAnalysis?.concept_analysis) {
+                      console.log('🔍 Unwrapping nested concept_analysis...')
+                      unwrappedAnalysis = unwrappedAnalysis.concept_analysis
+                    }
+                    // Check for double nesting
+                    if (unwrappedAnalysis?.concept_analysis) {
+                      console.log('🔍 Unwrapping double-nested concept_analysis...')
+                      unwrappedAnalysis = unwrappedAnalysis.concept_analysis
+                    }
+
+                    console.log('📊 Unwrapped concept analysis:', unwrappedAnalysis)
+                    console.log('📊 Fit assessment:', unwrappedAnalysis?.fit_assessment?.alignment_level)
+                    console.log('📊 Strong aspects count:', unwrappedAnalysis?.strong_aspects?.length)
+                    console.log('📊 Sections count:', unwrappedAnalysis?.sections_needing_elaboration?.length)
+
+                    // Update concept analysis state with unwrapped data
+                    setConceptAnalysis(unwrappedAnalysis)
+
+                    // Clear downstream analyses
+                    setStructureWorkplanAnalysis(null)
+                    setProposalTemplate(null)
+
+                    // Save to localStorage
+                    if (proposalId) {
+                      localStorage.setItem(
+                        `proposal_concept_analysis_${proposalId}`,
+                        JSON.stringify(unwrappedAnalysis)
+                      )
+                      localStorage.removeItem(`proposal_structure_workplan_${proposalId}`)
+                      localStorage.removeItem(`proposal_template_${proposalId}`)
+                    }
+
+                    // Reset selected sections to Critical priority from new analysis
+                    const newSections = unwrappedAnalysis?.sections_needing_elaboration || []
+                    const criticalSections = newSections
+                      .filter((s: any) => s.priority === 'Critical')
+                      .map((s: any) => s.section)
+
+                    console.log('📊 New critical sections:', criticalSections)
+
+                    // Update concept evaluation data with new critical sections
+                    setConceptEvaluationData({ selectedSections: criticalSections })
+
+                  } else if (status.status === 'failed' || status.error) {
+                    throw new Error(status.error || 'Concept analysis failed')
+                  }
+                }
+
+                if (!analysisComplete) {
+                  throw new Error('Concept analysis timed out')
+                }
+
+                // Step 2: Generate concept document with fresh analysis
+                console.log('🔄 Regenerate: Generating concept document with fresh analysis...')
+                setAnalysisProgress({
+                  step: 2,
+                  total: 2,
+                  message: 'Generating updated concept document...'
+                })
+
+                await handleGenerateConceptDocument({
+                  selectedSections,
+                  userComments,
+                })
+
+                setAnalysisProgress(null)
+
+              } catch (error: any) {
+                console.error('❌ Regenerate failed:', error)
+                setIsGeneratingDocument(false)
+                setAnalysisProgress(null)
+                alert(`Regeneration failed: ${error.message || 'Unknown error'}`)
+              }
             }}
             onConceptReanalyzed={(newConceptAnalysis) => {
               console.log('🔄 Concept reanalyzed, updating state')
               setConceptAnalysis(newConceptAnalysis)
+              // Clear downstream analyses that depend on concept
+              setStructureWorkplanAnalysis(null)
+              setProposalTemplate(null)
+              setConceptEvaluationData(null)
               // Save to localStorage
               if (proposalId) {
                 localStorage.setItem(
                   `proposal_concept_analysis_${proposalId}`,
                   JSON.stringify(newConceptAnalysis)
                 )
+                // Clear downstream localStorage items
+                localStorage.removeItem(`proposal_structure_workplan_${proposalId}`)
+                localStorage.removeItem(`proposal_template_${proposalId}`)
+                localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
               }
             }}
             onClearConceptDocument={() => {
@@ -1694,7 +1818,7 @@ export function ProposalWriterPage() {
         )
       case 3:
         return (
-          <Step4StructureWorkplan
+          <Step3StructureWorkplan
             {...stepProps}
             proposalId={proposalId}
             structureWorkplanAnalysis={structureWorkplanAnalysis}

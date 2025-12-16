@@ -29,7 +29,7 @@ Resources:
       MemorySize: 512
       Timeout: 300  # Increased from 120 to 300 seconds (5 minutes)
       Architectures:
-        - x86_64
+        - arm64
       Environment:
         Variables:
           PORT: 8080
@@ -112,7 +112,7 @@ Resources:
       
       Layers:
         
-        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:25"
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerArm64:25"
         
       Events:
         ApiEvent:
@@ -162,7 +162,7 @@ Resources:
       MemorySize: 1024
       Timeout: 900  # 15 minutes for long-running analysis
       Architectures:
-        - x86_64
+        - arm64
       Environment:
         Variables:
           TABLE_NAME: igad-testing-main-table
