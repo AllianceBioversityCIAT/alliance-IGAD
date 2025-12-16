@@ -41,6 +41,7 @@ export function ProposalWriterPage() {
   } | null>(null)
   const [conceptEvaluationData, setConceptEvaluationData] = useState<{
     selectedSections: string[]
+    userComments?: { [key: string]: string }
   } | null>(null)
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
   const [generationProgressStep, setGenerationProgressStep] = useState(1)
@@ -424,22 +425,26 @@ export function ProposalWriterPage() {
     }
   }, [conceptEvaluationData, proposalId])
 
-  // Track previous selectedSections to detect changes
+  // Track previous selectedSections and userComments to detect changes
   const previousSelectedSectionsRef = useRef<string[] | null>(null)
+  const previousUserCommentsRef = useRef<{ [key: string]: string } | null>(null)
 
-  // Invalidate concept document when section selections change in Step 2
+  // Invalidate concept document when section selections OR user comments change in Step 2
   useEffect(() => {
     if (!conceptEvaluationData?.selectedSections || !proposalId) {
       return
     }
 
     const currentSelections = conceptEvaluationData.selectedSections
+    const currentComments = conceptEvaluationData.userComments || {}
     const previousSelections = previousSelectedSectionsRef.current
+    const previousComments = previousUserCommentsRef.current
 
-    // Skip on initial load - only invalidate if there was a previous document
+    // Skip on initial load - only invalidate if there was previous data
     if (previousSelections === null) {
-      // Store initial selections but don't invalidate
+      // Store initial values but don't invalidate
       previousSelectedSectionsRef.current = [...currentSelections]
+      previousUserCommentsRef.current = { ...currentComments }
       return
     }
 
@@ -448,11 +453,22 @@ export function ProposalWriterPage() {
       previousSelections.length !== currentSelections.length ||
       !previousSelections.every(section => currentSelections.includes(section))
 
-    // Only invalidate if selections changed AND a concept document already exists
-    if (selectionsChanged && conceptDocument) {
-      console.log('📋 Section selections changed - invalidating concept document')
-      console.log('   Previous:', previousSelections)
-      console.log('   Current:', currentSelections)
+    // Check if comments have actually changed
+    const currentCommentsKeys = Object.keys(currentComments)
+    const previousCommentsKeys = Object.keys(previousComments || {})
+    const commentsChanged =
+      currentCommentsKeys.length !== previousCommentsKeys.length ||
+      currentCommentsKeys.some(key => currentComments[key] !== (previousComments || {})[key])
+
+    // Only invalidate if (selections OR comments) changed AND a concept document already exists
+    if ((selectionsChanged || commentsChanged) && conceptDocument) {
+      console.log('📋 Concept evaluation changed - invalidating concept document')
+      if (selectionsChanged) {
+        console.log('   Selections changed - Previous:', previousSelections, 'Current:', currentSelections)
+      }
+      if (commentsChanged) {
+        console.log('   Comments changed')
+      }
 
       // Clear concept document
       setConceptDocument(null)
@@ -463,9 +479,10 @@ export function ProposalWriterPage() {
       console.log('✅ Concept document invalidated - user will need to regenerate')
     }
 
-    // Update reference for next comparison
+    // Update references for next comparison
     previousSelectedSectionsRef.current = [...currentSelections]
-  }, [conceptEvaluationData?.selectedSections, proposalId, conceptDocument])
+    previousUserCommentsRef.current = { ...currentComments }
+  }, [conceptEvaluationData?.selectedSections, conceptEvaluationData?.userComments, proposalId, conceptDocument])
 
   // Calculate completed steps based on available data
   useEffect(() => {
@@ -1491,7 +1508,10 @@ export function ProposalWriterPage() {
     poll()
   }
 
-  const handleConceptEvaluationChange = useCallback((data: { selectedSections: string[] }) => {
+  const handleConceptEvaluationChange = useCallback((data: {
+    selectedSections: string[]
+    userComments?: { [key: string]: string }
+  }) => {
     setConceptEvaluationData(data)
   }, [])
 
@@ -1704,33 +1724,9 @@ export function ProposalWriterPage() {
             {...stepProps}
             conceptDocument={conceptDocument}
             proposalId={proposalId}
-            onRegenerateDocument={async (selectedSections, userComments) => {
-              // This callback only regenerates the concept document WITHOUT re-running concept analysis
-              // It uses the current concept analysis and user's selected sections/comments
-              console.log('🔄 Regenerating concept document (without re-analysis)...')
-              console.log('📋 Selected sections:', selectedSections)
-              console.log('📋 User comments:', userComments)
-
-              try {
-                // Clear existing concept document
-                setConceptDocument(null)
-                if (proposalId) {
-                  localStorage.removeItem(`proposal_concept_document_${proposalId}`)
-                }
-
-                // Generate concept document with current analysis and user selections
-                await handleGenerateConceptDocument({
-                  selectedSections,
-                  userComments,
-                })
-
-              } catch (error: any) {
-                console.error('❌ Regenerate document failed:', error)
-                alert(`Regeneration failed: ${error.message || 'Unknown error'}`)
-              }
-            }}
-            onConceptReanalyzed={(newConceptAnalysis) => {
-              console.log('🔄 Concept reanalyzed, updating state')
+            onConceptAnalysisChanged={(newConceptAnalysis) => {
+              // Called when concept analysis is regenerated (from Step2's internal handler)
+              console.log('🔄 Concept analysis changed, updating state')
               setConceptAnalysis(newConceptAnalysis)
               // Clear downstream analyses that depend on concept
               setStructureWorkplanAnalysis(null)
@@ -1748,12 +1744,20 @@ export function ProposalWriterPage() {
                 localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
               }
             }}
-            onClearConceptDocument={() => {
-              console.log('🗑️ Clearing concept document')
-              setConceptDocument(null)
-              // Clear from localStorage
+            onConceptDocumentChanged={(newDocument) => {
+              // Called when concept document is generated or cleared (from Step2's internal handler)
+              console.log('📄 Concept document changed:', newDocument ? 'new document' : 'cleared')
+              setConceptDocument(newDocument)
+              // Update localStorage
               if (proposalId) {
-                localStorage.removeItem(`proposal_concept_document_${proposalId}`)
+                if (newDocument) {
+                  localStorage.setItem(
+                    `proposal_concept_document_${proposalId}`,
+                    JSON.stringify(newDocument)
+                  )
+                } else {
+                  localStorage.removeItem(`proposal_concept_document_${proposalId}`)
+                }
               }
             }}
             currentConceptFileName={currentConceptFileName}

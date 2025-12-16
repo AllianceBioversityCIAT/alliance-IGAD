@@ -1,5 +1,8 @@
-/* Step 4: Structure & Workplan - Specific Styles */
-/* Inherits most styles from step2.module.css */
+/* Step 3: Structure & Workplan - Styles */
+
+/* ========================================
+   MAIN LAYOUT
+   ======================================== */
 
 .mainContent {
   flex: 1;
@@ -55,7 +58,305 @@
   border: 1px solid #D1FAE5;
 }
 
-/* Generate Template Button */
+/* ========================================
+   CONTAINER & CARDS
+   ======================================== */
+
+.step3Container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1126px;
+  width: 100%;
+}
+
+.card {
+  background: #FFFFFF;
+  border: 1px solid #E6E6E6;
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.sectionsCard {
+  background: #FFFFFF;
+  border: 1px solid #E6E6E6;
+  border-radius: 14px;
+  padding: 24px 0px 24px 24px;
+  overflow: hidden;
+}
+
+.sectionsCardInner {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-right: 24px;
+  overflow-x: hidden;
+}
+
+/* ========================================
+   SECTION HEADER
+   ======================================== */
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sectionIcon {
+  color: #166534;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+  color: #0A0A0A;
+  margin: 0 0 4px 0;
+}
+
+.sectionSubtitle {
+  font-size: 14px;
+  line-height: 20px;
+  color: #717182;
+  margin: 0;
+}
+
+/* ========================================
+   BADGE STYLES
+   ======================================== */
+
+.badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+/* ========================================
+   SELECTION & SECTIONS LIST
+   ======================================== */
+
+.selectionCount {
+  font-size: 14px;
+  font-weight: 700;
+  color: #484848;
+  padding: 8px 0;
+}
+
+.sectionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow: visible;
+}
+
+/* ========================================
+   SECTION ITEM
+   ======================================== */
+
+.sectionItem {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.sectionItem:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.sectionItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #FAFEFC;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.sectionItemHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sectionItemInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.sectionItemTitle {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #0A0A0A;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* ========================================
+   CHECKBOX
+   ======================================== */
+
+.checkbox {
+  width: 21px;
+  height: 21px;
+  border: 1.91px solid #B5B5B5;
+  border-radius: 5.73px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.checkbox:hover {
+  border-color: #22C55E;
+}
+
+.checkboxChecked {
+  background: #22C55E;
+  border-color: #BFFEC5;
+}
+
+/* ========================================
+   EXPAND BUTTON
+   ======================================== */
+
+.expandButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  color: #717182;
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.expandButton:hover {
+  background: #F3F4F6;
+  color: #0A0A0A;
+}
+
+/* ========================================
+   SECTION ITEM CONTENT (EXPANDED)
+   ======================================== */
+
+.sectionItemContent {
+  padding: 21px 20px;
+  background: #F9FAFB;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ========================================
+   DETAILS SECTION
+   ======================================== */
+
+.detailsSection {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.subsectionIcon {
+  color: #6B7280;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.subsectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #101828;
+  margin: 0 0 8px 0;
+}
+
+.subsectionText {
+  font-size: 14px;
+  line-height: 23px;
+  color: #364153;
+  margin: 0;
+}
+
+/* ========================================
+   SUGGESTIONS SECTION
+   ======================================== */
+
+.suggestionsSection {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-top: 21px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.suggestionsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.suggestionsList li {
+  font-size: 14px;
+  line-height: 23px;
+  color: #364153;
+  padding-left: 22px;
+  position: relative;
+}
+
+.suggestionsList li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 6px;
+  height: 6px;
+  background: #364153;
+  border-radius: 50%;
+}
+
+/* ========================================
+   GENERATE TEMPLATE BUTTON
+   ======================================== */
+
 .generateButton {
   display: flex;
   align-items: center;
@@ -92,11 +393,10 @@
   box-shadow: none;
 }
 
-/* ============================================
+/* ========================================
    NARRATIVE OVERVIEW STYLES
-   ============================================ */
+   ======================================== */
 
-/* Narrative Content Container */
 .narrativeContent {
   background: #F9FAFB;
   border-radius: 10px;
@@ -107,7 +407,6 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Narrative Paragraphs */
 .narrativeParagraph {
   font-size: 15px;
   line-height: 1.8;
@@ -124,7 +423,6 @@
   margin-bottom: 0;
 }
 
-/* Narrative Subheadings (for ### headers) */
 .narrativeSubheading {
   font-size: 16px;
   font-weight: 600;
@@ -138,7 +436,6 @@
   margin-top: 0;
 }
 
-/* Narrative Bullet Points */
 .narrativeBullet {
   font-size: 15px;
   line-height: 1.7;
@@ -148,7 +445,6 @@
   text-align: left;
 }
 
-/* Bold and Italic styling */
 .narrativeParagraph strong,
 .narrativeBullet strong {
   font-weight: 600;
@@ -161,7 +457,6 @@
   color: #4B5563;
 }
 
-/* Preview State (Collapsed) */
 .narrativePreview {
   background: #F9FAFB;
   border-radius: 10px;
@@ -182,7 +477,32 @@
   pointer-events: none;
 }
 
-/* Fade-in Animation */
+/* ========================================
+   SCROLLBAR STYLING
+   ======================================== */
+
+.sectionsList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sectionsList::-webkit-scrollbar-track {
+  background: #F3F4F6;
+  border-radius: 4px;
+}
+
+.sectionsList::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 4px;
+}
+
+.sectionsList::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -194,8 +514,46 @@
   }
 }
 
-/* Responsive Design */
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
 @media (max-width: 768px) {
+  .mainContent {
+    padding: 24px 20px;
+  }
+
+  .step3Container {
+    max-width: 100%;
+  }
+
+  .sectionsCard {
+    padding: 16px 0px 16px 16px;
+  }
+
+  .sectionsCardInner {
+    padding-right: 16px;
+  }
+
+  .sectionItemHeader {
+    padding: 16px;
+    flex-wrap: wrap;
+  }
+
+  .sectionItemHeaderLeft {
+    flex: 1 1 100%;
+    margin-bottom: 8px;
+  }
+
+  .expandButton {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .sectionItemContent {
+    padding: 16px;
+  }
+
   .narrativeContent,
   .narrativePreview {
     padding: 16px;
@@ -204,5 +562,17 @@
   .narrativeParagraph {
     font-size: 14px;
     line-height: 1.7;
+  }
+}
+
+@media (max-width: 480px) {
+  .sectionItemInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .badge {
+    align-self: flex-start;
   }
 }

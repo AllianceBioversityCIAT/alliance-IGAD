@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react'
 import { Sparkles, Check, ChevronDown, ChevronUp, FileText, Info, Lightbulb, BookOpen, Download } from 'lucide-react'
 import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType } from 'docx'
 import styles from './step3-structure.module.css'
-import step2Styles from './step2.module.css'
-import step2ConceptStyles from './step2-concept-review.module.css'
 import { StepProps } from './stepConfig'
 
 interface Section {
@@ -161,20 +159,20 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
   }
 
   return (
-    <div className={step2ConceptStyles.card}>
-      <div className={step2ConceptStyles.cardHeader}>
-        <div className={step2ConceptStyles.sectionHeader}>
-          <FileText className={step2ConceptStyles.sectionIcon} size={24} />
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <div className={styles.sectionHeader}>
+          <FileText className={styles.sectionIcon} size={24} />
           <div>
-            <h2 className={step2ConceptStyles.sectionTitle}>Proposal Structure Overview</h2>
-            <p className={step2ConceptStyles.sectionSubtitle}>
+            <h2 className={styles.sectionTitle}>Proposal Structure Overview</h2>
+            <p className={styles.sectionSubtitle}>
               AI-generated analysis of your proposal structure and recommendations
             </p>
           </div>
         </div>
         <button
           type="button"
-          className={step2ConceptStyles.expandButton}
+          className={styles.expandButton}
           onClick={() => setIsExpanded(!isExpanded)}
           style={{ marginLeft: 'auto' }}
         >
@@ -801,28 +799,28 @@ export function Step3StructureWorkplan({
         </p>
       </div>
 
-      <div className={step2Styles.step2Container}>
+      <div className={styles.step3Container}>
         {/* Narrative Overview Card */}
         <NarrativeOverview narrativeText={structureWorkplanAnalysis.narrative_overview} />
 
         {/* Sections Card */}
-        <div className={step2Styles.sectionsCard}>
-          <div className={step2Styles.sectionsCardInner}>
-            <div className={step2Styles.sectionHeader}>
-              <Sparkles className={step2Styles.sectionIcon} size={24} />
+        <div className={styles.sectionsCard}>
+          <div className={styles.sectionsCardInner}>
+            <div className={styles.sectionHeader}>
+              <Sparkles className={styles.sectionIcon} size={24} />
               <div>
-                <h2 className={step2Styles.sectionTitle}>Proposal Sections</h2>
-                <p className={step2Styles.sectionSubtitle}>
+                <h2 className={styles.sectionTitle}>Proposal Sections</h2>
+                <p className={styles.sectionSubtitle}>
                   Review the proposed structure. Mandatory sections are pre-selected.
                 </p>
               </div>
             </div>
 
-            <div className={step2Styles.selectionCount}>
+            <div className={styles.selectionCount}>
               <strong>{selectedSections.length}</strong> sections selected
             </div>
 
-            <div className={step2Styles.sectionsList}>
+            <div className={styles.sectionsList}>
               {allSections.map((section, index) => {
                 const isSelected = selectedSections.includes(section.section_title)
                 const isExpanded = expandedSections.includes(section.section_title)
@@ -831,20 +829,20 @@ export function Step3StructureWorkplan({
                 )
 
                 return (
-                  <div key={index} className={step2Styles.sectionItem}>
-                    <div className={step2Styles.sectionItemHeader}>
-                      <div className={step2Styles.sectionItemHeaderLeft}>
+                  <div key={index} className={styles.sectionItem}>
+                    <div className={styles.sectionItemHeader}>
+                      <div className={styles.sectionItemHeaderLeft}>
                         <div
-                          className={`${step2Styles.checkbox} ${isSelected ? step2Styles.checkboxChecked : ''}`}
+                          className={`${styles.checkbox} ${isSelected ? styles.checkboxChecked : ''}`}
                           onClick={() => toggleSection(section.section_title)}
                         >
                           {isSelected && <Check size={14} color="white" />}
                         </div>
-                        <div className={step2Styles.sectionItemInfo}>
-                          <h3 className={step2Styles.sectionItemTitle}>{section.section_title}</h3>
+                        <div className={styles.sectionItemInfo}>
+                          <h3 className={styles.sectionItemTitle}>{section.section_title}</h3>
                           {isMandatory && (
                             <span
-                              className={step2Styles.badge}
+                              className={styles.badge}
                               style={{
                                 backgroundColor: '#FFE2E2',
                                 border: '1px solid #FFC9C9',
@@ -856,7 +854,7 @@ export function Step3StructureWorkplan({
                           )}
                           {section.recommended_word_count && (
                             <span
-                              className={step2Styles.badge}
+                              className={styles.badge}
                               style={{
                                 backgroundColor: '#F3F4F6',
                                 border: '1px solid #E5E7EB',
@@ -870,7 +868,7 @@ export function Step3StructureWorkplan({
                       </div>
                       <button
                         type="button"
-                        className={step2Styles.expandButton}
+                        className={styles.expandButton}
                         onClick={() => toggleExpansion(section.section_title)}
                       >
                         {isExpanded ? 'See less' : 'See more'}
@@ -879,33 +877,33 @@ export function Step3StructureWorkplan({
                     </div>
 
                     {isExpanded && (
-                      <div className={step2Styles.sectionItemContent}>
+                      <div className={styles.sectionItemContent}>
                         {section.purpose && (
-                          <div className={step2Styles.detailsSection}>
-                            <Info className={step2Styles.subsectionIcon} size={16} />
+                          <div className={styles.detailsSection}>
+                            <Info className={styles.subsectionIcon} size={16} />
                             <div>
-                              <h4 className={step2Styles.subsectionTitle}>Purpose</h4>
-                              <p className={step2Styles.subsectionText}>{section.purpose}</p>
+                              <h4 className={styles.subsectionTitle}>Purpose</h4>
+                              <p className={styles.subsectionText}>{section.purpose}</p>
                             </div>
                           </div>
                         )}
 
                         {section.content_guidance && (
-                          <div className={step2Styles.detailsSection}>
-                            <BookOpen className={step2Styles.subsectionIcon} size={16} />
+                          <div className={styles.detailsSection}>
+                            <BookOpen className={styles.subsectionIcon} size={16} />
                             <div>
-                              <h4 className={step2Styles.subsectionTitle}>Content Guidance</h4>
-                              <p className={step2Styles.subsectionText}>{section.content_guidance}</p>
+                              <h4 className={styles.subsectionTitle}>Content Guidance</h4>
+                              <p className={styles.subsectionText}>{section.content_guidance}</p>
                             </div>
                           </div>
                         )}
 
                         {section.guiding_questions && section.guiding_questions.length > 0 && (
-                          <div className={step2Styles.suggestionsSection}>
-                            <Lightbulb className={step2Styles.subsectionIcon} size={16} />
+                          <div className={styles.suggestionsSection}>
+                            <Lightbulb className={styles.subsectionIcon} size={16} />
                             <div>
-                              <h4 className={step2Styles.subsectionTitle}>Guiding Questions</h4>
-                              <ul className={step2Styles.suggestionsList}>
+                              <h4 className={styles.subsectionTitle}>Guiding Questions</h4>
+                              <ul className={styles.suggestionsList}>
                                 {section.guiding_questions.map((question, idx) => (
                                   <li key={idx}>{question}</li>
                                 ))}
@@ -923,12 +921,12 @@ export function Step3StructureWorkplan({
         </div>
 
         {/* Generate Template Section */}
-        <div className={step2Styles.card}>
-          <div className={step2Styles.sectionHeader}>
-            <FileText className={step2Styles.sectionIcon} size={20} />
+        <div className={styles.card}>
+          <div className={styles.sectionHeader}>
+            <FileText className={styles.sectionIcon} size={20} />
             <div>
-              <h3 className={step2Styles.sectionTitle}>Generate Proposal Template</h3>
-              <p className={step2Styles.sectionSubtitle}>
+              <h3 className={styles.sectionTitle}>Generate Proposal Template</h3>
+              <p className={styles.sectionSubtitle}>
                 Create a customized Word template with instructions and suggested content based on
                 your RFP
               </p>

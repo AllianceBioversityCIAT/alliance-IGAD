@@ -40,20 +40,15 @@ interface Step2Props extends StepProps {
   conceptDocument?: any | null
   /** Unique proposal identifier */
   proposalId?: string
-  /** Callback to regenerate document with new selections */
-  onRegenerateDocument?: (
-    selectedSections: string[],
-    userComments: { [key: string]: string }
-  ) => void
-  /** Callback when concept evaluation changes */
+  /** Callback when concept analysis changes (after regeneration) */
+  onConceptAnalysisChanged?: (newAnalysis: ConceptAnalysis) => void
+  /** Callback when concept document changes (after generation) */
+  onConceptDocumentChanged?: (newDocument: any | null) => void
+  /** Callback when concept evaluation changes (sections selected, comments) */
   onConceptEvaluationChange?: (data: {
     selectedSections: string[]
     userComments?: { [key: string]: string }
   }) => void
-  /** Callback when concept is re-uploaded and re-analyzed */
-  onConceptReanalyzed?: (newConceptAnalysis: ConceptAnalysis) => void
-  /** Callback to clear the generated concept document */
-  onClearConceptDocument?: () => void
   /** Current concept file name (for display in confirmation modal) */
   currentConceptFileName?: string
 }
@@ -214,9 +209,20 @@ function useSelectedSections(
 ): [string[], React.Dispatch<React.SetStateAction<string[]>>] {
   // Initialize selected sections from saved data OR default to Critical priority sections
   const [selectedSections, setSelectedSections] = useState<string[]>(() => {
+    // Get valid section names from current concept analysis
+    const validSectionNames = conceptAnalysis?.sections_needing_elaboration?.map(s => s.section) || []
+
     // Priority 1: Load from saved evaluation data (when returning to this step)
+    // But filter to only include sections that still exist in current analysis
     if (conceptEvaluationData?.selectedSections) {
-      return conceptEvaluationData.selectedSections
+      const filteredSelections = conceptEvaluationData.selectedSections.filter(
+        sectionName => validSectionNames.includes(sectionName)
+      )
+      // If we have valid selections after filtering, use them
+      if (filteredSelections.length > 0) {
+        return filteredSelections
+      }
+      // Otherwise fall through to default behavior
     }
 
     // Priority 2: Default to Critical sections (first time on this step)
@@ -227,6 +233,25 @@ function useSelectedSections(
       .filter(s => s.priority === 'Critical')
       .map(s => s.section)
   })
+
+  // When conceptAnalysis changes, filter selectedSections to remove any that no longer exist
+  useEffect(() => {
+    if (!conceptAnalysis?.sections_needing_elaboration) {
+      return
+    }
+
+    const validSectionNames = conceptAnalysis.sections_needing_elaboration.map(s => s.section)
+
+    setSelectedSections(prev => {
+      const filtered = prev.filter(sectionName => validSectionNames.includes(sectionName))
+      // Only update if something was actually filtered out
+      if (filtered.length !== prev.length) {
+        console.log(`🔄 Filtered selectedSections: ${prev.length} -> ${filtered.length}`)
+        return filtered
+      }
+      return prev
+    })
+  }, [conceptAnalysis?.sections_needing_elaboration])
 
   // Notify parent component whenever selections or comments change
   useEffect(() => {
@@ -607,6 +632,7 @@ interface UpdatedConceptDocumentCardProps {
   conceptDocument: any
   proposalId?: string
   onRegenerateDocument?: (selectedSections: string[], userComments: { [key: string]: string }) => void
+  onRegenerateAnalysis?: () => Promise<void>
   selectedSections: string[]
   userComments: { [key: string]: string }
   isDownloading: boolean
@@ -618,6 +644,7 @@ function UpdatedConceptDocumentCard({
   conceptDocument,
   proposalId,
   onRegenerateDocument,
+  onRegenerateAnalysis,
   selectedSections,
   userComments,
   isDownloading,
@@ -626,18 +653,20 @@ function UpdatedConceptDocumentCard({
 }: UpdatedConceptDocumentCardProps) {
   const [isRegenerating, setIsRegenerating] = useState(false)
 
+  // "Regenerate" button: re-runs entire concept analysis (Fit Assessment, Strong Aspects, Sections)
+  // and clears the concept document so user can generate a new one
   const handleRegenerate = async () => {
-    if (!proposalId || !onRegenerateDocument) {
-      alert('Unable to regenerate document. Please try again.')
+    if (!proposalId || !onRegenerateAnalysis) {
+      alert('Unable to regenerate analysis. Please try again.')
       return
     }
 
     setIsRegenerating(true)
     try {
-      await onRegenerateDocument(selectedSections, userComments)
+      await onRegenerateAnalysis()
     } catch (error) {
       console.error('Regeneration error:', error)
-      alert('Error regenerating document. Please try again.')
+      alert('Error regenerating analysis. Please try again.')
     } finally {
       setIsRegenerating(false)
     }
@@ -833,9 +862,8 @@ export function Step2ConceptReview({
   onConceptEvaluationChange,
   conceptDocument,
   proposalId,
-  onRegenerateDocument,
-  onConceptReanalyzed,
-  onClearConceptDocument,
+  onConceptAnalysisChanged,
+  onConceptDocumentChanged,
   currentConceptFileName,
 }: Step2Props) {
   // ========================================
@@ -863,6 +891,221 @@ export function Step2ConceptReview({
   const [isDownloading, setIsDownloading] = useState(false)
 
   // ========================================
+  // REGENERATION & GENERATION STATE
+  // ========================================
+  const [isRegeneratingAnalysis, setIsRegeneratingAnalysis] = useState(false)
+  const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
+  const [progressMessage, setProgressMessage] = useState<string | null>(null)
+
+  // ========================================
+  // REGENERATION & GENERATION HANDLERS
+  // ========================================
+
+  /**
+   * Regenerates the entire concept analysis (Fit Assessment, Strong Aspects, Sections)
+   * Also clears the concept document so user can generate a new one
+   */
+  const handleRegenerateAnalysis = useCallback(async () => {
+    if (!proposalId) {
+      alert('No proposal ID found. Please try again.')
+      return
+    }
+
+    setIsRegeneratingAnalysis(true)
+    setProgressMessage('Regenerating concept analysis...')
+
+    try {
+      // Clear the existing concept document
+      onConceptDocumentChanged?.(null)
+
+      // Start concept analysis with force=true to bypass cache
+      await proposalService.analyzeConcept(proposalId, { force: true })
+
+      // Poll for analysis completion
+      let analysisComplete = false
+      let pollCount = 0
+      const maxPolls = 60 // 5 minutes max (5s intervals)
+
+      while (!analysisComplete && pollCount < maxPolls) {
+        await new Promise(resolve => setTimeout(resolve, 5000))
+        pollCount++
+
+        const status = await proposalService.getConceptStatus(proposalId)
+
+        if (status.status === 'completed' && status.concept_analysis) {
+          analysisComplete = true
+
+          // Notify parent component of new analysis
+          onConceptAnalysisChanged?.(status.concept_analysis)
+
+          // Reset selected sections to default (Critical priority, or all if no Critical)
+          const newAnalysis = status.concept_analysis
+          if (newAnalysis.sections_needing_elaboration) {
+            const allSections = newAnalysis.sections_needing_elaboration
+            const criticalSections = allSections
+              .filter((s: SectionNeedingElaboration) => s.priority === 'Critical')
+              .map((s: SectionNeedingElaboration) => s.section)
+
+            // If no Critical sections, select all sections by default
+            const sectionsToSelect = criticalSections.length > 0
+              ? criticalSections
+              : allSections.map((s: SectionNeedingElaboration) => s.section)
+
+            setSelectedSections(sectionsToSelect)
+          }
+
+          // Clear user comments
+          setUserComments({})
+
+        } else if (status.status === 'failed' || status.error) {
+          throw new Error(status.error || 'Concept analysis failed')
+        }
+      }
+
+      if (!analysisComplete) {
+        throw new Error('Analysis timed out. Please try again.')
+      }
+
+    } catch (error) {
+      console.error('Regeneration error:', error)
+      alert('Error regenerating analysis. Please try again.')
+    } finally {
+      setIsRegeneratingAnalysis(false)
+      setProgressMessage(null)
+    }
+  }, [proposalId, onConceptDocumentChanged, onConceptAnalysisChanged, setSelectedSections])
+
+  /**
+   * Generates the concept document based on selected sections and user comments
+   * Does NOT regenerate the analysis - only creates the document
+   *
+   * Flow:
+   * 1. Unwrap conceptAnalysis to get sections
+   * 2. Mark all sections with selected flag and user_comment
+   * 3. Save concept evaluation to DynamoDB via updateConceptEvaluation
+   * 4. Generate concept document
+   * 5. Poll for completion
+   */
+  const handleGenerateDocument = useCallback(async (
+    sections: string[] = selectedSections,
+    comments: { [key: string]: string } = userComments
+  ) => {
+    if (!proposalId) {
+      alert('No proposal ID found. Please try again.')
+      return
+    }
+
+    if (sections.length === 0) {
+      alert('Please select at least one section to generate.')
+      return
+    }
+
+    setIsGeneratingDocument(true)
+    setProgressMessage('Preparing concept evaluation...')
+
+    try {
+      // Step 1: Unwrap conceptAnalysis (handle nested structure from backend)
+      let unwrappedAnalysis = conceptAnalysis
+      if (unwrappedAnalysis && 'concept_analysis' in unwrappedAnalysis) {
+        unwrappedAnalysis = (unwrappedAnalysis as { concept_analysis: ConceptAnalysis }).concept_analysis
+      }
+      // Check for another level of nesting
+      if (unwrappedAnalysis && 'concept_analysis' in unwrappedAnalysis) {
+        unwrappedAnalysis = (unwrappedAnalysis as unknown as { concept_analysis: ConceptAnalysis }).concept_analysis
+      }
+
+      if (!unwrappedAnalysis) {
+        throw new Error('Concept analysis not found. Please complete the analysis first.')
+      }
+
+      console.log('🔍 Unwrapped concept analysis for document generation')
+
+      // Step 2: Get all sections and mark with selected flag and user_comment
+      const allSections = unwrappedAnalysis.sections_needing_elaboration || []
+      const allSectionsWithSelection = allSections.map((section: SectionNeedingElaboration) => ({
+        ...section,
+        selected: sections.includes(section.section),
+        user_comment: comments[section.section] || '',
+      }))
+
+      console.log(`📊 Total sections: ${allSections.length}, Selected: ${allSectionsWithSelection.filter((s: { selected: boolean }) => s.selected).length}`)
+
+      // Step 3: Build the full concept evaluation payload
+      const conceptEvaluation = {
+        concept_analysis: {
+          fit_assessment: unwrappedAnalysis.fit_assessment,
+          strong_aspects: unwrappedAnalysis.strong_aspects,
+          sections_needing_elaboration: allSectionsWithSelection,
+          strategic_verdict: unwrappedAnalysis.strategic_verdict,
+        },
+        status: 'completed',
+      }
+
+      // Step 4: Prepare update payload for DynamoDB
+      const userCommentsPayload: Record<string, string> = {}
+      allSectionsWithSelection.forEach((section: { section: string; user_comment: string }) => {
+        if (section.user_comment) {
+          userCommentsPayload[section.section] = section.user_comment
+        }
+      })
+
+      const updatePayload = {
+        selected_sections: allSectionsWithSelection.map((section: SectionNeedingElaboration & { selected: boolean }) => ({
+          title: section.section,
+          selected: section.selected,
+          analysis: section.issue, // 'issue' maps to 'analysis' in the API
+          alignment_level: section.priority,
+          suggestions: section.suggestions || [],
+        })),
+        user_comments: Object.keys(userCommentsPayload).length > 0 ? userCommentsPayload : undefined,
+      }
+
+      // Step 5: Save concept evaluation to DynamoDB
+      setProgressMessage('Saving concept evaluation...')
+      console.log('💾 Saving concept evaluation to DynamoDB...')
+      await proposalService.updateConceptEvaluation(proposalId, updatePayload)
+      console.log('✅ Concept evaluation saved')
+
+      // Step 6: Start document generation
+      setProgressMessage('Generating updated concept document...')
+      console.log('📄 Starting document generation...')
+      await proposalService.generateConceptDocument(proposalId, conceptEvaluation)
+
+      // Step 7: Poll for completion
+      let generationComplete = false
+      let pollCount = 0
+      const maxPolls = 60 // 5 minutes max (5s intervals)
+
+      while (!generationComplete && pollCount < maxPolls) {
+        await new Promise(resolve => setTimeout(resolve, 5000))
+        pollCount++
+
+        const status = await proposalService.getConceptDocumentStatus(proposalId)
+
+        if (status.status === 'completed' && status.concept_document) {
+          generationComplete = true
+          console.log('✅ Document generation completed')
+          // Notify parent component of new document
+          onConceptDocumentChanged?.(status.concept_document)
+        } else if (status.status === 'failed' || status.error) {
+          throw new Error(status.error || 'Document generation failed')
+        }
+      }
+
+      if (!generationComplete) {
+        throw new Error('Document generation timed out. Please try again.')
+      }
+
+    } catch (error) {
+      console.error('Document generation error:', error)
+      alert(`Error generating document: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsGeneratingDocument(false)
+      setProgressMessage(null)
+    }
+  }, [proposalId, selectedSections, userComments, conceptAnalysis, onConceptDocumentChanged])
+
+  // ========================================
   // REUPLOAD STATE
   // ========================================
   const [showConfirmationModal, setShowConfirmationModal] = useState(false)
@@ -880,6 +1123,7 @@ export function Step2ConceptReview({
   /**
    * Toggles selection of a section for elaboration
    * Adds to selectedSections if not present, removes if already present
+   * Note: Document invalidation is handled by the parent's useEffect that watches conceptEvaluationData
    */
   const toggleSection = (sectionName: string) => {
     setSelectedSections(prev =>
@@ -890,6 +1134,7 @@ export function Step2ConceptReview({
   /**
    * Handles changes to user comments for a section
    * Updates the userComments state with the new comment
+   * Note: Document invalidation is handled by the parent's useEffect that watches conceptEvaluationData
    */
   const handleCommentChange = (sectionName: string, comment: string) => {
     setUserComments(prev => ({
@@ -957,9 +1202,7 @@ export function Step2ConceptReview({
       })
 
       // Clear the generated concept document if it exists
-      if (onClearConceptDocument) {
-        onClearConceptDocument()
-      }
+      onConceptDocumentChanged?.(null)
 
       // Stage 3: Analyzing
       setReuploadProgress({
@@ -991,17 +1234,22 @@ export function Step2ConceptReview({
           })
 
           // Notify parent component of new analysis
-          if (onConceptReanalyzed) {
-            onConceptReanalyzed(status.concept_analysis)
-          }
+          onConceptAnalysisChanged?.(status.concept_analysis)
 
-          // Reset selected sections to default (Critical priority)
+          // Reset selected sections to default (Critical priority, or all if no Critical)
           const newAnalysis = status.concept_analysis
           if (newAnalysis.sections_needing_elaboration) {
-            const criticalSections = newAnalysis.sections_needing_elaboration
-              .filter((s: any) => s.priority === 'Critical')
-              .map((s: any) => s.section)
-            setSelectedSections(criticalSections)
+            const allSections = newAnalysis.sections_needing_elaboration
+            const criticalSections = allSections
+              .filter((s: SectionNeedingElaboration) => s.priority === 'Critical')
+              .map((s: SectionNeedingElaboration) => s.section)
+
+            // If no Critical sections, select all sections by default
+            const sectionsToSelect = criticalSections.length > 0
+              ? criticalSections
+              : allSections.map((s: SectionNeedingElaboration) => s.section)
+
+            setSelectedSections(sectionsToSelect)
           }
 
           // Clear user comments
@@ -1030,7 +1278,7 @@ export function Step2ConceptReview({
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       })
     }
-  }, [proposalId, currentConceptFileName, onClearConceptDocument, onConceptReanalyzed, setSelectedSections])
+  }, [proposalId, currentConceptFileName, onConceptDocumentChanged, onConceptAnalysisChanged, setSelectedSections])
 
   /**
    * Handles retry after error
@@ -1514,7 +1762,8 @@ export function Step2ConceptReview({
           <UpdatedConceptDocumentCard
             conceptDocument={conceptDocument}
             proposalId={proposalId}
-            onRegenerateDocument={onRegenerateDocument}
+            onRegenerateDocument={handleGenerateDocument}
+            onRegenerateAnalysis={handleRegenerateAnalysis}
             selectedSections={selectedSections}
             userComments={userComments}
             isDownloading={isDownloading}
@@ -1528,14 +1777,20 @@ export function Step2ConceptReview({
           <div className={styles.generateButtonContainer}>
             <button
               className={styles.generateConceptButton}
-              onClick={() => {
-                if (onRegenerateDocument) {
-                  onRegenerateDocument(selectedSections, userComments)
-                }
-              }}
+              onClick={() => handleGenerateDocument(selectedSections, userComments)}
+              disabled={isGeneratingDocument}
             >
-              <Sparkles size={20} />
-              Generate Updated Concept
+              {isGeneratingDocument ? (
+                <>
+                  <div className={styles.spinner}></div>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={20} />
+                  Generate Updated Concept
+                </>
+              )}
             </button>
           </div>
         )}
