@@ -174,7 +174,9 @@ async def delete_prompt(
 ):
     """Delete a prompt version or all versions"""
     try:
-        success = await prompt_service.delete_prompt(prompt_id, version)
+        success = await prompt_service.delete_prompt(
+            prompt_id, version, user_id=current_user["email"]
+        )
         if success:
             return {"message": "Prompt deleted successfully"}
         else:
@@ -243,7 +245,9 @@ async def toggle_prompt_active(
 ):
     """Toggle prompt active status"""
     try:
-        prompt = await prompt_service.toggle_active(prompt_id)
+        prompt = await prompt_service.toggle_active(
+            prompt_id, user_id=current_user["email"]
+        )
         if not prompt:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found"

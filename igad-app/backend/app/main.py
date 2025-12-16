@@ -18,6 +18,7 @@ from .tools.admin.prompts_manager import routes as prompts_routes
 from .shared.documents import routes as documents_routes
 from .tools.proposal_writer import routes as proposal_writer_routes
 from .shared.vectors import routes as vectors_router
+from .routers import history
 
 # Load environment variables
 load_dotenv()
@@ -53,6 +54,7 @@ app.include_router(admin_routes.router)
 app.include_router(prompts_routes.router)
 app.include_router(admin_prompts_router)
 app.include_router(vectors_router.router)
+app.include_router(history.router)
 
 # Initialize services
 auth_middleware = AuthMiddleware()

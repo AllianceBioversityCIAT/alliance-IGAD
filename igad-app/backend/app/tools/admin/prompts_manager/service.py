@@ -18,6 +18,7 @@ from app.shared.schemas.prompt_model import (
     ProposalSection,
 )
 from app.utils.aws_session import get_aws_session
+from app.shared.database.history_service import history_service
 
 logger = logging.getLogger(__name__)
 
@@ -247,26 +248,64 @@ class PromptService:
             raise
 
     async def delete_prompt(
-        self, prompt_id: str, version: Optional[int] = None
+        self, prompt_id: str, version: Optional[int] = None, user_id: str = "system"
     ) -> bool:
         """Delete a prompt version or all versions"""
         try:
             if version:
+                # Capture state before deletion
+                before_state = None
+                response = self.table.get_item(
+                    Key={"PK": f"prompt#{prompt_id}", "SK": f"version#{version}"}
+                )
+                if "Item" in response:
+                    before_state = response["Item"]
+
                 # Delete specific version
                 self.table.delete_item(
                     Key={"PK": f"prompt#{prompt_id}", "SK": f"version#{version}"}
                 )
+
+                # Log to history
+                history_service.log_operation(
+                    operation_type="DELETE",
+                    resource_type="PROMPT",
+                    resource_id=f"{prompt_id}_v{version}",
+                    user_id=user_id,
+                    before_state=before_state,
+                    metadata={"version": version, "prompt_id": prompt_id},
+                )
+
                 logger.info(f"Deleted prompt {prompt_id} v{version}")
             else:
-                # Delete all versions
+                # Get all items before deletion
                 response = self.table.query(
                     KeyConditionExpression=Key("PK").eq(f"prompt#{prompt_id}")
                 )
 
-                for item in response["Items"]:
+                items_to_delete = response["Items"]
+
+                # Log each item to history before deletion
+                for item in items_to_delete:
+                    item_type = "version" if item["SK"].startswith("version#") else item["SK"].split("#")[0]
+                    history_service.log_operation(
+                        operation_type="DELETE",
+                        resource_type="PROMPT",
+                        resource_id=f"{prompt_id}_{item['SK']}",
+                        user_id=user_id,
+                        before_state=item,
+                        metadata={
+                            "prompt_id": prompt_id,
+                            "item_type": item_type,
+                            "bulk_delete": True,
+                        },
+                    )
+
+                # Delete all items
+                for item in items_to_delete:
                     self.table.delete_item(Key={"PK": item["PK"], "SK": item["SK"]})
 
-                logger.info(f"Deleted all versions of prompt {prompt_id}")
+                logger.info(f"Deleted all versions of prompt {prompt_id} ({len(items_to_delete)} items)")
 
             return True
         except Exception as e:
@@ -363,7 +402,7 @@ class PromptService:
             logger.error(f"Error getting prompt by section {section}: {e}")
             raise
 
-    async def toggle_active(self, prompt_id: str) -> Optional[Prompt]:
+    async def toggle_active(self, prompt_id: str, user_id: str = "system") -> Optional[Prompt]:
         """Toggle prompt active status"""
         try:
             # Get current prompt - use the correct key structure
@@ -379,6 +418,9 @@ class PromptService:
             item = response["Items"][0]
             current_active = item.get("is_active", True)
             new_active = not current_active
+
+            # Capture before state for history
+            before_state = dict(item)
 
             # If activating, check for conflicts
             if new_active:
@@ -412,6 +454,20 @@ class PromptService:
             # Return updated prompt
             item["is_active"] = new_active
             item["updated_at"] = now.isoformat()
+
+            # Log to history
+            history_service.log_operation(
+                operation_type="TOGGLE_ACTIVE",
+                resource_type="PROMPT",
+                resource_id=prompt_id,
+                user_id=user_id,
+                before_state=before_state,
+                after_state=dict(item),
+                metadata={
+                    "previous_active": current_active,
+                    "new_active": new_active,
+                },
+            )
 
             return self._item_to_prompt(item)
 
