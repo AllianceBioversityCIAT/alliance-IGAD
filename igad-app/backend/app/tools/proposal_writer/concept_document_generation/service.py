@@ -1,5 +1,5 @@
 """
-Document Generation Service
+Concept Document Generation Service
 
 Generates comprehensive concept documents based on:
 - RFP analysis and requirements
@@ -25,8 +25,8 @@ from PyPDF2 import PdfReader
 from docx import Document
 
 from app.shared.ai.bedrock_service import BedrockService
-from app.tools.proposal_writer.document_generation.config import (
-    DOCUMENT_GENERATION_SETTINGS,
+from app.tools.proposal_writer.concept_document_generation.config import (
+    CONCEPT_DOCUMENT_GENERATION_SETTINGS,
 )
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class ConceptDocumentGenerator:
         self.bedrock = BedrockService()
         self.dynamodb = boto3.resource("dynamodb")
         self.s3 = boto3.client("s3")
-        self.table_name = DOCUMENT_GENERATION_SETTINGS.get(
+        self.table_name = CONCEPT_DOCUMENT_GENERATION_SETTINGS.get(
             "table_name", "igad-testing-main-table"
         )
         self.bucket = os.environ.get("PROPOSALS_BUCKET")
@@ -144,13 +144,13 @@ class ConceptDocumentGenerator:
             ai_response = self.bedrock.invoke_claude(
                 system_prompt=prompt_parts["system_prompt"],
                 user_prompt=final_prompt,
-                max_tokens=DOCUMENT_GENERATION_SETTINGS.get(
+                max_tokens=CONCEPT_DOCUMENT_GENERATION_SETTINGS.get(
                     "max_tokens", 12000
                 ),
-                temperature=DOCUMENT_GENERATION_SETTINGS.get(
+                temperature=CONCEPT_DOCUMENT_GENERATION_SETTINGS.get(
                     "temperature", 0.2
                 ),
-                model_id=DOCUMENT_GENERATION_SETTINGS["model"],
+                model_id=CONCEPT_DOCUMENT_GENERATION_SETTINGS["model"],
             )
 
             elapsed = (datetime.utcnow() - start_time).total_seconds()

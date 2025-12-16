@@ -59,7 +59,7 @@ proposal_writer/
 │   ├── config.py                    # Configuración del evaluador
 │   └── service.py                   # Lógica de evaluación
 │
-├── document_generation/             # Módulo 3: Generación de documentos
+├── concept_document_generation/     # Módulo 3: Generación de documentos de concepto
 │   ├── __init__.py
 │   ├── config.py                    # Configuración del generador
 │   └── service.py                   # Lógica de generación
@@ -413,7 +413,7 @@ response = self.bedrock.invoke_claude(
 
 ---
 
-### 4. **document_generation/service.py** - Generación de Documentos
+### 4. **concept_document_generation/service.py** - Generación de Documentos de Concepto
 
 **Clase:** `ConceptDocumentGenerator`
 
@@ -577,7 +577,7 @@ def _handle_outline_generation(
     Output guardado en: PROPOSAL#{id}#OUTLINE
     """
 
-def _handle_document_generation(
+def _handle_concept_document_generation(
     proposal_id: str,
     selected_sections: List[Dict],
     user_comments: Dict
@@ -1157,10 +1157,10 @@ CONCEPT_EVALUATION_SETTINGS = {
 }
 ```
 
-**document_generation/config.py:**
+**concept_document_generation/config.py:**
 
 ```python
-DOCUMENT_GENERATION_SETTINGS = {
+CONCEPT_DOCUMENT_GENERATION_SETTINGS = {
     "table_name": os.environ.get("TABLE_NAME"),
     "max_tokens": 12000,
     "temperature": 0.7,

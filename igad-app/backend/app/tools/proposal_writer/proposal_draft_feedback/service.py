@@ -1,4 +1,4 @@
-"""Draft Proposal Feedback Analysis Service
+"""Proposal Draft Feedback Analysis Service
 
 Analyzes user's draft proposal against RFP requirements to provide:
 - Section-by-section feedback with status ratings (EXCELLENT, GOOD, NEEDS_IMPROVEMENT)
@@ -14,7 +14,7 @@ from typing import Dict, Any, Optional
 from boto3.dynamodb.conditions import Attr
 from app.shared.ai.bedrock_service import BedrockService
 from app.database.client import db_client
-from app.tools.proposal_writer.draft_feedback.config import DRAFT_FEEDBACK_SETTINGS
+from app.tools.proposal_writer.proposal_draft_feedback.config import PROPOSAL_DRAFT_FEEDBACK_SETTINGS
 from app.utils.document_extraction import extract_text_from_file
 
 logger = logging.getLogger(__name__)
@@ -123,9 +123,9 @@ class DraftFeedbackService:
             response = table.scan(
                 FilterExpression=(
                     Attr("is_active").eq(True)
-                    & Attr("section").eq(DRAFT_FEEDBACK_SETTINGS["section"])
-                    & Attr("sub_section").eq(DRAFT_FEEDBACK_SETTINGS["sub_section"])
-                    & Attr("categories").contains(DRAFT_FEEDBACK_SETTINGS["category"])
+                    & Attr("section").eq(PROPOSAL_DRAFT_FEEDBACK_SETTINGS["section"])
+                    & Attr("sub_section").eq(PROPOSAL_DRAFT_FEEDBACK_SETTINGS["sub_section"])
+                    & Attr("categories").contains(PROPOSAL_DRAFT_FEEDBACK_SETTINGS["category"])
                 )
             )
 
@@ -150,9 +150,9 @@ class DraftFeedbackService:
             )
 
             logger.info(f"🤖 Sending to Bedrock...")
-            logger.info(f"   Model: {DRAFT_FEEDBACK_SETTINGS['model']}")
-            logger.info(f"   Max tokens: {DRAFT_FEEDBACK_SETTINGS['max_tokens']}")
-            logger.info(f"   Temperature: {DRAFT_FEEDBACK_SETTINGS['temperature']}")
+            logger.info(f"   Model: {PROPOSAL_DRAFT_FEEDBACK_SETTINGS['model']}")
+            logger.info(f"   Max tokens: {PROPOSAL_DRAFT_FEEDBACK_SETTINGS['max_tokens']}")
+            logger.info(f"   Temperature: {PROPOSAL_DRAFT_FEEDBACK_SETTINGS['temperature']}")
 
             # Step 7: Call Bedrock with metrics
             start_time = time.time()
@@ -160,9 +160,9 @@ class DraftFeedbackService:
             response_text = self.bedrock.invoke_claude(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
-                model_id=DRAFT_FEEDBACK_SETTINGS["model"],
-                max_tokens=DRAFT_FEEDBACK_SETTINGS["max_tokens"],
-                temperature=DRAFT_FEEDBACK_SETTINGS["temperature"]
+                model_id=PROPOSAL_DRAFT_FEEDBACK_SETTINGS["model"],
+                max_tokens=PROPOSAL_DRAFT_FEEDBACK_SETTINGS["max_tokens"],
+                temperature=PROPOSAL_DRAFT_FEEDBACK_SETTINGS["temperature"]
             )
 
             elapsed_time = time.time() - start_time

@@ -60,6 +60,10 @@ interface Step1Props extends StepProps {
   setIsUploadingConcept?: (isUploading: boolean) => void
   /** Setter for vectorization state - notifies parent when files are being vectorized */
   setIsVectorizingFiles?: (isVectorizing: boolean) => void
+  /** Callback when RFP document changes - used to invalidate downstream data */
+  onRfpDocumentChanged?: () => void
+  /** Callback when concept document changes - used to invalidate downstream data */
+  onConceptDocumentChanged?: () => void
 }
 
 // ============================================================================
@@ -127,6 +131,8 @@ export function Step1InformationConsolidation({
   setIsUploadingSupporting: setParentIsUploadingSupporting,
   setIsUploadingConcept: setParentIsUploadingConcept,
   setIsVectorizingFiles: setParentIsVectorizingFiles,
+  onRfpDocumentChanged,
+  onConceptDocumentChanged,
 }: Step1Props) {
   // ============================================================================
   // STATE - Hooks
@@ -535,9 +541,11 @@ export function Step1InformationConsolidation({
         // Show success notification
         showSuccess(SUCCESS_MESSAGES.RFP_UPLOADED.title, SUCCESS_MESSAGES.RFP_UPLOADED.message)
 
-        // Invalidate analyses when documents are updated
-        // This ensures the user re-analyzes with the new document
-        console.log('🔄 [Document Updated] Dispatching documents-updated event for RFP')
+        // Invalidate downstream analyses when RFP document is updated
+        console.log('🔄 [RFP Document Changed] Invalidating downstream analyses')
+        if (onRfpDocumentChanged) {
+          onRfpDocumentChanged()
+        }
         window.dispatchEvent(new CustomEvent('documents-updated'))
       } catch (error: unknown) {
         const errorMsg =
@@ -726,8 +734,11 @@ export function Step1InformationConsolidation({
         SUCCESS_MESSAGES.CONCEPT_FILE_UPLOADED.message
       )
 
-      // Invalidate analyses when concept document is updated
-      // This ensures the user re-analyzes with the new document
+      // Invalidate downstream analyses when concept document is updated
+      console.log('🔄 [Concept Document Changed] Invalidating downstream analyses')
+      if (onConceptDocumentChanged) {
+        onConceptDocumentChanged()
+      }
       window.dispatchEvent(new CustomEvent('documents-updated'))
     } catch (error: Record<string, unknown>) {
       const errorMsg =

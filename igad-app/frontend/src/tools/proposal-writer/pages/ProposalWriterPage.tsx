@@ -1087,7 +1087,7 @@ export function ProposalWriterPage() {
       setAnalysisProgress({ 
         step: 1, 
         total: 1, 
-        message: 'Generating Proposal Structure & Workplan',
+        message: 'Generating Proposal Structure',
         description: 'Our AI is analyzing your RFP and concept evaluation to create a customized proposal structure with sections, guidance, and questions. This process uses advanced AI and may take up to 2 minutes.',
         steps: ['Analyzing RFP requirements and concept evaluation to generate tailored proposal structure']
       })
@@ -1650,7 +1650,48 @@ export function ProposalWriterPage() {
 
     switch (currentStep) {
       case 1:
-        return <Step1InformationConsolidation {...stepProps} />
+        return (
+          <Step1InformationConsolidation
+            {...stepProps}
+            onRfpDocumentChanged={() => {
+              console.log('🔄 RFP Document changed - invalidating all downstream analyses')
+              // Clear all analyses that depend on RFP
+              setRfpAnalysis(null)
+              setConceptAnalysis(null)
+              setConceptDocument(null)
+              setStructureWorkplanAnalysis(null)
+              setProposalTemplate(null)
+              setConceptEvaluationData(null)
+              setDraftFeedbackAnalysis(null)
+              // Clear localStorage
+              if (proposalId) {
+                localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
+                localStorage.removeItem(`proposal_concept_analysis_${proposalId}`)
+                localStorage.removeItem(`proposal_concept_document_${proposalId}`)
+                localStorage.removeItem(`proposal_structure_workplan_${proposalId}`)
+                localStorage.removeItem(`proposal_template_${proposalId}`)
+                localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
+              }
+            }}
+            onConceptDocumentChanged={() => {
+              console.log('🔄 Concept Document changed - invalidating downstream analyses')
+              // Clear analyses that depend on concept
+              setConceptAnalysis(null)
+              setConceptDocument(null)
+              setStructureWorkplanAnalysis(null)
+              setProposalTemplate(null)
+              setConceptEvaluationData(null)
+              // Clear localStorage
+              if (proposalId) {
+                localStorage.removeItem(`proposal_concept_analysis_${proposalId}`)
+                localStorage.removeItem(`proposal_concept_document_${proposalId}`)
+                localStorage.removeItem(`proposal_structure_workplan_${proposalId}`)
+                localStorage.removeItem(`proposal_template_${proposalId}`)
+                localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
+              }
+            }}
+          />
+        )
       case 2:
         // Get current concept file name from formData
         const conceptFiles = formData.uploadedFiles['concept-document'] || []

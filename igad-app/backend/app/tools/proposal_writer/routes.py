@@ -17,10 +17,10 @@ from app.middleware.auth_middleware import AuthMiddleware
 from app.shared.ai.bedrock_service import BedrockService
 from app.tools.admin.prompts_manager.service import PromptService
 from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer
-from app.tools.proposal_writer.document_generation.service import concept_generator
+from app.tools.proposal_writer.concept_document_generation.service import concept_generator
 from app.tools.proposal_writer.structure_workplan.service import StructureWorkplanService
 from app.tools.proposal_writer.template_generation.service import TemplateGenerationService
-from app.tools.proposal_writer.draft_feedback.service import DraftFeedbackService
+from app.tools.proposal_writer.proposal_draft_feedback.service import DraftFeedbackService
 from app.database.client import db_client
 
 router = APIRouter(prefix="/api/proposals", tags=["proposals"])

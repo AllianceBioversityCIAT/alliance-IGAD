@@ -19,10 +19,10 @@ from typing import Any, Dict, Optional
 
 from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer
 from app.tools.proposal_writer.concept_evaluation.service import SimpleConceptAnalyzer
-from app.tools.proposal_writer.document_generation.service import concept_generator
+from app.tools.proposal_writer.concept_document_generation.service import concept_generator
 from app.tools.proposal_writer.reference_proposals_analysis.service import ReferenceProposalsAnalyzer
 from app.tools.proposal_writer.structure_workplan.service import StructureWorkplanService
-from app.tools.proposal_writer.draft_feedback.service import DraftFeedbackService
+from app.tools.proposal_writer.proposal_draft_feedback.service import DraftFeedbackService
 from app.database.client import db_client
 from app.shared.vectors.service import VectorEmbeddingsService
 

@@ -11,34 +11,50 @@ The Structure Workplan analysis uses AI to:
 - Provide guidance, questions, and HCD notes for each section
 - Create a comprehensive workplan for proposal development
 
-Settings:
-    max_sections: Maximum number of sections allowed in proposal outline
-    timeout: Maximum processing time in seconds before timeout
-    model: AWS Bedrock model ID for Claude Sonnet 4.5
-    max_tokens: Maximum tokens for Bedrock response (~12k words)
-    temperature: Sampling temperature (0.0-1.0, lower = more deterministic)
-    section: DynamoDB section key for prompt lookup
-    sub_section: DynamoDB sub-section key for prompt lookup
-    category: DynamoDB category filter for prompt lookup
+AI Parameters:
+    model: AWS Bedrock model ID for Claude
+    max_tokens: Maximum tokens for Bedrock response
+    temperature: Sampling temperature (0.0-1.0)
+        - 0.0 = Deterministic, consistent outputs
+        - 0.2 = Low creativity, structured analysis (recommended)
+        - 0.5 = Balanced creativity
+        - 1.0 = Maximum creativity
+    top_p: Nucleus sampling parameter (0.0-1.0)
+        - Controls diversity of token selection
+        - Lower values = more focused responses
+    top_k: Top-k sampling parameter
+        - Limits token selection to top k tokens
+        - Lower values = more deterministic
+
+Processing Settings:
+    timeout: Maximum processing time in seconds
+    max_sections: Maximum number of sections in proposal outline
+
+DynamoDB Prompt Lookup:
+    section: Top-level section key
+    sub_section: Step identifier
+    category: Prompt category filter
 
 Usage:
     from app.tools.proposal_writer.structure_workplan.config import STRUCTURE_WORKPLAN_SETTINGS
 
     model = STRUCTURE_WORKPLAN_SETTINGS["model"]
-    max_tokens = STRUCTURE_WORKPLAN_SETTINGS["max_tokens"]
+    temperature = STRUCTURE_WORKPLAN_SETTINGS["temperature"]
 """
 
 STRUCTURE_WORKPLAN_SETTINGS = {
-    # Analysis constraints
-    "max_sections": 30,           # Maximum proposal sections allowed
-    "timeout": 300,               # Processing timeout (5 minutes)
-
-    # Bedrock configuration
+    # ==================== AI Model Configuration ====================
     "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",  # Claude Sonnet 4
-    "max_tokens": 16000,          # ~12,000 words of output
-    "temperature": 0.2,           # Balanced creativity (0.0 = deterministic, 1.0 = creative)
+    "max_tokens": 16000,          # Maximum tokens for response (~12,000 words)
+    "temperature": 0.2,           # Low temperature for consistent, structured output
+    "top_p": 0.9,                 # Nucleus sampling (0.9 = consider top 90% probability mass)
+    "top_k": 250,                 # Top-k sampling (consider top 250 tokens)
 
-    # DynamoDB prompt lookup keys
+    # ==================== Processing Settings ====================
+    "timeout": 300,               # Processing timeout (5 minutes)
+    "max_sections": 30,           # Maximum proposal sections allowed
+
+    # ==================== DynamoDB Prompt Lookup ====================
     "section": "proposal_writer",      # Top-level section
     "sub_section": "step-3",           # Step identifier
     "category": "Initial Proposal"     # Prompt category filter
