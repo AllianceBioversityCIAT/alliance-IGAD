@@ -45,6 +45,7 @@ export function ProposalWriterPage() {
   } | null>(null)
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
   const [generationProgressStep, setGenerationProgressStep] = useState(1)
+  const [isRegeneratingConcept, setIsRegeneratingConcept] = useState(false)
   const [conceptDocument, setConceptDocument] = useState<any>(null)
   const [proposalTemplate, setProposalTemplate] = useState<any>(null)
   const [structureSelectionData, setStructureSelectionData] = useState<{
@@ -1759,6 +1760,12 @@ export function ProposalWriterPage() {
             onConceptDocumentChanged={(newDocument) => {
               // Called when concept document is generated or cleared (from Step2's internal handler)
               console.log('📄 Concept document changed:', newDocument ? 'new document' : 'cleared')
+
+              // If clearing the document, set flag to prevent auto-reload from DynamoDB
+              if (!newDocument) {
+                intentionalDocumentClearRef.current = true
+              }
+
               setConceptDocument(newDocument)
               // Update localStorage
               if (proposalId) {
@@ -1771,6 +1778,10 @@ export function ProposalWriterPage() {
                   localStorage.removeItem(`proposal_concept_document_${proposalId}`)
                 }
               }
+            }}
+            onRegenerationStateChanged={(isRegenerating) => {
+              console.log('🔄 Regeneration state changed:', isRegenerating)
+              setIsRegeneratingConcept(isRegenerating)
             }}
             currentConceptFileName={currentConceptFileName}
           />
@@ -1962,22 +1973,34 @@ export function ProposalWriterPage() {
   return (
     <>
       <AnalysisProgressModal
-        isOpen={isAnalyzingRFP || isGeneratingDocument}
+        isOpen={isAnalyzingRFP || isGeneratingDocument || isRegeneratingConcept}
         progress={
-          isGeneratingDocument
+          isRegeneratingConcept
             ? {
-                step: generationProgressStep,
-                total: 3,
-                message: 'Generating Enhanced Concept Document...',
+                step: 1,
+                total: 2,
+                message: 'Regenerating Concept Analysis...',
                 description:
-                  'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
+                  'Our AI is re-analyzing your concept note against the RFP requirements. This typically takes 1-2 minutes.',
                 steps: [
-                  'Analyzing RFP requirements and selected sections',
-                  'Generating detailed narrative content with examples',
-                  'Finalizing and validating concept document',
+                  'Analyzing concept note and RFP alignment',
+                  'Generating fit assessment and improvement areas',
                 ],
               }
-            : analysisProgress
+            : isGeneratingDocument
+              ? {
+                  step: generationProgressStep,
+                  total: 3,
+                  message: 'Generating Enhanced Concept Document...',
+                  description:
+                    'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
+                  steps: [
+                    'Analyzing RFP requirements and selected sections',
+                    'Generating detailed narrative content with examples',
+                    'Finalizing and validating concept document',
+                  ],
+                }
+              : analysisProgress
         }
       />
       <DraftConfirmationModal

@@ -19,7 +19,8 @@ import {
   ReuploadConfirmationModal,
   ConceptReuploadModal,
   ReuploadProgressModal,
-  ReuploadProgress
+  ReuploadProgress,
+  RegenerateConfirmationModal
 } from '../components/ReuploadModals'
 
 // Services
@@ -49,6 +50,8 @@ interface Step2Props extends StepProps {
     selectedSections: string[]
     userComments?: { [key: string]: string }
   }) => void
+  /** Callback when regeneration state changes (for showing progress modal) */
+  onRegenerationStateChanged?: (isRegenerating: boolean) => void
   /** Current concept file name (for display in confirmation modal) */
   currentConceptFileName?: string
 }
@@ -632,7 +635,7 @@ interface UpdatedConceptDocumentCardProps {
   conceptDocument: any
   proposalId?: string
   onRegenerateDocument?: (selectedSections: string[], userComments: { [key: string]: string }) => void
-  onRegenerateAnalysis?: () => Promise<void>
+  onRegenerateAnalysis?: () => void | Promise<void>
   selectedSections: string[]
   userComments: { [key: string]: string }
   isDownloading: boolean
@@ -864,6 +867,7 @@ export function Step2ConceptReview({
   proposalId,
   onConceptAnalysisChanged,
   onConceptDocumentChanged,
+  onRegenerationStateChanged,
   currentConceptFileName,
 }: Step2Props) {
   // ========================================
@@ -890,6 +894,9 @@ export function Step2ConceptReview({
   // Document download state
   const [isDownloading, setIsDownloading] = useState(false)
 
+  // Regenerate confirmation modal state
+  const [showRegenerateConfirmModal, setShowRegenerateConfirmModal] = useState(false)
+
   // ========================================
   // REGENERATION & GENERATION STATE
   // ========================================
@@ -913,6 +920,8 @@ export function Step2ConceptReview({
 
     setIsRegeneratingAnalysis(true)
     setProgressMessage('Regenerating concept analysis...')
+    // Notify parent to show progress modal
+    onRegenerationStateChanged?.(true)
 
     try {
       // Clear the existing concept document
@@ -972,8 +981,10 @@ export function Step2ConceptReview({
     } finally {
       setIsRegeneratingAnalysis(false)
       setProgressMessage(null)
+      // Notify parent to hide progress modal
+      onRegenerationStateChanged?.(false)
     }
-  }, [proposalId, onConceptDocumentChanged, onConceptAnalysisChanged, setSelectedSections])
+  }, [proposalId, onConceptDocumentChanged, onConceptAnalysisChanged, onRegenerationStateChanged, setSelectedSections])
 
   /**
    * Generates the concept document based on selected sections and user comments
@@ -1763,7 +1774,7 @@ export function Step2ConceptReview({
             conceptDocument={conceptDocument}
             proposalId={proposalId}
             onRegenerateDocument={handleGenerateDocument}
-            onRegenerateAnalysis={handleRegenerateAnalysis}
+            onRegenerateAnalysis={() => setShowRegenerateConfirmModal(true)}
             selectedSections={selectedSections}
             userComments={userComments}
             isDownloading={isDownloading}
@@ -1772,13 +1783,14 @@ export function Step2ConceptReview({
           />
         )}
 
-        {/* Generate Updated Concept Button - only show if no document and sections selected */}
-        {!conceptDocument && selectedSections.length > 0 && (
+        {/* Generate Updated Concept Button - show when no document exists */}
+        {!conceptDocument && (
           <div className={styles.generateButtonContainer}>
             <button
               className={styles.generateConceptButton}
               onClick={() => handleGenerateDocument(selectedSections, userComments)}
-              disabled={isGeneratingDocument}
+              disabled={isGeneratingDocument || selectedSections.length === 0}
+              title={selectedSections.length === 0 ? 'Please select at least one section to generate' : ''}
             >
               {isGeneratingDocument ? (
                 <>
@@ -1792,6 +1804,11 @@ export function Step2ConceptReview({
                 </>
               )}
             </button>
+            {selectedSections.length === 0 && (
+              <p className={styles.generateButtonHint}>
+                Select at least one section above to generate the updated concept
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -1821,6 +1838,16 @@ export function Step2ConceptReview({
         progress={reuploadProgress}
         onClose={handleProgressModalClose}
         onRetry={handleRetry}
+      />
+
+      {/* Regenerate Confirmation Modal */}
+      <RegenerateConfirmationModal
+        isOpen={showRegenerateConfirmModal}
+        onClose={() => setShowRegenerateConfirmModal(false)}
+        onConfirm={() => {
+          setShowRegenerateConfirmModal(false)
+          handleRegenerateAnalysis()
+        }}
       />
     </div>
   )

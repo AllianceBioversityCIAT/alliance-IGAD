@@ -863,7 +863,9 @@
 .generateButtonContainer {
   margin-top: 24px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .generateConceptButton {
@@ -890,6 +892,26 @@
 
 .generateConceptButton:active {
   transform: translateY(0);
+}
+
+.generateConceptButton:disabled {
+  background: #9CA3AF;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.generateConceptButton:disabled:hover {
+  background: #9CA3AF;
+  box-shadow: none;
+  transform: none;
+}
+
+.generateButtonHint {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0;
+  text-align: center;
 }
 
 /* Responsive */

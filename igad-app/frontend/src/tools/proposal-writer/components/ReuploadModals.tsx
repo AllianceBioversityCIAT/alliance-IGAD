@@ -463,11 +463,76 @@ export function ReuploadProgressModal({
 }
 
 // ============================================================================
+// REGENERATE CONFIRMATION MODAL
+// ============================================================================
+
+interface RegenerateConfirmationModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+}
+
+export function RegenerateConfirmationModal({
+  isOpen,
+  onClose,
+  onConfirm
+}: RegenerateConfirmationModalProps) {
+  if (!isOpen) return null
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <button className={styles.closeButton} onClick={onClose} aria-label="Close modal">
+          <X size={20} />
+        </button>
+
+        <div className={styles.modalHeader}>
+          <div className={styles.warningIcon}>
+            <AlertTriangle size={28} />
+          </div>
+          <h2 className={styles.modalTitle}>Regenerate Concept Analysis?</h2>
+        </div>
+
+        <div className={styles.modalBody}>
+          <p className={styles.warningText}>
+            This will re-analyze your concept note with AI and replace the current analysis.
+          </p>
+
+          <div className={styles.warningBox}>
+            <h4>The following will be reset:</h4>
+            <ul>
+              <li>Your generated concept document</li>
+              <li>Comments added to sections</li>
+              <li>Section selections (will default to Critical)</li>
+            </ul>
+          </div>
+
+          <p className={styles.noteText}>
+            This process takes 1-2 minutes. Please don't close this window during the analysis.
+          </p>
+        </div>
+
+        <div className={styles.modalFooter}>
+          <button className={styles.cancelButton} onClick={onClose}>
+            Cancel
+          </button>
+          <button className={styles.confirmButton} onClick={onConfirm}>
+            <RefreshCw size={16} />
+            Regenerate Analysis
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
 // EXPORTS
 // ============================================================================
 
 export default {
   ReuploadConfirmationModal,
   ConceptReuploadModal,
-  ReuploadProgressModal
+  ReuploadProgressModal,
+  RegenerateConfirmationModal
 }
