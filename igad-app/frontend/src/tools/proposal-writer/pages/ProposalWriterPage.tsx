@@ -81,7 +81,10 @@ export function ProposalWriterPage() {
 
   const allowNavigation = useRef(false)
   const formDataLoadedFromDB = useRef(false)
-  const localStorageLoaded = useRef(false)
+  // Use useState instead of useRef so changes trigger re-renders
+  // This fixes the race condition where proposal creation effect
+  // runs before localStorage loading completes
+  const [localStorageLoaded, setLocalStorageLoaded] = useState(false)
   // Flag to track intentional document clearing (to prevent auto-reload from DynamoDB)
   const intentionalDocumentClearRef = useRef(false)
 
@@ -97,7 +100,7 @@ export function ProposalWriterPage() {
   // Load from localStorage on mount
   useEffect(() => {
     // Prevent multiple executions
-    if (localStorageLoaded.current) {
+    if (localStorageLoaded) {
       return
     }
 
@@ -144,7 +147,7 @@ export function ProposalWriterPage() {
     }
 
     // Mark that we've completed localStorage loading
-    localStorageLoaded.current = true
+    setLocalStorageLoaded(true)
 
     // Load concept analysis from localStorage
     if (draft.proposalId) {
@@ -294,19 +297,12 @@ export function ProposalWriterPage() {
   // Load formData from DynamoDB if localStorage is empty
   useEffect(() => {
     const loadFormDataFromDynamoDB = async () => {
-      if (!proposalId || formDataLoadedFromDB.current) {
+      // Wait until localStorage loading is complete (effect will re-run when localStorageLoaded changes)
+      if (!localStorageLoaded) {
         return
       }
 
-      // Wait until localStorage loading is complete
-      let attempts = 0
-      while (!localStorageLoaded.current && attempts < 50) {
-        await new Promise(resolve => setTimeout(resolve, 10))
-        attempts++
-      }
-
-      // If formData was already loaded from localStorage, skip DynamoDB loading
-      if (formDataLoadedFromDB.current) {
+      if (!proposalId || formDataLoadedFromDB.current) {
         return
       }
 
@@ -386,6 +382,7 @@ export function ProposalWriterPage() {
     loadFormDataFromDynamoDB()
   }, [
     proposalId,
+    localStorageLoaded,
     conceptDocument,
     proposalTemplate,
     structureWorkplanAnalysis,
@@ -598,7 +595,14 @@ export function ProposalWriterPage() {
   }, [proposalId])
 
   // Create a proposal when the component mounts (only if authenticated and no saved proposal)
+  // IMPORTANT: Wait for localStorage to be loaded first to prevent creating a new proposal
+  // when editing an existing one from the dashboard (race condition fix)
   useEffect(() => {
+    // Don't create a new proposal until we've checked localStorage for existing proposal
+    if (!localStorageLoaded) {
+      return
+    }
+
     const isAuthenticated = authService.isAuthenticated()
 
     if (!proposalId && !isCreating && isAuthenticated) {
@@ -618,7 +622,7 @@ export function ProposalWriterPage() {
         }
       )
     }
-  }, [proposalId, isCreating, createProposal])
+  }, [proposalId, isCreating, createProposal, localStorageLoaded])
 
   // Listen for RFP deletion event to clear analysis
   useEffect(() => {

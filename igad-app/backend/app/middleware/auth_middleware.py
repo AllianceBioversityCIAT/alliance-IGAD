@@ -11,9 +11,16 @@ from ..utils.aws_session import get_aws_session
 
 logger = logging.getLogger(__name__)
 
-# Mock JWT secret for local development
-JWT_SECRET = "mock-jwt-secret-for-local-development"
+# JWT configuration - SECURITY: Must use environment variable in production
+JWT_SECRET = os.getenv("JWT_SECRET", "mock-jwt-secret-for-local-development")
 JWT_ALGORITHM = "HS256"
+
+# Security check: Prevent using development secret in production
+if os.getenv("ENVIRONMENT") == "production":
+    if JWT_SECRET == "mock-jwt-secret-for-local-development":
+        raise ValueError(
+            "SECURITY ERROR: JWT_SECRET must be set to a secure value in production environment!"
+        )
 
 
 class AuthMiddleware:
@@ -64,12 +71,19 @@ class AuthMiddleware:
         try:
             token = credentials.credentials
 
-            # Try to decode as Cognito token first (without verification for development)
+            # Try to decode as Cognito token first
+            # SECURITY: Only skip verification in development
             try:
-                # Decode without verification for development
-                payload = jwt.decode(
-                    token, "", options={"verify_signature": False, "verify_aud": False}
-                )
+                environment = os.getenv("ENVIRONMENT", "development")
+                if environment == "development":
+                    # Decode without verification for development only
+                    payload = jwt.decode(
+                        token, "", options={"verify_signature": False, "verify_aud": False}
+                    )
+                else:
+                    # In production, we should verify Cognito tokens properly
+                    # For now, fall through to JWT verification
+                    raise Exception("Production requires proper token verification")
 
                 # Extract user info from Cognito token
                 username = payload.get("username", "")

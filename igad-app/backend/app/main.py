@@ -4,6 +4,7 @@ IGAD Innovation Hub - Main FastAPI Application.
 Refactored with clean architecture
 """
 
+import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,23 +24,44 @@ from .tools.proposal_writer import routes as proposal_writer_routes
 # Load environment variables
 load_dotenv()
 
+# Get environment
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
 # Initialize FastAPI app
 app = FastAPI(
     title="IGAD Innovation Hub API",
     description="API for IGAD Innovation Hub platform",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    # Deshabilitar documentación en producción por seguridad
+    docs_url="/docs" if ENVIRONMENT != "production" else None,
+    redoc_url="/redoc" if ENVIRONMENT != "production" else None,
+    openapi_url="/openapi.json" if ENVIRONMENT != "production" else None,
 )
+
+# CORS configuration - SECURITY: Restrict origins in production
+if ENVIRONMENT == "production":
+    # En producción, solo dominios específicos
+    allowed_origins = os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "https://igad-innovation-hub.com,https://www.igad-innovation-hub.com",
+    ).split(",")
+else:
+    # En desarrollo, permitir localhost
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ]
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
+    expose_headers=["X-Request-ID"],
 )
 
 # Add custom middleware
