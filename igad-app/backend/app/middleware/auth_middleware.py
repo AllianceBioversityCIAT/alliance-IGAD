@@ -2,10 +2,10 @@ import logging
 import os
 from typing import Any, Dict
 
-from jose import jwt
-from jose.exceptions import JWTError, ExpiredSignatureError
 from fastapi import HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTError
 
 from ..utils.aws_session import get_aws_session
 
@@ -27,8 +27,6 @@ class AuthMiddleware:
         # Check Cognito groups for admin status
         is_admin = False
         try:
-            import boto3
-
             session = get_aws_session()
             cognito_client = session.client("cognito-idp", region_name="us-east-1")
 
@@ -69,7 +67,9 @@ class AuthMiddleware:
             # Try to decode as Cognito token first (without verification for development)
             try:
                 # Decode without verification for development
-                payload = jwt.decode(token, "", options={"verify_signature": False, "verify_aud": False})
+                payload = jwt.decode(
+                    token, "", options={"verify_signature": False, "verify_aud": False}
+                )
 
                 # Extract user info from Cognito token
                 username = payload.get("username", "")
@@ -79,7 +79,9 @@ class AuthMiddleware:
                 if not email and username:
                     try:
                         session = get_aws_session()
-                        cognito_client = session.client("cognito-idp", region_name="us-east-1")
+                        cognito_client = session.client(
+                            "cognito-idp", region_name="us-east-1"
+                        )
                         user_response = cognito_client.admin_get_user(
                             UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
                             Username=username,
@@ -94,8 +96,6 @@ class AuthMiddleware:
                 # Check if user is admin by verifying Cognito groups
                 is_admin = False
                 try:
-                    import boto3
-
                     session = get_aws_session()
                     cognito_client = session.client(
                         "cognito-idp", region_name="us-east-1"

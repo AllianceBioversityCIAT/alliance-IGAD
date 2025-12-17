@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import sys
+
 import boto3
 from botocore.exceptions import ClientError
+
 
 def create_prompts_table():
     dynamodb = boto3.client("dynamodb")
@@ -102,6 +104,7 @@ def main():
         sys.exit(1)
     create_audit_logs_table()
     print("✅ DynamoDB setup completed!")
+
 
 if __name__ == "__main__":
     main()

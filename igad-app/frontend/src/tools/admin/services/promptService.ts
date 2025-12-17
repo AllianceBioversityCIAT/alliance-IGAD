@@ -93,8 +93,9 @@ class PromptService {
     try {
       const response = await apiClient.get(`/prompts/section/${section}?published=true`)
       return response.data
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number } }
+      if (err.response?.status === 404) {
         return null
       }
       throw error

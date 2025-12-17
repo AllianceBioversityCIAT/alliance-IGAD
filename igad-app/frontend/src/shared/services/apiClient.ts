@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
 import { tokenManager } from './tokenManager'
 import { globalToast, parseApiError } from './globalToast'
 
@@ -63,9 +63,10 @@ apiClient.interceptors.response.use(
     }
 
     // Show toast notification for errors (unless suppressed)
-    const shouldShowToast = !originalRequest?._suppressErrorToast &&
-                           !suppressedErrorUrls.has(requestUrl) &&
-                           error.response?.status !== 401 // Don't show toast for auth errors
+    const shouldShowToast =
+      !originalRequest?._suppressErrorToast &&
+      !suppressedErrorUrls.has(requestUrl) &&
+      error.response?.status !== 401 // Don't show toast for auth errors
 
     if (shouldShowToast) {
       const { title, message } = parseApiError(error)

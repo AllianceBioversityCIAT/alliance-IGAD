@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useToast } from '@/shared/hooks/useToast'
 import {
   Upload,
@@ -17,7 +17,7 @@ import {
   Loader2,
   TrendingUp,
   ArrowRight,
-  Check
+  Check,
 } from 'lucide-react'
 import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
@@ -78,13 +78,16 @@ interface SectionFeedback {
 // CONSTANTS
 // ============================================================================
 
-const STATUS_CONFIG: Record<FeedbackStatus, {
-  label: string
-  bgColor: string
-  borderColor: string
-  textColor: string
-  icon: typeof CheckCircle | typeof AlertTriangle
-}> = {
+const STATUS_CONFIG: Record<
+  FeedbackStatus,
+  {
+    label: string
+    bgColor: string
+    borderColor: string
+    textColor: string
+    icon: typeof CheckCircle | typeof AlertTriangle
+  }
+> = {
   EXCELLENT: {
     label: 'EXCELLENT',
     bgColor: '#DCFCE7',
@@ -153,7 +156,7 @@ function Step4Skeleton() {
 
           {/* Section Items Skeleton */}
           <div className={styles.skeletonSections}>
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map(i => (
               <div key={i} className={`${styles.skeleton} ${styles.skeletonSectionItem}`}></div>
             ))}
           </div>
@@ -168,7 +171,9 @@ function Step4Skeleton() {
 // ============================================================================
 
 function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes'
+  if (bytes === 0) {
+    return '0 Bytes'
+  }
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -176,15 +181,23 @@ function formatFileSize(bytes: number): string {
 }
 
 function normalizeTag(tag: string): FeedbackStatus {
-  if (!tag) return 'NEEDS_IMPROVEMENT'
+  if (!tag) {
+    return 'NEEDS_IMPROVEMENT'
+  }
   const tagLower = tag.toLowerCase().trim()
-  if (tagLower.includes('excellent')) return 'EXCELLENT'
-  if (tagLower.includes('good')) return 'GOOD'
+  if (tagLower.includes('excellent')) {
+    return 'EXCELLENT'
+  }
+  if (tagLower.includes('good')) {
+    return 'GOOD'
+  }
   return 'NEEDS_IMPROVEMENT'
 }
 
 function mapAnalysisToFeedback(analysis: DraftFeedbackAnalysis): SectionFeedback[] {
-  if (!analysis?.section_feedback) return []
+  if (!analysis?.section_feedback) {
+    return []
+  }
 
   return analysis.section_feedback.map((section, index) => ({
     id: String(index + 1),
@@ -217,7 +230,7 @@ function FileUploadZone({
   onDragEnter,
   onDragLeave,
   onDrop,
-  isUploading
+  isUploading,
 }: FileUploadZoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -237,10 +250,19 @@ function FileUploadZone({
   return (
     <div
       className={`${styles.uploadZone} ${isDragging ? styles.uploadZoneDragging : ''} ${isUploading ? styles.uploadZoneDisabled : ''}`}
-      onDragEnter={(e) => { e.preventDefault(); if (!isUploading) onDragEnter() }}
-      onDragOver={(e) => e.preventDefault()}
+      onDragEnter={e => {
+        e.preventDefault()
+        if (!isUploading) {
+          onDragEnter()
+        }
+      }}
+      onDragOver={e => e.preventDefault()}
       onDragLeave={onDragLeave}
-      onDrop={(e) => { if (!isUploading) onDrop(e) }}
+      onDrop={e => {
+        if (!isUploading) {
+          onDrop(e)
+        }
+      }}
     >
       <input
         ref={fileInputRef}
@@ -258,17 +280,9 @@ function FileUploadZone({
       ) : (
         <>
           <Upload className={styles.uploadIcon} size={48} />
-          <p className={styles.uploadText}>
-            Drop your proposal file here or click to upload
-          </p>
-          <p className={styles.uploadSubtext}>
-            Supports PDF, DOC, DOCX files up to 20MB
-          </p>
-          <button
-            type="button"
-            className={styles.chooseFileButton}
-            onClick={handleClick}
-          >
+          <p className={styles.uploadText}>Drop your proposal file here or click to upload</p>
+          <p className={styles.uploadSubtext}>Supports PDF, DOC, DOCX files up to 20MB</p>
+          <button type="button" className={styles.chooseFileButton} onClick={handleClick}>
             Choose File
           </button>
         </>
@@ -293,7 +307,7 @@ function UploadedFileCard({
   onRemove,
   onUploadNewVersion,
   isDeleting,
-  isAnalyzing
+  isAnalyzing,
 }: UploadedFileCardProps) {
   return (
     <div className={styles.uploadedFileContainer}>
@@ -302,9 +316,7 @@ function UploadedFileCard({
           <FileText className={styles.fileIcon} size={24} />
           <div className={styles.fileDetails}>
             <p className={styles.fileName}>{file.name}</p>
-            {file.size > 0 && (
-              <p className={styles.fileSize}>{formatFileSize(file.size)}</p>
-            )}
+            {file.size > 0 && <p className={styles.fileSize}>{formatFileSize(file.size)}</p>}
           </div>
         </div>
         <button
@@ -313,11 +325,7 @@ function UploadedFileCard({
           onClick={onRemove}
           disabled={isDeleting || isAnalyzing}
         >
-          {isDeleting ? (
-            <Loader2 size={16} className={styles.spinning} />
-          ) : (
-            <X size={16} />
-          )}
+          {isDeleting ? <Loader2 size={16} className={styles.spinning} /> : <X size={16} />}
           {isDeleting ? 'Removing...' : 'Remove'}
         </button>
       </div>
@@ -349,11 +357,7 @@ function SectionFeedbackItem({ section, isExpanded, onToggle }: SectionFeedbackI
 
   return (
     <div className={`${styles.feedbackItem} ${isExpanded ? styles.feedbackItemExpanded : ''}`}>
-      <button
-        type="button"
-        className={styles.feedbackItemHeader}
-        onClick={onToggle}
-      >
+      <button type="button" className={styles.feedbackItemHeader} onClick={onToggle}>
         <div className={styles.feedbackItemLeft}>
           <StatusIcon
             size={20}
@@ -432,7 +436,7 @@ function SummaryStats({ stats }: SummaryStatsProps) {
               ${STATUS_CONFIG.EXCELLENT.textColor} 0deg ${excellentPercent * 3.6}deg,
               ${STATUS_CONFIG.GOOD.textColor} ${excellentPercent * 3.6}deg ${(excellentPercent + goodPercent) * 3.6}deg,
               ${STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor} ${(excellentPercent + goodPercent) * 3.6}deg 360deg
-            )`
+            )`,
           }}
         >
           <div className={styles.scoreInner}>
@@ -446,7 +450,10 @@ function SummaryStats({ stats }: SummaryStatsProps) {
       <div className={styles.statsBreakdown}>
         <div className={styles.statRow}>
           <div className={styles.statLabel}>
-            <div className={styles.statDot} style={{ background: STATUS_CONFIG.EXCELLENT.textColor }} />
+            <div
+              className={styles.statDot}
+              style={{ background: STATUS_CONFIG.EXCELLENT.textColor }}
+            />
             <span>Excellent</span>
           </div>
           <div className={styles.statBar}>
@@ -455,7 +462,10 @@ function SummaryStats({ stats }: SummaryStatsProps) {
               style={{
                 width: `${excellentPercent}%`,
                 background: STATUS_CONFIG.EXCELLENT.bgColor,
-                borderLeft: stats.excellent_count > 0 ? `3px solid ${STATUS_CONFIG.EXCELLENT.textColor}` : 'none'
+                borderLeft:
+                  stats.excellent_count > 0
+                    ? `3px solid ${STATUS_CONFIG.EXCELLENT.textColor}`
+                    : 'none',
               }}
             />
           </div>
@@ -473,7 +483,8 @@ function SummaryStats({ stats }: SummaryStatsProps) {
               style={{
                 width: `${goodPercent}%`,
                 background: STATUS_CONFIG.GOOD.bgColor,
-                borderLeft: stats.good_count > 0 ? `3px solid ${STATUS_CONFIG.GOOD.textColor}` : 'none'
+                borderLeft:
+                  stats.good_count > 0 ? `3px solid ${STATUS_CONFIG.GOOD.textColor}` : 'none',
               }}
             />
           </div>
@@ -482,7 +493,10 @@ function SummaryStats({ stats }: SummaryStatsProps) {
 
         <div className={styles.statRow}>
           <div className={styles.statLabel}>
-            <div className={styles.statDot} style={{ background: STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor }} />
+            <div
+              className={styles.statDot}
+              style={{ background: STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor }}
+            />
             <span>Needs Improvement</span>
           </div>
           <div className={styles.statBar}>
@@ -491,7 +505,10 @@ function SummaryStats({ stats }: SummaryStatsProps) {
               style={{
                 width: `${needsImprovementPercent}%`,
                 background: STATUS_CONFIG.NEEDS_IMPROVEMENT.bgColor,
-                borderLeft: stats.needs_improvement_count > 0 ? `3px solid ${STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor}` : 'none'
+                borderLeft:
+                  stats.needs_improvement_count > 0
+                    ? `3px solid ${STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor}`
+                    : 'none',
               }}
             />
           </div>
@@ -520,11 +537,29 @@ function OverallAssessmentCard({ assessment }: OverallAssessmentCardProps) {
 
   // Normalize overall tag for styling
   const getTagStyle = () => {
-    if (!overall_tag) return { bg: '#F3F4F6', text: '#6B7280', border: '#E5E7EB' }
+    if (!overall_tag) {
+      return { bg: '#F3F4F6', text: '#6B7280', border: '#E5E7EB' }
+    }
     const tagLower = overall_tag.toLowerCase()
-    if (tagLower.includes('excellent')) return { bg: STATUS_CONFIG.EXCELLENT.bgColor, text: STATUS_CONFIG.EXCELLENT.textColor, border: STATUS_CONFIG.EXCELLENT.borderColor }
-    if (tagLower.includes('good')) return { bg: STATUS_CONFIG.GOOD.bgColor, text: STATUS_CONFIG.GOOD.textColor, border: STATUS_CONFIG.GOOD.borderColor }
-    return { bg: STATUS_CONFIG.NEEDS_IMPROVEMENT.bgColor, text: STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor, border: STATUS_CONFIG.NEEDS_IMPROVEMENT.borderColor }
+    if (tagLower.includes('excellent')) {
+      return {
+        bg: STATUS_CONFIG.EXCELLENT.bgColor,
+        text: STATUS_CONFIG.EXCELLENT.textColor,
+        border: STATUS_CONFIG.EXCELLENT.borderColor,
+      }
+    }
+    if (tagLower.includes('good')) {
+      return {
+        bg: STATUS_CONFIG.GOOD.bgColor,
+        text: STATUS_CONFIG.GOOD.textColor,
+        border: STATUS_CONFIG.GOOD.borderColor,
+      }
+    }
+    return {
+      bg: STATUS_CONFIG.NEEDS_IMPROVEMENT.bgColor,
+      text: STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor,
+      border: STATUS_CONFIG.NEEDS_IMPROVEMENT.borderColor,
+    }
   }
 
   const tagStyle = getTagStyle()
@@ -547,7 +582,7 @@ function OverallAssessmentCard({ assessment }: OverallAssessmentCardProps) {
             style={{
               backgroundColor: tagStyle.bg,
               color: tagStyle.text,
-              borderColor: tagStyle.border
+              borderColor: tagStyle.border,
             }}
           >
             {overall_tag}
@@ -633,17 +668,12 @@ export function Step4ProposalReview({
   uploadedDraftFiles = [],
   draftFeedbackAnalysis,
   onFeedbackAnalyzed,
-  onFilesChanged
+  onFilesChanged,
 }: Step4Props) {
   // Toast notifications
   const { showSuccess, showError, showWarning } = useToast()
 
-  // Show skeleton while loading
-  if (isLoading) {
-    return <Step4Skeleton />
-  }
-
-  // State
+  // State - ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [expandedSections, setExpandedSections] = useState<string[]>(['1'])
@@ -660,11 +690,12 @@ export function Step4ProposalReview({
   } | null>(null)
 
   // Custom steps for draft feedback analysis
-  const DRAFT_FEEDBACK_STEPS = [
-    'Step 1: Extracting document content',
-    'Step 2: Analyzing proposal sections'
-  ]
-  const DRAFT_FEEDBACK_DESCRIPTION = 'Our AI is analyzing your draft proposal against RFP requirements to provide section-by-section feedback. This may take 2-3 minutes.'
+  const DRAFT_FEEDBACK_STEPS = useMemo(
+    () => ['Step 1: Extracting document content', 'Step 2: Analyzing proposal sections'],
+    []
+  )
+  const DRAFT_FEEDBACK_DESCRIPTION =
+    'Our AI is analyzing your draft proposal against RFP requirements to provide section-by-section feedback. This may take 2-3 minutes.'
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
@@ -697,14 +728,15 @@ export function Step4ProposalReview({
 
   // Poll for analysis completion
   const pollAnalysisStatus = useCallback(async () => {
-    if (!proposalId) return
+    if (!proposalId) {
+      return
+    }
 
     try {
       const status = await proposalService.getDraftFeedbackStatus(proposalId)
 
       // Update progress
       const elapsedTime = Date.now() - pollingStartTimeRef.current
-      const progressPercent = Math.min((elapsedTime / MAX_POLLING_TIME) * 100, 95)
 
       setAnalysisProgress({
         step: 2,
@@ -726,8 +758,9 @@ export function Step4ProposalReview({
 
         // Extract and set feedback data
         // Handle both nested (draft_feedback_analysis) and direct (section_feedback) structures
-        const analysis = status.data?.draft_feedback_analysis ||
-                        (status.data?.section_feedback ? status.data : null)
+        const analysis =
+          status.data?.draft_feedback_analysis ||
+          (status.data?.section_feedback ? status.data : null)
         if (analysis) {
           setFeedbackData(mapAnalysisToFeedback(analysis))
           onFeedbackAnalyzed?.(analysis)
@@ -756,9 +789,16 @@ export function Step4ProposalReview({
         showError('Timeout', 'Analysis timed out. Please try again.')
       }
     } catch (error) {
-      console.error('Error polling analysis status:', error)
+      // Removed console.error
     }
-  }, [proposalId, onFeedbackAnalyzed])
+  }, [
+    proposalId,
+    onFeedbackAnalyzed,
+    showSuccess,
+    showError,
+    DRAFT_FEEDBACK_DESCRIPTION,
+    DRAFT_FEEDBACK_STEPS,
+  ])
 
   // Start analysis
   const startAnalysis = useCallback(async () => {
@@ -794,80 +834,101 @@ export function Step4ProposalReview({
         // Fetch the completed data
         const status = await proposalService.getDraftFeedbackStatus(proposalId)
         // Handle both nested (draft_feedback_analysis) and direct (section_feedback) structures
-        const analysis = status.data?.draft_feedback_analysis ||
-                        (status.data?.section_feedback ? status.data : null)
+        const analysis =
+          status.data?.draft_feedback_analysis ||
+          (status.data?.section_feedback ? status.data : null)
         if (analysis) {
           setFeedbackData(mapAnalysisToFeedback(analysis))
           onFeedbackAnalyzed?.(analysis)
         }
         showSuccess('Analysis Complete', 'Draft feedback analysis completed!')
       }
-    } catch (error: any) {
-      console.error('Error starting analysis:', error)
+    } catch (error: unknown) {
+      // Removed console.error
       setIsAnalyzing(false)
       setAnalysisProgress(null)
       showError('Analysis Failed', error.response?.data?.message || 'Failed to start analysis')
     }
-  }, [proposalId, pollAnalysisStatus, onFeedbackAnalyzed])
+  }, [
+    proposalId,
+    pollAnalysisStatus,
+    onFeedbackAnalyzed,
+    showError,
+    showSuccess,
+    DRAFT_FEEDBACK_STEPS,
+  ])
 
   // Handle file upload
-  const handleFileSelect = useCallback(async (file: File) => {
-    if (!proposalId) {
-      showError('Error', 'No proposal ID available')
-      return
-    }
-
-    // Validate file type
-    const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-    if (!validTypes.includes(file.type)) {
-      showError('Invalid File', 'Invalid file type. Please upload PDF, DOC, or DOCX files.')
-      return
-    }
-
-    // Validate file size (20MB)
-    if (file.size > 20 * 1024 * 1024) {
-      showError('File Too Large', 'File too large. Maximum size is 20MB.')
-      return
-    }
-
-    try {
-      setIsUploading(true)
-
-      const result = await proposalService.uploadDraftProposal(proposalId, file)
-
-      if (result.success) {
-        setUploadedFile({
-          name: result.filename,
-          size: result.size,
-          file: file,
-        })
-
-        onFilesChanged?.([result.filename])
-        showSuccess('Upload Complete', 'Draft uploaded successfully!')
-
-        // Automatically start analysis after upload
-        setTimeout(() => startAnalysis(), 500)
+  const handleFileSelect = useCallback(
+    async (file: File) => {
+      if (!proposalId) {
+        showError('Error', 'No proposal ID available')
+        return
       }
-    } catch (error: any) {
-      console.error('Error uploading file:', error)
-      showError('Upload Failed', error.response?.data?.message || 'Failed to upload file')
-    } finally {
-      setIsUploading(false)
-    }
-  }, [proposalId, startAnalysis, onFilesChanged])
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
+      // Validate file type
+      const validTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ]
+      if (!validTypes.includes(file.type)) {
+        showError('Invalid File', 'Invalid file type. Please upload PDF, DOC, or DOCX files.')
+        return
+      }
 
-    const file = e.dataTransfer.files?.[0]
-    if (file) {
-      handleFileSelect(file)
-    }
-  }, [handleFileSelect])
+      // Validate file size (20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        showError('File Too Large', 'File too large. Maximum size is 20MB.')
+        return
+      }
+
+      try {
+        setIsUploading(true)
+
+        const result = await proposalService.uploadDraftProposal(proposalId, file)
+
+        if (result.success) {
+          setUploadedFile({
+            name: result.filename,
+            size: result.size,
+            file: file,
+          })
+
+          onFilesChanged?.([result.filename])
+          showSuccess('Upload Complete', 'Draft uploaded successfully!')
+
+          // Automatically start analysis after upload
+          setTimeout(() => startAnalysis(), 500)
+        }
+      } catch (error: unknown) {
+        // Removed console.error
+        const err = error as { response?: { data?: { message?: string } } }
+        showError('Upload Failed', err.response?.data?.message || 'Failed to upload file')
+      } finally {
+        setIsUploading(false)
+      }
+    },
+    [proposalId, startAnalysis, onFilesChanged, showError, showSuccess]
+  )
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      setIsDragging(false)
+
+      const file = e.dataTransfer.files?.[0]
+      if (file) {
+        handleFileSelect(file)
+      }
+    },
+    [handleFileSelect]
+  )
 
   const handleRemoveFile = useCallback(async () => {
-    if (!proposalId || !uploadedFile) return
+    if (!proposalId || !uploadedFile) {
+      return
+    }
 
     try {
       setIsDeleting(true)
@@ -878,30 +939,32 @@ export function Step4ProposalReview({
       setFeedbackData([])
       onFilesChanged?.([])
       showSuccess('File Removed', 'Draft removed successfully')
-    } catch (error: any) {
-      console.error('Error removing file:', error)
-      showError('Delete Failed', error.response?.data?.message || 'Failed to remove file')
+    } catch (error: unknown) {
+      // Removed console.error
+      const err = error as { response?: { data?: { message?: string } } }
+      showError('Delete Failed', err.response?.data?.message || 'Failed to remove file')
     } finally {
       setIsDeleting(false)
     }
-  }, [proposalId, uploadedFile, onFilesChanged])
+  }, [proposalId, uploadedFile, onFilesChanged, showSuccess, showError])
 
   const handleUploadNewVersion = useCallback(() => {
     fileInputRef.current?.click()
   }, [])
 
-  const handleNewVersionSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      handleFileSelect(file)
-    }
-  }, [handleFileSelect])
+  const handleNewVersionSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) {
+        handleFileSelect(file)
+      }
+    },
+    [handleFileSelect]
+  )
 
   const toggleSection = useCallback((sectionId: string) => {
     setExpandedSections(prev =>
-      prev.includes(sectionId)
-        ? prev.filter(id => id !== sectionId)
-        : [...prev, sectionId]
+      prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId]
     )
   }, [])
 
@@ -921,7 +984,8 @@ export function Step4ProposalReview({
         step: 1,
         total: 2,
         message: 'Re-analyzing Your Draft Proposal',
-        description: 'Running a fresh AI analysis on your draft proposal. This will generate new feedback based on the current document.',
+        description:
+          'Running a fresh AI analysis on your draft proposal. This will generate new feedback based on the current document.',
         steps: DRAFT_FEEDBACK_STEPS,
       })
 
@@ -941,34 +1005,44 @@ export function Step4ProposalReview({
 
         // Fetch the new data
         const status = await proposalService.getDraftFeedbackStatus(proposalId)
-        const analysis = status.data?.draft_feedback_analysis ||
-                        (status.data?.section_feedback ? status.data : null)
+        const analysis =
+          status.data?.draft_feedback_analysis ||
+          (status.data?.section_feedback ? status.data : null)
         if (analysis) {
           setFeedbackData(mapAnalysisToFeedback(analysis))
           onFeedbackAnalyzed?.(analysis)
         }
         showSuccess('Re-analysis Complete', 'Fresh feedback has been generated!')
       }
-    } catch (error: any) {
-      console.error('Error re-analyzing:', error)
+    } catch (error: unknown) {
+      // Removed console.error
       setIsAnalyzing(false)
       setAnalysisProgress(null)
       showError('Re-analysis Failed', error.response?.data?.message || 'Failed to re-analyze')
     }
-  }, [proposalId, pollAnalysisStatus, onFeedbackAnalyzed])
+  }, [
+    proposalId,
+    pollAnalysisStatus,
+    onFeedbackAnalyzed,
+    showError,
+    showSuccess,
+    DRAFT_FEEDBACK_STEPS,
+  ])
 
   const handleDownloadWithFeedback = useCallback(() => {
     // TODO: Implement download with AI feedback
     showWarning('Coming Soon', 'Download with AI feedback - Coming soon!')
-  }, [])
+  }, [showWarning])
+
+  // Show skeleton while loading - AFTER all hooks
+  if (isLoading) {
+    return <Step4Skeleton />
+  }
 
   return (
     <div className={styles.mainContent}>
       {/* Analysis Progress Modal */}
-      <AnalysisProgressModal
-        isOpen={isAnalyzing}
-        progress={analysisProgress}
-      />
+      <AnalysisProgressModal isOpen={isAnalyzing} progress={analysisProgress} />
 
       {/* Hidden input for new version upload */}
       <input
@@ -981,9 +1055,7 @@ export function Step4ProposalReview({
 
       {/* Page Header */}
       <div className={styles.stepHeader}>
-        <h1 className={styles.stepMainTitle}>
-          Step 4: Proposal Review
-        </h1>
+        <h1 className={styles.stepMainTitle}>Step 4: Proposal Review</h1>
         <p className={styles.stepMainDescription}>
           Upload your draft for AI feedback, download with edits, and iterate until ready
         </p>
@@ -995,7 +1067,8 @@ export function Step4ProposalReview({
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>Upload Your Draft Proposal</h2>
             <p className={styles.cardSubtitle}>
-              In case you made adjustments to the downloaded Concept Document, please upload the new version here to take it into consideration.
+              In case you made adjustments to the downloaded Concept Document, please upload the new
+              version here to take it into consideration.
             </p>
           </div>
 
@@ -1113,7 +1186,6 @@ export function Step4ProposalReview({
             )}
           </div>
         )}
-
       </div>
     </div>
   )

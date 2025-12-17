@@ -39,7 +39,7 @@ export function DraftConfirmationModal({
 
         {/* Description */}
         <p className={styles.description}>
-          You're about to leave the Proposal Writer. What would you like to do with your draft{' '}
+          You&apos;re about to leave the Proposal Writer. What would you like to do with your draft{' '}
           {proposalCode && <span className={styles.proposalCode}>{proposalCode}</span>}?
         </p>
 
@@ -67,25 +67,13 @@ export function DraftConfirmationModal({
 
         {/* Actions */}
         <div className={styles.actions}>
-          <button
-            className={styles.buttonDanger}
-            onClick={onDeleteDraft}
-            disabled={isDisabled}
-          >
+          <button className={styles.buttonDanger} onClick={onDeleteDraft} disabled={isDisabled}>
             {isDeleting ? 'Deleting...' : 'Delete Draft'}
           </button>
-          <button
-            className={styles.buttonSecondary}
-            onClick={onKeepDraft}
-            disabled={isDisabled}
-          >
+          <button className={styles.buttonSecondary} onClick={onKeepDraft} disabled={isDisabled}>
             Keep Draft & Continue
           </button>
-          <button
-            className={styles.buttonPrimary}
-            onClick={onSaveAndClose}
-            disabled={isDisabled}
-          >
+          <button className={styles.buttonPrimary} onClick={onSaveAndClose} disabled={isDisabled}>
             {isSaving ? 'Saving...' : 'Save and Close'}
           </button>
         </div>

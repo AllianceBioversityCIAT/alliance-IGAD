@@ -1,12 +1,13 @@
 """AWS session utility for handling different environments."""
 import os
+
 import boto3
 
 
 def get_aws_session(region_name: str = "us-east-1") -> boto3.Session:
     """
     Get AWS session with appropriate credentials based on environment.
-    
+
     In Lambda, uses default credentials (IAM role).
     In local development, uses IBD-DEV profile.
     """
@@ -23,4 +24,6 @@ def get_aws_session(region_name: str = "us-east-1") -> boto3.Session:
     else:
         # Running locally - use profile
         return boto3.Session(profile_name="IBD-DEV", region_name=region_name)
+
+
 # Force update Tue Nov 11 16:34:33 -05 2025

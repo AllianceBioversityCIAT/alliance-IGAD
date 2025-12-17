@@ -42,8 +42,9 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserMo
       } else {
         setError('Failed to create user')
       }
-    } catch (error: any) {
-      setError(error.response?.data?.detail || 'Failed to create user')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      setError(err.response?.data?.detail || 'Failed to create user')
     } finally {
       setIsLoading(false)
     }

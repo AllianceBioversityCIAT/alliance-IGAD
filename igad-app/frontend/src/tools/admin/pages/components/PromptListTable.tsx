@@ -188,7 +188,7 @@ export function PromptListTable({
           </tr>
         </thead>
         <tbody className={styles.tableBody}>
-          {prompts.map((prompt, index) => (
+          {prompts.map((prompt, _index) => (
             <tr key={`${prompt.id}-${prompt.version}`} className={styles.tableRow}>
               <td className={styles.tableCell}>
                 <div className={styles.nameCell}>

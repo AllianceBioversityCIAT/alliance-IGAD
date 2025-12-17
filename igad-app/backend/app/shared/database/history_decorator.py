@@ -10,7 +10,6 @@ Usage:
 """
 
 import functools
-import inspect
 from typing import Any, Callable, Dict, Optional
 
 from app.shared.database.history_service import history_service
@@ -127,7 +126,9 @@ def track_history(
     return decorator
 
 
-def _get_current_state(resource_type: str, resource_id: str) -> Optional[Dict[str, Any]]:
+def _get_current_state(
+    resource_type: str, resource_id: str
+) -> Optional[Dict[str, Any]]:
     """
     Get current state of a resource from DynamoDB.
     This is a helper function that needs to be customized per resource type.

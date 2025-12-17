@@ -15,7 +15,7 @@ import json
 import os
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import boto3
 from boto3.dynamodb.conditions import Attr
@@ -86,13 +86,13 @@ class ReferenceProposalsAnalyzer:
             print(f"📋 Using proposal_code: {proposal_code}")
 
             # Step 2: Get semantic query from RFP analysis
-            rfp_analysis = proposal.get('rfp_analysis', {})
+            rfp_analysis = proposal.get("rfp_analysis", {})
 
             # Handle both flat and nested structure for semantic_query
             # The RFP analysis might be stored as:
             # 1. Flat: { "semantic_query": "...", ... }
             # 2. Nested: { "data": { "rfp_analysis": { "semantic_query": "..." } } }
-            semantic_query = rfp_analysis.get('semantic_query')
+            semantic_query = rfp_analysis.get("semantic_query")
 
             if not semantic_query and "data" in rfp_analysis:
                 # Try nested structure: rfp_analysis.data.rfp_analysis.semantic_query
@@ -100,18 +100,26 @@ class ReferenceProposalsAnalyzer:
                 nested_rfp = data.get("rfp_analysis", {})
                 semantic_query = nested_rfp.get("semantic_query")
                 if semantic_query:
-                    print(f"ℹ️  Found semantic_query in nested structure (data.rfp_analysis.semantic_query)")
+                    print(
+                        f"ℹ️  Found semantic_query in nested structure (data.rfp_analysis.semantic_query)"
+                    )
 
             if not semantic_query:
                 # Log the structure for debugging
-                print(f"❌ No semantic_query found in RFP analysis for proposal {proposal_id}")
+                print(
+                    f"❌ No semantic_query found in RFP analysis for proposal {proposal_id}"
+                )
                 print(f"   Available keys in rfp_analysis: {list(rfp_analysis.keys())}")
                 if "data" in rfp_analysis:
                     data_keys = list(rfp_analysis.get("data", {}).keys())
                     print(f"   Available keys in rfp_analysis.data: {data_keys}")
                     if "rfp_analysis" in rfp_analysis.get("data", {}):
-                        nested_keys = list(rfp_analysis.get("data", {}).get("rfp_analysis", {}).keys())
-                        print(f"   Available keys in nested rfp_analysis: {nested_keys}")
+                        nested_keys = list(
+                            rfp_analysis.get("data", {}).get("rfp_analysis", {}).keys()
+                        )
+                        print(
+                            f"   Available keys in nested rfp_analysis: {nested_keys}"
+                        )
                 raise Exception(
                     "RFP analysis not completed or semantic_query missing. "
                     "Please run RFP analysis first before searching reference proposals."
@@ -128,7 +136,7 @@ class ReferenceProposalsAnalyzer:
             documents = self.vector_service.get_documents_by_proposal(
                 proposal_id=proposal_code,
                 index_name="reference-proposals-index",
-                max_docs=max_docs
+                max_docs=max_docs,
             )
 
             if not documents:
@@ -138,8 +146,8 @@ class ReferenceProposalsAnalyzer:
                         "narrative_analysis": "No reference proposals were uploaded for this analysis.",
                         "structured_data": {
                             "status": "skipped",
-                            "reason": "No reference documents uploaded"
-                        }
+                            "reason": "No reference documents uploaded",
+                        },
                     },
                     "documents_analyzed": 0,
                     "status": "completed",
@@ -151,7 +159,9 @@ class ReferenceProposalsAnalyzer:
             max_chars = REFERENCE_PROPOSALS_ANALYSIS_SETTINGS["max_chars_per_document"]
             for doc in documents:
                 if len(doc["full_text"]) > max_chars:
-                    print(f"  ✂️  Truncating {doc['document_name']} from {len(doc['full_text'])} to {max_chars} chars")
+                    print(
+                        f"  ✂️  Truncating {doc['document_name']} from {len(doc['full_text'])} to {max_chars} chars"
+                    )
                     doc["full_text"] = (
                         doc["full_text"][:max_chars]
                         + "\n\n[... Document truncated for analysis ...]"
@@ -167,16 +177,17 @@ class ReferenceProposalsAnalyzer:
             start_time = time.time()
 
             for idx, doc in enumerate(documents, 1):
-                print(f"  📄 Analyzing document {idx}/{len(documents)}: {doc['document_name']}")
+                print(
+                    f"  📄 Analyzing document {idx}/{len(documents)}: {doc['document_name']}"
+                )
                 analysis = self._analyze_single_document(
                     document_text=doc["full_text"],
                     document_name=doc["document_name"],
                     prompt_template=prompt_template,
                 )
-                individual_analyses.append({
-                    "document_name": doc["document_name"],
-                    "analysis": analysis
-                })
+                individual_analyses.append(
+                    {"document_name": doc["document_name"], "analysis": analysis}
+                )
 
             elapsed = time.time() - start_time
             print(f"⏱️  Total analysis time: {elapsed:.2f} seconds")
@@ -309,9 +320,7 @@ class ReferenceProposalsAnalyzer:
             # The prompt asks for narrative + JSON, so we need to separate them
 
             # Look for JSON block
-            json_match = re.search(
-                r"```json\s*(\{.*?\})\s*```", response, re.DOTALL
-            )
+            json_match = re.search(r"```json\s*(\{.*?\})\s*```", response, re.DOTALL)
             if json_match:
                 json_str = json_match.group(1)
                 structured_data = json.loads(json_str)
@@ -366,7 +375,9 @@ class ReferenceProposalsAnalyzer:
             return individual_analyses[0]["analysis"]
 
         # Multiple documents: consolidate insights
-        consolidated_narrative = "# Consolidated Analysis from Multiple Reference Proposals\n\n"
+        consolidated_narrative = (
+            "# Consolidated Analysis from Multiple Reference Proposals\n\n"
+        )
         consolidated_narrative += f"Analyzed {len(individual_analyses)} reference proposals to extract common patterns and best practices.\n\n"
 
         # Collect all structured data

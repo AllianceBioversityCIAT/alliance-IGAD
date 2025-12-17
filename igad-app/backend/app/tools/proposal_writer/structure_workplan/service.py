@@ -10,12 +10,16 @@ import json
 import logging
 import os
 import time
+from typing import Any, Dict, Optional
+
 import boto3
-from typing import Dict, Any, Optional
 from boto3.dynamodb.conditions import Attr
-from app.shared.ai.bedrock_service import BedrockService
+
 from app.database.client import db_client
-from app.tools.proposal_writer.structure_workplan.config import STRUCTURE_WORKPLAN_SETTINGS
+from app.shared.ai.bedrock_service import BedrockService
+from app.tools.proposal_writer.structure_workplan.config import (
+    STRUCTURE_WORKPLAN_SETTINGS,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -78,28 +82,32 @@ class StructureWorkplanService:
             logger.info(f"📋 Using proposal_code: {proposal_code}")
 
             # Step 2: Get RFP analysis
-            rfp_analysis = proposal.get('rfp_analysis', {})
+            rfp_analysis = proposal.get("rfp_analysis", {})
             if not rfp_analysis:
                 raise Exception("RFP analysis not found. Please complete Step 1 first.")
 
             # Step 3: Get concept document v2 (try both keys)
-            concept_document_v2 = proposal.get('concept_document_v2')
+            concept_document_v2 = proposal.get("concept_document_v2")
             if not concept_document_v2:
                 # Fallback to concept_analysis
-                concept_document_v2 = proposal.get('concept_analysis')
+                concept_document_v2 = proposal.get("concept_analysis")
 
             if not concept_document_v2:
-                raise Exception("Concept document not found. Please complete Step 2 first.")
+                raise Exception(
+                    "Concept document not found. Please complete Step 2 first."
+                )
 
             # Step 4: Get reference proposals analysis (optional but recommended)
-            reference_proposals_analysis = proposal.get('reference_proposals_analysis', {})
+            reference_proposals_analysis = proposal.get(
+                "reference_proposals_analysis", {}
+            )
             if reference_proposals_analysis:
                 logger.info(f"✅ Found reference proposals analysis")
             else:
                 logger.warning(f"⚠️  No reference proposals analysis found (optional)")
 
             # Step 5: Get existing work analysis (optional but recommended)
-            existing_work_analysis = proposal.get('existing_work_analysis', {})
+            existing_work_analysis = proposal.get("existing_work_analysis", {})
             if existing_work_analysis:
                 logger.info(f"✅ Found existing work analysis")
             else:
@@ -116,7 +124,9 @@ class StructureWorkplanService:
                     Attr("is_active").eq(True)
                     & Attr("section").eq(STRUCTURE_WORKPLAN_SETTINGS["section"])
                     & Attr("sub_section").eq(STRUCTURE_WORKPLAN_SETTINGS["sub_section"])
-                    & Attr("categories").contains(STRUCTURE_WORKPLAN_SETTINGS["category"])
+                    & Attr("categories").contains(
+                        STRUCTURE_WORKPLAN_SETTINGS["category"]
+                    )
                 )
             )
 
@@ -137,7 +147,7 @@ class StructureWorkplanService:
                 rfp_analysis=rfp_analysis,
                 concept_document_v2=concept_document_v2,
                 reference_proposals_analysis=reference_proposals_analysis,
-                existing_work_analysis=existing_work_analysis
+                existing_work_analysis=existing_work_analysis,
             )
 
             logger.info(f"🤖 Sending to Bedrock...")
@@ -153,7 +163,7 @@ class StructureWorkplanService:
                 user_prompt=user_prompt,
                 model_id=STRUCTURE_WORKPLAN_SETTINGS["model"],
                 max_tokens=STRUCTURE_WORKPLAN_SETTINGS["max_tokens"],
-                temperature=STRUCTURE_WORKPLAN_SETTINGS["temperature"]
+                temperature=STRUCTURE_WORKPLAN_SETTINGS["temperature"],
             )
 
             elapsed_time = time.time() - start_time
@@ -171,8 +181,12 @@ class StructureWorkplanService:
             json_end = analysis_text.rfind("}") + 1
 
             if json_start == -1 or json_end == 0:
-                logger.error(f"❌ No JSON found. Full response length: {len(analysis_text)}")
-                logger.error(f"📄 Full response: {analysis_text[:1000]}")  # First 1000 chars
+                logger.error(
+                    f"❌ No JSON found. Full response length: {len(analysis_text)}"
+                )
+                logger.error(
+                    f"📄 Full response: {analysis_text[:1000]}"
+                )  # First 1000 chars
                 raise Exception("No JSON found in Bedrock response")
 
             analysis_json = json.loads(analysis_text[json_start:json_end])
@@ -183,9 +197,9 @@ class StructureWorkplanService:
             result = {
                 "structure_workplan_analysis": {
                     "narrative_overview": narrative_overview,
-                    **analysis_json
+                    **analysis_json,
                 },
-                "status": "completed"
+                "status": "completed",
             }
 
             # Step 10: Save to DynamoDB
@@ -196,7 +210,7 @@ class StructureWorkplanService:
                     pk=f"PROPOSAL#{proposal_code}",
                     sk="METADATA",
                     update_expression="SET structure_workplan_analysis = :analysis",
-                    expression_attribute_values={":analysis": result}
+                    expression_attribute_values={":analysis": result},
                 )
                 logger.info(f"✅ Structure workplan analysis saved successfully")
             except Exception as db_error:
@@ -212,6 +226,7 @@ class StructureWorkplanService:
         except Exception as e:
             logger.error(f"❌ Error in structure workplan analysis: {e}")
             import traceback
+
             traceback.print_exc()
             raise
 
@@ -224,7 +239,7 @@ class StructureWorkplanService:
         rfp_analysis: Dict[str, Any],
         concept_document_v2: Dict[str, Any],
         reference_proposals_analysis: Optional[Dict[str, Any]] = None,
-        existing_work_analysis: Optional[Dict[str, Any]] = None
+        existing_work_analysis: Optional[Dict[str, Any]] = None,
     ) -> str:
         """
         Build complete user prompt with all analyses injected.
@@ -253,34 +268,54 @@ class StructureWorkplanService:
 
         # Unwrap nested structures
         unwrapped_rfp = self._unwrap_analysis(rfp_analysis, "rfp_analysis")
-        unwrapped_concept = self._unwrap_analysis(concept_document_v2, "concept_document_v2")
-        unwrapped_ref_proposals = self._unwrap_analysis(reference_proposals_analysis, "reference_proposals_analysis")
-        unwrapped_existing_work = self._unwrap_analysis(existing_work_analysis, "existing_work_analysis")
+        unwrapped_concept = self._unwrap_analysis(
+            concept_document_v2, "concept_document_v2"
+        )
+        unwrapped_ref_proposals = self._unwrap_analysis(
+            reference_proposals_analysis, "reference_proposals_analysis"
+        )
+        unwrapped_existing_work = self._unwrap_analysis(
+            existing_work_analysis, "existing_work_analysis"
+        )
 
         # Prepare JSON strings for injection
         rfp_json = json.dumps(unwrapped_rfp, indent=2)
         concept_json = json.dumps(unwrapped_concept, indent=2)
-        ref_proposals_json = json.dumps(unwrapped_ref_proposals, indent=2) if unwrapped_ref_proposals else "{}"
-        existing_work_json = json.dumps(unwrapped_existing_work, indent=2) if unwrapped_existing_work else "{}"
+        ref_proposals_json = (
+            json.dumps(unwrapped_ref_proposals, indent=2)
+            if unwrapped_ref_proposals
+            else "{}"
+        )
+        existing_work_json = (
+            json.dumps(unwrapped_existing_work, indent=2)
+            if unwrapped_existing_work
+            else "{}"
+        )
 
         # Inject all placeholders
         user_prompt = complete_template.replace("{{rfp_analysis}}", rfp_json)
         user_prompt = user_prompt.replace("{{concept_document_v2}}", concept_json)
-        user_prompt = user_prompt.replace("{{reference_proposals_analysis}}", ref_proposals_json)
-        user_prompt = user_prompt.replace("{{existing_work_analysis}}", existing_work_json)
+        user_prompt = user_prompt.replace(
+            "{{reference_proposals_analysis}}", ref_proposals_json
+        )
+        user_prompt = user_prompt.replace(
+            "{{existing_work_analysis}}", existing_work_json
+        )
 
         logger.info(f"📝 Built user prompt: {len(user_prompt)} characters")
         logger.info(f"   - RFP analysis: ✅ ({len(rfp_json)} chars)")
         logger.info(f"   - Concept document: ✅ ({len(concept_json)} chars)")
-        logger.info(f"   - Reference proposals: {'✅' if unwrapped_ref_proposals else '⚠️  (empty)'}")
-        logger.info(f"   - Existing work: {'✅' if unwrapped_existing_work else '⚠️  (empty)'}")
+        logger.info(
+            f"   - Reference proposals: {'✅' if unwrapped_ref_proposals else '⚠️  (empty)'}"
+        )
+        logger.info(
+            f"   - Existing work: {'✅' if unwrapped_existing_work else '⚠️  (empty)'}"
+        )
 
         return user_prompt
 
     def _unwrap_analysis(
-        self,
-        analysis: Optional[Dict[str, Any]],
-        key: str
+        self, analysis: Optional[Dict[str, Any]], key: str
     ) -> Dict[str, Any]:
         """
         Unwrap nested analysis structure.

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import uuid
 from datetime import datetime
+
 import boto3
+
 
 def create_first_prompt():
     dynamodb = boto3.resource("dynamodb")

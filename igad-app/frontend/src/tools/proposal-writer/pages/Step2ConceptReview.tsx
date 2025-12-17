@@ -5,7 +5,22 @@
 import { useState, useEffect, useCallback } from 'react'
 
 // External Libraries - Icons
-import { Target, CheckCircle, Check, ChevronDown, ChevronUp, Info, X, Sparkles, Award, FileText, Download, Lightbulb, Edit3, RefreshCw } from 'lucide-react'
+import {
+  Target,
+  CheckCircle,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  X,
+  Sparkles,
+  Award,
+  FileText,
+  Download,
+  Lightbulb,
+  Edit3,
+  RefreshCw,
+} from 'lucide-react'
 
 // Document generation
 import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType } from 'docx'
@@ -20,7 +35,7 @@ import {
   ConceptReuploadModal,
   ReuploadProgressModal,
   ReuploadProgress,
-  RegenerateConfirmationModal
+  RegenerateConfirmationModal,
 } from '../components/ReuploadModals'
 
 // Services
@@ -38,13 +53,15 @@ interface Step2Props extends StepProps {
   /** AI-generated concept analysis (may be nested due to backend structure) */
   conceptAnalysis?: ConceptAnalysis | { concept_analysis: ConceptAnalysis }
   /** Generated concept document (can have various formats) */
-  conceptDocument?: any | null
+  conceptDocument?: import('../types/analysis').ConceptDocument | null
   /** Unique proposal identifier */
   proposalId?: string
   /** Callback when concept analysis changes (after regeneration) */
   onConceptAnalysisChanged?: (newAnalysis: ConceptAnalysis) => void
   /** Callback when concept document changes (after generation) */
-  onConceptDocumentChanged?: (newDocument: any | null) => void
+  onConceptDocumentChanged?: (
+    newDocument: import('../types/analysis').ConceptDocument | null
+  ) => void
   /** Callback when concept evaluation changes (sections selected, comments) */
   onConceptEvaluationChange?: (data: {
     selectedSections: string[]
@@ -203,7 +220,10 @@ function useUnwrappedConceptAnalysis(
  */
 function useSelectedSections(
   conceptAnalysis: ConceptAnalysis | undefined,
-  conceptEvaluationData?: { selectedSections: string[]; userComments?: { [key: string]: string } } | null,
+  conceptEvaluationData?: {
+    selectedSections: string[]
+    userComments?: { [key: string]: string }
+  } | null,
   onConceptEvaluationChange?: (data: {
     selectedSections: string[]
     userComments?: { [key: string]: string }
@@ -213,13 +233,14 @@ function useSelectedSections(
   // Initialize selected sections from saved data OR default to Critical priority sections
   const [selectedSections, setSelectedSections] = useState<string[]>(() => {
     // Get valid section names from current concept analysis
-    const validSectionNames = conceptAnalysis?.sections_needing_elaboration?.map(s => s.section) || []
+    const validSectionNames =
+      conceptAnalysis?.sections_needing_elaboration?.map(s => s.section) || []
 
     // Priority 1: Load from saved evaluation data (when returning to this step)
     // But filter to only include sections that still exist in current analysis
     if (conceptEvaluationData?.selectedSections) {
-      const filteredSelections = conceptEvaluationData.selectedSections.filter(
-        sectionName => validSectionNames.includes(sectionName)
+      const filteredSelections = conceptEvaluationData.selectedSections.filter(sectionName =>
+        validSectionNames.includes(sectionName)
       )
       // If we have valid selections after filtering, use them
       if (filteredSelections.length > 0) {
@@ -249,7 +270,7 @@ function useSelectedSections(
       const filtered = prev.filter(sectionName => validSectionNames.includes(sectionName))
       // Only update if something was actually filtered out
       if (filtered.length !== prev.length) {
-        console.log(`🔄 Filtered selectedSections: ${prev.length} -> ${filtered.length}`)
+        // Removed console.log`🔄 Filtered selectedSections: ${prev.length} -> ${filtered.length}`)
         return filtered
       }
       return prev
@@ -496,7 +517,7 @@ function SectionItem({
                 className={styles.commentTextarea}
                 placeholder="Add specific guidance, data points, or requirements for this section..."
                 value={userComment || ''}
-                onChange={(e) => onCommentChange(e.target.value)}
+                onChange={e => onCommentChange(e.target.value)}
               />
             </div>
           </div>
@@ -526,8 +547,8 @@ function RegenerationInfoBanner() {
         <div className={styles.bannerText}>
           <h4 className={styles.bannerTitle}>Changes will require regeneration</h4>
           <p className={styles.bannerMessage}>
-            If you change your section selections, you'll need to regenerate your concept document
-            in the next step.
+            If you change your section selections, you&apos;ll need to regenerate your concept
+            document in the next step.
           </p>
         </div>
       </div>
@@ -601,7 +622,7 @@ function SectionsNeedingElaborationCard({
               onToggleSelection={() => onToggleSection(section.section)}
               onToggleExpansion={() => onToggleExpansion(section.section)}
               userComment={userComments[section.section]}
-              onCommentChange={(comment) => onCommentChange(section.section, comment)}
+              onCommentChange={comment => onCommentChange(section.section, comment)}
             />
           ))}
         </div>
@@ -632,9 +653,12 @@ function StrategicVerdict({ verdict }: { verdict?: string }) {
  * Displays the generated concept document with download, re-upload, and regenerate options
  */
 interface UpdatedConceptDocumentCardProps {
-  conceptDocument: any
+  conceptDocument: import('../types/analysis').ConceptDocument
   proposalId?: string
-  onRegenerateDocument?: (selectedSections: string[], userComments: { [key: string]: string }) => void
+  onRegenerateDocument?: (
+    selectedSections: string[],
+    userComments: { [key: string]: string }
+  ) => void
   onRegenerateAnalysis?: () => void | Promise<void>
   selectedSections: string[]
   userComments: { [key: string]: string }
@@ -646,10 +670,10 @@ interface UpdatedConceptDocumentCardProps {
 function UpdatedConceptDocumentCard({
   conceptDocument,
   proposalId,
-  onRegenerateDocument,
+  onRegenerateDocument: _onRegenerateDocument,
   onRegenerateAnalysis,
   selectedSections,
-  userComments,
+  userComments: _userComments,
   isDownloading,
   onDownload,
   onReuploadClick,
@@ -668,7 +692,7 @@ function UpdatedConceptDocumentCard({
     try {
       await onRegenerateAnalysis()
     } catch (error) {
-      console.error('Regeneration error:', error)
+      // Removed console.errorRegeneration error:', error)
       alert('Error regenerating analysis. Please try again.')
     } finally {
       setIsRegenerating(false)
@@ -676,12 +700,24 @@ function UpdatedConceptDocumentCard({
   }
 
   // Extract and parse document content
-  const extractDocumentContent = (doc: any): string => {
-    if (!doc) return ''
-    if (typeof doc === 'string') return doc
-    if (doc.generated_concept_document) return doc.generated_concept_document
-    if (doc.content) return doc.content
-    if (doc.document) return doc.document
+  const extractDocumentContent = (
+    doc: import('../types/analysis').ConceptDocument | null | undefined
+  ): string => {
+    if (!doc) {
+      return ''
+    }
+    if (typeof doc === 'string') {
+      return doc
+    }
+    if (doc.generated_concept_document) {
+      return doc.generated_concept_document
+    }
+    if (doc.content) {
+      return doc.content
+    }
+    if (doc.document) {
+      return doc.document
+    }
     return JSON.stringify(doc, null, 2)
   }
 
@@ -792,11 +828,7 @@ function UpdatedConceptDocumentCard({
       </div>
 
       <div className={styles.buttonGroup}>
-        <button
-          className={styles.downloadButton}
-          onClick={onDownload}
-          disabled={isDownloading}
-        >
+        <button className={styles.downloadButton} onClick={onDownload} disabled={isDownloading}>
           {isDownloading ? (
             <>
               <div className={styles.spinner}></div>
@@ -810,10 +842,7 @@ function UpdatedConceptDocumentCard({
           )}
         </button>
 
-        <button
-          className={styles.reuploadButton}
-          onClick={onReuploadClick}
-        >
+        <button className={styles.reuploadButton} onClick={onReuploadClick}>
           <RefreshCw size={16} />
           Re-upload
         </button>
@@ -900,9 +929,9 @@ export function Step2ConceptReview({
   // ========================================
   // REGENERATION & GENERATION STATE
   // ========================================
-  const [isRegeneratingAnalysis, setIsRegeneratingAnalysis] = useState(false)
+  const [, setIsRegeneratingAnalysis] = useState(false)
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
-  const [progressMessage, setProgressMessage] = useState<string | null>(null)
+  const [, setProgressMessage] = useState<string | null>(null)
 
   // ========================================
   // REGENERATION & GENERATION HANDLERS
@@ -956,16 +985,16 @@ export function Step2ConceptReview({
               .map((s: SectionNeedingElaboration) => s.section)
 
             // If no Critical sections, select all sections by default
-            const sectionsToSelect = criticalSections.length > 0
-              ? criticalSections
-              : allSections.map((s: SectionNeedingElaboration) => s.section)
+            const sectionsToSelect =
+              criticalSections.length > 0
+                ? criticalSections
+                : allSections.map((s: SectionNeedingElaboration) => s.section)
 
             setSelectedSections(sectionsToSelect)
           }
 
           // Clear user comments
           setUserComments({})
-
         } else if (status.status === 'failed' || status.error) {
           throw new Error(status.error || 'Concept analysis failed')
         }
@@ -974,9 +1003,8 @@ export function Step2ConceptReview({
       if (!analysisComplete) {
         throw new Error('Analysis timed out. Please try again.')
       }
-
     } catch (error) {
-      console.error('Regeneration error:', error)
+      // Removed console.errorRegeneration error:', error)
       alert('Error regenerating analysis. Please try again.')
     } finally {
       setIsRegeneratingAnalysis(false)
@@ -984,7 +1012,13 @@ export function Step2ConceptReview({
       // Notify parent to hide progress modal
       onRegenerationStateChanged?.(false)
     }
-  }, [proposalId, onConceptDocumentChanged, onConceptAnalysisChanged, onRegenerationStateChanged, setSelectedSections])
+  }, [
+    proposalId,
+    onConceptDocumentChanged,
+    onConceptAnalysisChanged,
+    onRegenerationStateChanged,
+    setSelectedSections,
+  ])
 
   /**
    * Generates the concept document based on selected sections and user comments
@@ -997,124 +1031,132 @@ export function Step2ConceptReview({
    * 4. Generate concept document
    * 5. Poll for completion
    */
-  const handleGenerateDocument = useCallback(async (
-    sections: string[] = selectedSections,
-    comments: { [key: string]: string } = userComments
-  ) => {
-    if (!proposalId) {
-      alert('No proposal ID found. Please try again.')
-      return
-    }
-
-    if (sections.length === 0) {
-      alert('Please select at least one section to generate.')
-      return
-    }
-
-    setIsGeneratingDocument(true)
-    setProgressMessage('Preparing concept evaluation...')
-
-    try {
-      // Step 1: Unwrap conceptAnalysis (handle nested structure from backend)
-      let unwrappedAnalysis = conceptAnalysis
-      if (unwrappedAnalysis && 'concept_analysis' in unwrappedAnalysis) {
-        unwrappedAnalysis = (unwrappedAnalysis as { concept_analysis: ConceptAnalysis }).concept_analysis
-      }
-      // Check for another level of nesting
-      if (unwrappedAnalysis && 'concept_analysis' in unwrappedAnalysis) {
-        unwrappedAnalysis = (unwrappedAnalysis as unknown as { concept_analysis: ConceptAnalysis }).concept_analysis
+  const handleGenerateDocument = useCallback(
+    async (
+      sections: string[] = selectedSections,
+      comments: { [key: string]: string } = userComments
+    ) => {
+      if (!proposalId) {
+        alert('No proposal ID found. Please try again.')
+        return
       }
 
-      if (!unwrappedAnalysis) {
-        throw new Error('Concept analysis not found. Please complete the analysis first.')
+      if (sections.length === 0) {
+        alert('Please select at least one section to generate.')
+        return
       }
 
-      console.log('🔍 Unwrapped concept analysis for document generation')
+      setIsGeneratingDocument(true)
+      setProgressMessage('Preparing concept evaluation...')
 
-      // Step 2: Get all sections and mark with selected flag and user_comment
-      const allSections = unwrappedAnalysis.sections_needing_elaboration || []
-      const allSectionsWithSelection = allSections.map((section: SectionNeedingElaboration) => ({
-        ...section,
-        selected: sections.includes(section.section),
-        user_comment: comments[section.section] || '',
-      }))
-
-      console.log(`📊 Total sections: ${allSections.length}, Selected: ${allSectionsWithSelection.filter((s: { selected: boolean }) => s.selected).length}`)
-
-      // Step 3: Build the full concept evaluation payload
-      const conceptEvaluation = {
-        concept_analysis: {
-          fit_assessment: unwrappedAnalysis.fit_assessment,
-          strong_aspects: unwrappedAnalysis.strong_aspects,
-          sections_needing_elaboration: allSectionsWithSelection,
-          strategic_verdict: unwrappedAnalysis.strategic_verdict,
-        },
-        status: 'completed',
-      }
-
-      // Step 4: Prepare update payload for DynamoDB
-      const userCommentsPayload: Record<string, string> = {}
-      allSectionsWithSelection.forEach((section: { section: string; user_comment: string }) => {
-        if (section.user_comment) {
-          userCommentsPayload[section.section] = section.user_comment
+      try {
+        // Step 1: Unwrap conceptAnalysis (handle nested structure from backend)
+        let unwrappedAnalysis = conceptAnalysis
+        if (unwrappedAnalysis && 'concept_analysis' in unwrappedAnalysis) {
+          unwrappedAnalysis = (unwrappedAnalysis as { concept_analysis: ConceptAnalysis })
+            .concept_analysis
         }
-      })
-
-      const updatePayload = {
-        selected_sections: allSectionsWithSelection.map((section: SectionNeedingElaboration & { selected: boolean }) => ({
-          title: section.section,
-          selected: section.selected,
-          analysis: section.issue, // 'issue' maps to 'analysis' in the API
-          alignment_level: section.priority,
-          suggestions: section.suggestions || [],
-        })),
-        user_comments: Object.keys(userCommentsPayload).length > 0 ? userCommentsPayload : undefined,
-      }
-
-      // Step 5: Save concept evaluation to DynamoDB
-      setProgressMessage('Saving concept evaluation...')
-      console.log('💾 Saving concept evaluation to DynamoDB...')
-      await proposalService.updateConceptEvaluation(proposalId, updatePayload)
-      console.log('✅ Concept evaluation saved')
-
-      // Step 6: Start document generation
-      setProgressMessage('Generating updated concept document...')
-      console.log('📄 Starting document generation...')
-      await proposalService.generateConceptDocument(proposalId, conceptEvaluation)
-
-      // Step 7: Poll for completion
-      let generationComplete = false
-      let pollCount = 0
-      const maxPolls = 60 // 5 minutes max (5s intervals)
-
-      while (!generationComplete && pollCount < maxPolls) {
-        await new Promise(resolve => setTimeout(resolve, 5000))
-        pollCount++
-
-        const status = await proposalService.getConceptDocumentStatus(proposalId)
-
-        if (status.status === 'completed' && status.concept_document) {
-          generationComplete = true
-          console.log('✅ Document generation completed')
-          // Notify parent component of new document
-          onConceptDocumentChanged?.(status.concept_document)
-        } else if (status.status === 'failed' || status.error) {
-          throw new Error(status.error || 'Document generation failed')
+        // Check for another level of nesting
+        if (unwrappedAnalysis && 'concept_analysis' in unwrappedAnalysis) {
+          unwrappedAnalysis = (
+            unwrappedAnalysis as unknown as { concept_analysis: ConceptAnalysis }
+          ).concept_analysis
         }
-      }
 
-      if (!generationComplete) {
-        throw new Error('Document generation timed out. Please try again.')
-      }
+        if (!unwrappedAnalysis) {
+          throw new Error('Concept analysis not found. Please complete the analysis first.')
+        }
 
-    } catch (error) {
-      console.error('Document generation error:', error)
-      alert(`Error generating document: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setIsGeneratingDocument(false)
-      setProgressMessage(null)
-    }
-  }, [proposalId, selectedSections, userComments, conceptAnalysis, onConceptDocumentChanged])
+        // Removed console.log'🔍 Unwrapped concept analysis for document generation')
+
+        // Step 2: Get all sections and mark with selected flag and user_comment
+        const allSections = unwrappedAnalysis.sections_needing_elaboration || []
+        const allSectionsWithSelection = allSections.map((section: SectionNeedingElaboration) => ({
+          ...section,
+          selected: sections.includes(section.section),
+          user_comment: comments[section.section] || '',
+        }))
+
+        // Step 3: Build the full concept evaluation payload
+        const conceptEvaluation = {
+          concept_analysis: {
+            fit_assessment: unwrappedAnalysis.fit_assessment,
+            strong_aspects: unwrappedAnalysis.strong_aspects,
+            sections_needing_elaboration: allSectionsWithSelection,
+            strategic_verdict: unwrappedAnalysis.strategic_verdict,
+          },
+          status: 'completed',
+        }
+
+        // Step 4: Prepare update payload for DynamoDB
+        const userCommentsPayload: Record<string, string> = {}
+        allSectionsWithSelection.forEach((section: { section: string; user_comment: string }) => {
+          if (section.user_comment) {
+            userCommentsPayload[section.section] = section.user_comment
+          }
+        })
+
+        const updatePayload = {
+          selected_sections: allSectionsWithSelection.map(
+            (section: SectionNeedingElaboration & { selected: boolean }) => ({
+              title: section.section,
+              selected: section.selected,
+              analysis: section.issue, // 'issue' maps to 'analysis' in the API
+              alignment_level: section.priority,
+              suggestions: section.suggestions || [],
+            })
+          ),
+          user_comments:
+            Object.keys(userCommentsPayload).length > 0 ? userCommentsPayload : undefined,
+        }
+
+        // Step 5: Save concept evaluation to DynamoDB
+        setProgressMessage('Saving concept evaluation...')
+        // Removed console.log'💾 Saving concept evaluation to DynamoDB...')
+        await proposalService.updateConceptEvaluation(proposalId, updatePayload)
+        // Removed console.log'✅ Concept evaluation saved')
+
+        // Step 6: Start document generation
+        setProgressMessage('Generating updated concept document...')
+        // Removed console.log'📄 Starting document generation...')
+        await proposalService.generateConceptDocument(proposalId, conceptEvaluation)
+
+        // Step 7: Poll for completion
+        let generationComplete = false
+        let pollCount = 0
+        const maxPolls = 60 // 5 minutes max (5s intervals)
+
+        while (!generationComplete && pollCount < maxPolls) {
+          await new Promise(resolve => setTimeout(resolve, 5000))
+          pollCount++
+
+          const status = await proposalService.getConceptDocumentStatus(proposalId)
+
+          if (status.status === 'completed' && status.concept_document) {
+            generationComplete = true
+            // Removed console.log'✅ Document generation completed')
+            // Notify parent component of new document
+            onConceptDocumentChanged?.(status.concept_document)
+          } else if (status.status === 'failed' || status.error) {
+            throw new Error(status.error || 'Document generation failed')
+          }
+        }
+
+        if (!generationComplete) {
+          throw new Error('Document generation timed out. Please try again.')
+        }
+      } catch (error) {
+        // Removed console.errorDocument generation error:', error)
+        alert(
+          `Error generating document: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      } finally {
+        setIsGeneratingDocument(false)
+        setProgressMessage(null)
+      }
+    },
+    [proposalId, selectedSections, userComments, conceptAnalysis, onConceptDocumentChanged]
+  )
 
   // ========================================
   // REUPLOAD STATE
@@ -1124,7 +1166,7 @@ export function Step2ConceptReview({
   const [showProgressModal, setShowProgressModal] = useState(false)
   const [reuploadProgress, setReuploadProgress] = useState<ReuploadProgress>({
     stage: 'idle',
-    message: 'Preparing...'
+    message: 'Preparing...',
   })
 
   // ========================================
@@ -1176,120 +1218,128 @@ export function Step2ConceptReview({
   /**
    * Handles file selection and starts the re-upload process
    */
-  const handleFileSelect = useCallback(async (file: File) => {
-    if (!proposalId) {
-      alert('No proposal ID found. Please try again.')
-      return
-    }
-
-    // Close upload modal and show progress modal
-    setShowUploadModal(false)
-    setShowProgressModal(true)
-
-    try {
-      // Stage 1: Uploading
-      setReuploadProgress({
-        stage: 'uploading',
-        message: 'Uploading your new concept document to storage...'
-      })
-
-      // Delete old concept file if exists
-      if (currentConceptFileName) {
-        try {
-          await proposalService.deleteConceptFile(proposalId, currentConceptFileName)
-        } catch (error) {
-          console.warn('Could not delete old concept file:', error)
-          // Continue anyway - the old file may not exist
-        }
+  const handleFileSelect = useCallback(
+    async (file: File) => {
+      if (!proposalId) {
+        alert('No proposal ID found. Please try again.')
+        return
       }
 
-      // Upload new file
-      await proposalService.uploadConceptFile(proposalId, file)
+      // Close upload modal and show progress modal
+      setShowUploadModal(false)
+      setShowProgressModal(true)
 
-      // Stage 2: Replacing
-      setReuploadProgress({
-        stage: 'replacing',
-        message: 'Replacing concept document in the system...'
-      })
+      try {
+        // Stage 1: Uploading
+        setReuploadProgress({
+          stage: 'uploading',
+          message: 'Uploading your new concept document to storage...',
+        })
 
-      // Clear the generated concept document if it exists
-      onConceptDocumentChanged?.(null)
-
-      // Stage 3: Analyzing
-      setReuploadProgress({
-        stage: 'analyzing',
-        message: 'Running AI concept analysis... This may take a minute.'
-      })
-
-      // Start concept analysis with force=true to bypass cache and recalculate
-      await proposalService.analyzeConcept(proposalId, { force: true })
-
-      // Poll for analysis completion
-      let analysisComplete = false
-      let pollCount = 0
-      const maxPolls = 60 // 5 minutes max (5s intervals)
-
-      while (!analysisComplete && pollCount < maxPolls) {
-        await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
-        pollCount++
-
-        const status = await proposalService.getConceptStatus(proposalId)
-
-        if (status.status === 'completed' && status.concept_analysis) {
-          analysisComplete = true
-
-          // Stage 4: Finalizing
-          setReuploadProgress({
-            stage: 'finalizing',
-            message: 'Updating evaluation data...'
-          })
-
-          // Notify parent component of new analysis
-          onConceptAnalysisChanged?.(status.concept_analysis)
-
-          // Reset selected sections to default (Critical priority, or all if no Critical)
-          const newAnalysis = status.concept_analysis
-          if (newAnalysis.sections_needing_elaboration) {
-            const allSections = newAnalysis.sections_needing_elaboration
-            const criticalSections = allSections
-              .filter((s: SectionNeedingElaboration) => s.priority === 'Critical')
-              .map((s: SectionNeedingElaboration) => s.section)
-
-            // If no Critical sections, select all sections by default
-            const sectionsToSelect = criticalSections.length > 0
-              ? criticalSections
-              : allSections.map((s: SectionNeedingElaboration) => s.section)
-
-            setSelectedSections(sectionsToSelect)
+        // Delete old concept file if exists
+        if (currentConceptFileName) {
+          try {
+            await proposalService.deleteConceptFile(proposalId, currentConceptFileName)
+          } catch (error) {
+            // Removed console.warn
+            // Continue anyway - the old file may not exist
           }
-
-          // Clear user comments
-          setUserComments({})
-
-        } else if (status.status === 'failed' || status.error) {
-          throw new Error(status.error || 'Concept analysis failed')
         }
+
+        // Upload new file
+        await proposalService.uploadConceptFile(proposalId, file)
+
+        // Stage 2: Replacing
+        setReuploadProgress({
+          stage: 'replacing',
+          message: 'Replacing concept document in the system...',
+        })
+
+        // Clear the generated concept document if it exists
+        onConceptDocumentChanged?.(null)
+
+        // Stage 3: Analyzing
+        setReuploadProgress({
+          stage: 'analyzing',
+          message: 'Running AI concept analysis... This may take a minute.',
+        })
+
+        // Start concept analysis with force=true to bypass cache and recalculate
+        await proposalService.analyzeConcept(proposalId, { force: true })
+
+        // Poll for analysis completion
+        let analysisComplete = false
+        let pollCount = 0
+        const maxPolls = 60 // 5 minutes max (5s intervals)
+
+        while (!analysisComplete && pollCount < maxPolls) {
+          await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
+          pollCount++
+
+          const status = await proposalService.getConceptStatus(proposalId)
+
+          if (status.status === 'completed' && status.concept_analysis) {
+            analysisComplete = true
+
+            // Stage 4: Finalizing
+            setReuploadProgress({
+              stage: 'finalizing',
+              message: 'Updating evaluation data...',
+            })
+
+            // Notify parent component of new analysis
+            onConceptAnalysisChanged?.(status.concept_analysis)
+
+            // Reset selected sections to default (Critical priority, or all if no Critical)
+            const newAnalysis = status.concept_analysis
+            if (newAnalysis.sections_needing_elaboration) {
+              const allSections = newAnalysis.sections_needing_elaboration
+              const criticalSections = allSections
+                .filter((s: SectionNeedingElaboration) => s.priority === 'Critical')
+                .map((s: SectionNeedingElaboration) => s.section)
+
+              // If no Critical sections, select all sections by default
+              const sectionsToSelect =
+                criticalSections.length > 0
+                  ? criticalSections
+                  : allSections.map((s: SectionNeedingElaboration) => s.section)
+
+              setSelectedSections(sectionsToSelect)
+            }
+
+            // Clear user comments
+            setUserComments({})
+          } else if (status.status === 'failed' || status.error) {
+            throw new Error(status.error || 'Concept analysis failed')
+          }
+        }
+
+        if (!analysisComplete) {
+          throw new Error('Analysis timed out. Please try again.')
+        }
+
+        // Complete
+        setReuploadProgress({
+          stage: 'completed',
+          message: 'Your concept document has been replaced and analyzed successfully!',
+        })
+      } catch (error) {
+        // Removed console.errorRe-upload error:', error)
+        setReuploadProgress({
+          stage: 'error',
+          message: 'An error occurred during the re-upload process.',
+          error: error instanceof Error ? error.message : 'Unknown error occurred',
+        })
       }
-
-      if (!analysisComplete) {
-        throw new Error('Analysis timed out. Please try again.')
-      }
-
-      // Complete
-      setReuploadProgress({
-        stage: 'completed',
-        message: 'Your concept document has been replaced and analyzed successfully!'
-      })
-
-    } catch (error) {
-      console.error('Re-upload error:', error)
-      setReuploadProgress({
-        stage: 'error',
-        message: 'An error occurred during the re-upload process.',
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      })
-    }
-  }, [proposalId, currentConceptFileName, onConceptDocumentChanged, onConceptAnalysisChanged, setSelectedSections])
+    },
+    [
+      proposalId,
+      currentConceptFileName,
+      onConceptDocumentChanged,
+      onConceptAnalysisChanged,
+      setSelectedSections,
+    ]
+  )
 
   /**
    * Handles retry after error
@@ -1315,130 +1365,57 @@ export function Step2ConceptReview({
   /**
    * Extracts content from various possible document structures
    */
-  const extractDocumentContent = useCallback((doc: any): string => {
-    if (!doc) return ''
-    if (typeof doc === 'string') return doc
-    if (doc.generated_concept_document) return doc.generated_concept_document
-    if (doc.content) return doc.content
-    if (doc.document) return doc.document
-    
-    if (doc.proposal_outline && Array.isArray(doc.proposal_outline)) {
-      return doc.proposal_outline
-        .map((section: { section_title?: string; purpose?: string; recommended_word_count?: string; guiding_questions?: string[] }) => {
-          const title = section.section_title || ''
-          const purpose = section.purpose || ''
-          const wordCount = section.recommended_word_count || ''
-          const questions = Array.isArray(section.guiding_questions)
-            ? section.guiding_questions.map((q: string) => `- ${q}`).join('\n')
-            : ''
-          return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
-        })
-        .join('\n\n')
-    }
-    
-    if (doc.sections && typeof doc.sections === 'object') {
-      return Object.entries(doc.sections)
-        .map(([key, value]) => `## ${key}\n\n${value}`)
-        .join('\n\n')
-    }
-    
-    return JSON.stringify(doc, null, 2)
-  }, [])
-
-  /**
-   * Formats inline markdown (bold, italic, code)
-   */
-  const formatInlineMarkdown = useCallback((text: string): string => {
-    let formatted = text
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
-    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
-    return formatted
-  }, [])
-
-  /**
-   * Parses markdown content to React elements
-   */
-  const parseMarkdownToReact = useCallback(
-    (markdown: string): JSX.Element[] => {
-      const lines = markdown.split('\n')
-      const elements: JSX.Element[] = []
-      let currentList: string[] = []
-      let currentParagraph: string[] = []
-
-      const flushList = () => {
-        if (currentList.length > 0) {
-          elements.push(
-            <ul key={`ul-${elements.length}`} className={styles.markdownList}>
-              {currentList.map((item, i) => (
-                <li key={i} dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(item) }} />
-              ))}
-            </ul>
-          )
-          currentList = []
-        }
+  const extractDocumentContent = useCallback(
+    (doc: import('../types/analysis').ConceptDocument | null | undefined): string => {
+      if (!doc) {
+        return ''
+      }
+      if (typeof doc === 'string') {
+        return doc
+      }
+      if (doc.generated_concept_document) {
+        return doc.generated_concept_document
+      }
+      if (doc.content) {
+        return doc.content
+      }
+      if (doc.document) {
+        return doc.document
       }
 
-      const flushParagraph = () => {
-        if (currentParagraph.length > 0) {
-          const text = currentParagraph.join(' ')
-          if (text.trim()) {
-            elements.push(
-              <p
-                key={`p-${elements.length}`}
-                className={styles.markdownParagraph}
-                dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
-              />
-            )
-          }
-          currentParagraph = []
-        }
+      if (doc.proposal_outline && Array.isArray(doc.proposal_outline)) {
+        return doc.proposal_outline
+          .map(
+            (section: {
+              section_title?: string
+              purpose?: string
+              recommended_word_count?: string
+              guiding_questions?: string[]
+            }) => {
+              const title = section.section_title || ''
+              const purpose = section.purpose || ''
+              const wordCount = section.recommended_word_count || ''
+              const questions = Array.isArray(section.guiding_questions)
+                ? section.guiding_questions.map((q: string) => `- ${q}`).join('\n')
+                : ''
+              return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
+            }
+          )
+          .join('\n\n')
       }
 
-      lines.forEach((line, index) => {
-        if (line.startsWith('### ')) {
-          flushList()
-          flushParagraph()
-          elements.push(
-            <h3 key={`h3-${index}`} className={styles.markdownH3}>
-              {line.substring(4)}
-            </h3>
-          )
-        } else if (line.startsWith('## ')) {
-          flushList()
-          flushParagraph()
-          elements.push(
-            <h2 key={`h2-${index}`} className={styles.markdownH2}>
-              {line.substring(3)}
-            </h2>
-          )
-        } else if (line.startsWith('# ')) {
-          flushList()
-          flushParagraph()
-          elements.push(
-            <h1 key={`h1-${index}`} className={styles.markdownH1}>
-              {line.substring(2)}
-            </h1>
-          )
-        } else if (line.match(/^[*-]\s+/)) {
-          flushParagraph()
-          currentList.push(line.replace(/^[*-]\s+/, ''))
-        } else if (line.trim() === '') {
-          flushList()
-          flushParagraph()
-        } else {
-          flushList()
-          currentParagraph.push(line)
-        }
-      })
+      if (doc.sections && typeof doc.sections === 'object') {
+        return Object.entries(doc.sections)
+          .map(([key, value]) => `## ${key}\n\n${value}`)
+          .join('\n\n')
+      }
 
-      flushList()
-      flushParagraph()
-
-      return elements
+      return JSON.stringify(doc, null, 2)
     },
-    [formatInlineMarkdown]
+    []
   )
+
+  // Removed unused formatInlineMarkdown - it's defined in UpdatedConceptDocumentCard
 
   /**
    * Converts markdown to DOCX Paragraph objects
@@ -1455,23 +1432,29 @@ export function Step2ConceptReview({
     matches.forEach(match => {
       if (match.startsWith('**') && match.endsWith('**')) {
         // Bold text
-        runs.push(new TextRun({
-          text: match.slice(2, -2),
-          bold: true,
-        }))
+        runs.push(
+          new TextRun({
+            text: match.slice(2, -2),
+            bold: true,
+          })
+        )
       } else if (match.startsWith('*') && match.endsWith('*')) {
         // Italic text
-        runs.push(new TextRun({
-          text: match.slice(1, -1),
-          italics: true,
-        }))
+        runs.push(
+          new TextRun({
+            text: match.slice(1, -1),
+            italics: true,
+          })
+        )
       } else if (match.startsWith('`') && match.endsWith('`')) {
         // Code text
-        runs.push(new TextRun({
-          text: match.slice(1, -1),
-          font: 'Courier New',
-          color: '166534',
-        }))
+        runs.push(
+          new TextRun({
+            text: match.slice(1, -1),
+            font: 'Courier New',
+            color: '166534',
+          })
+        )
       } else {
         // Normal text
         runs.push(new TextRun({ text: match }))
@@ -1481,71 +1464,76 @@ export function Step2ConceptReview({
     return runs
   }, [])
 
-  const markdownToParagraphs = useCallback((markdown: string): Paragraph[] => {
-    const lines = markdown.split('\n')
-    const paragraphs: Paragraph[] = []
+  const markdownToParagraphs = useCallback(
+    (markdown: string): Paragraph[] => {
+      const lines = markdown.split('\n')
+      const paragraphs: Paragraph[] = []
 
-    lines.forEach(line => {
-      if (line.startsWith('### ')) {
-        paragraphs.push(
-          new Paragraph({
-            children: parseInlineFormatting(line.substring(4)),
-            heading: HeadingLevel.HEADING_3,
-            spacing: { before: 240, after: 120 },
-          })
-        )
-      } else if (line.startsWith('## ')) {
-        paragraphs.push(
-          new Paragraph({
-            children: parseInlineFormatting(line.substring(3)),
-            heading: HeadingLevel.HEADING_2,
-            spacing: { before: 360, after: 160 },
-          })
-        )
-      } else if (line.startsWith('# ')) {
-        paragraphs.push(
-          new Paragraph({
-            children: parseInlineFormatting(line.substring(2)),
-            heading: HeadingLevel.HEADING_1,
-            spacing: { before: 480, after: 240 },
-          })
-        )
-      } else if (line.match(/^[*-]\s+/)) {
-        const bulletText = line.replace(/^[*-]\s+/, '')
-        paragraphs.push(
-          new Paragraph({
-            children: parseInlineFormatting(bulletText),
-            bullet: { level: 0 },
-            spacing: { after: 60, line: 276 },
-          })
-        )
-      } else if (line.match(/^\s{2,}[*-]\s+/)) {
-        // Nested bullet (sub-item)
-        const bulletText = line.replace(/^\s{2,}[*-]\s+/, '')
-        paragraphs.push(
-          new Paragraph({
-            children: parseInlineFormatting(bulletText),
-            bullet: { level: 1 },
-            spacing: { after: 60, line: 276 },
-          })
-        )
-      } else if (line.trim() === '') {
-        paragraphs.push(new Paragraph({
-          text: '',
-          spacing: { after: 120 }
-        }))
-      } else if (line.trim()) {
-        paragraphs.push(
-          new Paragraph({
-            children: parseInlineFormatting(line.trim()),
-            spacing: { after: 140, line: 276 },
-          })
-        )
-      }
-    })
+      lines.forEach(line => {
+        if (line.startsWith('### ')) {
+          paragraphs.push(
+            new Paragraph({
+              children: parseInlineFormatting(line.substring(4)),
+              heading: HeadingLevel.HEADING_3,
+              spacing: { before: 240, after: 120 },
+            })
+          )
+        } else if (line.startsWith('## ')) {
+          paragraphs.push(
+            new Paragraph({
+              children: parseInlineFormatting(line.substring(3)),
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 360, after: 160 },
+            })
+          )
+        } else if (line.startsWith('# ')) {
+          paragraphs.push(
+            new Paragraph({
+              children: parseInlineFormatting(line.substring(2)),
+              heading: HeadingLevel.HEADING_1,
+              spacing: { before: 480, after: 240 },
+            })
+          )
+        } else if (line.match(/^[*-]\s+/)) {
+          const bulletText = line.replace(/^[*-]\s+/, '')
+          paragraphs.push(
+            new Paragraph({
+              children: parseInlineFormatting(bulletText),
+              bullet: { level: 0 },
+              spacing: { after: 60, line: 276 },
+            })
+          )
+        } else if (line.match(/^\s{2,}[*-]\s+/)) {
+          // Nested bullet (sub-item)
+          const bulletText = line.replace(/^\s{2,}[*-]\s+/, '')
+          paragraphs.push(
+            new Paragraph({
+              children: parseInlineFormatting(bulletText),
+              bullet: { level: 1 },
+              spacing: { after: 60, line: 276 },
+            })
+          )
+        } else if (line.trim() === '') {
+          paragraphs.push(
+            new Paragraph({
+              text: '',
+              spacing: { after: 120 },
+            })
+          )
+        } else if (line.trim()) {
+          paragraphs.push(
+            new Paragraph({
+              children: parseInlineFormatting(line.trim()),
+              spacing: { after: 140, line: 276 },
+            })
+          )
+        }
+      })
 
-    return paragraphs.length > 0 ? paragraphs : [new Paragraph({ text: 'No content available' })]
-  }, [parseInlineFormatting])
+      return paragraphs.length > 0 ? paragraphs : [new Paragraph({ text: 'No content available' })]
+    },
+    [parseInlineFormatting]
+  )
 
   /**
    * Handles document download as DOCX file
@@ -1564,7 +1552,7 @@ export function Step2ConceptReview({
         const currentDate = new Date().toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
-          day: 'numeric'
+          day: 'numeric',
         })
 
         // Build document with header and formatted content
@@ -1579,7 +1567,7 @@ export function Step2ConceptReview({
                 bold: true,
                 size: 32,
                 color: '166534',
-              })
+              }),
             ],
             spacing: { after: 200 },
             alignment: AlignmentType.CENTER,
@@ -1594,7 +1582,7 @@ export function Step2ConceptReview({
                 text: `Generated: ${currentDate}`,
                 size: 20,
                 color: '6B7280',
-              })
+              }),
             ],
             spacing: { after: 100 },
             alignment: AlignmentType.CENTER,
@@ -1609,7 +1597,7 @@ export function Step2ConceptReview({
                   text: `Proposal ID: ${proposalId}`,
                   size: 20,
                   color: '6B7280',
-                })
+                }),
               ],
               spacing: { after: 400 },
               alignment: AlignmentType.CENTER,
@@ -1619,7 +1607,7 @@ export function Step2ConceptReview({
           documentParagraphs.push(
             new Paragraph({
               text: '',
-              spacing: { after: 200 }
+              spacing: { after: 200 },
             })
           )
         }
@@ -1631,7 +1619,7 @@ export function Step2ConceptReview({
               new TextRun({
                 text: '═══════════════════════════════════════════════════',
                 color: 'CCCCCC',
-              })
+              }),
             ],
             spacing: { after: 400 },
             alignment: AlignmentType.CENTER,
@@ -1646,7 +1634,7 @@ export function Step2ConceptReview({
         documentParagraphs.push(
           new Paragraph({
             text: '',
-            spacing: { before: 400, after: 200 }
+            spacing: { before: 400, after: 200 },
           })
         )
 
@@ -1656,7 +1644,7 @@ export function Step2ConceptReview({
               new TextRun({
                 text: '═══════════════════════════════════════════════════',
                 color: 'CCCCCC',
-              })
+              }),
             ],
             spacing: { after: 200 },
             alignment: AlignmentType.CENTER,
@@ -1672,26 +1660,28 @@ export function Step2ConceptReview({
                 size: 18,
                 color: '9CA3AF',
                 italics: true,
-              })
+              }),
             ],
             alignment: AlignmentType.CENTER,
           })
         )
 
         const doc = new Document({
-          sections: [{
-            children: documentParagraphs,
-            properties: {
-              page: {
-                margin: {
-                  top: 1440,  // 1 inch
-                  right: 1440,
-                  bottom: 1440,
-                  left: 1440,
-                }
-              }
-            }
-          }],
+          sections: [
+            {
+              children: documentParagraphs,
+              properties: {
+                page: {
+                  margin: {
+                    top: 1440, // 1 inch
+                    right: 1440,
+                    bottom: 1440,
+                    left: 1440,
+                  },
+                },
+              },
+            },
+          ],
         })
 
         const blob = await Packer.toBlob(doc)
@@ -1702,7 +1692,7 @@ export function Step2ConceptReview({
         a.click()
         URL.revokeObjectURL(url)
       } catch (error) {
-        console.error('Download error:', error)
+        // Removed console.errorDownload error:', error)
         alert('Error generating document. Please try again.')
       } finally {
         setIsDownloading(false)
@@ -1790,7 +1780,11 @@ export function Step2ConceptReview({
               className={styles.generateConceptButton}
               onClick={() => handleGenerateDocument(selectedSections, userComments)}
               disabled={isGeneratingDocument || selectedSections.length === 0}
-              title={selectedSections.length === 0 ? 'Please select at least one section to generate' : ''}
+              title={
+                selectedSections.length === 0
+                  ? 'Please select at least one section to generate'
+                  : ''
+              }
             >
               {isGeneratingDocument ? (
                 <>

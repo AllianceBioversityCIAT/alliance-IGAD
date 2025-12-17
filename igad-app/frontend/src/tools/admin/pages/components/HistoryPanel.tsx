@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { History, Clock, User, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react'
 import styles from './HistoryPanel.module.css'
 
@@ -7,7 +7,7 @@ interface PromptChange {
   prompt_id: string
   version: number
   change_type: string
-  changes: Record<string, { old: any; new: any }>
+  changes: Record<string, { old: unknown; new: unknown }>
   comment?: string
   author: string
   author_name: string
@@ -31,13 +31,7 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
   const [expandedChanges, setExpandedChanges] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    if (isOpen && promptId) {
-      fetchHistory()
-    }
-  }, [isOpen, promptId])
-
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     setIsLoading(true)
     try {
       const response = await fetch(
@@ -53,10 +47,17 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
         setHistory(data)
       }
     } catch (error) {
+      // Silently handle error
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [promptId, setIsLoading])
+
+  useEffect(() => {
+    if (isOpen && promptId) {
+      fetchHistory()
+    }
+  }, [isOpen, promptId, fetchHistory])
 
   const toggleExpanded = (changeId: string) => {
     const newExpanded = new Set(expandedChanges)
@@ -107,7 +108,7 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
     }
   }
 
-  const renderFieldChange = (field: string, change: { old: any; new: any }) => {
+  const renderFieldChange = (field: string, change: { old: unknown; new: unknown }) => {
     const fieldLabels: Record<string, string> = {
       name: 'Name',
       system_prompt: 'System Prompt',
@@ -117,7 +118,7 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
       is_active: 'Status',
     }
 
-    const formatValue = (value: any) => {
+    const formatValue = (value: unknown) => {
       if (value === null || value === undefined) {
         return 'None'
       }

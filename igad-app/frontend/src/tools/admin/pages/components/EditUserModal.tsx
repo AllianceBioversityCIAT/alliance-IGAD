@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, User, Mail, Key, Shield, Loader2 } from 'lucide-react'
 import { userService, CognitoUser } from '@/tools/admin/services/userService'
 import styles from './EditUserModal.module.css'
@@ -23,14 +23,7 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
   const [togglingGroup, setTogglingGroup] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (isOpen && username) {
-      fetchUserData()
-      fetchGroups()
-    }
-  }, [isOpen, username])
-
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     if (!username) {
       return
     }
@@ -52,16 +45,25 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [username, setIsLoading])
 
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     try {
       const result = await userService.listGroups()
       if (result.success) {
         setGroups(result.groups)
       }
-    } catch (error) {}
-  }
+    } catch (error) {
+      // Silently handle error
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isOpen && username) {
+      fetchUserData()
+      fetchGroups()
+    }
+  }, [isOpen, username, fetchUserData, fetchGroups])
 
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,8 +88,9 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
       } else {
         setError(result.message || 'Failed to update user')
       }
-    } catch (error: any) {
-      setError(error.response?.data?.detail || 'Failed to update user')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      setError(err.response?.data?.detail || 'Failed to update user')
     } finally {
       setIsSaving(false)
     }
@@ -112,8 +115,9 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
       } else {
         setError(result.message || 'Failed to reset password')
       }
-    } catch (error: any) {
-      setError(error.response?.data?.detail || 'Failed to reset password')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      setError(err.response?.data?.detail || 'Failed to reset password')
     } finally {
       setIsLoading(false)
     }
@@ -137,8 +141,9 @@ export function EditUserModal({ isOpen, username, onClose, onUserUpdated }: Edit
       } else {
         setError(result.message || 'Failed to update group membership')
       }
-    } catch (error: any) {
-      setError(error.response?.data?.detail || 'Failed to update group membership')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      setError(err.response?.data?.detail || 'Failed to update group membership')
     } finally {
       setTogglingGroup(null)
     }

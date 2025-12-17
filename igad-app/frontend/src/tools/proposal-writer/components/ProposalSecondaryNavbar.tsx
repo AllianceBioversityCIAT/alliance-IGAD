@@ -13,36 +13,39 @@ interface ProposalSecondaryNavbarProps {
 }
 
 // Status badge configuration
-const STATUS_CONFIG: Record<ProposalStatus, {
-  label: string
-  className: string
-  icon: typeof CheckCircle
-}> = {
+const STATUS_CONFIG: Record<
+  ProposalStatus,
+  {
+    label: string
+    className: string
+    icon: typeof CheckCircle
+  }
+> = {
   draft: {
     label: 'Draft',
     className: 'statusBadgeDraft',
-    icon: FileEdit
+    icon: FileEdit,
   },
   in_progress: {
     label: 'In Progress',
     className: 'statusBadgeInProgress',
-    icon: Clock
+    icon: Clock,
   },
   review: {
     label: 'Review',
     className: 'statusBadgeReview',
-    icon: Eye
+    icon: Eye,
   },
   completed: {
     label: 'Completed',
     className: 'statusBadgeCompleted',
-    icon: CheckCircle
+    icon: CheckCircle,
   },
   archived: {
     label: 'Archived',
     className: 'statusBadgeArchived',
-    icon: Archive
-  }
+    icon: Archive,
+  },
 }
 
 export function ProposalSecondaryNavbar({

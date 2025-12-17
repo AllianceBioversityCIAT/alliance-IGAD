@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 import boto3
-import json
 
-COLORS = {"primary": "#2c5530", "accent": "#7cb342", "background": "#f8f9fa", "text": "#333333", "light_green": "#f1f8e9"}
+COLORS = {
+    "primary": "#2c5530",
+    "accent": "#7cb342",
+    "background": "#f8f9fa",
+    "text": "#333333",
+    "light_green": "#f1f8e9",
+}
+
 
 def create_base_template(content):
     return f"""<div style="font-family: Arial, sans-serif; padding: 20px; background-color: {COLORS['background']};">
@@ -15,10 +21,13 @@ def create_base_template(content):
 </div>
 </div>"""
 
+
 user_pool_id = "us-east-1_IMi3kSuB8"
 profile = "IBD-DEV"
 
-client = boto3.Session(profile_name=profile).client("cognito-idp", region_name="us-east-1")
+client = boto3.Session(profile_name=profile).client(
+    "cognito-idp", region_name="us-east-1"
+)
 
 content = f"""<p style="color: {COLORS['text']};">Welcome to IGAD Innovation Hub! Your account has been successfully created.</p>
 <div style="background-color: {COLORS['light_green']}; padding: 20px; border-radius: 6px; margin: 20px 0;">
@@ -42,9 +51,9 @@ try:
             "UnusedAccountValidityDays": 7,
             "InviteMessageTemplate": {
                 "EmailMessage": email_message,
-                "EmailSubject": email_subject
-            }
-        }
+                "EmailSubject": email_subject,
+            },
+        },
     )
     print("✅ Invite template updated successfully!")
     print(f"   URL: https://test-igad-hub.alliance.cgiar.org/login")

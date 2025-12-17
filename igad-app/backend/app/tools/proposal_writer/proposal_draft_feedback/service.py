@@ -9,12 +9,16 @@ import json
 import logging
 import os
 import time
+from typing import Any, Dict, Optional
+
 import boto3
-from typing import Dict, Any, Optional
 from boto3.dynamodb.conditions import Attr
-from app.shared.ai.bedrock_service import BedrockService
+
 from app.database.client import db_client
-from app.tools.proposal_writer.proposal_draft_feedback.config import PROPOSAL_DRAFT_FEEDBACK_SETTINGS
+from app.shared.ai.bedrock_service import BedrockService
+from app.tools.proposal_writer.proposal_draft_feedback.config import (
+    PROPOSAL_DRAFT_FEEDBACK_SETTINGS,
+)
 from app.utils.document_extraction import extract_text_from_file
 
 logger = logging.getLogger(__name__)
@@ -90,15 +94,21 @@ class DraftFeedbackService:
             logger.info(f"📋 Using proposal_code: {proposal_code}")
 
             # Step 3: Get draft proposal text from S3
-            draft_documents = proposal.get("uploaded_files", {}).get("draft-proposal", [])
+            draft_documents = proposal.get("uploaded_files", {}).get(
+                "draft-proposal", []
+            )
             if not draft_documents:
-                raise Exception("No draft proposal document found. Please upload your draft first.")
+                raise Exception(
+                    "No draft proposal document found. Please upload your draft first."
+                )
 
             draft_filename = draft_documents[0]
             draft_text = self._extract_draft_text(proposal_code, draft_filename)
 
             if not draft_text or len(draft_text.strip()) < 100:
-                raise Exception("Could not extract text from draft proposal document or document is too short.")
+                raise Exception(
+                    "Could not extract text from draft proposal document or document is too short."
+                )
 
             logger.info(f"✅ Extracted {len(draft_text)} characters from draft proposal")
 
@@ -110,11 +120,17 @@ class DraftFeedbackService:
             logger.info(f"✅ Found RFP analysis")
 
             # Step 4b: Get Step 2 analyses (optional context)
-            reference_proposals_analysis = proposal.get("reference_proposals_analysis", {})
+            reference_proposals_analysis = proposal.get(
+                "reference_proposals_analysis", {}
+            )
             existing_work_analysis = proposal.get("existing_work_analysis", {})
 
-            logger.info(f"📚 Reference proposals analysis: {'✅' if reference_proposals_analysis else '⚠️  (empty)'}")
-            logger.info(f"📂 Existing work analysis: {'✅' if existing_work_analysis else '⚠️  (empty)'}")
+            logger.info(
+                f"📚 Reference proposals analysis: {'✅' if reference_proposals_analysis else '⚠️  (empty)'}"
+            )
+            logger.info(
+                f"📂 Existing work analysis: {'✅' if existing_work_analysis else '⚠️  (empty)'}"
+            )
 
             # Step 5: Load prompt from DynamoDB
             logger.info(f"📝 Loading prompt from DynamoDB...")
@@ -124,8 +140,12 @@ class DraftFeedbackService:
                 FilterExpression=(
                     Attr("is_active").eq(True)
                     & Attr("section").eq(PROPOSAL_DRAFT_FEEDBACK_SETTINGS["section"])
-                    & Attr("sub_section").eq(PROPOSAL_DRAFT_FEEDBACK_SETTINGS["sub_section"])
-                    & Attr("categories").contains(PROPOSAL_DRAFT_FEEDBACK_SETTINGS["category"])
+                    & Attr("sub_section").eq(
+                        PROPOSAL_DRAFT_FEEDBACK_SETTINGS["sub_section"]
+                    )
+                    & Attr("categories").contains(
+                        PROPOSAL_DRAFT_FEEDBACK_SETTINGS["category"]
+                    )
                 )
             )
 
@@ -146,13 +166,17 @@ class DraftFeedbackService:
                 draft_proposal=draft_text,
                 rfp_analysis=rfp_analysis,
                 reference_proposals_analysis=reference_proposals_analysis,
-                existing_work_analysis=existing_work_analysis
+                existing_work_analysis=existing_work_analysis,
             )
 
             logger.info(f"🤖 Sending to Bedrock...")
             logger.info(f"   Model: {PROPOSAL_DRAFT_FEEDBACK_SETTINGS['model']}")
-            logger.info(f"   Max tokens: {PROPOSAL_DRAFT_FEEDBACK_SETTINGS['max_tokens']}")
-            logger.info(f"   Temperature: {PROPOSAL_DRAFT_FEEDBACK_SETTINGS['temperature']}")
+            logger.info(
+                f"   Max tokens: {PROPOSAL_DRAFT_FEEDBACK_SETTINGS['max_tokens']}"
+            )
+            logger.info(
+                f"   Temperature: {PROPOSAL_DRAFT_FEEDBACK_SETTINGS['temperature']}"
+            )
 
             # Step 7: Call Bedrock with metrics
             start_time = time.time()
@@ -162,7 +186,7 @@ class DraftFeedbackService:
                 user_prompt=user_prompt,
                 model_id=PROPOSAL_DRAFT_FEEDBACK_SETTINGS["model"],
                 max_tokens=PROPOSAL_DRAFT_FEEDBACK_SETTINGS["max_tokens"],
-                temperature=PROPOSAL_DRAFT_FEEDBACK_SETTINGS["temperature"]
+                temperature=PROPOSAL_DRAFT_FEEDBACK_SETTINGS["temperature"],
             )
 
             elapsed_time = time.time() - start_time
@@ -193,8 +217,8 @@ class DraftFeedbackService:
                         ":analysis": analysis_result,
                         ":status": "completed",
                         ":completed": completed_at,
-                        ":updated": completed_at
-                    }
+                        ":updated": completed_at,
+                    },
                 )
                 logger.info(f"✅ Draft feedback analysis saved successfully")
             except Exception as db_error:
@@ -202,10 +226,7 @@ class DraftFeedbackService:
                 raise
 
             logger.info(f"✅ Draft feedback analysis completed")
-            return {
-                "draft_feedback_analysis": analysis_result,
-                "status": "completed"
-            }
+            return {"draft_feedback_analysis": analysis_result, "status": "completed"}
 
         except ValueError as ve:
             logger.error(f"❌ Validation error: {ve}")
@@ -213,6 +234,7 @@ class DraftFeedbackService:
         except Exception as e:
             logger.error(f"❌ Error in draft feedback analysis: {e}")
             import traceback
+
             traceback.print_exc()
             raise
 
@@ -234,10 +256,7 @@ class DraftFeedbackService:
         logger.info(f"📥 Downloading draft from S3: {s3_key}")
 
         try:
-            response = self.s3_client.get_object(
-                Bucket=self.bucket_name,
-                Key=s3_key
-            )
+            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=s3_key)
             file_bytes = response["Body"].read()
 
             logger.info(f"📄 Downloaded {len(file_bytes)} bytes from S3")
@@ -263,7 +282,7 @@ class DraftFeedbackService:
         draft_proposal: str,
         rfp_analysis: Dict[str, Any],
         reference_proposals_analysis: Optional[Dict[str, Any]] = None,
-        existing_work_analysis: Optional[Dict[str, Any]] = None
+        existing_work_analysis: Optional[Dict[str, Any]] = None,
     ) -> str:
         """
         Build complete user prompt with all data injected.
@@ -295,32 +314,52 @@ class DraftFeedbackService:
         rfp_json = json.dumps(unwrapped_rfp, indent=2)
 
         # Unwrap Step 2 analyses if nested
-        unwrapped_ref_proposals = self._unwrap_analysis(reference_proposals_analysis, "reference_proposals_analysis")
-        unwrapped_existing_work = self._unwrap_analysis(existing_work_analysis, "existing_work_analysis")
+        unwrapped_ref_proposals = self._unwrap_analysis(
+            reference_proposals_analysis, "reference_proposals_analysis"
+        )
+        unwrapped_existing_work = self._unwrap_analysis(
+            existing_work_analysis, "existing_work_analysis"
+        )
 
-        reference_proposals_json = json.dumps(unwrapped_ref_proposals, indent=2) if unwrapped_ref_proposals else "{}"
-        existing_work_json = json.dumps(unwrapped_existing_work, indent=2) if unwrapped_existing_work else "{}"
+        reference_proposals_json = (
+            json.dumps(unwrapped_ref_proposals, indent=2)
+            if unwrapped_ref_proposals
+            else "{}"
+        )
+        existing_work_json = (
+            json.dumps(unwrapped_existing_work, indent=2)
+            if unwrapped_existing_work
+            else "{}"
+        )
 
         # Inject placeholders
         user_prompt = complete_template.replace("{{draft_proposal}}", draft_proposal)
         user_prompt = user_prompt.replace("{{rfp_analysis}}", rfp_json)
         # Handle both singular and plural forms for reference proposals
-        user_prompt = user_prompt.replace("{{reference_proposal_analysis}}", reference_proposals_json)
-        user_prompt = user_prompt.replace("{{reference_proposals_analysis}}", reference_proposals_json)
-        user_prompt = user_prompt.replace("{{existing_work_analysis}}", existing_work_json)
+        user_prompt = user_prompt.replace(
+            "{{reference_proposal_analysis}}", reference_proposals_json
+        )
+        user_prompt = user_prompt.replace(
+            "{{reference_proposals_analysis}}", reference_proposals_json
+        )
+        user_prompt = user_prompt.replace(
+            "{{existing_work_analysis}}", existing_work_json
+        )
 
         logger.info(f"📝 Built user prompt: {len(user_prompt)} characters")
         logger.info(f"   - Draft proposal: {len(draft_proposal)} chars")
         logger.info(f"   - RFP analysis: {len(rfp_json)} chars")
-        logger.info(f"   - Reference proposals: {'✅' if unwrapped_ref_proposals else '⚠️  (empty)'}")
-        logger.info(f"   - Existing work: {'✅' if unwrapped_existing_work else '⚠️  (empty)'}")
+        logger.info(
+            f"   - Reference proposals: {'✅' if unwrapped_ref_proposals else '⚠️  (empty)'}"
+        )
+        logger.info(
+            f"   - Existing work: {'✅' if unwrapped_existing_work else '⚠️  (empty)'}"
+        )
 
         return user_prompt
 
     def _unwrap_analysis(
-        self,
-        analysis: Optional[Dict[str, Any]],
-        key: str
+        self, analysis: Optional[Dict[str, Any]], key: str
     ) -> Dict[str, Any]:
         """
         Unwrap nested analysis structure.
@@ -387,7 +426,9 @@ class DraftFeedbackService:
             json_end = response.rfind("}") + 1
 
             if json_start == -1 or json_end == 0:
-                logger.error(f"❌ No JSON found in response. Full response length: {len(response)}")
+                logger.error(
+                    f"❌ No JSON found in response. Full response length: {len(response)}"
+                )
                 logger.error(f"📄 Full response: {response[:1000]}")
                 raise Exception("No JSON found in Bedrock response")
 
@@ -415,20 +456,34 @@ class DraftFeedbackService:
                 return tag
 
             summary_stats = {
-                "excellent_count": sum(1 for s in section_feedback if normalize_tag(s.get("tag", "")) == "Excellent"),
-                "good_count": sum(1 for s in section_feedback if normalize_tag(s.get("tag", "")) == "Good"),
-                "needs_improvement_count": sum(1 for s in section_feedback if normalize_tag(s.get("tag", "")) == "Needs improvement")
+                "excellent_count": sum(
+                    1
+                    for s in section_feedback
+                    if normalize_tag(s.get("tag", "")) == "Excellent"
+                ),
+                "good_count": sum(
+                    1
+                    for s in section_feedback
+                    if normalize_tag(s.get("tag", "")) == "Good"
+                ),
+                "needs_improvement_count": sum(
+                    1
+                    for s in section_feedback
+                    if normalize_tag(s.get("tag", "")) == "Needs improvement"
+                ),
             }
 
             logger.info(f"📊 Parsed {len(section_feedback)} sections")
             logger.info(f"   - Excellent: {summary_stats['excellent_count']}")
             logger.info(f"   - Good: {summary_stats['good_count']}")
-            logger.info(f"   - Needs Improvement: {summary_stats['needs_improvement_count']}")
+            logger.info(
+                f"   - Needs Improvement: {summary_stats['needs_improvement_count']}"
+            )
 
             return {
                 "overall_assessment": overall_assessment,
                 "section_feedback": section_feedback,
-                "summary_stats": summary_stats
+                "summary_stats": summary_stats,
             }
 
         except json.JSONDecodeError as e:
@@ -441,12 +496,12 @@ class DraftFeedbackService:
                     "overall_summary": response[:500] if response else "Parse error",
                     "key_strengths": [],
                     "key_issues": ["Failed to parse AI response"],
-                    "global_suggestions": []
+                    "global_suggestions": [],
                 },
                 "section_feedback": [],
                 "summary_stats": {
                     "excellent_count": 0,
                     "good_count": 0,
-                    "needs_improvement_count": 0
-                }
+                    "needs_improvement_count": 0,
+                },
             }

@@ -46,18 +46,16 @@ Usage:
 RFP_ANALYSIS_SETTINGS = {
     # ==================== AI Model Configuration ====================
     "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",  # Claude Sonnet 4
-    "max_tokens": 12000,          # Maximum tokens for response (~9,000 words)
-    "temperature": 0.2,           # Low temperature for consistent, factual analysis
-    "top_p": 0.9,                 # Nucleus sampling (0.9 = consider top 90% probability mass)
-    "top_k": 250,                 # Top-k sampling (consider top 250 tokens)
-
+    "max_tokens": 12000,  # Maximum tokens for response (~9,000 words)
+    "temperature": 0.2,  # Low temperature for consistent, factual analysis
+    "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)
+    "top_k": 250,  # Top-k sampling (consider top 250 tokens)
     # ==================== Processing Settings ====================
-    "timeout": 300,               # Processing timeout (5 minutes)
-    "max_pages": 100,             # Maximum pages to process from RFP
-    "max_chars": 50000,           # Max characters from RFP before truncation (~12K tokens)
-
+    "timeout": 300,  # Processing timeout (5 minutes)
+    "max_pages": 100,  # Maximum pages to process from RFP
+    "max_chars": 50000,  # Max characters from RFP before truncation (~12K tokens)
     # ==================== DynamoDB Prompt Lookup ====================
-    "section": "proposal_writer",      # Top-level section
-    "sub_section": "step-1",           # Step identifier
-    "category": "RFP Analysis"         # Prompt category filter
+    "section": "proposal_writer",  # Top-level section
+    "sub_section": "step-1",  # Step identifier
+    "category": "RFP Analysis",  # Prompt category filter
 }

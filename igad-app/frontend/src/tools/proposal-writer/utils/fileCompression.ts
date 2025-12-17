@@ -1,6 +1,6 @@
 /**
  * File Compression Utilities
- * 
+ *
  * Simple compression for PDFs and DOCX files to reduce size before upload
  */
 
@@ -8,7 +8,7 @@
  * Compress a file if it exceeds the target size
  * For PDFs: Attempts to reduce quality by re-encoding
  * For DOCX: Returns original (compression not effective)
- * 
+ *
  * @param file - Original file
  * @param maxSizeMB - Maximum size in MB (default 2MB)
  * @returns Compressed file or original if already small enough
@@ -45,8 +45,8 @@ export async function compressFileIfNeeded(
     try {
       // Simple approach: Just return original with warning
       // Real PDF compression requires backend processing
-      console.warn(`PDF file ${file.name} is ${(originalSize / 1024 / 1024).toFixed(2)}MB. Consider using a PDF compressor tool.`)
-      
+      // Removed console.warn - PDF file size warning
+
       return {
         file,
         wasCompressed: false,
@@ -54,7 +54,7 @@ export async function compressFileIfNeeded(
         newSize: originalSize,
       }
     } catch (error) {
-      console.error('PDF compression failed:', error)
+      // Removed console.error
       return {
         file,
         wasCompressed: false,
@@ -76,7 +76,11 @@ export async function compressFileIfNeeded(
  * Format file size for display
  */
 export function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024) {
+    return `${bytes} B`
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`
+  }
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`
 }

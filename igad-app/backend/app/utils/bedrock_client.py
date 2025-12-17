@@ -4,6 +4,7 @@ import time
 from typing import Any, Dict, Optional
 
 from botocore.exceptions import ClientError
+
 from app.utils.aws_session import get_aws_session
 
 logger = logging.getLogger(__name__)

@@ -25,7 +25,8 @@ export function LoginPage() {
     const checkAuth = async () => {
       if (authService.isAuthenticated()) {
         // User is already logged in, redirect to home
-        const from = (location.state as any)?.from?.pathname || '/'
+        const from =
+          (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/'
         navigate(from, { replace: true })
       } else {
         // Not authenticated, show login form

@@ -11,14 +11,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from .handlers.admin_prompts import router as admin_prompts_router
 from .middleware.auth_middleware import AuthMiddleware
 from .middleware.error_middleware import ErrorMiddleware
+from .routers import history
+from .shared.documents import routes as documents_routes
+from .shared.health import routes as health_routes
+from .shared.vectors import routes as vectors_router
+from .tools.admin.prompts_manager import routes as prompts_routes
 from .tools.admin.settings import routes as admin_routes
 from .tools.auth import routes as auth_routes
-from .shared.health import routes as health_routes
-from .tools.admin.prompts_manager import routes as prompts_routes
-from .shared.documents import routes as documents_routes
 from .tools.proposal_writer import routes as proposal_writer_routes
-from .shared.vectors import routes as vectors_router
-from .routers import history
 
 # Load environment variables
 load_dotenv()

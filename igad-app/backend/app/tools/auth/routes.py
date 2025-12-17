@@ -40,7 +40,7 @@ class LoginResponse(BaseModel):
 async def login(credentials: LoginRequest):
     """Real Cognito login endpoint"""
     import urllib.parse
-    
+
     # Properly handle email with special characters (dots, etc.)
     email = credentials.username.strip()
     # URL decode in case email was encoded
@@ -50,7 +50,6 @@ async def login(credentials: LoginRequest):
     print(f"Login attempt for email: '{email}'")  # Debug log
 
     try:
-        import boto3
         from botocore.exceptions import ClientError
 
         session = get_aws_session()
@@ -90,7 +89,9 @@ async def login(credentials: LoginRequest):
         # Decode ID token to get user info
         from jose import jwt
 
-        user_info = jwt.decode(id_token, "", options={"verify_signature": False, "verify_aud": False})
+        user_info = jwt.decode(
+            id_token, "", options={"verify_signature": False, "verify_aud": False}
+        )
 
         # Check if user is admin
         is_admin = email in [
@@ -137,7 +138,6 @@ class RefreshTokenRequest(BaseModel):
 async def refresh_token(request: RefreshTokenRequest):
     """Refresh access token using refresh token"""
     try:
-        import boto3
         from botocore.exceptions import ClientError
 
         session = get_aws_session()
@@ -148,9 +148,7 @@ async def refresh_token(request: RefreshTokenRequest):
             UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
             ClientId=os.getenv("COGNITO_CLIENT_ID"),
             AuthFlow="REFRESH_TOKEN_AUTH",
-            AuthParameters={
-                "REFRESH_TOKEN": request.refresh_token
-            },
+            AuthParameters={"REFRESH_TOKEN": request.refresh_token},
         )
 
         # Get new tokens
@@ -160,13 +158,16 @@ async def refresh_token(request: RefreshTokenRequest):
 
         # Decode ID token to get user info
         from jose import jwt
-        user_info = jwt.decode(id_token, "", options={"verify_signature": False, "verify_aud": False})
+
+        user_info = jwt.decode(
+            id_token, "", options={"verify_signature": False, "verify_aud": False}
+        )
 
         # Check if user is admin
         email = user_info.get("email", "")
         is_admin = email in [
             "test@example.com",
-            "admin@igad.int", 
+            "admin@igad.int",
             "user@igad.int",
             "j.cadavid@cgiar.org",
         ]
@@ -182,7 +183,7 @@ async def refresh_token(request: RefreshTokenRequest):
                 "role": "admin" if is_admin else "user",
                 "name": user_info.get("name", "IGAD User"),
                 "is_admin": is_admin,
-            }
+            },
         }
 
     except ClientError as e:
@@ -190,7 +191,9 @@ async def refresh_token(request: RefreshTokenRequest):
         if error_code == "NotAuthorizedException":
             raise HTTPException(status_code=401, detail="Invalid refresh token")
         else:
-            raise HTTPException(status_code=500, detail=f"Token refresh error: {error_code}")
+            raise HTTPException(
+                status_code=500, detail=f"Token refresh error: {error_code}"
+            )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Token refresh failed: {str(e)}")
 
@@ -215,7 +218,6 @@ class ResetPasswordRequest(BaseModel):
 async def forgot_password(request: ForgotPasswordRequest):
     """Send password reset code with custom HTML email"""
     try:
-        import boto3
         from botocore.exceptions import ClientError
 
         session = get_aws_session()
@@ -227,7 +229,7 @@ async def forgot_password(request: ForgotPasswordRequest):
             try:
                 users_response = cognito_client.list_users(
                     UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
-                    Filter=f'email = "{username}"'
+                    Filter=f'email = "{username}"',
                 )
                 if users_response["Users"]:
                     username = users_response["Users"][0]["Username"]
@@ -240,51 +242,6 @@ async def forgot_password(request: ForgotPasswordRequest):
         cognito_response = cognito_client.forgot_password(
             ClientId=os.getenv("COGNITO_CLIENT_ID"), Username=username
         )
-
-        # Since we can't get the actual code from Cognito, we'll send our own email
-        # instructing the user to check for the Cognito email and use our reset form
-
-        reset_html = """
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="utf-8"><title>Password Reset - IGAD Innovation Hub</title></head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-                <h1 style="color: white; margin: 0; font-size: 28px;">Password Reset Request</h1>
-                <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">IGAD Innovation Hub</p>
-            </div>
-
-            <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e2e8f0;">
-                <h2 style="color: #1e40af; margin-top: 0;">Reset Your Password</h2>
-
-                <p style="margin: 20px 0;">You have requested to reset your password for your IGAD Innovation Hub account.</p>
-
-                <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin: 20px 0;">
-                    <p style="margin: 0; font-weight: bold;">Next Steps:</p>
-                    <ol style="margin: 10px 0; padding-left: 20px;">
-                        <li>Check your email for a verification code (it may arrive separately)</li>
-                        <li>Return to the password reset form</li>
-                        <li>Enter the 6-digit code you received</li>
-                        <li>Set your new password</li>
-                    </ol>
-                </div>
-
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="http://localhost:3000/forgot-password" style="background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Continue Password Reset</a>
-                </div>
-
-                <p style="margin: 20px 0; font-size: 14px; color: #64748b;">The verification code will expire in 15 minutes. If you didn't request this password reset, please ignore this email.</p>
-
-                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-
-                <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0;">
-                    IGAD Innovation Hub - Driving Innovation in East Africa<br>
-                    If you have questions, contact us at <a href="mailto:j.cadavid@cgiar.org" style="color: #3b82f6;">j.cadavid@cgiar.org</a>
-                </p>
-            </div>
-        </body>
-        </html>
-        """
 
         # Use Cognito's built-in password reset (no custom email needed)
         # Cognito will send the reset code using the configured email templates
@@ -321,7 +278,6 @@ async def forgot_password(request: ForgotPasswordRequest):
 async def reset_password(request: ResetPasswordRequest):
     """Reset password with code"""
     try:
-        import boto3
         from botocore.exceptions import ClientError
 
         session = get_aws_session()
@@ -369,7 +325,6 @@ class CompletePasswordChangeRequest(BaseModel):
 async def complete_password_change(request: CompletePasswordChangeRequest):
     """Complete password change for users in FORCE_CHANGE_PASSWORD state"""
     try:
-        import boto3
         from botocore.exceptions import ClientError
 
         session = get_aws_session()
@@ -394,7 +349,9 @@ async def complete_password_change(request: CompletePasswordChangeRequest):
         # Decode ID token to get user info
         from jose import jwt
 
-        user_info = jwt.decode(id_token, "", options={"verify_signature": False, "verify_aud": False})
+        user_info = jwt.decode(
+            id_token, "", options={"verify_signature": False, "verify_aud": False}
+        )
 
         # Check if user is admin
         is_admin = request.username in [

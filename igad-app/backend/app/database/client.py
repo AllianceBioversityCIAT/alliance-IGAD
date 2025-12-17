@@ -135,10 +135,8 @@ class DynamoDBClient:
                 partition_key_name = "GSI1PK"
             else:
                 partition_key_name = "PK"
-            
-            kwargs = {
-                "KeyConditionExpression": Key(partition_key_name).eq(pk)
-            }
+
+            kwargs = {"KeyConditionExpression": Key(partition_key_name).eq(pk)}
 
             if sk_condition:
                 kwargs["KeyConditionExpression"] &= sk_condition
@@ -181,26 +179,28 @@ class DynamoDBClient:
             logger.error(f"Error batch writing items: {e}")
             raise
 
-    async def scan_table(self, filter_expression=None, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    async def scan_table(
+        self, filter_expression=None, limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """Scan entire table (use sparingly, prefer query when possible)"""
         try:
             kwargs = {}
-            
+
             if filter_expression:
                 kwargs["FilterExpression"] = filter_expression
-            
+
             if limit:
                 kwargs["Limit"] = limit
-            
+
             response = self.table.scan(**kwargs)
             items = response.get("Items", [])
-            
+
             # Handle pagination if needed
             while "LastEvaluatedKey" in response:
                 kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
                 response = self.table.scan(**kwargs)
                 items.extend(response.get("Items", []))
-            
+
             logger.info(f"Scanned table: {len(items)} items found")
             return items
         except ClientError as e:

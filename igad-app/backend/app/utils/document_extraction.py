@@ -4,6 +4,7 @@ Supports PDF and DOCX files
 """
 from io import BytesIO
 from typing import Optional
+
 import PyPDF2
 from docx import Document
 
@@ -93,11 +94,11 @@ def extract_text_from_file(file_bytes: bytes, filename: str) -> Optional[str]:
     """
     filename_lower = filename.lower()
 
-    if filename_lower.endswith('.pdf'):
+    if filename_lower.endswith(".pdf"):
         return extract_text_from_pdf(file_bytes)
-    elif filename_lower.endswith('.docx'):
+    elif filename_lower.endswith(".docx"):
         return extract_text_from_docx(file_bytes)
-    elif filename_lower.endswith('.doc'):
+    elif filename_lower.endswith(".doc"):
         # .doc files (old Word format) are not supported by python-docx
         # Return None and handle as fallback
         print(f"Warning: .doc files not supported, only .docx")
@@ -132,15 +133,15 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[st
         # If this isn't the last chunk, try to break at a sentence or word boundary
         if end < len(text):
             # Look for sentence endings (. ! ?) within the last 100 chars
-            last_period = text.rfind('.', start, end)
-            last_exclaim = text.rfind('!', start, end)
-            last_question = text.rfind('?', start, end)
+            last_period = text.rfind(".", start, end)
+            last_exclaim = text.rfind("!", start, end)
+            last_question = text.rfind("?", start, end)
 
             best_break = max(last_period, last_exclaim, last_question)
 
             # If no sentence break found, look for word boundary (space)
             if best_break == -1 or best_break < end - 100:
-                last_space = text.rfind(' ', start, end)
+                last_space = text.rfind(" ", start, end)
                 if last_space != -1:
                     best_break = last_space
 

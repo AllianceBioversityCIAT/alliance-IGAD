@@ -23,7 +23,7 @@ const AnalysisProgressModal: React.FC<AnalysisProgressModalProps> = ({ isOpen, p
   const defaultSteps = [
     'Step 1: Analyzing RFP',
     'Step 2: Analyzing Reference Proposals & Existing Work',
-    'Step 3: Analyzing Initial Concept'
+    'Step 3: Analyzing Initial Concept',
   ]
 
   const description = progress?.description || defaultDescription

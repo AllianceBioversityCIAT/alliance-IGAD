@@ -20,17 +20,19 @@ import os
 import re
 import time
 import traceback
+from io import BytesIO
 from typing import Any, Dict, Optional
 
 import boto3
 from boto3.dynamodb.conditions import Attr
-from PyPDF2 import PdfReader
 from docx import Document
-from io import BytesIO
+from PyPDF2 import PdfReader
 
 from app.database.client import db_client
 from app.shared.ai.bedrock_service import BedrockService
-from app.tools.proposal_writer.concept_evaluation.config import CONCEPT_EVALUATION_SETTINGS
+from app.tools.proposal_writer.concept_evaluation.config import (
+    CONCEPT_EVALUATION_SETTINGS,
+)
 
 
 class SimpleConceptAnalyzer:
@@ -62,7 +64,7 @@ class SimpleConceptAnalyzer:
         proposal_id: str,
         rfp_analysis: Dict,
         reference_proposals_analysis: Optional[Dict] = None,
-        existing_work_analysis: Optional[Dict] = None
+        existing_work_analysis: Optional[Dict] = None,
     ) -> Dict[str, Any]:
         """
         Evaluate concept against RFP requirements, reference proposals, and existing work.
@@ -108,7 +110,9 @@ class SimpleConceptAnalyzer:
 
             # Step 3: Validate concept
             if not concept_text or len(concept_text) < 50:
-                raise Exception("Concept text is too short or empty (minimum 50 characters)")
+                raise Exception(
+                    "Concept text is too short or empty (minimum 50 characters)"
+                )
 
             print(f"✅ Concept loaded: {len(concept_text)} characters")
 
@@ -117,20 +121,26 @@ class SimpleConceptAnalyzer:
             prompt_parts = self.get_prompt_from_dynamodb()
 
             if not prompt_parts:
-                raise Exception(
-                    "No active prompt found for concept evaluation"
-                )
+                raise Exception("No active prompt found for concept evaluation")
 
             print("✅ Using DynamoDB prompt")
 
             # Step 5: Prepare prompt with context
             prepared_concept = self._prepare_concept_text(concept_text)
             unwrapped_rfp = self._unwrap_rfp_analysis(rfp_analysis)
-            unwrapped_ref_proposals = self._unwrap_analysis(reference_proposals_analysis, "reference_proposals_analysis")
-            unwrapped_existing_work = self._unwrap_analysis(existing_work_analysis, "existing_work_analysis")
+            unwrapped_ref_proposals = self._unwrap_analysis(
+                reference_proposals_analysis, "reference_proposals_analysis"
+            )
+            unwrapped_existing_work = self._unwrap_analysis(
+                existing_work_analysis, "existing_work_analysis"
+            )
 
             final_user_prompt = self._build_user_prompt(
-                prompt_parts, prepared_concept, unwrapped_rfp, unwrapped_ref_proposals, unwrapped_existing_work
+                prompt_parts,
+                prepared_concept,
+                unwrapped_rfp,
+                unwrapped_ref_proposals,
+                unwrapped_existing_work,
             )
 
             # Step 6: Call Bedrock for evaluation
@@ -223,10 +233,7 @@ class SimpleConceptAnalyzer:
         for obj in contents:
             key = obj["Key"]
             # Only support PDF and DOCX (legacy .doc format not supported)
-            if (
-                key.lower().endswith((".pdf", ".docx"))
-                and not key.endswith("/")
-            ):
+            if key.lower().endswith((".pdf", ".docx")) and not key.endswith("/"):
                 return key
         return None
 
@@ -310,7 +317,7 @@ class SimpleConceptAnalyzer:
         concept_text: str,
         rfp_analysis: Dict,
         reference_proposals_analysis: Dict,
-        existing_work_analysis: Dict
+        existing_work_analysis: Dict,
     ) -> str:
         """
         Build complete user prompt with injected context.
@@ -341,13 +348,19 @@ class SimpleConceptAnalyzer:
         )
 
         # Prepare Step 2 analyses for injection
-        reference_proposals_json = json.dumps(reference_proposals_analysis, indent=2) if reference_proposals_analysis else "{}"
-        existing_work_json = json.dumps(existing_work_analysis, indent=2) if existing_work_analysis else "{}"
+        reference_proposals_json = (
+            json.dumps(reference_proposals_analysis, indent=2)
+            if reference_proposals_analysis
+            else "{}"
+        )
+        existing_work_json = (
+            json.dumps(existing_work_analysis, indent=2)
+            if existing_work_analysis
+            else "{}"
+        )
 
         # Inject all placeholders
-        user_prompt = user_prompt.replace(
-            "{{rfp_analysis.summary}}", rfp_summary_json
-        )
+        user_prompt = user_prompt.replace("{{rfp_analysis.summary}}", rfp_summary_json)
         user_prompt = user_prompt.replace(
             "{{rfp_analysis.extracted_data}}", rfp_extracted_json
         )
@@ -368,7 +381,9 @@ class SimpleConceptAnalyzer:
 
         print(f"📝 Final prompt: {len(final_prompt)} characters")
         print(f"   - RFP analysis: ✅")
-        print(f"   - Reference proposals: {'✅' if reference_proposals_analysis else '⚠️  (empty)'}")
+        print(
+            f"   - Reference proposals: {'✅' if reference_proposals_analysis else '⚠️  (empty)'}"
+        )
         print(f"   - Existing work: {'✅' if existing_work_analysis else '⚠️  (empty)'}")
         return final_prompt
 
@@ -396,7 +411,9 @@ class SimpleConceptAnalyzer:
             elif s3_key.lower().endswith(".docx"):
                 return self.extract_text_from_docx(file_bytes)
             elif s3_key.lower().endswith(".doc"):
-                print("❌ Legacy .doc format not supported. Please upload as .docx or .pdf")
+                print(
+                    "❌ Legacy .doc format not supported. Please upload as .docx or .pdf"
+                )
                 return None
             else:
                 print(f"❌ Unsupported file type: {s3_key}")
@@ -538,9 +555,7 @@ class SimpleConceptAnalyzer:
             response = response.strip()
 
             # Try to extract JSON from code block
-            json_match = re.search(
-                r"```json\s*(\{.*?\})\s*```", response, re.DOTALL
-            )
+            json_match = re.search(r"```json\s*(\{.*?\})\s*```", response, re.DOTALL)
             if json_match:
                 response = json_match.group(1)
             else:
@@ -550,9 +565,7 @@ class SimpleConceptAnalyzer:
                     response = json_match.group(0)
                 else:
                     # Remove markdown markers
-                    response = (
-                        response.lstrip("```json").lstrip("```").rstrip("```")
-                    )
+                    response = response.lstrip("```json").lstrip("```").rstrip("```")
 
             response = response.strip()
             parsed = json.loads(response)

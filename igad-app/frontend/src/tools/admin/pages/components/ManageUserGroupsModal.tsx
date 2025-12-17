@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Shield, Users, Loader2 } from 'lucide-react'
 import { userService, CognitoUser } from '@/tools/admin/services/userService'
 import styles from './ManageUserGroupsModal.module.css'
@@ -22,13 +22,7 @@ export function ManageUserGroupsModal({
   const [togglingGroup, setTogglingGroup] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (isOpen && username) {
-      fetchData()
-    }
-  }, [isOpen, username])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!username) {
       return
     }
@@ -52,7 +46,13 @@ export function ManageUserGroupsModal({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [username, setIsLoading])
+
+  useEffect(() => {
+    if (isOpen && username) {
+      fetchData()
+    }
+  }, [isOpen, username, fetchData])
 
   const handleToggleGroup = async (groupName: string, isInGroup: boolean) => {
     if (!username) {
@@ -73,8 +73,9 @@ export function ManageUserGroupsModal({
       } else {
         setError(result.message || 'Failed to update group membership')
       }
-    } catch (error: any) {
-      setError(error.response?.data?.detail || 'Failed to update group membership')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      setError(err.response?.data?.detail || 'Failed to update group membership')
     } finally {
       setTogglingGroup(null)
     }

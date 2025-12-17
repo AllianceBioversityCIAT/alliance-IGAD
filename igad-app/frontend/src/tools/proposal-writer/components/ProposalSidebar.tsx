@@ -31,7 +31,9 @@ function SidebarSkeleton() {
             <div key={step} className={styles.sidebarStep}>
               <div className={styles.stepIndicator}>
                 <div className={`${styles.skeleton} ${styles.skeletonStepCircle}`}></div>
-                {index < 3 && <div className={`${styles.skeleton} ${styles.skeletonStepLine}`}></div>}
+                {index < 3 && (
+                  <div className={`${styles.skeleton} ${styles.skeletonStepLine}`}></div>
+                )}
               </div>
               <div className={styles.stepContent}>
                 <div className={`${styles.skeleton} ${styles.skeletonStepTitle}`}></div>
@@ -44,7 +46,11 @@ function SidebarSkeleton() {
   )
 }
 
-export function ProposalSidebar({ currentStep, completedSteps, isLoading = false }: ProposalSidebarProps) {
+export function ProposalSidebar({
+  currentStep,
+  completedSteps,
+  isLoading = false,
+}: ProposalSidebarProps) {
   // Show skeleton while loading
   if (isLoading) {
     return <SidebarSkeleton />
@@ -73,7 +79,6 @@ export function ProposalSidebar({ currentStep, completedSteps, isLoading = false
         {/* Steps List */}
         <div className={styles.stepsList}>
           {stepConfig.map((step, index) => {
-            const StepIcon = step.icon
             const isCompleted = completedSteps.includes(step.id)
             const isActive = step.id === currentStep
 

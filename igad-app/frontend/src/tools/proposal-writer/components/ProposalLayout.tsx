@@ -81,7 +81,7 @@ export function ProposalLayout({
         navigate('/dashboard')
       }, 500)
     } catch (error) {
-      console.error('Failed to save proposal:', error)
+      // Removed console.error
       showError('Failed to save proposal', 'Please try again.')
       setIsSaving(false)
     }
@@ -97,7 +97,11 @@ export function ProposalLayout({
         isSaving={isSaving}
       />
       <div className={styles.proposalWriterContainer}>
-        <ProposalSidebar currentStep={currentStep} completedSteps={completedSteps} isLoading={isLoadingStepData} />
+        <ProposalSidebar
+          currentStep={currentStep}
+          completedSteps={completedSteps}
+          isLoading={isLoadingStepData}
+        />
         <div className={styles.contentArea}>
           {children}
           <div className={styles.navigationButtons}>

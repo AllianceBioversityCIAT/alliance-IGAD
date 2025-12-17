@@ -3,7 +3,6 @@ import {
   Users,
   UserPlus,
   Search,
-  Filter,
   Edit,
   Trash2,
   Shield,

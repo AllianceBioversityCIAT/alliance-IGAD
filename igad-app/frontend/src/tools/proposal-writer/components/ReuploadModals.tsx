@@ -12,7 +12,7 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  Loader2
+  Loader2,
 } from 'lucide-react'
 import styles from './reupload-modals.module.css'
 
@@ -43,7 +43,7 @@ const ALLOWED_FILE_TYPES = ['.pdf', '.docx', '.txt']
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain'
+  'text/plain',
 ]
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
 
@@ -67,7 +67,7 @@ function validateFile(file: File): { valid: boolean; error?: string } {
   if (!ALLOWED_FILE_TYPES.includes(extension) && !ALLOWED_MIME_TYPES.includes(file.type)) {
     return {
       valid: false,
-      error: `Invalid file type. Allowed types: ${ALLOWED_FILE_TYPES.join(', ')}`
+      error: `Invalid file type. Allowed types: ${ALLOWED_FILE_TYPES.join(', ')}`,
     }
   }
 
@@ -75,7 +75,7 @@ function validateFile(file: File): { valid: boolean; error?: string } {
   if (file.size > MAX_FILE_SIZE) {
     return {
       valid: false,
-      error: `File size exceeds 2MB limit. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
+      error: `File size exceeds 2MB limit. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
     }
   }
 
@@ -83,7 +83,9 @@ function validateFile(file: File): { valid: boolean; error?: string } {
 }
 
 function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes'
+  if (bytes === 0) {
+    return '0 Bytes'
+  }
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -105,13 +107,15 @@ export function ReuploadConfirmationModal({
   isOpen,
   onClose,
   onConfirm,
-  currentFileName
+  currentFileName,
 }: ReuploadConfirmationModalProps) {
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose} aria-label="Close modal">
           <X size={20} />
         </button>
@@ -126,7 +130,7 @@ export function ReuploadConfirmationModal({
         <div className={styles.modalBody}>
           <p className={styles.warningText}>
             You are about to replace your current concept document
-            {currentFileName && <strong> "{currentFileName}"</strong>}.
+            {currentFileName && <strong> &quot;{currentFileName}&quot;</strong>}.
           </p>
 
           <div className={styles.warningBox}>
@@ -140,7 +144,8 @@ export function ReuploadConfirmationModal({
           </div>
 
           <p className={styles.noteText}>
-            This process may take a few minutes. Please don't close this window during the process.
+            This process may take a few minutes. Please don&apos;t close this window during the
+            process.
           </p>
         </div>
 
@@ -168,11 +173,7 @@ interface ConceptReuploadModalProps {
   onFileSelect: (file: File) => void
 }
 
-export function ConceptReuploadModal({
-  isOpen,
-  onClose,
-  onFileSelect
-}: ConceptReuploadModalProps) {
+export function ConceptReuploadModal({ isOpen, onClose, onFileSelect }: ConceptReuploadModalProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -236,11 +237,13 @@ export function ConceptReuploadModal({
     setValidationError(null)
   }
 
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose} aria-label="Close modal">
           <X size={20} />
         </button>
@@ -275,12 +278,8 @@ export function ConceptReuploadModal({
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className={styles.dropZoneIcon} size={40} />
-              <p className={styles.dropZoneText}>
-                Drag and drop your file here
-              </p>
-              <p className={styles.dropZoneSubtext}>
-                or click to browse
-              </p>
+              <p className={styles.dropZoneText}>Drag and drop your file here</p>
+              <p className={styles.dropZoneSubtext}>or click to browse</p>
               <div className={styles.fileRequirements}>
                 <span>Supported: PDF, DOCX, TXT</span>
                 <span>Max size: 2MB</span>
@@ -348,14 +347,16 @@ export function ReuploadProgressModal({
   isOpen,
   progress,
   onClose,
-  onRetry
+  onRetry,
 }: ReuploadProgressModalProps) {
   const stages: ReuploadStage[] = ['uploading', 'replacing', 'analyzing', 'finalizing']
   const currentStageIndex = stages.indexOf(progress.stage)
   const isComplete = progress.stage === 'completed'
   const hasError = progress.stage === 'error'
 
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   const renderStageIcon = (stage: ReuploadStage, index: number) => {
     const isPast = currentStageIndex > index
@@ -376,7 +377,7 @@ export function ReuploadProgressModal({
 
   return (
     <div className={styles.modalOverlay}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
         {/* Only show close button if complete or error */}
         {(isComplete || hasError) && (
           <button className={styles.closeButton} onClick={onClose} aria-label="Close modal">
@@ -401,9 +402,7 @@ export function ReuploadProgressModal({
           <h2 className={styles.modalTitle}>
             {isComplete ? 'Re-upload Complete!' : hasError ? 'Re-upload Failed' : 'Processing...'}
           </h2>
-          <p className={styles.modalSubtitle}>
-            {progress.message}
-          </p>
+          <p className={styles.modalSubtitle}>{progress.message}</p>
         </div>
 
         <div className={styles.modalBody}>
@@ -413,18 +412,10 @@ export function ReuploadProgressModal({
               <div
                 key={stage}
                 className={`${styles.progressStage} ${
-                  currentStageIndex >= index || isComplete
-                    ? styles.progressStageActive
-                    : ''
-                } ${
-                  hasError && currentStageIndex === index
-                    ? styles.progressStageError
-                    : ''
-                }`}
+                  currentStageIndex >= index || isComplete ? styles.progressStageActive : ''
+                } ${hasError && currentStageIndex === index ? styles.progressStageError : ''}`}
               >
-                <div className={styles.stageIconWrapper}>
-                  {renderStageIcon(stage, index)}
-                </div>
+                <div className={styles.stageIconWrapper}>{renderStageIcon(stage, index)}</div>
                 <span className={styles.stageLabel}>
                   {STAGE_CONFIG[stage].label.replace('...', '')}
                 </span>
@@ -475,13 +466,15 @@ interface RegenerateConfirmationModalProps {
 export function RegenerateConfirmationModal({
   isOpen,
   onClose,
-  onConfirm
+  onConfirm,
 }: RegenerateConfirmationModalProps) {
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose} aria-label="Close modal">
           <X size={20} />
         </button>
@@ -508,7 +501,7 @@ export function RegenerateConfirmationModal({
           </div>
 
           <p className={styles.noteText}>
-            This process takes 1-2 minutes. Please don't close this window during the analysis.
+            This process takes 1-2 minutes. Please don&apos;t close this window during the analysis.
           </p>
         </div>
 
@@ -534,5 +527,5 @@ export default {
   ReuploadConfirmationModal,
   ConceptReuploadModal,
   ReuploadProgressModal,
-  RegenerateConfirmationModal
+  RegenerateConfirmationModal,
 }

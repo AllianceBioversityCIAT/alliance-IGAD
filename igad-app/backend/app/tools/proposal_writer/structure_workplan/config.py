@@ -45,17 +45,15 @@ Usage:
 STRUCTURE_WORKPLAN_SETTINGS = {
     # ==================== AI Model Configuration ====================
     "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",  # Claude Sonnet 4
-    "max_tokens": 16000,          # Maximum tokens for response (~12,000 words)
-    "temperature": 0.2,           # Low temperature for consistent, structured output
-    "top_p": 0.9,                 # Nucleus sampling (0.9 = consider top 90% probability mass)
-    "top_k": 250,                 # Top-k sampling (consider top 250 tokens)
-
+    "max_tokens": 16000,  # Maximum tokens for response (~12,000 words)
+    "temperature": 0.2,  # Low temperature for consistent, structured output
+    "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)
+    "top_k": 250,  # Top-k sampling (consider top 250 tokens)
     # ==================== Processing Settings ====================
-    "timeout": 300,               # Processing timeout (5 minutes)
-    "max_sections": 30,           # Maximum proposal sections allowed
-
+    "timeout": 300,  # Processing timeout (5 minutes)
+    "max_sections": 30,  # Maximum proposal sections allowed
     # ==================== DynamoDB Prompt Lookup ====================
-    "section": "proposal_writer",      # Top-level section
-    "sub_section": "step-3",           # Step identifier
-    "category": "Initial Proposal"     # Prompt category filter
+    "section": "proposal_writer",  # Top-level section
+    "sub_section": "step-3",  # Step identifier
+    "category": "Initial Proposal",  # Prompt category filter
 }

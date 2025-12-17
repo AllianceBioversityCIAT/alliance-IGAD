@@ -45,18 +45,16 @@ Usage:
 REFERENCE_PROPOSALS_ANALYSIS_SETTINGS = {
     # ==================== AI Model Configuration ====================
     "model": "us.anthropic.claude-3-5-haiku-20241022-v1:0",  # Claude 3.5 Haiku (fast)
-    "max_tokens": 8000,           # Maximum tokens for response (~6,000 words)
-    "temperature": 0.2,           # Low temperature for consistent pattern identification
-    "top_p": 0.9,                 # Nucleus sampling (0.9 = consider top 90% probability mass)
-    "top_k": 250,                 # Top-k sampling (consider top 250 tokens)
-
+    "max_tokens": 8000,  # Maximum tokens for response (~6,000 words)
+    "temperature": 0.2,  # Low temperature for consistent pattern identification
+    "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)
+    "top_k": 250,  # Top-k sampling (consider top 250 tokens)
     # ==================== Processing Settings ====================
-    "timeout": 120,               # Processing timeout (2 minutes - Haiku is fast)
-    "max_documents": 3,           # Maximum reference proposals to analyze
+    "timeout": 120,  # Processing timeout (2 minutes - Haiku is fast)
+    "max_documents": 3,  # Maximum reference proposals to analyze
     "max_chars_per_document": 100000,  # Max characters per document (~25K tokens)
-
     # ==================== DynamoDB Prompt Lookup ====================
-    "section": "proposal_writer",      # Top-level section
-    "sub_section": "step-1",           # Step identifier
-    "category": "Reference Proposals"  # Prompt category filter
+    "section": "proposal_writer",  # Top-level section
+    "sub_section": "step-1",  # Step identifier
+    "category": "Reference Proposals",  # Prompt category filter
 }

@@ -129,9 +129,11 @@ class UserService {
     return response.data
   }
 
-  async createGroup(
-    groupData: CreateGroupRequest
-  ): Promise<{ success: boolean; message: string; group?: any }> {
+  async createGroup(groupData: CreateGroupRequest): Promise<{
+    success: boolean
+    message: string
+    group?: { name: string; description?: string; [key: string]: unknown }
+  }> {
     const response = await apiClient.post('/admin/groups', groupData)
     return response.data
   }

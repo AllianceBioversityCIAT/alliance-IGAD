@@ -48,17 +48,15 @@ Usage:
 PROPOSAL_DRAFT_FEEDBACK_SETTINGS = {
     # ==================== AI Model Configuration ====================
     "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",  # Claude Sonnet 4
-    "max_tokens": 16000,          # Maximum tokens for response (~12,000 words)
-    "temperature": 0.3,           # Low temperature for constructive, consistent feedback
-    "top_p": 0.9,                 # Nucleus sampling (0.9 = consider top 90% probability mass)
-    "top_k": 250,                 # Top-k sampling (consider top 250 tokens)
-
+    "max_tokens": 16000,  # Maximum tokens for response (~12,000 words)
+    "temperature": 0.3,  # Low temperature for constructive, consistent feedback
+    "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)
+    "top_k": 250,  # Top-k sampling (consider top 250 tokens)
     # ==================== Processing Settings ====================
-    "timeout": 300,               # Processing timeout (5 minutes)
-    "max_sections": 20,           # Maximum sections to analyze
-
+    "timeout": 300,  # Processing timeout (5 minutes)
+    "max_sections": 20,  # Maximum sections to analyze
     # ==================== DynamoDB Prompt Lookup ====================
-    "section": "proposal_writer",      # Top-level section
-    "sub_section": "step-4",           # Step identifier
-    "category": "Proposal Review"      # Prompt category filter
+    "section": "proposal_writer",  # Top-level section
+    "sub_section": "step-4",  # Step identifier
+    "category": "Proposal Review",  # Prompt category filter
 }

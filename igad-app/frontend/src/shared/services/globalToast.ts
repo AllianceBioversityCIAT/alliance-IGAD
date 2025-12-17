@@ -57,7 +57,7 @@ export const globalToast = {
     if (toastHandler) {
       toastHandler.show('success', { title, message, duration })
     } else {
-      console.log(`[Toast Success] ${title}: ${message}`)
+      // Removed console.log
     }
   },
 
@@ -68,7 +68,7 @@ export const globalToast = {
     if (toastHandler) {
       toastHandler.show('error', { title, message, duration: 0, action })
     } else {
-      console.error(`[Toast Error] ${title}: ${message}`)
+      // Removed console.error
     }
   },
 
@@ -79,7 +79,7 @@ export const globalToast = {
     if (toastHandler) {
       toastHandler.show('warning', { title, message, duration })
     } else {
-      console.warn(`[Toast Warning] ${title}: ${message}`)
+      // Removed console.warn
     }
   },
 
@@ -90,7 +90,7 @@ export const globalToast = {
     if (toastHandler) {
       toastHandler.show('info', { title, message, duration })
     } else {
-      console.info(`[Toast Info] ${title}: ${message}`)
+      // Removed console.info
     }
   },
 }
@@ -98,7 +98,7 @@ export const globalToast = {
 /**
  * Parse API error responses into user-friendly messages
  */
-export function parseApiError(error: any): { title: string; message: string } {
+export function parseApiError(error: unknown): { title: string; message: string } {
   // Default error
   let title = 'Error'
   let message = 'An unexpected error occurred. Please try again.'
@@ -108,9 +108,12 @@ export function parseApiError(error: any): { title: string; message: string } {
   }
 
   // Axios error with response
-  if (error.response) {
-    const status = error.response.status
-    const data = error.response.data
+  const err = error as {
+    response?: { status?: number; data?: { detail?: unknown; message?: string; error?: string } }
+  }
+  if (err.response) {
+    const status = err.response.status
+    const data = err.response.data
 
     // Extract message from response
     if (data?.detail) {
@@ -176,12 +179,10 @@ export function parseApiError(error: any): { title: string; message: string } {
     if (message.toLowerCase().includes('bedrock') || message.toLowerCase().includes('model')) {
       title = 'AI Processing Error'
     }
-
   } else if (error.request) {
     // Request was made but no response received
     title = 'Network Error'
     message = 'Unable to connect to the server. Please check your internet connection.'
-
   } else if (error.message) {
     // Error setting up the request
     message = error.message

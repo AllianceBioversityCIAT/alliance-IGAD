@@ -31,7 +31,6 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
   const getTemplateView = (text: string) => {
     let result = text
     allVariables.forEach(variable => {
-      const placeholder = `{${variable}}`
       const exampleValue = `[${variable.replace(/_/g, ' ').toUpperCase()}]`
       result = result.replace(new RegExp(`\\{${variable}\\}`, 'g'), exampleValue)
     })
@@ -45,7 +44,7 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
       setCopiedSection(section)
       setTimeout(() => setCopiedSection(null), 2000)
     } catch (err) {
-      console.error('Failed to copy text: ', err)
+      // Removed console.error
     }
   }
 

@@ -25,12 +25,6 @@ export function ChangePasswordPage() {
 
   const state = location.state as LocationState
 
-  // Redirect if no session data
-  if (!state?.username || !state?.session) {
-    navigate('/login')
-    return null
-  }
-
   const {
     register,
     handleSubmit,
@@ -39,6 +33,12 @@ export function ChangePasswordPage() {
   } = useForm<ChangePasswordForm>()
 
   const newPassword = watch('newPassword')
+
+  // Redirect if no session data - AFTER all hooks
+  if (!state?.username || !state?.session) {
+    navigate('/login')
+    return null
+  }
 
   const onSubmit = async (data: ChangePasswordForm) => {
     if (data.newPassword !== data.confirmPassword) {

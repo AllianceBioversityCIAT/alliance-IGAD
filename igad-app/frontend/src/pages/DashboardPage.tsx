@@ -1,14 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  FileText,
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  ChevronDown,
-  AlertCircle
-} from 'lucide-react'
+import { FileText, Plus, Search, Edit, Trash2, ChevronDown, AlertCircle } from 'lucide-react'
 import { proposalService, Proposal } from '@/tools/proposal-writer/services/proposalService'
 import { useToast } from '@/shared/components/ui/ToastContainer'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
@@ -63,7 +55,7 @@ export function DashboardPage() {
         setProposals(response)
         setFilteredProposals(response)
       } catch (error) {
-        console.error('Failed to fetch proposals:', error)
+        // Removed console.error
         showError('Failed to load proposals', 'Please try again later.')
       } finally {
         setIsLoading(false)
@@ -71,7 +63,7 @@ export function DashboardPage() {
     }
 
     fetchProposals()
-  }, [])
+  }, [showError])
 
   // Filter proposals when search or status filter changes
   useEffect(() => {
@@ -120,7 +112,9 @@ export function DashboardPage() {
   }
 
   const handleDeleteConfirm = async () => {
-    if (!deleteDialog.proposalId) return
+    if (!deleteDialog.proposalId) {
+      return
+    }
 
     setIsDeleting(true)
     try {
@@ -129,7 +123,7 @@ export function DashboardPage() {
       showSuccess('Proposal deleted', `${deleteDialog.proposalCode} has been deleted.`)
       setDeleteDialog({ isOpen: false, proposalId: '', proposalCode: '' })
     } catch (error) {
-      console.error('Failed to delete proposal:', error)
+      // Removed console.error
       showError('Failed to delete proposal', 'Please try again.')
     } finally {
       setIsDeleting(false)
@@ -137,7 +131,9 @@ export function DashboardPage() {
   }
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return '-'
+    if (!dateString) {
+      return '-'
+    }
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -147,11 +143,7 @@ export function DashboardPage() {
 
   const renderStatusBadge = (status: ProposalStatus) => {
     const config = STATUS_CONFIG[status] || STATUS_CONFIG.draft
-    return (
-      <span className={`${styles.statusBadge} ${config.className}`}>
-        {config.label}
-      </span>
-    )
+    return <span className={`${styles.statusBadge} ${config.className}`}>{config.label}</span>
   }
 
   const renderEmptyState = () => (
@@ -161,7 +153,8 @@ export function DashboardPage() {
       </div>
       <h3 className={styles.emptyStateTitle}>No proposals yet</h3>
       <p className={styles.emptyStateDescription}>
-        Get started by creating your first proposal. Our AI-powered tool will help you craft compelling proposals.
+        Get started by creating your first proposal. Our AI-powered tool will help you craft
+        compelling proposals.
       </p>
       <button className={styles.emptyStateButton} onClick={handleCreateNew}>
         <Plus size={20} />
@@ -239,9 +232,7 @@ export function DashboardPage() {
             </div>
             <div>
               <h1 className={styles.title}>My Proposals</h1>
-              <p className={styles.subtitle}>
-                Manage and track all your proposal submissions
-              </p>
+              <p className={styles.subtitle}>Manage and track all your proposal submissions</p>
             </div>
           </div>
           <button className={styles.createButton} onClick={handleCreateNew}>
@@ -293,13 +284,11 @@ export function DashboardPage() {
           </div>
 
           {/* Content Area */}
-          {isLoading ? (
-            renderLoadingState()
-          ) : proposals.length === 0 ? (
-            renderEmptyState()
-          ) : (
-            renderTable()
-          )}
+          {isLoading
+            ? renderLoadingState()
+            : proposals.length === 0
+              ? renderEmptyState()
+              : renderTable()}
         </div>
       </div>
 

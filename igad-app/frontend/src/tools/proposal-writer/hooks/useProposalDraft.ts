@@ -1,4 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
+import type { RFPAnalysis } from '../types/analysis'
+
+interface FormData {
+  uploadedFiles: Record<string, File[]>
+  textInputs: Record<string, string>
+}
 
 const DRAFT_KEYS = {
   PROPOSAL_ID: 'draft_proposal_id',
@@ -19,17 +25,17 @@ export function useProposalDraft() {
   }
 
   // Save form data
-  const saveFormData = (data: any) => {
+  const saveFormData = (data: FormData) => {
     localStorage.setItem(DRAFT_KEYS.FORM_DATA, JSON.stringify(data))
   }
 
   // Save RFP analysis
-  const saveRfpAnalysis = (analysis: any) => {
+  const saveRfpAnalysis = (analysis: RFPAnalysis) => {
     localStorage.setItem(DRAFT_KEYS.RFP_ANALYSIS, JSON.stringify(analysis))
   }
 
   // Load all draft data
-  const loadDraft = () => {
+  const loadDraft = useCallback(() => {
     const proposalId = localStorage.getItem(DRAFT_KEYS.PROPOSAL_ID)
     const proposalCode = localStorage.getItem(DRAFT_KEYS.PROPOSAL_CODE)
     const formDataStr = localStorage.getItem(DRAFT_KEYS.FORM_DATA)
@@ -46,7 +52,7 @@ export function useProposalDraft() {
         rfpAnalysis = JSON.parse(rfpAnalysisStr)
       }
     } catch (e) {
-      console.error('Failed to parse draft data', e)
+      // Removed console.error
     }
 
     return {
@@ -55,7 +61,7 @@ export function useProposalDraft() {
       formData,
       rfpAnalysis,
     }
-  }
+  }, [])
 
   // Clear all draft data
   const clearDraft = () => {

@@ -7,6 +7,7 @@ Run from backend directory:
 Requires AWS credentials and TABLE_NAME environment variable.
 """
 import os
+
 import boto3
 from boto3.dynamodb.conditions import Attr
 
@@ -16,12 +17,15 @@ REQUIRED_PLACEHOLDERS = [
     "{{rfp_analysis}}",
     "{{concept_document_v2}}",
     "{{reference_proposals_analysis}}",
-    "{{existing_work_analysis}}"
+    "{{existing_work_analysis}}",
 ]
+
 
 def verify_prompt():
     print(f"🔍 Searching for Step 3 prompt in table: {TABLE_NAME}")
-    print(f"   Criteria: section='proposal_writer', sub_section='step-3', categories contains 'Initial Proposal'")
+    print(
+        f"   Criteria: section='proposal_writer', sub_section='step-3', categories contains 'Initial Proposal'"
+    )
     print()
 
     dynamodb = boto3.resource("dynamodb")
@@ -74,7 +78,9 @@ def verify_prompt():
             print(f"\n✅ All required placeholders found!")
         else:
             print(f"\n⚠️  Some placeholders are MISSING. Please update the prompt.")
-            print(f"   The prompt needs these placeholders for Step 3 to work correctly.")
+            print(
+                f"   The prompt needs these placeholders for Step 3 to work correctly."
+            )
 
         # Show a preview of the template
         print(f"\n📄 Template preview (first 500 chars):")
@@ -89,4 +95,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Error: {e}")
         import traceback
+
         traceback.print_exc()

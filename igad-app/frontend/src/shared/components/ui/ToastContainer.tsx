@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { Toast, ToastProps, ToastAction } from './Toast'
 import { registerToastHandler, unregisterToastHandler } from '../../services/globalToast'
 import styles from './ToastContainer.module.css'
@@ -28,19 +28,22 @@ interface ToastProviderProps {
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastProps[]>([])
 
-  const removeToast = (id: string) => {
+  const removeToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(toast => toast.id !== id))
-  }
+  }, [])
 
-  const showToast = (toast: Omit<ToastProps, 'id' | 'onClose'>) => {
-    const id = Math.random().toString(36).substr(2, 9)
-    const newToast: ToastProps = {
-      ...toast,
-      id,
-      onClose: removeToast,
-    }
-    setToasts(prev => [...prev, newToast])
-  }
+  const showToast = useCallback(
+    (toast: Omit<ToastProps, 'id' | 'onClose'>) => {
+      const id = Math.random().toString(36).substr(2, 9)
+      const newToast: ToastProps = {
+        ...toast,
+        id,
+        onClose: removeToast,
+      }
+      setToasts(prev => [...prev, newToast])
+    },
+    [removeToast]
+  )
 
   // Register global toast handler for non-React contexts (e.g., API interceptors)
   useEffect(() => {
@@ -59,7 +62,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
     return () => {
       unregisterToastHandler()
     }
-  }, [])
+  }, [showToast])
 
   const showSuccess = (title: string, message?: string, duration = 4000) => {
     showToast({ type: 'success', title, message, duration })
@@ -79,9 +82,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
   }
 
   return (
-    <ToastContext.Provider
-      value={{ showToast, showSuccess, showError, showInfo, showWarning }}
-    >
+    <ToastContext.Provider value={{ showToast, showSuccess, showError, showInfo, showWarning }}>
       {children}
       <div className={styles.container} aria-live="polite" aria-atomic="false">
         {toasts.map(toast => (

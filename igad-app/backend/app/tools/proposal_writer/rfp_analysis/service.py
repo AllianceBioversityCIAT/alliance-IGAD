@@ -16,12 +16,12 @@ import json
 import os
 import re
 import time
+from io import BytesIO
 from typing import Any, Dict, Optional
 
 import boto3
 from boto3.dynamodb.conditions import Attr
 from PyPDF2 import PdfReader
-from io import BytesIO
 
 from app.database.client import db_client
 from app.shared.ai.bedrock_service import BedrockService
@@ -124,7 +124,7 @@ class SimpleRFPAnalyzer:
             # Step 7: Generate semantic query for vector search
             print("🔍 Generating semantic query for vector search...")
             semantic_query = self._build_semantic_query(result)
-            result['semantic_query'] = semantic_query
+            result["semantic_query"] = semantic_query
             print(f"✅ Semantic query generated ({len(semantic_query)} chars)")
 
             print("✅ RFP analysis completed successfully")
@@ -212,9 +212,7 @@ class SimpleRFPAnalyzer:
             user_prompt = prompt_parts["user_prompt"].replace(
                 "{{rfp_text}}", prepared_text
             )
-            user_prompt = (
-                f"{user_prompt}\n\n{prompt_parts['output_format']}"
-            ).strip()
+            user_prompt = (f"{user_prompt}\n\n{prompt_parts['output_format']}").strip()
 
             return {
                 "system_prompt": prompt_parts["system_prompt"],
@@ -431,19 +429,19 @@ Use this structure:
         query_parts = []
 
         # Extract data from RFP analysis structure
-        summary = rfp_analysis.get('summary', {})
-        extracted = rfp_analysis.get('extracted_data', {})
-        overview = rfp_analysis.get('rfp_overview', {})
-        eligibility = rfp_analysis.get('eligibility', {})
+        summary = rfp_analysis.get("summary", {})
+        extracted = rfp_analysis.get("extracted_data", {})
+        overview = rfp_analysis.get("rfp_overview", {})
+        eligibility = rfp_analysis.get("eligibility", {})
 
         # 1. DONOR CONTEXT
-        donor = summary.get('donor', '') or extracted.get('donor_name', '')
+        donor = summary.get("donor", "") or extracted.get("donor_name", "")
         if donor:
             query_parts.append(f"Proposals funded by {donor} or similar donors")
 
         # 2. THEMATIC FOCUS (most important part)
-        key_focus = summary.get('key_focus', '')
-        objectives = overview.get('general_objectives', '')
+        key_focus = summary.get("key_focus", "")
+        objectives = overview.get("general_objectives", "")
 
         if key_focus:
             query_parts.append(f"focusing on {key_focus}")
@@ -452,16 +450,18 @@ Use this structure:
             query_parts.append(f"focusing on {objectives[:250]}")
 
         # 3. GEOGRAPHIC CONTEXT
-        geo_focus = eligibility.get('geographic_focus', []) or extracted.get('geographic_scope', [])
+        geo_focus = eligibility.get("geographic_focus", []) or extracted.get(
+            "geographic_scope", []
+        )
         if geo_focus:
             if isinstance(geo_focus, list):
-                geo_str = ', '.join(geo_focus[:5])  # Top 5 locations
+                geo_str = ", ".join(geo_focus[:5])  # Top 5 locations
             else:
                 geo_str = str(geo_focus)
             query_parts.append(f"Target region: {geo_str}.")
 
         # 4. BENEFICIARIES
-        beneficiaries = extracted.get('target_beneficiaries', '')
+        beneficiaries = extracted.get("target_beneficiaries", "")
         if beneficiaries:
             query_parts.append(f"Primary beneficiaries: {beneficiaries}.")
 
@@ -469,45 +469,57 @@ Use this structure:
         intervention_parts = []
 
         # Intervention type
-        intervention_type = extracted.get('intervention_type', '')
+        intervention_type = extracted.get("intervention_type", "")
         if intervention_type:
             intervention_parts.append(intervention_type)
 
         # Mandatory requirements (capture key methodologies)
-        mandatory_reqs = extracted.get('mandatory_requirements', [])
+        mandatory_reqs = extracted.get("mandatory_requirements", [])
         if mandatory_reqs:
             # Take first 3-4 requirements
-            reqs_str = ', '.join(mandatory_reqs[:4]) if isinstance(mandatory_reqs, list) else str(mandatory_reqs)
+            reqs_str = (
+                ", ".join(mandatory_reqs[:4])
+                if isinstance(mandatory_reqs, list)
+                else str(mandatory_reqs)
+            )
             intervention_parts.append(reqs_str)
 
         if intervention_parts:
-            query_parts.append(f"Intervention approach: {', '.join(intervention_parts)}.")
+            query_parts.append(
+                f"Intervention approach: {', '.join(intervention_parts)}."
+            )
 
         # 6. KEY OBJECTIVES (additional context)
-        expected_outcomes = overview.get('expected_outcomes', '')
+        expected_outcomes = overview.get("expected_outcomes", "")
         if expected_outcomes:
             query_parts.append(f"Key objectives: {expected_outcomes[:200]}.")
 
         # 7. SCALE/BUDGET
-        budget = extracted.get('budget_range', '') or extracted.get('budget', '')
+        budget = extracted.get("budget_range", "") or extracted.get("budget", "")
         if budget:
             query_parts.append(f"Budget range: {budget}.")
 
         # 8. SECTORS/TOPICS
-        sectors = extracted.get('sectors', [])
-        thematic_areas = eligibility.get('thematic_areas', [])
+        sectors = extracted.get("sectors", [])
+        thematic_areas = eligibility.get("thematic_areas", [])
 
         topic_parts = []
         if sectors:
-            sectors_str = ', '.join(sectors[:5]) if isinstance(sectors, list) else str(sectors)
+            sectors_str = (
+                ", ".join(sectors[:5]) if isinstance(sectors, list) else str(sectors)
+            )
             topic_parts.append(f"Sectors: {sectors_str}")
 
         if thematic_areas:
-            themes_str = ', '.join(thematic_areas[:5]) if isinstance(thematic_areas, list) else str(thematic_areas)
+            themes_str = (
+                ", ".join(thematic_areas[:5])
+                if isinstance(thematic_areas, list)
+                else str(thematic_areas)
+            )
             topic_parts.append(f"Thematic areas: {themes_str}")
 
         if topic_parts:
-            query_parts.append('. '.join(topic_parts) + '.')
+            query_parts.append(". ".join(topic_parts) + ".")
 
         # 9. REQUIRED EVIDENCE (what to look for in past work)
         evidence_parts = []
@@ -518,24 +530,34 @@ Use this structure:
             elif geo_focus:
                 evidence_parts.append(f"past work in {geo_focus}")
 
-        if intervention_type and 'AI' in intervention_type or 'ML' in str(mandatory_reqs):
+        if (
+            intervention_type
+            and "AI" in intervention_type
+            or "ML" in str(mandatory_reqs)
+        ):
             evidence_parts.append("demonstrated AI/ML capabilities")
 
-        if beneficiaries and ('women' in beneficiaries.lower() or 'gender' in beneficiaries.lower()):
+        if beneficiaries and (
+            "women" in beneficiaries.lower() or "gender" in beneficiaries.lower()
+        ):
             evidence_parts.append("gender mainstreaming")
 
         if evidence_parts:
             query_parts.append(f"Required evidence: {', '.join(evidence_parts)}.")
 
         # Combine all parts
-        semantic_query = ' '.join(query_parts)
+        semantic_query = " ".join(query_parts)
 
         # Log for debugging
         print(f"📋 Semantic query components:")
         print(f"   - Donor: {donor or 'N/A'}")
-        print(f"   - Focus: {key_focus[:50] if key_focus else objectives[:50] if objectives else 'N/A'}...")
+        print(
+            f"   - Focus: {key_focus[:50] if key_focus else objectives[:50] if objectives else 'N/A'}..."
+        )
         print(f"   - Geography: {geo_str if geo_focus else 'N/A'}")
-        print(f"   - Beneficiaries: {beneficiaries[:50] if beneficiaries else 'N/A'}...")
+        print(
+            f"   - Beneficiaries: {beneficiaries[:50] if beneficiaries else 'N/A'}..."
+        )
         print(f"   - Sectors: {len(sectors) if sectors else 0} sectors")
         print(f"   📏 Total length: {len(semantic_query)} characters")
 

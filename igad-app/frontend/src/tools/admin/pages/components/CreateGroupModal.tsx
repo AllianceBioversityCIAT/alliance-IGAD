@@ -38,8 +38,9 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
       } else {
         setError('Failed to create group')
       }
-    } catch (error: any) {
-      setError(error.response?.data?.detail || 'Failed to create group')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } }
+      setError(err.response?.data?.detail || 'Failed to create group')
     } finally {
       setIsLoading(false)
     }

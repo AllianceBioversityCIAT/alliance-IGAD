@@ -1,4 +1,4 @@
-import { Edit, Trash2, Copy, Power, PowerOff, Eye, MoreVertical, FileText } from 'lucide-react'
+import { Edit, Trash2, Copy, Power, PowerOff, FileText } from 'lucide-react'
 import { SECTION_LABELS, type Prompt } from '@/types/prompt'
 import styles from './PromptCardsView.module.css'
 
@@ -18,7 +18,7 @@ export function PromptCardsView({
   onDelete,
   onClone,
   onToggleActive,
-  onPreview,
+  onPreview: _onPreview,
   onTemplate,
 }: PromptCardsViewProps) {
   const formatDate = (dateString: string) => {

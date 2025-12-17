@@ -28,7 +28,7 @@ export function useProposal(proposalId?: string) {
 
   // Generate content mutation
   const generateContentMutation = useMutation(
-    ({ sectionId, contextData }: { sectionId: string; contextData?: Record<string, any> }) =>
+    ({ sectionId, contextData }: { sectionId: string; contextData?: Record<string, unknown> }) =>
       proposalService.generateSectionContent(proposalId!, sectionId, contextData),
     {
       onSuccess: () => {

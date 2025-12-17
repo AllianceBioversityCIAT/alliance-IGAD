@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { MessageCircle, Send, Reply, Clock } from 'lucide-react'
 import styles from './CommentsPanel.module.css'
 
@@ -25,13 +25,7 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    if (isOpen && promptId) {
-      fetchComments()
-    }
-  }, [isOpen, promptId])
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}/comments`,
@@ -45,8 +39,16 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
         const data = await response.json()
         setComments(data)
       }
-    } catch (error) {}
-  }
+    } catch (error) {
+      // Silently handle error
+    }
+  }, [promptId])
+
+  useEffect(() => {
+    if (isOpen && promptId) {
+      fetchComments()
+    }
+  }, [isOpen, promptId, fetchComments])
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,6 +79,7 @@ export function CommentsPanel({ promptId, isOpen, onClose }: CommentsPanelProps)
         fetchComments()
       }
     } catch (error) {
+      // Silently handle error
     } finally {
       setIsLoading(false)
     }

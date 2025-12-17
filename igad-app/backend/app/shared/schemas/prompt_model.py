@@ -39,13 +39,21 @@ class PromptContext(BaseModel):
 class PromptBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     section: ProposalSection
-    sub_section: Optional[str] = Field(None, max_length=100, description="Sub-section identifier (e.g., 'step-1', 'step-2')")
+    sub_section: Optional[str] = Field(
+        None,
+        max_length=100,
+        description="Sub-section identifier (e.g., 'step-1', 'step-2')",
+    )
     route: Optional[str] = None
-    categories: Optional[List[str]] = Field(default=None, description="Categories where this prompt can be used")
+    categories: Optional[List[str]] = Field(
+        default=None, description="Categories where this prompt can be used"
+    )
     tags: List[str] = Field(default_factory=list)
     system_prompt: str = Field(..., min_length=1)
     user_prompt_template: str = Field(..., min_length=1)
-    output_format: Optional[str] = Field(default="Clear and structured response", max_length=5000)
+    output_format: Optional[str] = Field(
+        default="Clear and structured response", max_length=5000
+    )
     tone: Optional[str] = Field(default="Professional and informative", max_length=500)
     few_shot: Optional[List[FewShotExample]] = None
     context: Optional[PromptContext] = None

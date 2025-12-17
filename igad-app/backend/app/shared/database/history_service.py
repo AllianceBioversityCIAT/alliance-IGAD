@@ -8,15 +8,12 @@ Tracks all operations on prompts and other critical data with:
 - Automatic cleanup of old history records
 """
 
-import json
 import os
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import boto3
 from boto3.dynamodb.conditions import Key
-
-from app.database.client import db_client
 
 
 class HistoryService:
@@ -78,7 +75,9 @@ class HistoryService:
         # Store in DynamoDB
         try:
             self.table.put_item(Item=history_record)
-            print(f"📝 History logged: {operation_type} on {resource_type}#{resource_id}")
+            print(
+                f"📝 History logged: {operation_type} on {resource_type}#{resource_id}"
+            )
             return history_id
         except Exception as e:
             print(f"❌ Failed to log history: {str(e)}")
@@ -101,7 +100,9 @@ class HistoryService:
         """
         try:
             response = self.table.query(
-                KeyConditionExpression=Key("PK").eq(f"HISTORY#{resource_type}#{resource_id}"),
+                KeyConditionExpression=Key("PK").eq(
+                    f"HISTORY#{resource_type}#{resource_id}"
+                ),
                 ScanIndexForward=False,  # Newest first
                 Limit=limit,
             )

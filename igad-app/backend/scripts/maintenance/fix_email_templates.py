@@ -6,8 +6,10 @@ USER_POOL_ID = "us-east-1_EULeelICj"
 REGION = "us-east-1"
 PROFILE = "IBD-DEV"
 
+
 def get_cognito_client():
     return boto3.Session(profile_name=PROFILE).client("cognito-idp", region_name=REGION)
+
 
 def configure_simple_template(cognito_client):
     html_template = """<div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f8f9fa;">
@@ -43,6 +45,7 @@ def configure_simple_template(cognito_client):
         print(f"❌ Error: {e}")
         return False
 
+
 def main():
     try:
         cognito_client = get_cognito_client()
@@ -50,6 +53,7 @@ def main():
         print("✅ Email template fixed!")
     except Exception as e:
         print(f"❌ Failed: {e}")
+
 
 if __name__ == "__main__":
     main()

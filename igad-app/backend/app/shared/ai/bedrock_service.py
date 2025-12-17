@@ -21,10 +21,7 @@ import time
 import traceback
 from typing import Any, Dict, List, Optional
 
-from app.shared.schemas.prompt_model import (
-    PromptPreviewRequest,
-    PromptPreviewResponse,
-)
+from app.shared.schemas.prompt_model import PromptPreviewRequest, PromptPreviewResponse
 from app.utils.aws_session import get_aws_session
 
 logger = logging.getLogger(__name__)
@@ -82,9 +79,7 @@ class BedrockService:
 
     # ==================== HELPER METHODS ====================
 
-    def _substitute_variables(
-        self, template: str, variables: Dict[str, str]
-    ) -> str:
+    def _substitute_variables(self, template: str, variables: Dict[str, str]) -> str:
         """
         Substitute variables in template using {{variable}} format.
 
@@ -233,9 +228,7 @@ class BedrockService:
             # Add context constraints if provided
             if request.context:
                 if request.context.constraints:
-                    system_prompt += (
-                        f"\n\nConstraints: {request.context.constraints}"
-                    )
+                    system_prompt += f"\n\nConstraints: {request.context.constraints}"
                 if request.context.guardrails:
                     system_prompt += f"\n\nGuardrails: {request.context.guardrails}"
 

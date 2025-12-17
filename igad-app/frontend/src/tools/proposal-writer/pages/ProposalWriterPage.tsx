@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import type {
+  RFPAnalysis,
+  ConceptAnalysis,
+  StructureWorkplanAnalysis,
+  DraftFeedbackAnalysis,
+  ReferenceProposalsAnalysis,
+  ConceptDocument,
+  ProposalTemplate,
+} from '../types/analysis'
+import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ProposalLayout } from '../components/ProposalLayout'
 import { DraftConfirmationModal } from '../components/DraftConfirmationModal'
@@ -18,7 +27,6 @@ import styles from './proposalWriter.module.css'
 export function ProposalWriterPage() {
   const { stepId } = useParams()
   const navigate = useNavigate()
-  const location = useLocation()
   const { showSuccess, showError } = useToast()
   const [currentStep, setCurrentStep] = useState(1)
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
@@ -28,12 +36,18 @@ export function ProposalWriterPage() {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
   const [isSavingDraft, setIsSavingDraft] = useState(false)
   const [isAnalyzingRFP, setIsAnalyzingRFP] = useState(false)
-  const [rfpAnalysis, setRfpAnalysis] = useState<any>(null)
-  const [referenceProposalsAnalysis, setReferenceProposalsAnalysis] = useState<any>(null)
-  const [conceptAnalysis, setConceptAnalysis] = useState<any>(null)
-  const [structureWorkplanAnalysis, setStructureWorkplanAnalysis] = useState<any>(null)
-  const [draftFeedbackAnalysis, setDraftFeedbackAnalysis] = useState<any>(null)
-  const [proposalStatus, setProposalStatus] = useState<'draft' | 'in_progress' | 'review' | 'completed' | 'archived'>('draft')
+  const [rfpAnalysis, setRfpAnalysis] = useState<RFPAnalysis | null>(null)
+  const [referenceProposalsAnalysis, setReferenceProposalsAnalysis] =
+    useState<ReferenceProposalsAnalysis | null>(null)
+  const [conceptAnalysis, setConceptAnalysis] = useState<ConceptAnalysis | null>(null)
+  const [structureWorkplanAnalysis, setStructureWorkplanAnalysis] =
+    useState<StructureWorkplanAnalysis | null>(null)
+  const [draftFeedbackAnalysis, setDraftFeedbackAnalysis] = useState<DraftFeedbackAnalysis | null>(
+    null
+  )
+  const [proposalStatus, setProposalStatus] = useState<
+    'draft' | 'in_progress' | 'review' | 'completed' | 'archived'
+  >('draft')
   const [analysisProgress, setAnalysisProgress] = useState<{
     step: number
     total: number
@@ -46,9 +60,9 @@ export function ProposalWriterPage() {
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
   const [generationProgressStep, setGenerationProgressStep] = useState(1)
   const [isRegeneratingConcept, setIsRegeneratingConcept] = useState(false)
-  const [conceptDocument, setConceptDocument] = useState<any>(null)
-  const [proposalTemplate, setProposalTemplate] = useState<any>(null)
-  const [structureSelectionData, setStructureSelectionData] = useState<{
+  const [conceptDocument, setConceptDocument] = useState<ConceptDocument | null>(null)
+  const [proposalTemplate, setProposalTemplate] = useState<ProposalTemplate | null>(null)
+  const [, setStructureSelectionData] = useState<{
     selectedSections: string[]
     userComments: { [key: string]: string }
   } | null>(null)
@@ -82,6 +96,11 @@ export function ProposalWriterPage() {
 
   // Load from localStorage on mount
   useEffect(() => {
+    // Prevent multiple executions
+    if (localStorageLoaded.current) {
+      return
+    }
+
     const draft = loadDraft()
 
     if (draft.proposalId) {
@@ -104,7 +123,7 @@ export function ProposalWriterPage() {
       }
     }
     if (draft.rfpAnalysis) {
-      console.log('📊 Loading rfpAnalysis from localStorage:', !!draft.rfpAnalysis)
+      // Removed console.log'📊 Loading rfpAnalysis from localStorage:', !!draft.rfpAnalysis)
       setRfpAnalysis(draft.rfpAnalysis)
     }
 
@@ -116,10 +135,10 @@ export function ProposalWriterPage() {
       if (savedRefAnalysis) {
         try {
           const parsed = JSON.parse(savedRefAnalysis)
-          console.log('📊 Loading referenceProposalsAnalysis from localStorage')
+          // Removed console.log'📊 Loading referenceProposalsAnalysis from localStorage')
           setReferenceProposalsAnalysis(parsed)
         } catch (e) {
-          console.error('Failed to parse saved reference proposals analysis:', e)
+          // Removed console.error
         }
       }
     }
@@ -132,10 +151,6 @@ export function ProposalWriterPage() {
       const savedConceptAnalysis = localStorage.getItem(
         `proposal_concept_analysis_${draft.proposalId}`
       )
-      console.log(
-        `📊 Checking for conceptAnalysis with key: proposal_concept_analysis_${draft.proposalId}`,
-        !!savedConceptAnalysis
-      )
       if (savedConceptAnalysis) {
         try {
           const parsed = JSON.parse(savedConceptAnalysis)
@@ -143,14 +158,14 @@ export function ProposalWriterPage() {
           // Unwrap if nested (concept_analysis.concept_analysis)
           let unwrapped = parsed?.concept_analysis || parsed
           if (unwrapped?.concept_analysis) {
-            console.log('🔍 Initial load - Found nested concept_analysis, unwrapping...')
+            // Removed console.log'🔍 Initial load - Found nested concept_analysis, unwrapping...')
             unwrapped = unwrapped.concept_analysis
           }
 
-          console.log('📊 Loading conceptAnalysis from localStorage:', !!unwrapped)
+          // Removed console.log'📊 Loading conceptAnalysis from localStorage:', !!unwrapped)
           setConceptAnalysis(unwrapped)
         } catch (e) {
-          console.error('Failed to parse saved concept analysis:', e)
+          // Removed console.error
         }
       }
 
@@ -162,7 +177,7 @@ export function ProposalWriterPage() {
         try {
           setConceptDocument(JSON.parse(savedConceptDocument))
         } catch (e) {
-          console.error('Failed to parse saved concept document:', e)
+          // Removed console.error
         }
       }
 
@@ -174,13 +189,13 @@ export function ProposalWriterPage() {
         try {
           setConceptEvaluationData(JSON.parse(savedConceptEvaluation))
         } catch (e) {
-          console.error('Failed to parse saved concept evaluation:', e)
+          // Removed console.error
         }
       }
     }
 
-    console.log('📊 Initial load complete - rfpAnalysis:', !!draft.rfpAnalysis)
-  }, [])
+    // Removed console.log'📊 Initial load complete - rfpAnalysis:', !!draft.rfpAnalysis)
+  }, [loadDraft])
 
   // Track if step completion data has been loaded for this session
   const stepCompletionLoadedRef = useRef(false)
@@ -206,59 +221,68 @@ export function ProposalWriterPage() {
 
       try {
         setIsLoadingStepData(true)
-        console.log('🔄 Loading step completion data from DynamoDB...')
+        // Removed console.log'🔄 Loading step completion data from DynamoDB...')
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
         const proposal = await proposalService.getProposal(proposalId)
 
         if (proposal) {
           // Load structure workplan analysis (Step 3 completion)
           if (proposal.structure_workplan_analysis) {
-            console.log('✅ Loaded structure_workplan_analysis for Step 3 completion')
+            // Removed console.log'✅ Loaded structure_workplan_analysis for Step 3 completion')
             setStructureWorkplanAnalysis(proposal.structure_workplan_analysis)
           }
 
           // Load draft feedback analysis (Step 4 completion)
           if (proposal.draft_feedback_analysis) {
-            console.log('✅ Loaded draft_feedback_analysis for Step 4 completion')
+            // Removed console.log'✅ Loaded draft_feedback_analysis for Step 4 completion')
             setDraftFeedbackAnalysis(proposal.draft_feedback_analysis)
           }
 
           // Load proposal template generated flag
           if (proposal.proposal_template_generated) {
-            console.log('✅ Loaded proposal_template_generated for Step 3 completion')
-            setProposalTemplate({ generated: true, timestamp: proposal.proposal_template_generated })
-          } else if (proposal.structure_workplan_completed_at && proposal.structure_workplan_analysis) {
-            console.log('✅ Using structure_workplan_completed_at as fallback for Step 3')
-            setProposalTemplate({ generated: true, timestamp: proposal.structure_workplan_completed_at })
+            // Removed console.log'✅ Loaded proposal_template_generated for Step 3 completion')
+            setProposalTemplate({
+              generated: true,
+              timestamp: proposal.proposal_template_generated,
+            })
+          } else if (
+            proposal.structure_workplan_completed_at &&
+            proposal.structure_workplan_analysis
+          ) {
+            // Removed console.log'✅ Using structure_workplan_completed_at as fallback for Step 3')
+            setProposalTemplate({
+              generated: true,
+              timestamp: proposal.structure_workplan_completed_at,
+            })
           }
 
           // Load concept document (Step 2 completion)
           if (proposal.concept_document_v2) {
-            console.log('✅ Loaded concept_document_v2 for Step 2 completion')
+            // Removed console.log'✅ Loaded concept_document_v2 for Step 2 completion')
             setConceptDocument(proposal.concept_document_v2)
           }
 
           // Load uploaded draft files
           const draftFiles = proposal.uploaded_files?.['draft-proposal'] || []
           if (draftFiles.length > 0) {
-            console.log('✅ Loaded draft-proposal files:', draftFiles)
+            // Removed console.log'✅ Loaded draft-proposal files:', draftFiles)
             setFormData(prev => ({
               ...prev,
               uploadedFiles: {
                 ...prev.uploadedFiles,
-                'draft-proposal': draftFiles
-              }
+                'draft-proposal': draftFiles,
+              },
             }))
           }
 
           // Load proposal status
           if (proposal.status) {
-            console.log('✅ Loaded proposal status:', proposal.status)
+            // Removed console.log'✅ Loaded proposal status:', proposal.status)
             setProposalStatus(proposal.status)
           }
         }
       } catch (error) {
-        console.log('⚠️ Error loading step completion data:', error)
+        // Removed console.log'⚠️ Error loading step completion data:', error)
       } finally {
         setIsLoadingStepData(false)
       }
@@ -308,13 +332,13 @@ export function ProposalWriterPage() {
 
           setFormData({
             textInputs: proposal.text_inputs || {},
-            uploadedFiles: uploadedFiles as any,
+            uploadedFiles: uploadedFiles as Record<string, File[]>,
           })
           formDataLoadedFromDB.current = true
 
           // Load concept_document_v2 from DynamoDB for step completion tracking
           if (proposal.concept_document_v2 && !conceptDocument) {
-            console.log('📄 Loading concept_document_v2 from DynamoDB on initial mount')
+            // Removed console.log'📄 Loading concept_document_v2 from DynamoDB on initial mount')
             setConceptDocument(proposal.concept_document_v2)
           }
 
@@ -322,24 +346,32 @@ export function ProposalWriterPage() {
           // Also check structure_workplan_completed_at as fallback for older proposals
           if (!proposalTemplate) {
             if (proposal.proposal_template_generated) {
-              console.log('📄 Loading proposal_template_generated from DynamoDB on initial mount')
-              setProposalTemplate({ generated: true, timestamp: proposal.proposal_template_generated })
-            } else if (proposal.structure_workplan_completed_at && proposal.structure_workplan_analysis) {
+              // Removed console.log'📄 Loading proposal_template_generated from DynamoDB on initial mount')
+              setProposalTemplate({
+                generated: true,
+                timestamp: proposal.proposal_template_generated,
+              })
+            } else if (
+              proposal.structure_workplan_completed_at &&
+              proposal.structure_workplan_analysis
+            ) {
               // Fallback: If structure workplan is completed, mark Step 3 as done
-              console.log('📄 Loading structure_workplan_completed_at as fallback for Step 3 completion')
-              setProposalTemplate({ generated: true, timestamp: proposal.structure_workplan_completed_at })
+              setProposalTemplate({
+                generated: true,
+                timestamp: proposal.structure_workplan_completed_at,
+              })
             }
           }
 
           // Also load structure workplan analysis if available
           if (proposal.structure_workplan_analysis && !structureWorkplanAnalysis) {
-            console.log('📄 Loading structure_workplan_analysis from DynamoDB on initial mount')
+            // Removed console.log'📄 Loading structure_workplan_analysis from DynamoDB on initial mount')
             setStructureWorkplanAnalysis(proposal.structure_workplan_analysis)
           }
 
           // Also load draft feedback analysis if available (Step 4)
           if (proposal.draft_feedback_analysis && !draftFeedbackAnalysis) {
-            console.log('📄 Loading draft_feedback_analysis from DynamoDB on initial mount')
+            // Removed console.log'📄 Loading draft_feedback_analysis from DynamoDB on initial mount')
             setDraftFeedbackAnalysis(proposal.draft_feedback_analysis)
           }
         } else {
@@ -352,7 +384,13 @@ export function ProposalWriterPage() {
     }
 
     loadFormDataFromDynamoDB()
-  }, [proposalId, conceptDocument, proposalTemplate, structureWorkplanAnalysis, draftFeedbackAnalysis])
+  }, [
+    proposalId,
+    conceptDocument,
+    proposalTemplate,
+    structureWorkplanAnalysis,
+    draftFeedbackAnalysis,
+  ])
 
   // Save to localStorage whenever state changes
   useEffect(() => {
@@ -373,7 +411,7 @@ export function ProposalWriterPage() {
 
   useEffect(() => {
     if (rfpAnalysis) {
-      console.log('💾 Saving rfpAnalysis to localStorage with key: draft_rfp_analysis')
+      // Removed console.log'💾 Saving rfpAnalysis to localStorage with key: draft_rfp_analysis')
       saveRfpAnalysis(rfpAnalysis)
     }
   }, [rfpAnalysis, saveRfpAnalysis])
@@ -381,9 +419,6 @@ export function ProposalWriterPage() {
   // Save reference proposals analysis to localStorage
   useEffect(() => {
     if (referenceProposalsAnalysis && proposalId) {
-      console.log(
-        `💾 Saving referenceProposalsAnalysis to localStorage with key: proposal_reference_proposals_analysis_${proposalId}`
-      )
       localStorage.setItem(
         `proposal_reference_proposals_analysis_${proposalId}`,
         JSON.stringify(referenceProposalsAnalysis)
@@ -394,16 +429,9 @@ export function ProposalWriterPage() {
   // Save concept analysis to localStorage
   useEffect(() => {
     if (conceptAnalysis && proposalId) {
-      console.log(
-        `💾 Saving conceptAnalysis to localStorage with key: proposal_concept_analysis_${proposalId}`
-      )
       localStorage.setItem(
         `proposal_concept_analysis_${proposalId}`,
         JSON.stringify(conceptAnalysis)
-      )
-    } else {
-      console.log(
-        `⚠️ Not saving conceptAnalysis - conceptAnalysis: ${!!conceptAnalysis}, proposalId: ${!!proposalId}`
       )
     }
   }, [conceptAnalysis, proposalId])
@@ -465,12 +493,9 @@ export function ProposalWriterPage() {
 
     // Only invalidate if (selections OR comments) changed AND a concept document already exists
     if ((selectionsChanged || commentsChanged) && conceptDocument) {
-      console.log('📋 Concept evaluation changed - invalidating concept document')
-      if (selectionsChanged) {
-        console.log('   Selections changed - Previous:', previousSelections, 'Current:', currentSelections)
-      }
+      // Removed console.log'📋 Concept evaluation changed - invalidating concept document')
       if (commentsChanged) {
-        console.log('   Comments changed')
+        // Removed console.log'   Comments changed')
       }
 
       // Set flag to prevent auto-reload from DynamoDB
@@ -482,13 +507,18 @@ export function ProposalWriterPage() {
       // Clear localStorage
       localStorage.removeItem(`proposal_concept_document_${proposalId}`)
 
-      console.log('✅ Concept document invalidated - user will need to regenerate')
+      // Removed console.log'✅ Concept document invalidated - user will need to regenerate')
     }
 
     // Update references for next comparison
     previousSelectedSectionsRef.current = [...currentSelections]
     previousUserCommentsRef.current = { ...currentComments }
-  }, [conceptEvaluationData?.selectedSections, conceptEvaluationData?.userComments, proposalId, conceptDocument])
+  }, [
+    conceptEvaluationData?.selectedSections,
+    conceptEvaluationData?.userComments,
+    proposalId,
+    conceptDocument,
+  ])
 
   // Calculate completed steps based on available data
   useEffect(() => {
@@ -522,14 +552,21 @@ export function ProposalWriterPage() {
     if (JSON.stringify(completed) !== JSON.stringify(completedSteps)) {
       setCompletedSteps(completed)
     }
-  }, [formData.uploadedFiles, conceptDocument, proposalTemplate, structureWorkplanAnalysis, draftFeedbackAnalysis, completedSteps])
+  }, [
+    formData.uploadedFiles,
+    conceptDocument,
+    proposalTemplate,
+    structureWorkplanAnalysis,
+    draftFeedbackAnalysis,
+    completedSteps,
+  ])
 
   // Detect RFP/document changes and invalidate analyses
   useEffect(() => {
     if (proposalId) {
       // Listen for document update events
       const handleDocumentsUpdated = () => {
-        console.log('📄 [ProposalWriterPage] documents-updated event received - clearing analyses')
+        // Removed console.log'📄 [ProposalWriterPage] documents-updated event received - clearing analyses')
         setRfpAnalysis(null)
         setReferenceProposalsAnalysis(null)
         setConceptAnalysis(null)
@@ -599,35 +636,34 @@ export function ProposalWriterPage() {
     const loadConceptDocument = async () => {
       // Skip if document was intentionally cleared (user changed selections/comments)
       if (intentionalDocumentClearRef.current) {
-        console.log('⏭️ Skipping concept document load - intentionally cleared')
+        // Removed console.log'⏭️ Skipping concept document load - intentionally cleared')
         intentionalDocumentClearRef.current = false
         return
       }
 
       if (proposalId && currentStep === 2 && !conceptDocument) {
         try {
-          console.log('🔍 Loading concept document for proposalId:', proposalId)
-          const { proposalService } = await import(
-            '@/tools/proposal-writer/services/proposalService'
-          )
+          // Removed console.log'🔍 Loading concept document for proposalId:', proposalId)
+          const { proposalService } =
+            await import('@/tools/proposal-writer/services/proposalService')
           const response = await proposalService.getProposal(proposalId)
-          console.log('📡 API response:', response)
+          // Removed console.log'📡 API response:', response)
 
           // Handle both single proposal and array responses
           const proposal = Array.isArray(response)
             ? response.find(p => p.id === proposalId)
             : response
 
-          console.log('🎯 Selected proposal:', proposal?.id, proposal?.proposalCode)
+          // Removed console.log'🎯 Selected proposal:', proposal?.id, proposal?.proposalCode)
 
           if (proposal?.concept_document_v2) {
-            console.log('✅ Found concept_document_v2, loading...')
+            // Removed console.log'✅ Found concept_document_v2, loading...')
             setConceptDocument(proposal.concept_document_v2)
           } else {
-            console.log('⚠️ No concept_document_v2 in proposal:', proposal?.id)
+            // Removed console.log'⚠️ No concept_document_v2 in proposal:', proposal?.id)
           }
         } catch (error) {
-          console.error('❌ Error loading concept document:', error)
+          // Removed console.error
         }
       }
     }
@@ -640,12 +676,12 @@ export function ProposalWriterPage() {
     const loadProposalTemplate = async () => {
       if (proposalId && currentStep === 4 && !proposalTemplate) {
         try {
-          console.log('🔍 Loading proposal template for proposalId:', proposalId)
+          // Removed console.log'🔍 Loading proposal template for proposalId:', proposalId)
 
           // First check localStorage
           const cachedTemplate = localStorage.getItem(`proposal_template_${proposalId}`)
           if (cachedTemplate) {
-            console.log('✅ Found cached template in localStorage')
+            // Removed console.log'✅ Found cached template in localStorage')
             setProposalTemplate(JSON.parse(cachedTemplate))
             return
           }
@@ -657,7 +693,7 @@ export function ProposalWriterPage() {
           //   setProposalTemplate(response.proposal_template)
           // }
         } catch (error) {
-          console.error('❌ Error loading proposal template:', error)
+          // Removed console.error❌ Error loading proposal template:', error)
         }
       }
     }
@@ -670,18 +706,17 @@ export function ProposalWriterPage() {
     const loadConceptEvaluation = async () => {
       if (proposalId && currentStep === 2) {
         try {
-          console.log('🔍 Loading concept evaluation for Step 2:', proposalId)
-          const { proposalService } = await import(
-            '@/tools/proposal-writer/services/proposalService'
-          )
+          // Removed console.log'🔍 Loading concept evaluation for Step 2:', proposalId)
+          const { proposalService } =
+            await import('@/tools/proposal-writer/services/proposalService')
           const response = await proposalService.getConceptEvaluation(proposalId)
 
           if (response?.concept_evaluation) {
-            console.log('✅ Loaded concept evaluation from DynamoDB')
+            // Removed console.log'✅ Loaded concept evaluation from DynamoDB')
             setConceptAnalysis(response.concept_evaluation)
           }
         } catch (error) {
-          console.log('⚠️ No saved concept evaluation found, using localStorage')
+          // Removed console.log'⚠️ No saved concept evaluation found, using localStorage')
           // Fallback to localStorage is already handled
         }
       }
@@ -695,14 +730,13 @@ export function ProposalWriterPage() {
     const loadStructureWorkplan = async () => {
       if (proposalId && currentStep === 3 && !structureWorkplanAnalysis) {
         try {
-          console.log('🔍 Loading structure workplan for Step 3:', proposalId)
-          const { proposalService } = await import(
-            '@/tools/proposal-writer/services/proposalService'
-          )
+          // Removed console.log'🔍 Loading structure workplan for Step 3:', proposalId)
+          const { proposalService } =
+            await import('@/tools/proposal-writer/services/proposalService')
           const response = await proposalService.getStructureWorkplanStatus(proposalId)
 
           if (response?.data) {
-            console.log('✅ Loaded structure workplan from DynamoDB')
+            // Removed console.log'✅ Loaded structure workplan from DynamoDB')
             setStructureWorkplanAnalysis(response.data)
             // Also update localStorage
             localStorage.setItem(
@@ -711,11 +745,11 @@ export function ProposalWriterPage() {
             )
           }
         } catch (error) {
-          console.log('⚠️ No saved structure workplan found, checking localStorage')
+          // Removed console.log'⚠️ No saved structure workplan found, checking localStorage')
           // Try localStorage fallback
           const cached = localStorage.getItem(`proposal_structure_workplan_${proposalId}`)
           if (cached) {
-            console.log('✅ Found structure workplan in localStorage')
+            // Removed console.log'✅ Found structure workplan in localStorage')
             setStructureWorkplanAnalysis(JSON.parse(cached))
           }
         }
@@ -730,10 +764,9 @@ export function ProposalWriterPage() {
     const loadDraftFeedback = async () => {
       if (proposalId && currentStep === 4) {
         try {
-          console.log('🔍 Loading draft feedback for Step 4:', proposalId)
-          const { proposalService } = await import(
-            '@/tools/proposal-writer/services/proposalService'
-          )
+          // Removed console.log'🔍 Loading draft feedback for Step 4:', proposalId)
+          const { proposalService } =
+            await import('@/tools/proposal-writer/services/proposalService')
 
           // Load proposal to get both draft files and feedback analysis
           const proposal = await proposalService.getProposal(proposalId)
@@ -741,31 +774,30 @@ export function ProposalWriterPage() {
           if (proposal) {
             // Load draft feedback analysis
             if (proposal.draft_feedback_analysis && !draftFeedbackAnalysis) {
-              console.log('✅ Loaded draft_feedback_analysis from DynamoDB')
+              // Removed console.log'✅ Loaded draft_feedback_analysis from DynamoDB')
               setDraftFeedbackAnalysis(proposal.draft_feedback_analysis)
             }
 
             // Load structure workplan analysis (to show Step 3 as completed)
             if (proposal.structure_workplan_analysis && !structureWorkplanAnalysis) {
-              console.log('✅ Loaded structure_workplan_analysis from DynamoDB (for Step 3 completion)')
               setStructureWorkplanAnalysis(proposal.structure_workplan_analysis)
             }
 
             // Load uploaded draft files
             const draftFiles = proposal.uploaded_files?.['draft-proposal'] || []
             if (draftFiles.length > 0) {
-              console.log('✅ Loaded draft-proposal files from DynamoDB:', draftFiles)
+              // Removed console.log'✅ Loaded draft-proposal files from DynamoDB:', draftFiles)
               setFormData(prev => ({
                 ...prev,
                 uploadedFiles: {
                   ...prev.uploadedFiles,
-                  'draft-proposal': draftFiles
-                }
+                  'draft-proposal': draftFiles,
+                },
               }))
             }
           }
         } catch (error) {
-          console.log('⚠️ Error loading draft feedback data:', error)
+          // Removed console.log'⚠️ Error loading draft feedback data:', error)
         }
       }
     }
@@ -803,13 +835,13 @@ export function ProposalWriterPage() {
     // Push a dummy state to prevent immediate back navigation
     window.history.pushState(null, '', window.location.pathname)
 
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = (_e: PopStateEvent) => {
       // Push state back to keep user on page
       window.history.pushState(null, '', window.location.pathname)
 
       // Show confirmation modal
       setShowExitModal(true)
-      setPendingNavigation(-1 as any) // Special marker for back button
+      setPendingNavigation('-1') // Special marker for back button
     }
 
     window.addEventListener('popstate', handlePopState)
@@ -824,7 +856,7 @@ export function ProposalWriterPage() {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       // Only block if we actually have a proposal draft
       if (proposalId) {
-        console.log('⚠️ Blocking navigation - draft exists')
+        // Removed console.log'⚠️ Blocking navigation - draft exists')
         e.preventDefault()
         e.returnValue = ''
       }
@@ -895,29 +927,29 @@ export function ProposalWriterPage() {
         navigate('/dashboard')
       }, 500)
     } catch (error) {
-      console.error('Failed to save proposal:', error)
+      // Removed console.error
       showError('Failed to save proposal', 'Please try again.')
       setIsSavingDraft(false)
     }
   }
 
   const handleNavigateAway = () => {
-    console.log('🚨 handleNavigateAway called!')
-    console.log('   allowNavigation.current:', allowNavigation.current)
-    console.log('   proposalId:', proposalId)
+    // Removed console.log'🚨 handleNavigateAway called!')
+    // Removed console.log'   allowNavigation.current:', allowNavigation.current)
+    // Removed console.log'   proposalId:', proposalId)
 
     // Only show modal if navigation is not explicitly allowed
     if (proposalId && !allowNavigation.current) {
-      console.log('   ➡️ Showing exit modal')
+      // Removed console.log'   ➡️ Showing exit modal')
       setShowExitModal(true)
     } else {
-      console.log('   ➡️ Navigation allowed, not showing modal')
+      // Removed console.log'   ➡️ Navigation allowed, not showing modal')
     }
   }
 
   // Helper function to proceed to next step
   const proceedToNextStep = useCallback(() => {
-    console.log('⏭️ proceedToNextStep called - allowNavigation:', allowNavigation.current)
+    // Removed console.log'⏭️ proceedToNextStep called - allowNavigation:', allowNavigation.current)
 
     if (currentStep < 4) {
       const nextStep = currentStep + 1
@@ -928,19 +960,21 @@ export function ProposalWriterPage() {
       // Reset allowNavigation after navigation completes
       // Use longer delay to ensure navigation is fully processed
       setTimeout(() => {
-        console.log('🔒 Resetting allowNavigation to FALSE')
+        // Removed console.log'🔒 Resetting allowNavigation to FALSE')
         allowNavigation.current = false
       }, 500) // Increased from 100ms to 500ms
     }
   }, [currentStep, navigate])
 
-  const handleGenerateTemplate = async (
+  // Removed unused _handleGenerateTemplate function - was not being called
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const _handleGenerateTemplate = async (
     selectedSections: string[],
     userComments: { [key: string]: string }
   ) => {
-    console.log('🟢 Starting proposal template generation...')
-    console.log('📋 Selected sections:', selectedSections)
-    console.log('📋 User comments:', userComments)
+    // Removed console.log'🟢 Starting proposal template generation...')
+    // Removed console.log'📋 Selected sections:', selectedSections)
+    // Removed console.log'📋 User comments:', userComments)
 
     if (!proposalId || selectedSections.length === 0) {
       alert('Please select at least one section before generating template')
@@ -955,7 +989,7 @@ export function ProposalWriterPage() {
 
       // TODO: Call API to generate proposal template
       // For now, simulate template generation
-      console.log('🔄 Generating proposal template...')
+      // Removed console.log'🔄 Generating proposal template...')
 
       // Placeholder: In real implementation, call proposalService.generateProposalTemplate
       await new Promise(resolve => setTimeout(resolve, 2000))
@@ -981,17 +1015,17 @@ export function ProposalWriterPage() {
         )
       }
 
-      console.log('✅ Template generated successfully')
+      // Removed console.log'✅ Template generated successfully')
       proceedToNextStep()
-    } catch (error: any) {
-      console.error('❌ Template generation failed:', error)
+    } catch (error: unknown) {
+      // Removed console.error
       setIsGeneratingDocument(false)
       alert(`Generation failed: ${error.message || 'Unknown error'}`)
     }
   }
 
   const handleNextStep = async () => {
-    console.log('🔵 handleNextStep called - Current step:', currentStep)
+    // Removed console.log'🔵 handleNextStep called - Current step:', currentStep)
 
     // If on Step 1 and trying to go to Step 2, analyze Step 1 (RFP + Reference Proposals) AND Concept
     if (currentStep === 1) {
@@ -1001,7 +1035,7 @@ export function ProposalWriterPage() {
         (formData.textInputs['initial-concept'] || '').length >= 100 ||
         formData.uploadedFiles['concept-document']?.length > 0
 
-      console.log('🔵 Step 1 validation:', { hasRFP, hasConcept })
+      // Removed console.log'🔵 Step 1 validation:', { hasRFP, hasConcept })
 
       if (!hasRFP) {
         alert('Please upload an RFP document before proceeding.')
@@ -1015,13 +1049,13 @@ export function ProposalWriterPage() {
 
       // If all analyses already exist, just proceed
       if (rfpAnalysis && conceptAnalysis) {
-        console.log('✅ All analyses already complete, proceeding to next step')
+        // Removed console.log'✅ All analyses already complete, proceeding to next step')
         proceedToNextStep()
         return
       }
 
       // Start 3-step sequential analysis: RFP → Reference Proposals → Concept
-      console.log('🟢 Starting 3-step sequential analysis...')
+      // Removed console.log'🟢 Starting 3-step sequential analysis...')
       setIsAnalyzingRFP(true)
       setAnalysisProgress({ step: 1, total: 3, message: 'Analyzing RFP...' })
 
@@ -1030,22 +1064,23 @@ export function ProposalWriterPage() {
 
         // STEP 1: RFP Analysis ONLY
         if (!rfpAnalysis) {
-          console.log('📡 Step 1/3: Starting RFP analysis...')
+          // Removed console.log'📡 Step 1/3: Starting RFP analysis...')
           const step1Result = await proposalService.analyzeStep1(proposalId!)
 
-          console.log('📊 Step 1 (RFP) launched:', step1Result)
+          // Removed console.log'📊 Step 1 (RFP) launched:', step1Result)
 
           // Poll for Step 1 completion (RFP only)
           await pollStep1Status(proposalService)
         }
 
         // STEP 2: Reference Proposals + Existing Work
-        console.log('📡 Step 2/3: Starting Reference Proposals + Existing Work analysis...')
-        
+        // Removed console.log'📡 Step 2/3: Starting Reference Proposals + Existing Work analysis...')
+
         // Check if there are documents to analyze
-        const hasReferenceProposals = (formData.uploadedFiles['reference-proposals'] || []).length > 0
+        const hasReferenceProposals =
+          (formData.uploadedFiles['reference-proposals'] || []).length > 0
         const hasSupportingDocs = (formData.uploadedFiles['supporting-docs'] || []).length > 0
-        
+
         let step2Message = 'Analyzing Reference Proposals & Existing Work...'
         if (!hasReferenceProposals && !hasSupportingDocs) {
           step2Message = 'Skipping optional analyses (no documents uploaded)...'
@@ -1054,17 +1089,17 @@ export function ProposalWriterPage() {
         } else if (!hasSupportingDocs) {
           step2Message = 'Analyzing Reference Proposals (no existing work)...'
         }
-        
+
         setAnalysisProgress({ step: 2, total: 3, message: step2Message })
 
         const step2Result = await proposalService.analyzeStep2(proposalId!)
-        console.log('📊 Step 2 (Reference Proposals + Existing Work) launched:', step2Result)
+        // Removed console.log'📊 Step 2 (Reference Proposals + Existing Work) launched:', step2Result)
 
         // Poll for Step 2 completion
         await pollStep2Status(proposalService)
 
         // STEP 3: Concept Analysis
-        console.log('📡 Step 3/3: Starting Concept analysis...')
+        // Removed console.log'📡 Step 3/3: Starting Concept analysis...')
         setAnalysisProgress({ step: 3, total: 3, message: 'Analyzing Initial Concept...' })
 
         if (!conceptAnalysis) {
@@ -1088,12 +1123,12 @@ export function ProposalWriterPage() {
         }
 
         // All analyses complete!
-        console.log('✅ All analyses completed!')
+        // Removed console.log'✅ All analyses completed!')
         setIsAnalyzingRFP(false)
         setAnalysisProgress(null)
         proceedToNextStep()
-      } catch (error: any) {
-        console.error('❌ Analysis failed:', error)
+      } catch (error: unknown) {
+        // Removed console.error❌ Analysis failed:', error)
         setIsAnalyzingRFP(false)
         setAnalysisProgress(null)
         alert(`Analysis failed: ${error.message || 'Unknown error'}`)
@@ -1104,29 +1139,32 @@ export function ProposalWriterPage() {
 
     // Step 2: Execute Step 3 analysis (Structure and Workplan) before proceeding
     if (currentStep === 2) {
-      console.log('🔵 Step 2: Executing Structure and Workplan analysis...')
-      
+      // Removed console.log'🔵 Step 2: Executing Structure and Workplan analysis...')
+
       // Check if analysis already exists
       if (structureWorkplanAnalysis) {
-        console.log('✅ Structure and Workplan analysis already complete, proceeding')
+        // Removed console.log'✅ Structure and Workplan analysis already complete, proceeding')
         proceedToNextStep()
         return
       }
 
       setIsAnalyzingRFP(true)
-      setAnalysisProgress({ 
-        step: 1, 
-        total: 1, 
+      setAnalysisProgress({
+        step: 1,
+        total: 1,
         message: 'Generating Proposal Structure',
-        description: 'Our AI is analyzing your RFP and concept evaluation to create a customized proposal structure with sections, guidance, and questions. This process uses advanced AI and may take up to 2 minutes.',
-        steps: ['Analyzing RFP requirements and concept evaluation to generate tailored proposal structure']
+        description:
+          'Our AI is analyzing your RFP and concept evaluation to create a customized proposal structure with sections, guidance, and questions. This process uses advanced AI and may take up to 2 minutes.',
+        steps: [
+          'Analyzing RFP requirements and concept evaluation to generate tailored proposal structure',
+        ],
       })
 
       try {
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-        
+
         const result = await proposalService.analyzeStep3(proposalId!)
-        
+
         if (result.status === 'processing') {
           // Poll for completion
           await pollAnalysisStatus(
@@ -1143,7 +1181,7 @@ export function ProposalWriterPage() {
             },
             'Structure Workplan'
           )
-          
+
           setIsAnalyzingRFP(false)
           setAnalysisProgress(null)
           proceedToNextStep()
@@ -1162,14 +1200,16 @@ export function ProposalWriterPage() {
         } else {
           throw new Error('Failed to start structure and workplan analysis')
         }
-      } catch (error: any) {
-        console.error('❌ Structure and Workplan analysis failed:', error)
+      } catch (error: unknown) {
+        // Removed console.error❌ Structure and Workplan analysis failed:', error)
         setIsAnalyzingRFP(false)
         setAnalysisProgress(null)
-        
+
         // Show detailed error message
         const errorMsg = error.response?.data?.detail || error.message || 'Unknown error'
-        alert(`Structure and Workplan analysis failed:\n\n${errorMsg}\n\nPlease ensure Step 1 (RFP) and Step 2 (Concept) are completed.`)
+        alert(
+          `Structure and Workplan analysis failed:\n\n${errorMsg}\n\nPlease ensure Step 1 (RFP) and Step 2 (Concept) are completed.`
+        )
       }
 
       return
@@ -1177,17 +1217,19 @@ export function ProposalWriterPage() {
 
     // Step 2: Download document before proceeding
     if (currentStep === 2 && conceptDocument) {
-      console.log('📥 Step 2: Downloading document before proceeding')
+      // Removed console.log'📥 Step 2: Downloading document before proceeding')
       await handleDownloadConceptDocument()
     }
 
     // Normal navigation for other steps
-    console.log('➡️ Normal navigation to next step')
+    // Removed console.log'➡️ Normal navigation to next step')
     proceedToNextStep()
   }
 
   // Helper function to poll Step 1 status (RFP ONLY)
-  const pollStep1Status = async (proposalService: any): Promise<void> => {
+  const pollStep1Status = async (
+    proposalService: typeof import('../services/proposalService').proposalService
+  ): Promise<void> => {
     return new Promise((resolve, reject) => {
       let attempts = 0
       const maxAttempts = 100 // 5 minutes at 3 second intervals
@@ -1197,8 +1239,8 @@ export function ProposalWriterPage() {
           attempts++
           const status = await proposalService.getStep1Status(proposalId!)
 
-          console.log(`📊 Step 1 status (attempt ${attempts}):`, status.overall_status)
-          console.log('   RFP:', status.rfp_analysis.status)
+          // Removed console.log`📊 Step 1 status (attempt ${attempts}):`, status.overall_status)
+          // Removed console.log'   RFP:', status.rfp_analysis.status)
 
           // Update RFP state when completed
           if (status.rfp_analysis.status === 'completed' && status.rfp_analysis.data) {
@@ -1207,7 +1249,7 @@ export function ProposalWriterPage() {
 
           // Check overall status (Step 1 = RFP only)
           if (status.overall_status === 'completed') {
-            console.log('✅ Step 1 (RFP) completed!')
+            // Removed console.log'✅ Step 1 (RFP) completed!')
             resolve()
           } else if (status.overall_status === 'failed') {
             const errorMsg = status.rfp_analysis.error || 'Step 1 (RFP) analysis failed'
@@ -1228,7 +1270,11 @@ export function ProposalWriterPage() {
   }
 
   // Helper function to poll Step 2 combined status (Reference Proposals + Existing Work)
-  const pollStep2Status = async (proposalService: any): Promise<void> => {
+  const pollStep2Status = async (proposalService: {
+    getAnalysisStatus: (
+      id: string
+    ) => Promise<{ status: string; rfp_analysis?: RFPAnalysis; error?: string }>
+  }): Promise<void> => {
     return new Promise((resolve, reject) => {
       let attempts = 0
       const maxAttempts = 100 // 5 minutes at 3 second intervals
@@ -1238,9 +1284,9 @@ export function ProposalWriterPage() {
           attempts++
           const status = await proposalService.getStep2Status(proposalId!)
 
-          console.log(`📊 Step 2 combined status (attempt ${attempts}):`, status.overall_status)
-          console.log('   Reference Proposals:', status.reference_proposals_analysis.status)
-          console.log('   Existing Work:', status.existing_work_analysis.status)
+          // Removed console.log`📊 Step 2 combined status (attempt ${attempts}):`, status.overall_status)
+          // Removed console.log'   Reference Proposals:', status.reference_proposals_analysis.status)
+          // Removed console.log'   Existing Work:', status.existing_work_analysis.status)
 
           // Update individual states as they complete
           if (
@@ -1252,7 +1298,7 @@ export function ProposalWriterPage() {
 
           // Check overall status
           if (status.overall_status === 'completed') {
-            console.log('✅ Step 2 analyses completed!')
+            // Removed console.log'✅ Step 2 analyses completed!')
             resolve()
           } else if (status.overall_status === 'failed') {
             const refError = status.reference_proposals_analysis.error
@@ -1275,9 +1321,9 @@ export function ProposalWriterPage() {
   }
 
   // Helper function to poll analysis status (for Concept analysis)
-  const pollAnalysisStatus = async (
-    statusFn: () => Promise<any>,
-    onSuccess: (result: any) => any,
+  const pollAnalysisStatus = async <T,>(
+    statusFn: () => Promise<{ status: string; [key: string]: unknown }>,
+    onSuccess: (result: T) => void,
     analysisName: string
   ): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -1289,7 +1335,7 @@ export function ProposalWriterPage() {
           attempts++
           const status = await statusFn()
 
-          console.log(`📊 ${analysisName} status (attempt ${attempts}):`, status.status)
+          // Removed console.log`📊 ${analysisName} status (attempt ${attempts}):`, status.status)
 
           if (status.status === 'completed') {
             onSuccess(status)
@@ -1320,26 +1366,21 @@ export function ProposalWriterPage() {
     }
   }
 
-  const handleGenerateConceptDocument = async (overrideData?: {
+  const _handleGenerateConceptDocument = async (overrideData?: {
     selectedSections: string[]
     userComments?: { [key: string]: string }
   }) => {
-    console.log('🟢 Starting concept document generation...')
-    console.log('📋 Override data:', overrideData)
-    console.log('📋 Concept evaluation data:', conceptEvaluationData)
+    // Removed console.log'🟢 Starting concept document generation...')
+    // Removed console.log'📋 Override data:', overrideData)
+    // Removed console.log'📋 Concept evaluation data:', conceptEvaluationData)
 
     // Use override data if provided (from Step 3 regeneration), otherwise use conceptEvaluationData
     const evaluationData = overrideData || conceptEvaluationData
 
-    console.log('📋 Final evaluation data to use:', evaluationData)
-    console.log(
-      `   Selected sections (${evaluationData?.selectedSections?.length || 0}):`,
-      evaluationData?.selectedSections
-    )
-
+    // Removed console.log'📋 Final evaluation data to use:', evaluationData)
     // If concept document already exists and no override, just proceed to next step
     if (conceptDocument && !overrideData) {
-      console.log('✅ Concept document already exists, proceeding to next step')
+      // Removed console.log'✅ Concept document already exists, proceeding to next step')
       proceedToNextStep()
       return
     }
@@ -1361,41 +1402,23 @@ export function ProposalWriterPage() {
 
       // Check if there's another level of nesting (concept_analysis.concept_analysis)
       if (unwrappedAnalysis?.concept_analysis) {
-        console.log('🔍 Found nested concept_analysis, unwrapping again...')
+        // Removed console.log'🔍 Found nested concept_analysis, unwrapping again...')
         unwrappedAnalysis = unwrappedAnalysis.concept_analysis
 
         // Update the state with unwrapped version for Step 2
         setConceptAnalysis(unwrappedAnalysis)
       }
 
-      console.log('🔍 Unwrapped concept analysis:', unwrappedAnalysis)
+      // Removed console.log'🔍 Unwrapped concept analysis:', unwrappedAnalysis)
 
       // Filter sections to include ONLY the ones user selected
       const allSections = unwrappedAnalysis?.sections_needing_elaboration || []
-      console.log(`📊 All sections from concept analysis: ${allSections.length}`)
-      console.log(
-        '📊 Section names:',
-        allSections.map((s: any) => s.section)
-      )
-      const filteredSections = allSections
-        .filter(section => evaluationData.selectedSections.includes(section.section))
-        .map(section => ({
-          ...section,
-          selected: true, // Mark as selected
-          // Add user comment if provided (only from Step 3 regeneration)
-          user_comment: overrideData?.userComments?.[section.section] || '',
-        }))
-
       // Mark all sections with selected flag
       const allSectionsWithSelection = allSections.map(section => ({
         ...section,
         selected: evaluationData.selectedSections.includes(section.section),
         user_comment: overrideData?.userComments?.[section.section] || '',
       }))
-
-      console.log(
-        `📊 Total sections: ${allSections.length}, Selected: ${allSectionsWithSelection.filter(s => s.selected).length}`
-      )
 
       const conceptEvaluation = {
         concept_analysis: {
@@ -1409,10 +1432,10 @@ export function ProposalWriterPage() {
         status: 'completed',
       }
 
-      console.log('📤 Sending concept evaluation:', conceptEvaluation)
+      // Removed console.log'📤 Sending concept evaluation:', conceptEvaluation)
 
       // Step 1: Save concept evaluation to DynamoDB
-      console.log('💾 Saving concept evaluation to DynamoDB...')
+      // Removed console.log'💾 Saving concept evaluation to DynamoDB...')
 
       // Prepare update payload in the format expected by the endpoint
       const userComments: Record<string, string> = {}
@@ -1434,7 +1457,7 @@ export function ProposalWriterPage() {
       }
 
       const updateResult = await proposalService.updateConceptEvaluation(proposalId, updatePayload)
-      console.log('✅ Concept evaluation saved to DynamoDB')
+      // Removed console.log'✅ Concept evaluation saved to DynamoDB')
 
       // Update local state with saved concept evaluation
       // Keep the existing structure, just update the sections
@@ -1443,7 +1466,7 @@ export function ProposalWriterPage() {
           updateResult.concept_evaluation?.concept_analysis || updateResult.concept_evaluation,
         status: 'completed',
       }
-      console.log('📊 Updated conceptAnalysis:', updatedConceptAnalysis)
+      // Removed console.log'📊 Updated conceptAnalysis:', updatedConceptAnalysis)
       setConceptAnalysis(updatedConceptAnalysis)
 
       // Step 2: Generate concept document
@@ -1451,7 +1474,7 @@ export function ProposalWriterPage() {
       const result = await proposalService.generateConceptDocument(proposalId, conceptEvaluation)
 
       if (result.status === 'completed') {
-        console.log('✅ Document generated successfully')
+        // Removed console.log'✅ Document generated successfully')
         setGenerationProgressStep(3)
         setConceptDocument(result.concept_document)
         setIsGeneratingDocument(false)
@@ -1464,8 +1487,8 @@ export function ProposalWriterPage() {
         // Poll for completion
         await pollConceptDocumentStatus(!!overrideData)
       }
-    } catch (error: any) {
-      console.error('❌ Concept document generation failed:', error)
+    } catch (error: unknown) {
+      // Removed console.error❌ Concept document generation failed:', error)
       setIsGeneratingDocument(false)
       setGenerationProgressStep(1) // Reset on error
       alert(`Generation failed: ${error.message || 'Unknown error'}`)
@@ -1521,12 +1544,12 @@ export function ProposalWriterPage() {
     poll()
   }
 
-  const handleConceptEvaluationChange = useCallback((data: {
-    selectedSections: string[]
-    userComments?: { [key: string]: string }
-  }) => {
-    setConceptEvaluationData(data)
-  }, [])
+  const handleConceptEvaluationChange = useCallback(
+    (data: { selectedSections: string[]; userComments?: { [key: string]: string } }) => {
+      setConceptEvaluationData(data)
+    },
+    []
+  )
 
   const parseMarkdownToHTML = (markdown: string): string => {
     let formatted = markdown
@@ -1546,7 +1569,7 @@ export function ProposalWriterPage() {
     formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
 
     // Lists
-    formatted = formatted.replace(/^\- (.*$)/gim, '<li>$1</li>')
+    formatted = formatted.replace(/^- (.*$)/gim, '<li>$1</li>')
     formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
 
     // Line breaks
@@ -1556,17 +1579,12 @@ export function ProposalWriterPage() {
   }
 
   const handleDownloadConceptDocument = async () => {
-    console.log('🔽 Downloading concept document...')
+    // Removed console.log'🔽 Downloading concept document...')
 
     try {
       let content = ''
 
-      console.log('📄 conceptDocument type:', typeof conceptDocument)
-      console.log(
-        '📄 conceptDocument keys:',
-        conceptDocument ? Object.keys(conceptDocument) : 'null'
-      )
-
+      // Removed console.log'📄 conceptDocument type:', typeof conceptDocument)
       // Extract content from conceptDocument
       if (typeof conceptDocument === 'string') {
         content = conceptDocument
@@ -1627,27 +1645,27 @@ export function ProposalWriterPage() {
 </body>
 </html>`
 
-      console.log('📝 Content length:', content.length, 'characters')
-      console.log('📝 HTML length:', htmlContent.length, 'characters')
+      // Removed console.log'📝 Content length:', content.length, 'characters')
+      // Removed console.log'📝 HTML length:', htmlContent.length, 'characters')
 
       // Create blob and download
       const blob = new Blob([fullHtml], { type: 'text/html' })
-      console.log('📦 Blob created - size:', blob.size, 'bytes')
+      // Removed console.log'📦 Blob created - size:', blob.size, 'bytes')
 
       const url = window.URL.createObjectURL(blob)
-      console.log('🔗 Blob URL created:', url)
+      // Removed console.log'🔗 Blob URL created:', url)
 
       const a = document.createElement('a')
       a.href = url
       a.download = `concept-document-${proposalCode || 'draft'}.html`
 
-      console.log('📥 Triggering download:', a.download)
-      console.log('   Href:', a.href)
+      // Removed console.log'📥 Triggering download:', a.download)
+      // Removed console.log'   Href:', a.href)
 
       document.body.appendChild(a)
       a.click()
 
-      console.log('✅ Click triggered!')
+      // Removed console.log'✅ Click triggered!')
 
       // Clean up after click
       setTimeout(() => {
@@ -1655,9 +1673,9 @@ export function ProposalWriterPage() {
         window.URL.revokeObjectURL(url)
       }, 100)
 
-      console.log('✅ Download complete!')
+      // Removed console.log'✅ Download complete!')
     } catch (error) {
-      console.error('❌ Download failed:', error)
+      // Removed console.error❌ Download failed:', error)
       alert('Failed to download document')
     }
   }
@@ -1687,7 +1705,7 @@ export function ProposalWriterPage() {
           <Step1InformationConsolidation
             {...stepProps}
             onRfpDocumentChanged={() => {
-              console.log('🔄 RFP Document changed - invalidating all downstream analyses')
+              // Removed console.log'🔄 RFP Document changed - invalidating all downstream analyses')
               // Clear all analyses that depend on RFP
               setRfpAnalysis(null)
               setConceptAnalysis(null)
@@ -1707,7 +1725,7 @@ export function ProposalWriterPage() {
               }
             }}
             onConceptDocumentChanged={() => {
-              console.log('🔄 Concept Document changed - invalidating downstream analyses')
+              // Removed console.log'🔄 Concept Document changed - invalidating downstream analyses')
               // Clear analyses that depend on concept
               setConceptAnalysis(null)
               setConceptDocument(null)
@@ -1725,21 +1743,24 @@ export function ProposalWriterPage() {
             }}
           />
         )
-      case 2:
+      case 2: {
         // Get current concept file name from formData
         const conceptFiles = formData.uploadedFiles['concept-document'] || []
-        const currentConceptFileName = conceptFiles.length > 0
-          ? (typeof conceptFiles[0] === 'string' ? conceptFiles[0] : conceptFiles[0]?.name)
-          : undefined
+        const currentConceptFileName =
+          conceptFiles.length > 0
+            ? typeof conceptFiles[0] === 'string'
+              ? conceptFiles[0]
+              : conceptFiles[0]?.name
+            : undefined
 
         return (
           <Step2ConceptReview
             {...stepProps}
             conceptDocument={conceptDocument}
             proposalId={proposalId}
-            onConceptAnalysisChanged={(newConceptAnalysis) => {
+            onConceptAnalysisChanged={newConceptAnalysis => {
               // Called when concept analysis is regenerated (from Step2's internal handler)
-              console.log('🔄 Concept analysis changed, updating state')
+              // Removed console.log'🔄 Concept analysis changed, updating state')
               setConceptAnalysis(newConceptAnalysis)
               // Clear downstream analyses that depend on concept
               setStructureWorkplanAnalysis(null)
@@ -1757,9 +1778,9 @@ export function ProposalWriterPage() {
                 localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
               }
             }}
-            onConceptDocumentChanged={(newDocument) => {
+            onConceptDocumentChanged={newDocument => {
               // Called when concept document is generated or cleared (from Step2's internal handler)
-              console.log('📄 Concept document changed:', newDocument ? 'new document' : 'cleared')
+              // Removed console.log'📄 Concept document changed:', newDocument ? 'new document' : 'cleared')
 
               // If clearing the document, set flag to prevent auto-reload from DynamoDB
               if (!newDocument) {
@@ -1779,13 +1800,14 @@ export function ProposalWriterPage() {
                 }
               }
             }}
-            onRegenerationStateChanged={(isRegenerating) => {
-              console.log('🔄 Regeneration state changed:', isRegenerating)
+            onRegenerationStateChanged={isRegenerating => {
+              // Removed console.log'🔄 Regeneration state changed:', isRegenerating)
               setIsRegeneratingConcept(isRegenerating)
             }}
             currentConceptFileName={currentConceptFileName}
           />
         )
+      }
       case 3:
         return (
           <Step3StructureWorkplan
@@ -1794,7 +1816,7 @@ export function ProposalWriterPage() {
             structureWorkplanAnalysis={structureWorkplanAnalysis}
             onTemplateGenerated={async () => {
               const timestamp = new Date().toISOString()
-              console.log('✅ Template generated, enabling Next button')
+              // Removed console.log'✅ Template generated, enabling Next button')
               setProposalTemplate({ generated: true, timestamp })
 
               // Save to DynamoDB for persistence across sessions
@@ -1802,10 +1824,10 @@ export function ProposalWriterPage() {
                 try {
                   await proposalService.updateProposal(proposalId, {
                     proposal_template_generated: timestamp,
-                  } as any)
-                  console.log('💾 Saved proposal_template_generated to DynamoDB')
+                  } as { proposal_template_generated: string })
+                  // Removed console.log'💾 Saved proposal_template_generated to DynamoDB')
                 } catch (error) {
-                  console.error('❌ Failed to save template status to DynamoDB:', error)
+                  // Removed console.error❌ Failed to save template status to DynamoDB:', error)
                 }
               }
             }}
@@ -1817,20 +1839,24 @@ export function ProposalWriterPage() {
             {...stepProps}
             proposalId={proposalId}
             isLoading={isLoadingStepData}
-            uploadedDraftFiles={formData.uploadedFiles['draft-proposal'] as unknown as string[] || []}
-            draftFeedbackAnalysis={draftFeedbackAnalysis?.draft_feedback_analysis || draftFeedbackAnalysis}
-            onFeedbackAnalyzed={(analysis) => {
-              console.log('✅ Draft feedback analysis received:', analysis)
+            uploadedDraftFiles={
+              (formData.uploadedFiles['draft-proposal'] as unknown as string[]) || []
+            }
+            draftFeedbackAnalysis={
+              draftFeedbackAnalysis?.draft_feedback_analysis || draftFeedbackAnalysis
+            }
+            onFeedbackAnalyzed={analysis => {
+              // Removed console.log'✅ Draft feedback analysis received:', analysis)
               setDraftFeedbackAnalysis(analysis)
             }}
-            onFilesChanged={(files) => {
-              console.log('📄 Draft files changed:', files)
+            onFilesChanged={files => {
+              // Removed console.log'📄 Draft files changed:', files)
               setFormData(prev => ({
                 ...prev,
                 uploadedFiles: {
                   ...prev.uploadedFiles,
-                  'draft-proposal': files as any
-                }
+                  'draft-proposal': files as File[],
+                },
               }))
             }}
           />
@@ -1857,23 +1883,23 @@ export function ProposalWriterPage() {
         e.preventDefault()
         e.stopPropagation()
 
-        console.log('🔘 Next button clicked - Step:', currentStep)
+        // Removed console.log'🔘 Next button clicked - Step:', currentStep)
 
         // Step 3 proceeds to next step
         // Step 4 is the final step - handled by Finish process button
         if (currentStep === 3) {
-          console.log(`📥 Step ${currentStep}: Proceeding to next step`)
+          // Removed console.log`📥 Step ${currentStep}: Proceeding to next step`)
           proceedToNextStep()
         } else if (currentStep === 4) {
           // Final step - finish process
-          console.log('🏁 Finishing process')
+          // Removed console.log'🏁 Finishing process')
           if (proposalId) {
             try {
               await proposalService.updateProposalStatus(proposalId, 'completed')
               setProposalStatus('completed')
               showSuccess('Process Complete', 'Your proposal has been marked as completed!')
             } catch (error) {
-              console.error('Error finishing process:', error)
+              // Removed console.errorError finishing process:', error)
               showError('Error', 'Failed to complete process. Please try again.')
             }
           }
@@ -1907,17 +1933,20 @@ export function ProposalWriterPage() {
         currentStep === 1 && isVectorizingFiles
           ? 'Please wait for document vectorization to complete'
           : currentStep === 1 &&
-            (isUploadingRFP || isUploadingReference || isUploadingSupporting || isUploadingConcept)
-          ? 'Please wait for file uploads to complete'
-          : currentStep === 1 &&
-            (!(formData.textInputs['proposal-title'] || '').trim() ||
-              !formData.uploadedFiles['rfp-document'] ||
-              formData.uploadedFiles['rfp-document'].length === 0 ||
-              ((formData.textInputs['initial-concept'] || '').length < 100 &&
-                (!formData.uploadedFiles['concept-document'] ||
-                  formData.uploadedFiles['concept-document'].length === 0)))
-          ? 'Please provide a title, upload an RFP document, and provide an initial concept'
-          : ''
+              (isUploadingRFP ||
+                isUploadingReference ||
+                isUploadingSupporting ||
+                isUploadingConcept)
+            ? 'Please wait for file uploads to complete'
+            : currentStep === 1 &&
+                (!(formData.textInputs['proposal-title'] || '').trim() ||
+                  !formData.uploadedFiles['rfp-document'] ||
+                  formData.uploadedFiles['rfp-document'].length === 0 ||
+                  ((formData.textInputs['initial-concept'] || '').length < 100 &&
+                    (!formData.uploadedFiles['concept-document'] ||
+                      formData.uploadedFiles['concept-document'].length === 0)))
+              ? 'Please provide a title, upload an RFP document, and provide an initial concept'
+              : ''
       }
     >
       {isGeneratingDocument ? (

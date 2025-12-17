@@ -46,18 +46,16 @@ Usage:
 CONCEPT_EVALUATION_SETTINGS = {
     # ==================== AI Model Configuration ====================
     "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",  # Claude Sonnet 4
-    "max_tokens": 15000,          # Maximum tokens for response (~11,000 words)
-    "temperature": 0.2,           # Low temperature for consistent evaluation
-    "top_p": 0.9,                 # Nucleus sampling (0.9 = consider top 90% probability mass)
-    "top_k": 250,                 # Top-k sampling (consider top 250 tokens)
-
+    "max_tokens": 15000,  # Maximum tokens for response (~11,000 words)
+    "temperature": 0.2,  # Low temperature for consistent evaluation
+    "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)
+    "top_k": 250,  # Top-k sampling (consider top 250 tokens)
     # ==================== Processing Settings ====================
-    "timeout": 300,               # Processing timeout (5 minutes)
-    "max_sections": 20,           # Maximum sections to evaluate
-    "max_chars": 100000,          # Max characters from concept document (~25K tokens)
-
+    "timeout": 300,  # Processing timeout (5 minutes)
+    "max_sections": 20,  # Maximum sections to evaluate
+    "max_chars": 100000,  # Max characters from concept document (~25K tokens)
     # ==================== DynamoDB Prompt Lookup ====================
-    "section": "proposal_writer",      # Top-level section
-    "sub_section": "step-1",           # Step identifier (concept eval is part of step 1)
-    "category": "Initial Concept"      # Prompt category filter
+    "section": "proposal_writer",  # Top-level section
+    "sub_section": "step-1",  # Step identifier (concept eval is part of step 1)
+    "category": "Initial Concept",  # Prompt category filter
 }

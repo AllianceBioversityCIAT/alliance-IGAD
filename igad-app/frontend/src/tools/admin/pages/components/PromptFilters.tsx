@@ -11,7 +11,7 @@ interface PromptFiltersProps {
     route?: string
     is_active?: boolean
   }
-  onChange: (filters: any) => void
+  onChange: (filters: { section?: string; sub_section?: string; is_active?: boolean }) => void
 }
 
 export function PromptFilters({ filters, onChange }: PromptFiltersProps) {

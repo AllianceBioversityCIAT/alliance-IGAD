@@ -63,7 +63,7 @@ class TokenManager {
     try {
       const refreshToken = this.getRefreshToken()
       if (!refreshToken) {
-        console.warn('No refresh token available')
+        // Removed console.warn
         return false
       }
 
@@ -76,7 +76,7 @@ class TokenManager {
       })
 
       if (!response.ok) {
-        console.error('Token refresh failed:', response.status)
+        // Removed console.error
         this.handleRefreshFailure()
         return false
       }
@@ -89,10 +89,10 @@ class TokenManager {
         this.setRefreshToken(tokenData.refresh_token)
       }
 
-      console.log('Tokens refreshed successfully')
+      // Removed console.log
       return true
     } catch (error) {
-      console.error('Token refresh error:', error)
+      // Removed console.error
       this.handleRefreshFailure()
       return false
     }
@@ -169,7 +169,7 @@ class TokenManager {
       // Refresh if expires in less than 1 hour
       return timeUntilExpiry < 60 * 60 * 1000
     } catch (error) {
-      console.error('Error parsing token:', error)
+      // Removed console.error
       return true // Assume expired if can't parse
     }
   }

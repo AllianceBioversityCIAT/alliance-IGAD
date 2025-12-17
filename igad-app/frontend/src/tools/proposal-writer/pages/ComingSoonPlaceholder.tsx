@@ -21,7 +21,8 @@ export function ComingSoonPlaceholder({ stepNumber, stepTitle }: ComingSoonProps
         </p>
 
         <p className={styles.message}>
-          This feature is currently under development. We're working hard to bring you an amazing experience!
+          This feature is currently under development. We&apos;re working hard to bring you an
+          amazing experience!
         </p>
 
         <div className={styles.badge}>

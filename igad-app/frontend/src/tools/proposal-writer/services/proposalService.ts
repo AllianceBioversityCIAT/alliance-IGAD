@@ -1,4 +1,11 @@
 import { apiClient } from '@/shared/services/apiClient'
+import type {
+  RFPAnalysis,
+  ConceptAnalysis,
+  StructureWorkplanAnalysis,
+  DraftFeedbackAnalysis,
+  ConceptDocument,
+} from '../types/analysis'
 
 export interface Proposal {
   id: string
@@ -11,7 +18,7 @@ export interface Proposal {
   template_id?: string
   status: 'draft' | 'in_progress' | 'review' | 'completed' | 'archived'
   sections?: ProposalSection[]
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
   uploaded_files: Record<string, string[]>
   text_inputs: Record<string, string>
   documents?: {
@@ -20,16 +27,16 @@ export interface Proposal {
     reference_documents: string[]
     supporting_documents: string[]
   }
-  ai_context?: Record<string, any>
+  ai_context?: Record<string, unknown>
   created_at: string
   updated_at: string
   version?: number
   // Step completion tracking fields (from DynamoDB)
-  concept_document_v2?: any  // Generated concept document from Step 2
-  proposal_template_generated?: string  // ISO timestamp when template was generated in Step 3
-  structure_workplan_completed_at?: string  // ISO timestamp when structure workplan analysis was completed
-  structure_workplan_analysis?: any  // Structure workplan analysis data from Step 3
-  draft_feedback_analysis?: any  // Draft feedback analysis data from Step 4
+  concept_document_v2?: ConceptDocument // Generated concept document from Step 2
+  proposal_template_generated?: string // ISO timestamp when template was generated in Step 3
+  structure_workplan_completed_at?: string // ISO timestamp when structure workplan analysis was completed
+  structure_workplan_analysis?: StructureWorkplanAnalysis // Structure workplan analysis data from Step 3
+  draft_feedback_analysis?: DraftFeedbackAnalysis // Draft feedback analysis data from Step 4
 }
 
 export interface ProposalSection {
@@ -38,7 +45,7 @@ export interface ProposalSection {
   content: string
   ai_generated: boolean
   order: number
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 }
 
 export interface AIGenerationResult {
@@ -89,7 +96,7 @@ class ProposalService {
   async generateSectionContent(
     proposalId: string,
     sectionId: string,
-    contextData?: Record<string, any>
+    contextData?: Record<string, unknown>
   ): Promise<AIGenerationResult> {
     const response = await apiClient.post(`/api/proposals/${proposalId}/generate`, {
       section_id: sectionId,
@@ -152,7 +159,7 @@ class ProposalService {
 
   async analyzeRFP(proposalId: string): Promise<{
     status: string
-    rfp_analysis?: any
+    rfp_analysis?: RFPAnalysis
     message?: string
     cached?: boolean
   }> {
@@ -162,7 +169,7 @@ class ProposalService {
 
   async getAnalysisStatus(proposalId: string): Promise<{
     status: string
-    rfp_analysis?: any
+    rfp_analysis?: RFPAnalysis
     error?: string
     started_at?: string
     completed_at?: string
@@ -199,7 +206,7 @@ class ProposalService {
     overall_status: 'not_started' | 'processing' | 'completed' | 'failed'
     rfp_analysis: {
       status: string
-      data?: any
+      data?: unknown
       error?: string
       started_at?: string
       completed_at?: string
@@ -237,14 +244,14 @@ class ProposalService {
     overall_status: 'not_started' | 'processing' | 'completed' | 'failed'
     reference_proposals_analysis: {
       status: string
-      data?: any
+      data?: unknown
       error?: string
       started_at?: string
       completed_at?: string
     }
     existing_work_analysis: {
       status: string
-      data?: any
+      data?: unknown
       error?: string
       started_at?: string
       completed_at?: string
@@ -341,26 +348,28 @@ class ProposalService {
     options?: { force?: boolean }
   ): Promise<{
     status: string
-    concept_analysis?: any
+    concept_analysis?: ConceptAnalysis
     message?: string
     cached?: boolean
     started_at?: string
   }> {
     const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-concept`, {
-      force: options?.force ?? false
+      force: options?.force ?? false,
     })
     return response.data
   }
 
   async getConceptStatus(proposalId: string): Promise<{
     status: string
-    concept_analysis?: any
+    concept_analysis?: ConceptAnalysis
     error?: string
     started_at?: string
     completed_at?: string
   }> {
     // Add timestamp to prevent caching
-    const response = await apiClient.get(`/api/proposals/${proposalId}/concept-status?_t=${Date.now()}`)
+    const response = await apiClient.get(
+      `/api/proposals/${proposalId}/concept-status?_t=${Date.now()}`
+    )
     return response.data
   }
 
@@ -391,16 +400,11 @@ class ProposalService {
   async analyzeStep3(proposalId: string): Promise<{
     status: string
     message: string
-    data?: any
+    data?: unknown
     started_at?: string
   }> {
-    try {
-      const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-step-3`)
-      return response.data
-    } catch (error) {
-      console.error('❌ Failed to start Step 3 analysis:', error)
-      throw error
-    }
+    const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-step-3`)
+    return response.data
   }
 
   /**
@@ -424,18 +428,13 @@ class ProposalService {
    */
   async getStructureWorkplanStatus(proposalId: string): Promise<{
     status: string
-    data?: any
+    data?: unknown
     error?: string
     started_at?: string
     completed_at?: string
   }> {
-    try {
-      const response = await apiClient.get(`/api/proposals/${proposalId}/structure-workplan-status`)
-      return response.data
-    } catch (error) {
-      console.error('❌ Failed to check Structure Workplan status:', error)
-      throw error
-    }
+    const response = await apiClient.get(`/api/proposals/${proposalId}/structure-workplan-status`)
+    return response.data
   }
 
   /**
@@ -472,20 +471,15 @@ class ProposalService {
     selectedSections?: string[],
     userComments?: Record<string, string>
   ): Promise<Blob> {
-    try {
-      const response = await apiClient.post(
-        `/api/proposals/${proposalId}/generate-proposal-template`,
-        {
-          selected_sections: selectedSections || null,
-          user_comments: userComments || null,
-        },
-        { responseType: 'blob' }
-      )
-      return response.data
-    } catch (error) {
-      console.error('❌ Failed to generate proposal template:', error)
-      throw error
-    }
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/generate-proposal-template`,
+      {
+        selected_sections: selectedSections || null,
+        user_comments: userComments || null,
+      },
+      { responseType: 'blob' }
+    )
+    return response.data
   }
 
   async getUploadedDocuments(proposalId: string): Promise<{
@@ -500,11 +494,11 @@ class ProposalService {
 
   async generateConceptDocument(
     proposalId: string,
-    conceptEvaluation: any
+    conceptEvaluation: { selectedSections: string[]; userComments?: Record<string, string> }
   ): Promise<{
     status: string
     message: string
-    concept_document?: any
+    concept_document?: ConceptDocument
   }> {
     const response = await apiClient.post(
       `/api/proposals/${proposalId}/generate-concept-document`,
@@ -515,7 +509,7 @@ class ProposalService {
 
   async getConceptDocumentStatus(proposalId: string): Promise<{
     status: string
-    concept_document?: any
+    concept_document?: ConceptDocument
     error?: string
     started_at?: string
     completed_at?: string
@@ -526,11 +520,11 @@ class ProposalService {
 
   async updateConceptEvaluation(
     proposalId: string,
-    conceptEvaluation: any
+    conceptEvaluation: { selectedSections: string[]; userComments?: Record<string, string> }
   ): Promise<{
     status: string
     message: string
-    concept_evaluation: any
+    concept_evaluation: { selectedSections: string[]; userComments?: Record<string, string> }
   }> {
     const response = await apiClient.put(
       `/api/proposals/${proposalId}/concept-evaluation`,
@@ -540,7 +534,7 @@ class ProposalService {
   }
 
   async getConceptEvaluation(proposalId: string): Promise<{
-    concept_evaluation: any
+    concept_evaluation: { selectedSections: string[]; userComments?: Record<string, string> }
   }> {
     const response = await apiClient.get(`/api/proposals/${proposalId}/concept-evaluation`)
     return response.data
@@ -772,20 +766,18 @@ class ProposalService {
    * const freshResult = await proposalService.analyzeDraftFeedback('abc-123', true)
    * ```
    */
-  async analyzeDraftFeedback(proposalId: string, force: boolean = false): Promise<{
+  async analyzeDraftFeedback(
+    proposalId: string,
+    force: boolean = false
+  ): Promise<{
     status: string
     message: string
     started_at?: string
   }> {
-    try {
-      const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-draft-feedback`, {
-        force: force
-      })
-      return response.data
-    } catch (error) {
-      console.error('❌ Failed to start Draft Feedback analysis:', error)
-      throw error
-    }
+    const response = await apiClient.post(`/api/proposals/${proposalId}/analyze-draft-feedback`, {
+      force: force,
+    })
+    return response.data
   }
 
   /**
@@ -830,19 +822,14 @@ class ProposalService {
         needs_improvement_count: number
       }
       // Legacy nested structure support
-      draft_feedback_analysis?: any
+      draft_feedback_analysis?: DraftFeedbackAnalysis
     }
     error?: string
     started_at?: string
     completed_at?: string
   }> {
-    try {
-      const response = await apiClient.get(`/api/proposals/${proposalId}/draft-feedback-status`)
-      return response.data
-    } catch (error) {
-      console.error('❌ Failed to check Draft Feedback status:', error)
-      throw error
-    }
+    const response = await apiClient.get(`/api/proposals/${proposalId}/draft-feedback-status`)
+    return response.data
   }
 
   // Vectorization status operations
@@ -905,16 +892,11 @@ class ProposalService {
     proposalId: string,
     status: 'draft' | 'in_progress' | 'review' | 'completed' | 'archived'
   ): Promise<Proposal> {
-    try {
-      const response = await apiClient.put(`/api/proposals/${proposalId}`, {
-        status,
-        completed_at: status === 'completed' ? new Date().toISOString() : undefined
-      })
-      return response.data.proposal || response.data
-    } catch (error) {
-      console.error('❌ Failed to update proposal status:', error)
-      throw error
-    }
+    const response = await apiClient.put(`/api/proposals/${proposalId}`, {
+      status,
+      completed_at: status === 'completed' ? new Date().toISOString() : undefined,
+    })
+    return response.data.proposal || response.data
   }
 }
 

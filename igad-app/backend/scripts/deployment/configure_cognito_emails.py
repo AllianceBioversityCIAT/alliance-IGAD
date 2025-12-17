@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
 import argparse
 import json
+
 import boto3
 from botocore.exceptions import ClientError
 
-COLORS = {"primary": "#2c5530", "accent": "#7cb342", "background": "#f8f9fa", "text": "#333333", "light_green": "#f1f8e9"}
+COLORS = {
+    "primary": "#2c5530",
+    "accent": "#7cb342",
+    "background": "#f8f9fa",
+    "text": "#333333",
+    "light_green": "#f1f8e9",
+}
+
 
 def get_cognito_client(profile_name, region="us-east-1"):
-    return boto3.Session(profile_name=profile_name).client("cognito-idp", region_name=region)
+    return boto3.Session(profile_name=profile_name).client(
+        "cognito-idp", region_name=region
+    )
+
 
 def create_base_template(content):
     return f"""<div style="font-family: Arial, sans-serif; padding: 20px; background-color: {COLORS['background']};">
@@ -35,14 +46,18 @@ def configure_welcome_email(cognito_client, user_pool_id):
     try:
         # Get current config first
         response = cognito_client.describe_user_pool(UserPoolId=user_pool_id)
-        current_config = response['UserPool'].get('AdminCreateUserConfig', {})
-        
+        current_config = response["UserPool"].get("AdminCreateUserConfig", {})
+
         # Update with new template
         cognito_client.update_user_pool(
             UserPoolId=user_pool_id,
             AdminCreateUserConfig={
-                "AllowAdminCreateUserOnly": current_config.get('AllowAdminCreateUserOnly', False),
-                "UnusedAccountValidityDays": current_config.get('UnusedAccountValidityDays', 7),
+                "AllowAdminCreateUserOnly": current_config.get(
+                    "AllowAdminCreateUserOnly", False
+                ),
+                "UnusedAccountValidityDays": current_config.get(
+                    "UnusedAccountValidityDays", 7
+                ),
                 "InviteMessageTemplate": {
                     "EmailMessage": create_base_template(content),
                     "EmailSubject": "Welcome to IGAD Innovation Hub - Account Created",
@@ -66,8 +81,8 @@ def configure_verification_email(cognito_client, user_pool_id):
 <p style="color: #666; font-size: 14px;">If you didn't request this verification, you can ignore this message.</p>"""
     try:
         # Get current config first
-        response = cognito_client.describe_user_pool(UserPoolId=user_pool_id)
-        
+        cognito_client.describe_user_pool(UserPoolId=user_pool_id)
+
         cognito_client.update_user_pool(
             UserPoolId=user_pool_id,
             VerificationMessageTemplate={
@@ -93,7 +108,9 @@ def configure_mfa_setup(cognito_client, user_pool_id):
     return True
 
 
-def configure_email_settings(cognito_client, user_pool_id, use_ses=False, ses_email=None):
+def configure_email_settings(
+    cognito_client, user_pool_id, use_ses=False, ses_email=None
+):
     try:
         if use_ses and ses_email:
             email_config = {
@@ -105,7 +122,9 @@ def configure_email_settings(cognito_client, user_pool_id, use_ses=False, ses_em
         else:
             email_config = {"EmailSendingAccount": "COGNITO_DEFAULT"}
 
-        cognito_client.update_user_pool(UserPoolId=user_pool_id, EmailConfiguration=email_config)
+        cognito_client.update_user_pool(
+            UserPoolId=user_pool_id, EmailConfiguration=email_config
+        )
         config_type = "SES" if use_ses else "COGNITO_DEFAULT"
         print(f"✅ Email configuration set to {config_type}")
         return True
@@ -119,10 +138,22 @@ def save_configuration_backup(user_pool_id, profile_name):
         "user_pool_id": user_pool_id,
         "profile": profile_name,
         "templates": {
-            "welcome_email": {"subject": "Bienvenido al IGAD Innovation Hub - Cuenta Creada", "configured": True},
-            "email_verification": {"subject": "IGAD Innovation Hub - Verifica tu Email", "configured": True},
-            "password_reset": {"subject": "IGAD Innovation Hub - Restablecimiento de Contraseña", "configured": "prepared"},
-            "mfa_setup": {"subject": "IGAD Innovation Hub - Configuración MFA", "configured": "prepared"},
+            "welcome_email": {
+                "subject": "Bienvenido al IGAD Innovation Hub - Cuenta Creada",
+                "configured": True,
+            },
+            "email_verification": {
+                "subject": "IGAD Innovation Hub - Verifica tu Email",
+                "configured": True,
+            },
+            "password_reset": {
+                "subject": "IGAD Innovation Hub - Restablecimiento de Contraseña",
+                "configured": "prepared",
+            },
+            "mfa_setup": {
+                "subject": "IGAD Innovation Hub - Configuración MFA",
+                "configured": "prepared",
+            },
         },
         "email_configuration": "COGNITO_DEFAULT",
         "colors": COLORS,
@@ -134,17 +165,23 @@ def save_configuration_backup(user_pool_id, profile_name):
 
 def main():
     parser = argparse.ArgumentParser(description="Configure Cognito email templates")
-    parser.add_argument("--user-pool-id", default="us-east-1_EULeelICj", help="Cognito User Pool ID")
+    parser.add_argument(
+        "--user-pool-id", default="us-east-1_EULeelICj", help="Cognito User Pool ID"
+    )
     parser.add_argument("--profile", default="IBD-DEV", help="AWS Profile name")
     parser.add_argument("--region", default="us-east-1", help="AWS Region")
-    parser.add_argument("--use-ses", action="store_true", help="Use SES instead of Cognito default")
+    parser.add_argument(
+        "--use-ses", action="store_true", help="Use SES instead of Cognito default"
+    )
     parser.add_argument("--ses-email", help="SES verified email address")
 
     args = parser.parse_args()
 
     try:
         cognito_client = get_cognito_client(args.profile, args.region)
-        configure_email_settings(cognito_client, args.user_pool_id, args.use_ses, args.ses_email)
+        configure_email_settings(
+            cognito_client, args.user_pool_id, args.use_ses, args.ses_email
+        )
         configure_welcome_email(cognito_client, args.user_pool_id)
         configure_verification_email(cognito_client, args.user_pool_id)
         configure_password_reset(cognito_client, args.user_pool_id)
@@ -155,6 +192,7 @@ def main():
     except Exception as e:
         print(f"❌ Configuration failed: {e}")
         return False
+
 
 if __name__ == "__main__":
     main()

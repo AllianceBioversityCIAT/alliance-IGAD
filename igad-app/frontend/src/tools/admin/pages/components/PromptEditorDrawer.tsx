@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   X,
   Save,
@@ -13,24 +13,15 @@ import {
   User,
 } from 'lucide-react'
 import { usePrompt } from '@/tools/admin/hooks/usePrompts'
-import {
-  ProposalSection,
-  SECTION_LABELS,
-  type CreatePromptRequest,
-  type UpdatePromptRequest,
-} from '@/types/prompt'
+import { ProposalSection, SECTION_LABELS } from '@/types/prompt'
 import styles from './PromptEditorDrawer.module.css'
 
 // Simple History Component for Drawer
 function HistoryContent({ promptId }: { promptId: string }) {
-  const [history, setHistory] = useState<any>(null)
+  const [history, setHistory] = useState<import('./HistoryPanel').PromptHistory | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    fetchHistory()
-  }, [promptId])
-
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     setIsLoading(true)
     try {
       const response = await fetch(
@@ -46,10 +37,15 @@ function HistoryContent({ promptId }: { promptId: string }) {
         setHistory(data)
       }
     } catch (error) {
+      // Silently handle error
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [promptId, setIsLoading])
+
+  useEffect(() => {
+    fetchHistory()
+  }, [promptId, fetchHistory])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -89,7 +85,7 @@ function HistoryContent({ promptId }: { promptId: string }) {
 
   return (
     <div className={styles.historyList}>
-      {history.changes.slice(0, 5).map((change: any) => (
+      {history.changes.slice(0, 5).map((change: import('./HistoryPanel').PromptChange) => (
         <div key={change.id} className={styles.historyItem}>
           <div className={styles.historyItemHeader}>
             <span className={styles.historyChangeType}>
@@ -118,7 +114,18 @@ interface PromptEditorDrawerProps {
   mode: 'create' | 'edit'
   promptId?: string | null
   onClose: () => void
-  onSave: (data: any) => void
+  onSave: (
+    data: Omit<
+      import('@/types/prompt').Prompt,
+      | 'id'
+      | 'created_by'
+      | 'updated_by'
+      | 'created_at'
+      | 'updated_at'
+      | 'version'
+      | 'comments_count'
+    >
+  ) => void
   isLoading?: boolean
   contextData?: {
     fromRoute?: string
@@ -168,7 +175,7 @@ export function PromptEditorDrawer({
     ],
   }
 
-  const applyTemplate = (template: any) => {
+  const applyTemplate = (template: Partial<import('@/types/prompt').Prompt>) => {
     setFormData(prev => ({
       ...prev,
       name: template.name,
@@ -421,8 +428,8 @@ export function PromptEditorDrawer({
               <div className={styles.helpTooltip}>
                 <HelpCircle size={14} className={styles.helpIcon} />
                 <div className={styles.tooltipContent}>
-                  Defines the AI's role, personality, and behavior. Example: "You are an expert
-                  proposal writer specializing in African development projects..."
+                  Defines the AI&apos;s role, personality, and behavior. Example: &quot;You are an
+                  expert proposal writer specializing in African development projects...&quot;
                 </div>
               </div>
             </div>
@@ -446,8 +453,8 @@ export function PromptEditorDrawer({
                 <HelpCircle size={14} className={styles.helpIcon} />
                 <div className={styles.tooltipContent}>
                   Template with variables for dynamic content. Use {'{variable_name}'} for
-                  placeholders. Example: "Create a {'{section_type}'} for {'{project_type}'} in{' '}
-                  {'{region}'}..."
+                  placeholders. Example: &quot;Create a {'{section_type}'} for {'{project_type}'} in{' '}
+                  {'{region}'}...&quot;
                 </div>
               </div>
             </div>
@@ -479,7 +486,7 @@ export function PromptEditorDrawer({
               maxLength={500}
             />
             <p className={styles.helpText}>
-              Define the tone and style for the AI's responses (optional).
+              Define the tone and style for the AI&apos;s responses (optional).
             </p>
           </div>
 
@@ -499,7 +506,7 @@ export function PromptEditorDrawer({
               maxLength={500}
             />
             <p className={styles.helpText}>
-              Specify the desired format for the AI's output (optional).
+              Specify the desired format for the AI&apos;s output (optional).
             </p>
           </div>
 

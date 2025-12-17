@@ -45,18 +45,16 @@ Usage:
 CONCEPT_DOCUMENT_GENERATION_SETTINGS = {
     # ==================== AI Model Configuration ====================
     "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",  # Claude Sonnet 4
-    "max_tokens": 16000,          # Maximum tokens for response (~12,000 words)
-    "temperature": 0.2,           # Balanced temperature for creative document generation
-    "top_p": 0.9,                 # Nucleus sampling (0.9 = consider top 90% probability mass)
-    "top_k": 250,                 # Top-k sampling (consider top 250 tokens)
-
+    "max_tokens": 16000,  # Maximum tokens for response (~12,000 words)
+    "temperature": 0.2,  # Balanced temperature for creative document generation
+    "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)
+    "top_k": 250,  # Top-k sampling (consider top 250 tokens)
     # ==================== Processing Settings ====================
-    "timeout": 300,               # Processing timeout (5 minutes)
-    "max_retries": 3,             # Maximum retry attempts on failure
-    "max_sections": 20,           # Maximum sections to generate
-
+    "timeout": 300,  # Processing timeout (5 minutes)
+    "max_retries": 3,  # Maximum retry attempts on failure
+    "max_sections": 20,  # Maximum sections to generate
     # ==================== DynamoDB Prompt Lookup ====================
-    "section": "proposal_writer",      # Top-level section
-    "sub_section": "step-2",           # Step identifier
-    "category": "Document Generation"  # Prompt category filter
+    "section": "proposal_writer",  # Top-level section
+    "sub_section": "step-2",  # Step identifier
+    "category": "Document Generation",  # Prompt category filter
 }

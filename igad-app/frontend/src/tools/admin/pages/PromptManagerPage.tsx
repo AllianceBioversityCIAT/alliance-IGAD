@@ -32,7 +32,7 @@ export function PromptManagerPage() {
   const [filters, setFilters] = useState<PromptManagerFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
+  // Removed unused selectedPromptId state
   const [commentsPromptId, setCommentsPromptId] = useState<string | null>(null)
   const [templatePrompt, setTemplatePrompt] = useState<Prompt | null>(null)
   const [contextData, setContextData] = useState<{
@@ -88,7 +88,6 @@ export function PromptManagerPage() {
     isDeleting,
     isTogglingActive,
     createPrompt,
-    updatePrompt,
     publishPrompt,
     deletePrompt,
     toggleActive,
@@ -124,8 +123,9 @@ export function PromptManagerPage() {
     try {
       await publishPrompt({ id, version })
       showSuccess('Prompt published successfully', 'The prompt is now available for use.')
-    } catch (error: any) {
-      showError('Failed to publish prompt', error.message || 'Please try again.')
+    } catch (error: unknown) {
+      const err = error as { message?: string }
+      showError('Failed to publish prompt', err.message || 'Please try again.')
     }
   }
 
@@ -140,8 +140,9 @@ export function PromptManagerPage() {
           await deletePrompt({ id, version })
           showSuccess('Prompt deleted successfully', 'The prompt has been permanently removed.')
           setConfirmDialog(prev => ({ ...prev, isOpen: false }))
-        } catch (error: any) {
-          showError('Failed to delete prompt', error.message || 'Please try again.')
+        } catch (error: unknown) {
+          const err = error as { message?: string }
+          showError('Failed to delete prompt', err.message || 'Please try again.')
         }
       },
     })
@@ -161,8 +162,9 @@ export function PromptManagerPage() {
       }
       await createPrompt(clonedData)
       showSuccess('Prompt cloned successfully', `"${clonedData.name}" has been created as a draft.`)
-    } catch (error: any) {
-      showError('Failed to clone prompt', error.message || 'Please try again.')
+    } catch (error: unknown) {
+      const err = error as { message?: string }
+      showError('Failed to clone prompt', err.message || 'Please try again.')
     }
   }
 
@@ -174,9 +176,10 @@ export function PromptManagerPage() {
         `Prompt ${prompt?.is_active ? 'deactivated' : 'activated'} successfully`,
         `"${prompt?.name}" is now ${prompt?.is_active ? 'inactive' : 'active'}.`
       )
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } } }
       const errorMessage =
-        typeof error.response?.data?.detail === 'string'
+        typeof err.response?.data?.detail === 'string'
           ? error.response.data.detail
           : error.message || 'Please try again.'
       if (errorMessage.includes('already active')) {
@@ -329,7 +332,7 @@ export function PromptManagerPage() {
               onDelete={handleDeletePrompt}
               onClone={handleClonePrompt}
               onToggleActive={handleToggleActive}
-              onPreview={id => {}}
+              onPreview={_id => {}}
               onTemplate={handleTemplateView}
             />
           )}

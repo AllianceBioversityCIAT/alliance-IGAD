@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional
 
-import boto3
 from botocore.exceptions import ClientError
+
 from app.utils.aws_session import get_aws_session
 
 
@@ -14,9 +14,7 @@ class CognitoUserManagementService:
         session = get_aws_session(region)
         self.cognito_client = session.client("cognito-idp")
 
-        print(
-            f"Initialized Cognito client, region: {region}"
-        )  # Debug
+        print(f"Initialized Cognito client, region: {region}")  # Debug
 
     def list_users(
         self, limit: int = 60, pagination_token: Optional[str] = None
@@ -46,7 +44,9 @@ class CognitoUserManagementService:
                         group["GroupName"]
                         for group in groups_response.get("Groups", [])
                     ]
-                    print(f"User {user_data['username']} groups: {user_data['groups']}")  # Debug
+                    print(
+                        f"User {user_data['username']} groups: {user_data['groups']}"
+                    )  # Debug
                 except Exception as group_error:
                     print(
                         f"Error getting groups for user {user_data['username']}: {group_error}"
@@ -118,7 +118,7 @@ class CognitoUserManagementService:
         try:
             # Normalize email to lowercase for consistency
             normalized_email = email.lower().strip()
-            
+
             print(f"Creating user with email: {normalized_email}")  # Debug
             print(f"Using UserPoolId: {self.user_pool_id}")  # Debug
 

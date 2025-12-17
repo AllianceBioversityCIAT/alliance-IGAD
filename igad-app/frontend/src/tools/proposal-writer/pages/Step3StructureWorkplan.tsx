@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react'
-import { Sparkles, Check, ChevronDown, ChevronUp, FileText, Info, Lightbulb, BookOpen, Download } from 'lucide-react'
-import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType } from 'docx'
+import {
+  Sparkles,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Info,
+  Lightbulb,
+  BookOpen,
+  Download,
+} from 'lucide-react'
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx'
 import styles from './step3-structure.module.css'
 import { StepProps } from './stepConfig'
 
-interface Section {
-  section: string
-  description: string
-  priority: 'Critical' | 'Recommended' | 'Optional'
-  suggestions: string[]
-}
+// Removed unused Section interface
 
 interface Step3Props extends StepProps {
   proposalId?: string
@@ -31,11 +36,7 @@ interface ProposalSection {
   guiding_questions: string[]
 }
 
-const PRIORITY_COLORS = {
-  Critical: { bg: '#FFE2E2', border: '#FFC9C9', text: '#9F0712' },
-  Recommended: { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
-  Optional: { bg: '#E0E7FF', border: '#C7D2FE', text: '#193CB8' },
-}
+// Removed unused PRIORITY_COLORS constant
 
 /**
  * NarrativeOverview Component
@@ -117,7 +118,9 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
           <p
             key={`li-${index}`}
             className={styles.narrativeBullet}
-            dangerouslySetInnerHTML={{ __html: '• ' + formatInlineMarkdown(line.replace(/^[*-]\s+/, '')) }}
+            dangerouslySetInnerHTML={{
+              __html: '• ' + formatInlineMarkdown(line.replace(/^[*-]\s+/, '')),
+            }}
           />
         )
       } else if (line.trim() === '') {
@@ -151,7 +154,13 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
       }
 
       // Skip headers, bullets, and empty lines
-      if (trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('*') && !trimmed.startsWith('-') && !trimmed.startsWith('`')) {
+      if (
+        trimmed &&
+        !trimmed.startsWith('#') &&
+        !trimmed.startsWith('*') &&
+        !trimmed.startsWith('-') &&
+        !trimmed.startsWith('`')
+      ) {
         return trimmed.length > 200 ? trimmed.substring(0, 200) + '...' : trimmed
       }
     }
@@ -182,179 +191,30 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
       </div>
 
       {isExpanded && (
-        <div className={styles.narrativeContent}>
-          {parseMarkdownContent(narrativeText)}
-        </div>
+        <div className={styles.narrativeContent}>{parseMarkdownContent(narrativeText)}</div>
       )}
 
       {!isExpanded && (
         <div className={styles.narrativePreview}>
-          <p className={styles.narrativeParagraph}>
-            {getPreviewText(narrativeText)}
-          </p>
+          <p className={styles.narrativeParagraph}>{getPreviewText(narrativeText)}</p>
         </div>
       )}
     </div>
   )
 }
 
-const PROPOSAL_SECTIONS: Section[] = [
-  {
-    section: 'Executive Summary',
-    description:
-      'A concise overview of the entire proposal, highlighting the problem, proposed solution, expected outcomes, and budget. This section should be written last but appears first.',
-    priority: 'Critical',
-    suggestions: [
-      'Keep it to 1-2 pages maximum',
-      'Write in clear, compelling language accessible to non-technical readers',
-      'Include key metrics: target beneficiaries, budget, timeline',
-      'Emphasize alignment with donor priorities',
-    ],
-  },
-  {
-    section: 'Problem Statement',
-    description:
-      'A clear articulation of the development challenge or issue that the project will address, supported by evidence and data.',
-    priority: 'Critical',
-    suggestions: [
-      'Use recent, credible data and statistics',
-      'Demonstrate understanding of root causes, not just symptoms',
-      'Show how this problem affects target beneficiaries',
-      'Reference relevant studies, reports, or assessments',
-    ],
-  },
-  {
-    section: 'Theory of Change',
-    description:
-      'A logical framework showing how your activities will lead to outputs, outcomes, and ultimately impact. Explains the causal pathway from inputs to long-term change.',
-    priority: 'Critical',
-    suggestions: [
-      'Include a visual diagram if possible',
-      'Clearly articulate assumptions',
-      'Show both short-term and long-term changes',
-      'Link directly to the problem statement',
-    ],
-  },
-  {
-    section: 'Project Objectives',
-    description:
-      'Specific, measurable, achievable, relevant, and time-bound (SMART) objectives that define what the project will accomplish.',
-    priority: 'Critical',
-    suggestions: [
-      'Make objectives SMART (Specific, Measurable, Achievable, Relevant, Time-bound)',
-      'Limit to 3-5 main objectives',
-      'Align with donor strategic goals',
-      'Include both process and outcome objectives',
-    ],
-  },
-  {
-    section: 'Implementation Methodology',
-    description:
-      'Detailed description of the approaches, strategies, and activities that will be used to achieve the project objectives.',
-    priority: 'Critical',
-    suggestions: [
-      'Describe specific activities under each objective',
-      'Explain why chosen approaches are appropriate',
-      'Address any innovative or evidence-based methodologies',
-      'Show how activities are sequenced and interrelated',
-    ],
-  },
-  {
-    section: 'Workplan and Timeline',
-    description:
-      'A detailed schedule showing when activities will be implemented, key milestones, and responsible parties.',
-    priority: 'Critical',
-    suggestions: [
-      'Use a Gantt chart or clear table format',
-      'Break down by quarters or months',
-      'Include milestones and deliverables',
-      'Show dependencies between activities',
-    ],
-  },
-  {
-    section: 'Monitoring, Evaluation & Learning',
-    description:
-      'Framework for tracking progress, measuring results, and using data for adaptive management and learning.',
-    priority: 'Critical',
-    suggestions: [
-      'Define clear indicators for each objective',
-      'Describe data collection methods and frequency',
-      'Explain how findings will inform project adaptation',
-      'Include baseline and target values',
-    ],
-  },
-  {
-    section: 'Gender and Social Inclusion',
-    description:
-      'Analysis of how the project will promote gender equality and address the needs of marginalized or vulnerable groups.',
-    priority: 'Recommended',
-    suggestions: [
-      'Conduct gender and inclusion analysis',
-      'Set specific targets for women and marginalized groups',
-      'Address potential barriers to participation',
-      'Show how activities will be gender-responsive',
-    ],
-  },
-  {
-    section: 'Sustainability Plan',
-    description:
-      'Strategy for ensuring that project benefits continue after donor funding ends, including financial, institutional, and community ownership aspects.',
-    priority: 'Recommended',
-    suggestions: [
-      'Address financial sustainability (revenue models, cost recovery)',
-      'Describe capacity building for local partners',
-      'Explain community ownership strategies',
-      'Show linkages to government systems or policies',
-    ],
-  },
-  {
-    section: 'Budget and Budget Narrative',
-    description:
-      'Detailed budget breakdown by line item and activity, with narrative justification explaining costs and their necessity.',
-    priority: 'Critical',
-    suggestions: [
-      'Align budget categories with donor requirements',
-      'Provide detailed narrative for major cost items',
-      'Show cost-sharing or co-funding if applicable',
-      'Ensure costs are realistic and well-justified',
-    ],
-  },
-  {
-    section: 'Organizational Capacity',
-    description:
-      "Demonstration of your organization's ability to successfully implement the project, including relevant experience, expertise, and resources.",
-    priority: 'Recommended',
-    suggestions: [
-      'Highlight relevant past projects and results',
-      'Describe key staff qualifications and experience',
-      'Mention partnerships and local presence',
-      'Address any capacity gaps and mitigation strategies',
-    ],
-  },
-  {
-    section: 'Risk Management',
-    description:
-      'Identification of potential risks to project success and mitigation strategies to address them.',
-    priority: 'Recommended',
-    suggestions: [
-      'Categorize risks (political, operational, financial, environmental)',
-      'Assess likelihood and impact of each risk',
-      'Provide specific mitigation strategies',
-      'Include contingency plans for critical risks',
-    ],
-  },
-]
+// Removed unused PROPOSAL_SECTIONS constant - was not being used
 
 export function Step3StructureWorkplan({
   proposalId,
   structureWorkplanAnalysis,
-  onGenerateTemplate,
+  onGenerateTemplate: _onGenerateTemplate,
   onTemplateGenerated,
 }: Step3Props) {
   // Combine mandatory and outline sections
   const allSections = [
     ...(structureWorkplanAnalysis?.proposal_mandatory || []),
-    ...(structureWorkplanAnalysis?.proposal_outline || [])
+    ...(structureWorkplanAnalysis?.proposal_outline || []),
   ]
 
   const [selectedSections, setSelectedSections] = useState<string[]>([])
@@ -365,10 +225,11 @@ export function Step3StructureWorkplan({
   // Initialize selected sections when data becomes available
   useEffect(() => {
     if (structureWorkplanAnalysis?.proposal_mandatory && !hasInitialized) {
-      const mandatorySectionTitles = structureWorkplanAnalysis.proposal_mandatory.map(s => s.section_title)
+      const mandatorySectionTitles = structureWorkplanAnalysis.proposal_mandatory.map(
+        s => s.section_title
+      )
       setSelectedSections(mandatorySectionTitles)
       setHasInitialized(true)
-      console.log('📋 Initialized selectedSections with mandatory sections:', mandatorySectionTitles)
     }
   }, [structureWorkplanAnalysis, hasInitialized])
 
@@ -414,13 +275,6 @@ export function Step3StructureWorkplan({
         selectedSections.includes(s.section_title)
       )
 
-      console.log('📋 Generating template with:', {
-        proposalId,
-        totalAvailable: allAvailableSections.length,
-        selectedSections: selectedSections,
-        sectionsToInclude: sectionsToInclude.map(s => s.section_title)
-      })
-
       // Create Word document sections (using docx library on frontend)
       const documentSections: Paragraph[] = []
 
@@ -428,7 +282,7 @@ export function Step3StructureWorkplan({
       const currentDate = new Date().toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
       })
 
       // Add title (centered, large, green)
@@ -440,7 +294,7 @@ export function Step3StructureWorkplan({
               bold: true,
               size: 36,
               color: '166534',
-            })
+            }),
           ],
           spacing: { after: 200 },
           alignment: AlignmentType.CENTER,
@@ -455,7 +309,7 @@ export function Step3StructureWorkplan({
               text: `Generated: ${currentDate}`,
               size: 20,
               color: '6B7280',
-            })
+            }),
           ],
           spacing: { after: 100 },
           alignment: AlignmentType.CENTER,
@@ -469,7 +323,7 @@ export function Step3StructureWorkplan({
               text: `Proposal ID: ${proposalId}`,
               size: 20,
               color: '6B7280',
-            })
+            }),
           ],
           spacing: { after: 400 },
           alignment: AlignmentType.CENTER,
@@ -483,7 +337,7 @@ export function Step3StructureWorkplan({
             new TextRun({
               text: '═══════════════════════════════════════════════════',
               color: 'CCCCCC',
-            })
+            }),
           ],
           spacing: { after: 400 },
           alignment: AlignmentType.CENTER,
@@ -504,7 +358,7 @@ export function Step3StructureWorkplan({
                 bold: true,
                 size: 28,
                 color: '1F2937',
-              })
+              }),
             ],
             spacing: { before: 400, after: 200 },
           })
@@ -559,7 +413,7 @@ export function Step3StructureWorkplan({
                   bold: true,
                   size: 22,
                   color: '374151',
-                })
+                }),
               ],
               spacing: { before: 240, after: 100 },
             })
@@ -570,7 +424,7 @@ export function Step3StructureWorkplan({
                 new TextRun({
                   text: section.purpose,
                   size: 20,
-                })
+                }),
               ],
               spacing: { after: 200, line: 276 },
             })
@@ -587,7 +441,7 @@ export function Step3StructureWorkplan({
                   bold: true,
                   size: 22,
                   color: '374151',
-                })
+                }),
               ],
               spacing: { before: 240, after: 100 },
             })
@@ -598,7 +452,7 @@ export function Step3StructureWorkplan({
                 new TextRun({
                   text: section.content_guidance,
                   size: 20,
-                })
+                }),
               ],
               spacing: { after: 200, line: 276 },
             })
@@ -615,7 +469,7 @@ export function Step3StructureWorkplan({
                   bold: true,
                   size: 22,
                   color: '374151',
-                })
+                }),
               ],
               spacing: { before: 240, after: 100 },
             })
@@ -628,7 +482,7 @@ export function Step3StructureWorkplan({
                     new TextRun({
                       text: question,
                       size: 20,
-                    })
+                    }),
                   ],
                   bullet: { level: 0 },
                   spacing: { after: 60, line: 276 },
@@ -653,7 +507,7 @@ export function Step3StructureWorkplan({
                 bold: true,
                 size: 22,
                 color: '2563EB',
-              })
+              }),
             ],
             spacing: { after: 100 },
           })
@@ -666,7 +520,7 @@ export function Step3StructureWorkplan({
                 size: 20,
                 color: '9CA3AF',
                 italics: true,
-              })
+              }),
             ],
             spacing: { after: 400, line: 276 },
           })
@@ -679,7 +533,7 @@ export function Step3StructureWorkplan({
               new TextRun({
                 text: '─────────────────────────────────────────────────────',
                 color: 'E5E7EB',
-              })
+              }),
             ],
             spacing: { before: 200, after: 400 },
             alignment: AlignmentType.CENTER,
@@ -691,7 +545,7 @@ export function Step3StructureWorkplan({
       documentSections.push(
         new Paragraph({
           text: '',
-          spacing: { before: 400, after: 200 }
+          spacing: { before: 400, after: 200 },
         })
       )
 
@@ -701,7 +555,7 @@ export function Step3StructureWorkplan({
             new TextRun({
               text: '═══════════════════════════════════════════════════',
               color: 'CCCCCC',
-            })
+            }),
           ],
           spacing: { after: 200 },
           alignment: AlignmentType.CENTER,
@@ -717,7 +571,7 @@ export function Step3StructureWorkplan({
               size: 18,
               color: '9CA3AF',
               italics: true,
-            })
+            }),
           ],
           alignment: AlignmentType.CENTER,
         })
@@ -725,19 +579,21 @@ export function Step3StructureWorkplan({
 
       // Create the document with page margins
       const doc = new Document({
-        sections: [{
-          children: documentSections,
-          properties: {
-            page: {
-              margin: {
-                top: 1440,    // 1 inch
-                right: 1440,
-                bottom: 1440,
-                left: 1440,
-              }
-            }
-          }
-        }],
+        sections: [
+          {
+            children: documentSections,
+            properties: {
+              page: {
+                margin: {
+                  top: 1440, // 1 inch
+                  right: 1440,
+                  bottom: 1440,
+                  left: 1440,
+                },
+              },
+            },
+          },
+        ],
       })
 
       // Generate blob and download
@@ -749,21 +605,20 @@ export function Step3StructureWorkplan({
       a.click()
       URL.revokeObjectURL(url)
 
-      console.log('✅ Template downloaded successfully')
+      // Removed console.log'✅ Template downloaded successfully')
 
       // Notify parent that template was generated
       if (onTemplateGenerated) {
         onTemplateGenerated()
       }
-    } catch (error: any) {
-      console.error('❌ Error generating template:', error)
-      alert(`Failed to generate template: ${error.message || 'Unknown error'}`)
+    } catch (error: unknown) {
+      // Removed console.error
+      const err = error as { message?: string }
+      alert(`Failed to generate template: ${err.message || 'Unknown error'}`)
     } finally {
       setIsGenerating(false)
     }
   }
-
-  const totalSections = allSections.length
 
   // Show loading state if no analysis yet
   if (!structureWorkplanAnalysis) {
@@ -776,9 +631,7 @@ export function Step3StructureWorkplan({
               Proposal
             </span>
           </h1>
-          <p className={styles.stepMainDescription}>
-            Loading proposal structure and workplan...
-          </p>
+          <p className={styles.stepMainDescription}>Loading proposal structure and workplan...</p>
         </div>
       </div>
     )
@@ -795,7 +648,8 @@ export function Step3StructureWorkplan({
           </span>
         </h1>
         <p className={styles.stepMainDescription}>
-          Review and customize your proposal structure based on RFP requirements and donor guidelines
+          Review and customize your proposal structure based on RFP requirements and donor
+          guidelines
         </p>
       </div>
 
@@ -935,12 +789,20 @@ export function Step3StructureWorkplan({
           <button
             type="button"
             className={styles.generateButton}
-            onClick={(e) => handleGenerateTemplate(e)}
+            onClick={e => handleGenerateTemplate(e)}
             disabled={isGenerating || selectedSections.length === 0}
-            title={selectedSections.length === 0 ? 'Select at least one section to generate template' : ''}
+            title={
+              selectedSections.length === 0
+                ? 'Select at least one section to generate template'
+                : ''
+            }
           >
             <Download size={16} />
-            {isGenerating ? 'Generating...' : selectedSections.length === 0 ? 'Select sections first' : `Generate Template (${selectedSections.length} sections)`}
+            {isGenerating
+              ? 'Generating...'
+              : selectedSections.length === 0
+                ? 'Select sections first'
+                : `Generate Template (${selectedSections.length} sections)`}
           </button>
         </div>
       </div>

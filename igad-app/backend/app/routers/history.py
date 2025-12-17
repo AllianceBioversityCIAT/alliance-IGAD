@@ -165,7 +165,9 @@ async def get_history_stats():
             "total_operations": total_operations,
             "operation_types": operation_types,
             "resource_types": resource_types,
-            "top_users": dict(sorted(users.items(), key=lambda x: x[1], reverse=True)[:10]),
+            "top_users": dict(
+                sorted(users.items(), key=lambda x: x[1], reverse=True)[:10]
+            ),
             "sample_size": "Last 1000 operations",
         }
 

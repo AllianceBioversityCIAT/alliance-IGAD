@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Save, Eye, EyeOff, History, FileText, Copy, Check, X, Plus } from 'lucide-react'
+import { ArrowLeft, Save, History, FileText, Copy, Check, X, Plus } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { usePrompts } from '@/tools/admin/hooks/usePrompts'
 import { useToast } from '@/shared/components/ui/ToastContainer'
@@ -18,12 +18,11 @@ export function PromptEditorPage() {
   const { showSuccess, showError } = useToast()
   const { createPrompt, updatePrompt, isCreating, isUpdating } = usePrompts()
 
-  const [showPreview, setShowPreview] = useState(true) // Always show preview
   const [copiedSection, setCopiedSection] = useState<string | null>(null)
   const [showTemplateSelector, setShowTemplateSelector] = useState(!isEdit) // Show for new prompts only
   const [isLoading, setIsLoading] = useState(isEdit) // Loading state for edit mode
   const [showHistory, setShowHistory] = useState(false)
-  const [prompt, setPrompt] = useState<Prompt | null>(null)
+  const [, setPrompt] = useState<Prompt | null>(null)
   const [customCategory, setCustomCategory] = useState('')
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false)
   const [errorModal, setErrorModal] = useState<{
@@ -83,73 +82,76 @@ export function PromptEditorPage() {
 
   const [formData, setFormData] = useState(getInitialFormData())
 
+  const fetchPrompt = useCallback(
+    async (promptId: string) => {
+      try {
+        setIsLoading(true)
+        const token = tokenManager.getAccessToken()
+
+        if (!token) {
+          showError('Authentication required', 'Please log in again.')
+          navigate('/login')
+          return
+        }
+
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+
+        if (response.status === 401) {
+          showError('Session expired', 'Please log in again.')
+          navigate('/login')
+          return
+        }
+
+        if (response.status === 403) {
+          showError('Access denied', 'You need admin permissions to access this resource.')
+          navigate('/admin/prompt-manager')
+          return
+        }
+
+        if (response.ok) {
+          const data = await response.json()
+          setPrompt(data)
+          setFormData({
+            name: data.name,
+            section: data.section,
+            sub_section: data.sub_section || '',
+            route: data.route || '',
+            categories: Array.isArray(data.categories) ? data.categories : [],
+            tags: Array.isArray(data.tags) ? data.tags : [],
+            system_prompt: data.system_prompt,
+            user_prompt_template: data.user_prompt_template,
+            output_format: data.output_format || 'Clear and structured response',
+            tone: data.tone || 'Professional and informative',
+            few_shot: data.few_shot || [],
+            context: data.context || {},
+          })
+        } else {
+          const errorData = await response.json().catch(() => ({ detail: 'Failed to load prompt' }))
+          showError('Error loading prompt', errorData.detail || 'Please try again.')
+        }
+      } catch (error) {
+        // Removed console.error
+        showError('Failed to load prompt', 'Please try again.')
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [showError, navigate, setIsLoading]
+  )
+
   useEffect(() => {
     if (isEdit && id) {
       fetchPrompt(id)
     }
-  }, [id, isEdit])
-
-  const fetchPrompt = async (promptId: string) => {
-    try {
-      setIsLoading(true)
-      const token = tokenManager.getAccessToken()
-
-      if (!token) {
-        showError('Authentication required', 'Please log in again.')
-        navigate('/login')
-        return
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/admin/prompts/${promptId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
-      if (response.status === 401) {
-        showError('Session expired', 'Please log in again.')
-        navigate('/login')
-        return
-      }
-
-      if (response.status === 403) {
-        showError('Access denied', 'You need admin permissions to access this resource.')
-        navigate('/admin/prompt-manager')
-        return
-      }
-
-      if (response.ok) {
-        const data = await response.json()
-        setPrompt(data)
-        setFormData({
-          name: data.name,
-          section: data.section,
-          sub_section: data.sub_section || '',
-          route: data.route || '',
-          categories: Array.isArray(data.categories) ? data.categories : [],
-          tags: Array.isArray(data.tags) ? data.tags : [],
-          system_prompt: data.system_prompt,
-          user_prompt_template: data.user_prompt_template,
-          output_format: data.output_format || 'Clear and structured response',
-          tone: data.tone || 'Professional and informative',
-          few_shot: data.few_shot || [],
-          context: data.context || {},
-        })
-      } else {
-        const errorData = await response.json().catch(() => ({ detail: 'Failed to load prompt' }))
-        showError('Error loading prompt', errorData.detail || 'Please try again.')
-      }
-    } catch (error) {
-      console.error('Error fetching prompt:', error)
-      showError('Failed to load prompt', 'Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  }, [id, isEdit, fetchPrompt])
 
   const handleSave = async () => {
     try {
@@ -161,8 +163,8 @@ export function PromptEditorPage() {
         showSuccess('Prompt created successfully')
       }
       navigate('/admin/prompt-manager')
-    } catch (error: any) {
-      console.error('Save error:', error)
+    } catch (error: unknown) {
+      // Removed console.error
 
       // Parse error message for better UX
       let title = 'Failed to Save Prompt'
@@ -249,7 +251,7 @@ export function PromptEditorPage() {
       setCopiedSection(section)
       setTimeout(() => setCopiedSection(null), 2000)
     } catch (err) {
-      console.error('Failed to copy text: ', err)
+      // Removed console.error
     }
   }
 
@@ -278,7 +280,7 @@ export function PromptEditorPage() {
       setCopiedSection('all')
       setTimeout(() => setCopiedSection(null), 2000)
     } catch (err) {
-      console.error('Failed to copy markdown: ', err)
+      // Removed console.error
     }
   }
 
@@ -524,8 +526,8 @@ Please provide detailed documentation that covers all essential aspects.`,
                 <div className={styles.formSection}>
                   <h3 className={styles.sectionTitle}>Start with a Template</h3>
                   <p className={styles.templateDescription}>
-                    Choose a template to get started quickly, or select "Blank Template" to start
-                    from scratch.
+                    Choose a template to get started quickly, or select &quot;Blank Template&quot;
+                    to start from scratch.
                   </p>
                   <div className={styles.templateGrid}>
                     {Object.entries(promptTemplates).map(([key, template]) => (
@@ -590,7 +592,8 @@ Please provide detailed documentation that covers all essential aspects.`,
                       placeholder="e.g., step-1, step-2"
                     />
                     <small className={styles.fieldHint}>
-                      Organize prompts within sections (e.g., "step-1", "step-2")
+                      Organize prompts within sections (e.g., &quot;step-1&quot;,
+                      &quot;step-2&quot;)
                     </small>
                   </div>
 
@@ -715,7 +718,7 @@ Please provide detailed documentation that covers all essential aspects.`,
                   {formData.categories.length > 0 && (
                     <div className={styles.categoryInjectors}>
                       <span className={styles.injectorLabel}>Insert:</span>
-                      {formData.categories.map((category, index) => (
+                      {formData.categories.map((category, _index) => (
                         <button
                           key={category}
                           type="button"
@@ -759,7 +762,7 @@ Please provide detailed documentation that covers all essential aspects.`,
                   {formData.categories.length > 0 && (
                     <div className={styles.categoryInjectors}>
                       <span className={styles.injectorLabel}>Insert:</span>
-                      {formData.categories.map((category, index) => (
+                      {formData.categories.map((category, _index) => (
                         <button
                           key={category}
                           type="button"

@@ -15,14 +15,14 @@ import logging
 import os
 import re
 import traceback
-from typing import Any, Dict, Optional
 from datetime import datetime
 from io import BytesIO
+from typing import Any, Dict, Optional
 
 import boto3
 from boto3.dynamodb.conditions import Attr
-from PyPDF2 import PdfReader
 from docx import Document
+from PyPDF2 import PdfReader
 
 from app.shared.ai.bedrock_service import BedrockService
 from app.tools.proposal_writer.concept_document_generation.config import (
@@ -107,9 +107,7 @@ class ConceptDocumentGenerator:
                 logger.info("📥 Loading proposal outline...")
                 proposal_outline = self._load_proposal_outline(proposal_code)
                 if proposal_outline:
-                    outline_count = len(
-                        proposal_outline.get("proposal_outline", [])
-                    )
+                    outline_count = len(proposal_outline.get("proposal_outline", []))
                     logger.info(f"✅ Loaded {outline_count} outline sections")
 
             # Step 3: Load initial concept from S3
@@ -125,20 +123,20 @@ class ConceptDocumentGenerator:
             # Step 4: Prepare context
             logger.info("🔄 Preparing context...")
             context = self._prepare_context(
-                rfp_analysis, concept_evaluation, proposal_outline, initial_concept,
-                reference_proposals_analysis, existing_work_analysis
+                rfp_analysis,
+                concept_evaluation,
+                proposal_outline,
+                initial_concept,
+                reference_proposals_analysis,
+                existing_work_analysis,
             )
 
             # Step 5: Build final prompt
-            user_prompt = self._inject_context(
-                prompt_parts["user_prompt"], context
-            )
+            user_prompt = self._inject_context(prompt_parts["user_prompt"], context)
             final_prompt = f"{user_prompt}\n\n{prompt_parts['output_format']}".strip()
 
             # Step 6: Call Bedrock
-            logger.info(
-                "📡 Calling Bedrock (this may take 3-5 minutes)..."
-            )
+            logger.info("📡 Calling Bedrock (this may take 3-5 minutes)...")
             start_time = datetime.utcnow()
 
             ai_response = self.bedrock.invoke_claude(
@@ -238,9 +236,8 @@ class ConceptDocumentGenerator:
         """
         for obj in contents:
             key = obj["Key"]
-            if (
-                key.lower().endswith((".pdf", ".doc", ".docx"))
-                and not key.endswith("/")
+            if key.lower().endswith((".pdf", ".doc", ".docx")) and not key.endswith(
+                "/"
             ):
                 return key
         return None
@@ -382,9 +379,7 @@ class ConceptDocumentGenerator:
             logger.error(f"❌ Error loading prompt: {str(e)}")
             return None
 
-    def _load_proposal_outline(
-        self, proposal_code: str
-    ) -> Optional[Dict[str, Any]]:
+    def _load_proposal_outline(self, proposal_code: str) -> Optional[Dict[str, Any]]:
         """
         Load proposal outline from DynamoDB.
 
@@ -448,9 +443,7 @@ class ConceptDocumentGenerator:
             'reference_proposals_analysis', and 'existing_work_analysis'
         """
         # Filter to selected sections
-        filtered_evaluation = self._filter_selected_sections(
-            concept_evaluation
-        )
+        filtered_evaluation = self._filter_selected_sections(concept_evaluation)
 
         # Enrich with outline data if available
         if proposal_outline:
@@ -478,14 +471,18 @@ class ConceptDocumentGenerator:
         # Add reference proposals analysis if provided
         if reference_proposals_analysis:
             # Unwrap nested structure if present
-            analysis = reference_proposals_analysis.get("reference_proposals_analysis", reference_proposals_analysis)
+            analysis = reference_proposals_analysis.get(
+                "reference_proposals_analysis", reference_proposals_analysis
+            )
             context["reference_proposals_analysis"] = json.dumps(analysis, indent=2)
             logger.info("✅ Reference proposals analysis added to context")
 
         # Add existing work analysis if provided
         if existing_work_analysis:
             # Unwrap nested structure if present
-            analysis = existing_work_analysis.get("existing_work_analysis", existing_work_analysis)
+            analysis = existing_work_analysis.get(
+                "existing_work_analysis", existing_work_analysis
+            )
             context["existing_work_analysis"] = json.dumps(analysis, indent=2)
             logger.info("✅ Existing work analysis added to context")
 
@@ -567,9 +564,7 @@ class ConceptDocumentGenerator:
                 return filtered_evaluation
 
             concept_analysis = filtered_evaluation.get("concept_analysis", {})
-            selected_sections = concept_analysis.get(
-                "sections_needing_elaboration", []
-            )
+            selected_sections = concept_analysis.get("sections_needing_elaboration", [])
 
             if not selected_sections:
                 logger.warning("⚠️  No sections to enrich")
@@ -602,9 +597,7 @@ class ConceptDocumentGenerator:
 
                     # Summarize long guidance
                     if len(content_guidance) > 5000:
-                        content_guidance = self._summarize_guidance(
-                            content_guidance
-                        )
+                        content_guidance = self._summarize_guidance(content_guidance)
 
                     enriched_section = {
                         **section,
@@ -613,16 +606,16 @@ class ConceptDocumentGenerator:
                         ),
                         "purpose": outline_data.get("purpose", ""),
                         "content_guidance": content_guidance,
-                        "guiding_questions": outline_data.get(
-                            "guiding_questions", []
-                        ),
+                        "guiding_questions": outline_data.get("guiding_questions", []),
                         # Preserve user_comment if it exists
                         "user_comment": section.get("user_comment", ""),
                     }
 
                     # Log if user comment is present
                     if enriched_section["user_comment"]:
-                        logger.info(f"      📝 User comment included ({len(enriched_section['user_comment'])} chars)")
+                        logger.info(
+                            f"      📝 User comment included ({len(enriched_section['user_comment'])} chars)"
+                        )
 
                     enriched_sections.append(enriched_section)
                 else:
@@ -661,9 +654,7 @@ class ConceptDocumentGenerator:
         max_chars = 50000  # Generous limit for initial concept
 
         if len(concept_text) <= max_chars:
-            logger.info(
-                f"📄 Initial concept within limit ({len(concept_text)} chars)"
-            )
+            logger.info(f"📄 Initial concept within limit ({len(concept_text)} chars)")
             return concept_text
 
         logger.info(
@@ -703,18 +694,13 @@ class ConceptDocumentGenerator:
                 bullets = [
                     line.strip()
                     for line in lines
-                    if line.strip()
-                    and line.strip()[0] in ("•", "-", "*")
+                    if line.strip() and line.strip()[0] in ("•", "-", "*")
                 ]
                 if bullets:
                     return "\n".join(bullets[:8])
 
             # Truncate to 500 chars
-            return (
-                guidance[:500] + "..."
-                if len(guidance) > 500
-                else guidance
-            )
+            return guidance[:500] + "..." if len(guidance) > 500 else guidance
 
         except Exception as e:
             logger.error(f"❌ Error summarizing: {str(e)}")
@@ -758,9 +744,7 @@ class ConceptDocumentGenerator:
         """
         try:
             # Try JSON parsing first
-            json_match = re.search(
-                r"```json\s*(\{.*?\})\s*```", response, re.DOTALL
-            )
+            json_match = re.search(r"```json\s*(\{.*?\})\s*```", response, re.DOTALL)
             if json_match:
                 parsed = json.loads(json_match.group(1))
                 logger.info("📦 Parsed JSON from code block")
@@ -777,12 +761,10 @@ class ConceptDocumentGenerator:
                 # Handle wrapped format
                 if "concept_document" in parsed:
                     return {
-                        "generated_concept_document": parsed[
-                            "concept_document"
-                        ].get("generated_concept_document", ""),
-                        "sections": parsed["concept_document"].get(
-                            "sections", {}
+                        "generated_concept_document": parsed["concept_document"].get(
+                            "generated_concept_document", ""
                         ),
+                        "sections": parsed["concept_document"].get("sections", {}),
                     }
 
                 # Handle flat format
@@ -804,9 +786,7 @@ class ConceptDocumentGenerator:
             "sections": self._extract_sections_from_text(response),
         }
 
-    def _extract_sections_from_text(
-        self, text: str
-    ) -> Dict[str, str]:
+    def _extract_sections_from_text(self, text: str) -> Dict[str, str]:
         """
         Extract sections from markdown text.
 
@@ -826,16 +806,12 @@ class ConceptDocumentGenerator:
             # Check for # or ## section headers
             if line.startswith("## "):
                 if current_section:
-                    sections[current_section] = (
-                        "\n".join(current_content).strip()
-                    )
+                    sections[current_section] = "\n".join(current_content).strip()
                 current_section = line[3:].strip()
                 current_content = []
             elif line.startswith("# "):
                 if current_section:
-                    sections[current_section] = (
-                        "\n".join(current_content).strip()
-                    )
+                    sections[current_section] = "\n".join(current_content).strip()
                 current_section = line[2:].strip()
                 current_content = []
             elif current_section:

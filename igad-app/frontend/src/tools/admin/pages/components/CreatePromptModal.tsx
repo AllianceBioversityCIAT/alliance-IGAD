@@ -17,10 +17,21 @@ import styles from './CreatePromptModal.module.css'
 interface CreatePromptModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: any) => Promise<void>
+  onSave: (
+    data: Omit<
+      import('@/types/prompt').Prompt,
+      | 'id'
+      | 'created_by'
+      | 'updated_by'
+      | 'created_at'
+      | 'updated_at'
+      | 'version'
+      | 'comments_count'
+    >
+  ) => Promise<void>
   isLoading?: boolean
   mode?: 'create' | 'edit'
-  initialData?: any
+  initialData?: Partial<import('@/types/prompt').Prompt>
   onHistory?: () => void
   contextData?: {
     fromRoute?: string
@@ -373,7 +384,7 @@ export function CreatePromptModal({
                   placeholder="You are an expert proposal writer specializing in development projects. You create clear, compelling, and professional content..."
                 />
                 <p className={styles.helpText}>
-                  Define the AI's role, expertise, and how it should approach the task.
+                  Define the AI&apos;s role, expertise, and how it should approach the task.
                 </p>
               </div>
 
@@ -410,7 +421,7 @@ export function CreatePromptModal({
                   maxLength={500}
                 />
                 <p className={styles.helpText}>
-                  Define the tone and style for the AI's responses (optional).
+                  Define the tone and style for the AI&apos;s responses (optional).
                 </p>
               </div>
 
@@ -429,7 +440,7 @@ export function CreatePromptModal({
                   placeholder="Specify the desired format for the AI's output (optional)..."
                 />
                 <p className={styles.helpText}>
-                  Specify the desired format for the AI's output (optional).
+                  Specify the desired format for the AI&apos;s output (optional).
                 </p>
               </div>
             </div>

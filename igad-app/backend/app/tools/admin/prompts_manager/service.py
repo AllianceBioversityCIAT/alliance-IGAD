@@ -3,9 +3,9 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-import boto3
 from boto3.dynamodb.conditions import Attr, Key
 
+from app.shared.database.history_service import history_service
 from app.shared.schemas.prompt_model import (
     Comment,
     CommentCreate,
@@ -18,7 +18,6 @@ from app.shared.schemas.prompt_model import (
     ProposalSection,
 )
 from app.utils.aws_session import get_aws_session
-from app.shared.database.history_service import history_service
 
 logger = logging.getLogger(__name__)
 
@@ -113,14 +112,18 @@ class PromptService:
 
         # Check for active prompt conflict (new prompts are active by default)
         is_active = True
-        existing_active = self._find_active_prompt_by_section_route_subsection_categories(
-            prompt_data.section, 
-            prompt_data.route or "", 
-            prompt_data.sub_section,
-            prompt_data.categories
+        existing_active = (
+            self._find_active_prompt_by_section_route_subsection_categories(
+                prompt_data.section,
+                prompt_data.route or "",
+                prompt_data.sub_section,
+                prompt_data.categories,
+            )
         )
         if existing_active:
-            raise ValueError("Duplicate active prompt for this section, route, subsection, and categories")
+            raise ValueError(
+                "Duplicate active prompt for this section, route, subsection, and categories"
+            )
 
         prompt = Prompt(
             id=prompt_id,
@@ -216,12 +219,16 @@ class PromptService:
             subsection = prompt_dict.get("sub_section")
             categories = prompt_dict.get("categories", [])
 
-            existing_active = self._find_active_prompt_by_section_route_subsection_categories(
-                section, route, subsection, categories, exclude_id=prompt_id
+            existing_active = (
+                self._find_active_prompt_by_section_route_subsection_categories(
+                    section, route, subsection, categories, exclude_id=prompt_id
+                )
             )
             # If there's another active prompt with same section+route+subsection+categories, reject the update
             if existing_active:
-                raise ValueError("Duplicate active prompt for this section, route, subsection, and categories")
+                raise ValueError(
+                    "Duplicate active prompt for this section, route, subsection, and categories"
+                )
 
         updated_prompt = Prompt(**prompt_dict)
         item = self._prompt_to_item(updated_prompt)
@@ -287,7 +294,11 @@ class PromptService:
 
                 # Log each item to history before deletion
                 for item in items_to_delete:
-                    item_type = "version" if item["SK"].startswith("version#") else item["SK"].split("#")[0]
+                    item_type = (
+                        "version"
+                        if item["SK"].startswith("version#")
+                        else item["SK"].split("#")[0]
+                    )
                     history_service.log_operation(
                         operation_type="DELETE",
                         resource_type="PROMPT",
@@ -305,7 +316,9 @@ class PromptService:
                 for item in items_to_delete:
                     self.table.delete_item(Key={"PK": item["PK"], "SK": item["SK"]})
 
-                logger.info(f"Deleted all versions of prompt {prompt_id} ({len(items_to_delete)} items)")
+                logger.info(
+                    f"Deleted all versions of prompt {prompt_id} ({len(items_to_delete)} items)"
+                )
 
             return True
         except Exception as e:
@@ -402,7 +415,9 @@ class PromptService:
             logger.error(f"Error getting prompt by section {section}: {e}")
             raise
 
-    async def toggle_active(self, prompt_id: str, user_id: str = "system") -> Optional[Prompt]:
+    async def toggle_active(
+        self, prompt_id: str, user_id: str = "system"
+    ) -> Optional[Prompt]:
         """Toggle prompt active status"""
         try:
             # Get current prompt - use the correct key structure
@@ -430,8 +445,10 @@ class PromptService:
                 categories = item.get("categories", [])
 
                 # Check for other active prompts with same section, route, subsection, and categories
-                existing_active = self._find_active_prompt_by_section_route_subsection_categories(
-                    section, route, subsection, categories, prompt_id
+                existing_active = (
+                    self._find_active_prompt_by_section_route_subsection_categories(
+                        section, route, subsection, categories, prompt_id
+                    )
                 )
                 if existing_active:
                     raise ValueError(
@@ -476,7 +493,12 @@ class PromptService:
             raise
 
     def _find_active_prompt_by_section_route_subsection_categories(
-        self, section: str, route: str, sub_section: str = None, categories: list = None, exclude_id: str = None
+        self,
+        section: str,
+        route: str,
+        sub_section: str = None,
+        categories: list = None,
+        exclude_id: str = None,
     ) -> Optional[Prompt]:
         """Find active prompt with same section, route, sub_section, and categories"""
         try:
@@ -498,7 +520,7 @@ class PromptService:
             # Find active prompt with matching section, route, subsection, and categories
             for item in prompt_items:
                 item_categories_set = set(item.get("categories", []))
-                
+
                 if (
                     item.get("section") == section
                     and item.get("route") == route
@@ -506,7 +528,6 @@ class PromptService:
                     and item_categories_set == categories_set
                     and item.get("is_active", False) is True
                 ):
-
                     # Exclude the current prompt if specified
                     prompt_id = item.get("PK", "").replace("prompt#", "")
                     if exclude_id and prompt_id == exclude_id:
@@ -517,7 +538,9 @@ class PromptService:
             return None
 
         except Exception as e:
-            logger.error(f"Error finding active prompt by section/route/subsection/categories: {e}")
+            logger.error(
+                f"Error finding active prompt by section/route/subsection/categories: {e}"
+            )
             return None
 
     def _find_active_prompt_by_section_route(
@@ -544,7 +567,6 @@ class PromptService:
                     and item.get("route") == route
                     and item.get("is_active", False) is True
                 ):
-
                     # Exclude the current prompt if specified
                     prompt_id = item.get("PK", "").replace("prompt#", "")
                     if exclude_id and prompt_id == exclude_id:
@@ -751,31 +773,37 @@ class PromptService:
         """
         if not categories:
             return prompt_text
-        
+
         result = prompt_text
-        
+
         # Replace individual category variables {{category_1}}, {{category_2}}, etc.
         for i, category in enumerate(categories, 1):
             placeholder = f"{{{{category_{i}}}}}"
             result = result.replace(placeholder, category)
-        
+
         # Replace {{categories}} with comma-separated list
         categories_list = ", ".join(categories)
         result = result.replace("{{categories}}", categories_list)
-        
+
         return result
 
-    async def get_prompt_with_categories(self, prompt_id: str, categories: Optional[List[str]] = None) -> Optional[Prompt]:
+    async def get_prompt_with_categories(
+        self, prompt_id: str, categories: Optional[List[str]] = None
+    ) -> Optional[Prompt]:
         """
         Get a prompt and inject category variables if categories are provided.
         """
         prompt = await self.get_prompt(prompt_id)
         if not prompt or not categories:
             return prompt
-        
+
         # Create a copy with injected categories
         prompt_dict = prompt.dict()
-        prompt_dict["system_prompt"] = self.inject_category_variables(prompt.system_prompt, categories)
-        prompt_dict["user_prompt_template"] = self.inject_category_variables(prompt.user_prompt_template, categories)
-        
+        prompt_dict["system_prompt"] = self.inject_category_variables(
+            prompt.system_prompt, categories
+        )
+        prompt_dict["user_prompt_template"] = self.inject_category_variables(
+            prompt.user_prompt_template, categories
+        )
+
         return Prompt(**prompt_dict)

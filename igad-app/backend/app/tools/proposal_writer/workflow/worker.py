@@ -17,14 +17,22 @@ import traceback
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer
-from app.tools.proposal_writer.concept_evaluation.service import SimpleConceptAnalyzer
-from app.tools.proposal_writer.concept_document_generation.service import concept_generator
-from app.tools.proposal_writer.reference_proposals_analysis.service import ReferenceProposalsAnalyzer
-from app.tools.proposal_writer.structure_workplan.service import StructureWorkplanService
-from app.tools.proposal_writer.proposal_draft_feedback.service import DraftFeedbackService
 from app.database.client import db_client
 from app.shared.vectors.service import VectorEmbeddingsService
+from app.tools.proposal_writer.concept_document_generation.service import (
+    concept_generator,
+)
+from app.tools.proposal_writer.concept_evaluation.service import SimpleConceptAnalyzer
+from app.tools.proposal_writer.proposal_draft_feedback.service import (
+    DraftFeedbackService,
+)
+from app.tools.proposal_writer.reference_proposals_analysis.service import (
+    ReferenceProposalsAnalyzer,
+)
+from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer
+from app.tools.proposal_writer.structure_workplan.service import (
+    StructureWorkplanService,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -141,11 +149,13 @@ def _set_completed_status(
     if analysis_type == "rfp":
         # Log result size for debugging
         result_json = json.dumps(result)
-        result_size_kb = len(result_json.encode('utf-8')) / 1024
+        result_size_kb = len(result_json.encode("utf-8")) / 1024
         print(f"📊 RFP analysis result size: {result_size_kb:.2f} KB")
 
         if result_size_kb > 350:
-            print(f"⚠️  WARNING: Result size ({result_size_kb:.2f} KB) is close to DynamoDB 400KB limit!")
+            print(
+                f"⚠️  WARNING: Result size ({result_size_kb:.2f} KB) is close to DynamoDB 400KB limit!"
+            )
 
         try:
             db_client.update_item_sync(
@@ -561,15 +571,15 @@ def _handle_existing_work_analysis(proposal_id: str) -> Dict[str, Any]:
     _set_processing_status(proposal_id, "existing_work")
 
     logger.info("🔍 Starting existing work analysis...")
-    from app.tools.proposal_writer.existing_work_analysis.service import ExistingWorkAnalyzer
+    from app.tools.proposal_writer.existing_work_analysis.service import (
+        ExistingWorkAnalyzer,
+    )
+
     analyzer = ExistingWorkAnalyzer()
     result = analyzer.analyze_existing_work(proposal_id)
 
     logger.info("✅ Existing work analysis completed successfully")
     logger.info(f"📊 Documents analyzed: {result.get('documents_analyzed', 0)}")
-
-    # Extract just the analysis content (avoid duplication)
-    analysis_data = result.get("existing_work_analysis", {})
 
     _set_completed_status(proposal_id, "existing_work", result)
     logger.info("💾 Existing work result saved to DynamoDB")
@@ -596,9 +606,7 @@ def _handle_concept_analysis(proposal_id: str) -> Dict[str, Any]:
     logger.info(f"📋 Processing concept analysis for: {proposal_id}")
 
     # Retrieve proposal and validate RFP analysis exists
-    proposal = db_client.get_item_sync(
-        pk=f"PROPOSAL#{proposal_id}", sk="METADATA"
-    )
+    proposal = db_client.get_item_sync(pk=f"PROPOSAL#{proposal_id}", sk="METADATA")
 
     if not proposal:
         raise Exception(f"Proposal {proposal_id} not found")
@@ -614,22 +622,23 @@ def _handle_concept_analysis(proposal_id: str) -> Dict[str, Any]:
     if reference_proposals_analysis:
         logger.info("✅ Reference proposals analysis available for context")
     else:
-        logger.info("⚠️  Reference proposals analysis not available (will proceed without it)")
+        logger.info(
+            "⚠️  Reference proposals analysis not available (will proceed without it)"
+        )
 
     if existing_work_analysis:
         logger.info("✅ Existing work analysis available for context")
     else:
-        logger.info("⚠️  Existing work analysis not available (will proceed without it)")
+        logger.info(
+            "⚠️  Existing work analysis not available (will proceed without it)"
+        )
 
     _set_processing_status(proposal_id, "concept")
 
     logger.info("🔍 Starting concept analysis...")
     analyzer = SimpleConceptAnalyzer()
     result = analyzer.analyze_concept(
-        proposal_id,
-        rfp_analysis,
-        reference_proposals_analysis,
-        existing_work_analysis
+        proposal_id, rfp_analysis, reference_proposals_analysis, existing_work_analysis
     )
 
     logger.info("✅ Concept analysis completed successfully")
@@ -660,9 +669,7 @@ def _handle_structure_workplan_analysis(proposal_id: str) -> Dict[str, Any]:
     logger.info(f"📋 Processing structure workplan analysis for: {proposal_id}")
 
     # Retrieve proposal and validate dependencies (same as concept analysis)
-    proposal = db_client.get_item_sync(
-        pk=f"PROPOSAL#{proposal_id}", sk="METADATA"
-    )
+    proposal = db_client.get_item_sync(pk=f"PROPOSAL#{proposal_id}", sk="METADATA")
 
     if not proposal:
         raise Exception(f"Proposal {proposal_id} not found")
@@ -672,7 +679,9 @@ def _handle_structure_workplan_analysis(proposal_id: str) -> Dict[str, Any]:
         raise Exception("RFP analysis must be completed first")
 
     # Check for concept_evaluation or concept_analysis
-    concept_eval = proposal.get("concept_evaluation") or proposal.get("concept_analysis")
+    concept_eval = proposal.get("concept_evaluation") or proposal.get(
+        "concept_analysis"
+    )
     if not concept_eval:
         raise Exception("Concept evaluation must be completed first")
 
@@ -717,9 +726,7 @@ def _handle_draft_feedback_analysis(proposal_id: str) -> Dict[str, Any]:
     logger.info(f"📋 Processing draft feedback analysis for: {proposal_id}")
 
     # Retrieve proposal and validate dependencies
-    proposal = db_client.get_item_sync(
-        pk=f"PROPOSAL#{proposal_id}", sk="METADATA"
-    )
+    proposal = db_client.get_item_sync(pk=f"PROPOSAL#{proposal_id}", sk="METADATA")
 
     if not proposal:
         raise Exception(f"Proposal {proposal_id} not found")
@@ -816,10 +823,9 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
     }
     """
     import os
-    import boto3
-    from io import BytesIO
 
-    proposal_id = event.get("proposal_id")
+    import boto3
+
     proposal_code = event.get("proposal_code")
     document_type = event.get("document_type")
     filename = event.get("filename")
@@ -836,16 +842,16 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
         _update_vectorization_status(proposal_code, filename, "processing")
 
         # Download file from S3
-        bucket = os.environ.get('PROPOSALS_BUCKET', 'igad-proposals-testing')
-        s3_client = boto3.client('s3')
+        bucket = os.environ.get("PROPOSALS_BUCKET", "igad-proposals-testing")
+        s3_client = boto3.client("s3")
 
         logger.info(f"📥 Downloading file from S3: {s3_key}")
         response = s3_client.get_object(Bucket=bucket, Key=s3_key)
-        file_bytes = response['Body'].read()
+        file_bytes = response["Body"].read()
         logger.info(f"   Downloaded {len(file_bytes)} bytes")
 
         # Extract text from file
-        from app.shared.documents.routes import extract_text_from_file, chunk_text
+        from app.shared.documents.routes import chunk_text, extract_text_from_file
 
         logger.info(f"📄 Extracting text from {filename}...")
         extracted_text = extract_text_from_file(file_bytes, filename)
@@ -872,8 +878,13 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
         logger.info(f"   Created {total_chunks} chunks")
 
         # Update status with total chunks
-        _update_vectorization_status(proposal_code, filename, "processing",
-                                    chunks_processed=0, total_chunks=total_chunks)
+        _update_vectorization_status(
+            proposal_code,
+            filename,
+            "processing",
+            chunks_processed=0,
+            total_chunks=total_chunks,
+        )
 
         # Vectorize each chunk
         vector_service = VectorEmbeddingsService()
@@ -889,12 +900,10 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
                     "status": metadata.get("status", ""),
                     "document_name": filename,
                     "chunk_index": str(idx),
-                    "total_chunks": str(total_chunks)
+                    "total_chunks": str(total_chunks),
                 }
                 result = vector_service.insert_reference_proposal(
-                    proposal_id=proposal_code,
-                    text=chunk,
-                    metadata=chunk_metadata
+                    proposal_id=proposal_code, text=chunk, metadata=chunk_metadata
                 )
             else:  # supporting
                 chunk_metadata = {
@@ -903,12 +912,10 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
                     "region": metadata.get("region", ""),
                     "document_name": filename,
                     "chunk_index": str(idx),
-                    "total_chunks": str(total_chunks)
+                    "total_chunks": str(total_chunks),
                 }
                 result = vector_service.insert_existing_work(
-                    proposal_id=proposal_code,
-                    text=chunk,
-                    metadata=chunk_metadata
+                    proposal_id=proposal_code, text=chunk, metadata=chunk_metadata
                 )
 
             if not result:
@@ -918,19 +925,29 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
 
             # Update progress every 5 chunks or on last chunk
             if (idx + 1) % 5 == 0 or idx == total_chunks - 1:
-                _update_vectorization_status(proposal_code, filename, "processing",
-                                            chunks_processed=idx + 1, total_chunks=total_chunks)
+                _update_vectorization_status(
+                    proposal_code,
+                    filename,
+                    "processing",
+                    chunks_processed=idx + 1,
+                    total_chunks=total_chunks,
+                )
 
         # Mark as completed
-        _update_vectorization_status(proposal_code, filename, "completed",
-                                    chunks_processed=total_chunks, total_chunks=total_chunks)
+        _update_vectorization_status(
+            proposal_code,
+            filename,
+            "completed",
+            chunks_processed=total_chunks,
+            total_chunks=total_chunks,
+        )
 
         logger.info(f"✅ Vectorization completed for {filename}: {total_chunks} chunks")
 
         return {
             "status": "completed",
             "filename": filename,
-            "chunks_vectorized": total_chunks
+            "chunks_vectorized": total_chunks,
         }
 
     except Exception as e:
@@ -1024,9 +1041,7 @@ def _handle_concept_document_generation(
     logger.info(f"📋 Processing document generation for: {proposal_id}")
 
     # Retrieve proposal and validate dependencies
-    proposal = db_client.get_item_sync(
-        pk=f"PROPOSAL#{proposal_id}", sk="METADATA"
-    )
+    proposal = db_client.get_item_sync(pk=f"PROPOSAL#{proposal_id}", sk="METADATA")
 
     if not proposal:
         raise Exception(f"Proposal {proposal_id} not found")
@@ -1043,7 +1058,9 @@ def _handle_concept_document_generation(
     if proposal_outline:
         logger.info("✅ Found proposal_outline in proposal data")
     else:
-        logger.warning("⚠️ No proposal_outline found - will attempt to load from DynamoDB")
+        logger.warning(
+            "⚠️ No proposal_outline found - will attempt to load from DynamoDB"
+        )
 
     _set_processing_status(proposal_id, "concept_document")
 
@@ -1149,7 +1166,9 @@ def handler(event, context):
         error_msg = str(e)
         error_trace = traceback.format_exc()
 
-        logger.error(f"❌ {event.get('analysis_type', 'RFP').upper()} Analysis Worker Failed")
+        logger.error(
+            f"❌ {event.get('analysis_type', 'RFP').upper()} Analysis Worker Failed"
+        )
         logger.error(f"Error: {error_msg}")
         logger.error(f"Traceback:\n{error_trace}")
 

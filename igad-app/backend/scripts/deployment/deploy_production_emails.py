@@ -10,10 +10,20 @@ PRODUCTION_CONFIG = {
     "ses_email": "noreply@igad-innovation-hub.com",
 }
 
-COLORS = {"primary": "#2c5530", "accent": "#7cb342", "background": "#f8f9fa", "text": "#333333", "light_green": "#f1f8e9"}
+COLORS = {
+    "primary": "#2c5530",
+    "accent": "#7cb342",
+    "background": "#f8f9fa",
+    "text": "#333333",
+    "light_green": "#f1f8e9",
+}
+
 
 def get_cognito_client():
-    return boto3.Session(profile_name=PRODUCTION_CONFIG["profile"]).client("cognito-idp", region_name=PRODUCTION_CONFIG["region"])
+    return boto3.Session(profile_name=PRODUCTION_CONFIG["profile"]).client(
+        "cognito-idp", region_name=PRODUCTION_CONFIG["region"]
+    )
+
 
 def create_base_template(content):
     return f"""<div style="font-family: Arial, sans-serif; padding: 20px; background-color: {COLORS['background']};">
@@ -94,6 +104,7 @@ def deploy_production_templates():
 
 def main():
     return deploy_production_templates()
+
 
 if __name__ == "__main__":
     main()
