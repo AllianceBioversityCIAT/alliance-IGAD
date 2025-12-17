@@ -190,7 +190,7 @@ export function PromptListTable({
         <tbody className={styles.tableBody}>
           {prompts.map((prompt, _index) => (
             <tr key={`${prompt.id}-${prompt.version}`} className={styles.tableRow}>
-              <td className={styles.tableCell}>
+              <td className={styles.tableCell} data-label="Name">
                 <div className={styles.nameCell}>
                   <span className={styles.promptName}>{prompt.name}</span>
                   {prompt.tags.length > 0 && (
@@ -207,17 +207,17 @@ export function PromptListTable({
                   )}
                 </div>
               </td>
-              <td className={styles.tableCell}>
+              <td className={styles.tableCell} data-label="Section">
                 <span className={styles.sectionLabel}>{SECTION_LABELS[prompt.section]}</span>
               </td>
-              <td className={styles.tableCell}>
+              <td className={styles.tableCell} data-label="Sub-section">
                 {prompt.sub_section ? (
                   <code className={styles.subSectionCode}>{prompt.sub_section}</code>
                 ) : (
                   <span className={styles.noSubSection}>—</span>
                 )}
               </td>
-              <td className={styles.tableCell}>
+              <td className={styles.tableCell} data-label="Categories">
                 {prompt.categories && prompt.categories.length > 0 ? (
                   <div className={styles.categories}>
                     {prompt.categories.slice(0, 2).map(category => (
@@ -233,33 +233,34 @@ export function PromptListTable({
                   <span className={styles.noCategories}>—</span>
                 )}
               </td>
-              <td className={styles.tableCell}>
+              <td className={styles.tableCell} data-label="Route">
                 {prompt.route ? (
                   <code className={styles.routeCode}>{prompt.route}</code>
                 ) : (
                   <span className={styles.noRoute}>—</span>
                 )}
               </td>
-              <td className={styles.tableCell}>
+              <td className={styles.tableCell} data-label="Status">
                 <div
                   className={`${styles.activeBadge} ${prompt.is_active ? styles.active : styles.inactive}`}
                 >
                   {prompt.is_active ? 'Active' : 'Inactive'}
                 </div>
               </td>
-              <td className={styles.tableCell}>
+              <td className={styles.tableCell} data-label="Updated">
                 <div className={styles.dateCell}>
                   <span className={styles.date}>{formatDate(prompt.updated_at)}</span>
                   <span className={styles.author}>by {prompt.updated_by}</span>
                 </div>
               </td>
-              <td className={styles.tableCell}>
+              <td className={styles.tableCell} data-label="Actions">
                 <div className={styles.actionsCell}>
                   <div className={styles.primaryActions}>
                     <button
                       onClick={() => onEdit(prompt.id)}
                       className={`${styles.actionButton} ${styles.editButton}`}
                       title={`Edit "${prompt.name}"`}
+                      aria-label={`Edit "${prompt.name}"`}
                     >
                       <Edit size={14} />
                     </button>
@@ -269,6 +270,7 @@ export function PromptListTable({
                         onClick={() => handleActionClick(prompt.id, 'template', prompt)}
                         className={`${styles.actionButton} ${styles.templateButton}`}
                         title={`View template for "${prompt.name}"`}
+                        aria-label={`View template for "${prompt.name}"`}
                       >
                         <FileText size={14} />
                       </button>
@@ -282,6 +284,11 @@ export function PromptListTable({
                           ? `Deactivate "${prompt.name}"`
                           : `Activate "${prompt.name}"`
                       }
+                      aria-label={
+                        prompt.is_active
+                          ? `Deactivate "${prompt.name}"`
+                          : `Activate "${prompt.name}"`
+                      }
                     >
                       {prompt.is_active ? <PowerOff size={14} /> : <Power size={14} />}
                     </button>
@@ -290,6 +297,7 @@ export function PromptListTable({
                       onClick={() => handleActionClick(prompt.id, 'clone', prompt)}
                       className={`${styles.actionButton} ${styles.cloneButton}`}
                       title={`Create a copy of "${prompt.name}"`}
+                      aria-label={`Create a copy of "${prompt.name}"`}
                     >
                       <Copy size={14} />
                     </button>
@@ -298,6 +306,7 @@ export function PromptListTable({
                       onClick={() => handleActionClick(prompt.id, 'delete', prompt)}
                       className={`${styles.actionButton} ${styles.deleteButton}`}
                       title={`Permanently delete "${prompt.name}" - this cannot be undone`}
+                      aria-label={`Delete "${prompt.name}"`}
                     >
                       <Trash2 size={14} />
                     </button>

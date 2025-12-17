@@ -131,17 +131,17 @@ class TokenManager {
   }
 
   setTokens(accessToken: string, refreshToken?: string, rememberMe: boolean = true): void {
+    // Always use localStorage for tokens to enable cross-tab authentication
+    // sessionStorage is per-tab and doesn't work across multiple tabs
+    localStorage.setItem('access_token', accessToken)
+    if (refreshToken) {
+      localStorage.setItem('refresh_token', refreshToken)
+    }
+
+    // Remember me flag controls whether email is remembered for next login
     if (rememberMe) {
-      localStorage.setItem('access_token', accessToken)
-      if (refreshToken) {
-        localStorage.setItem('refresh_token', refreshToken)
-      }
       localStorage.setItem('remember_me', 'true')
     } else {
-      sessionStorage.setItem('access_token', accessToken)
-      if (refreshToken) {
-        sessionStorage.setItem('refresh_token', refreshToken)
-      }
       localStorage.removeItem('remember_me')
     }
   }
