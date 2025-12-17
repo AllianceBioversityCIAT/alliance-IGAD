@@ -1635,7 +1635,7 @@ export function ProposalWriterPage() {
   <meta charset="utf-8">
   <title>Concept Document</title>
   <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 20px; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 20px; }
     h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
     h2 { color: #34495e; margin-top: 30px; }
     h3 { color: #7f8c8d; }

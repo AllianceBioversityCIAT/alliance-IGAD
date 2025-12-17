@@ -140,7 +140,7 @@
   resize: vertical;
   min-height: 120px;
   line-height: 1.6;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 13px;
 }
 

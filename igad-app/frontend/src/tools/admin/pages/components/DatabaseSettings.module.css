@@ -245,7 +245,7 @@
   font-weight: 600;
   color: #111827;
   margin: 0;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
   padding: 8px 12px;
   border-radius: 8px;

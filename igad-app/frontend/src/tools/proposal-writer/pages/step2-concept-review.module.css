@@ -698,7 +698,7 @@
 }
 
 .markdownContent {
-  font-family: 'Arial', sans-serif;
+  font-family: inherit;
   font-size: 14px;
   line-height: 1.6;
   color: #0A0A0A;
@@ -764,7 +764,7 @@
   background: #F3F4F6;
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 13px;
   color: #DB2777;
 }

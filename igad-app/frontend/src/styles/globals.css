@@ -43,6 +43,11 @@
   --text-primary: #111827;
   --text-secondary: #6b7280;
   --text-tertiary: #374151;
+  
+  /* Typography - Standardized fonts */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
 }
 
 /* Global Styles */
@@ -50,7 +55,7 @@ body {
   margin: 0;
   padding: 0;
   background: #FFFFFF;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -953,7 +958,7 @@ body {
 }
 
 html {
-  font-family: Inter, system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -964,6 +969,7 @@ body {
   background-color: var(--background-secondary);
   color: var(--text-primary);
   line-height: 1.5;
+  font-family: var(--font-sans);
 }
 
 /* Focus Styles */

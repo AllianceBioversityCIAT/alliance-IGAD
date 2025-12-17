@@ -24,7 +24,7 @@
 }
 
 .loadingText {
-  font-family: 'Arial', sans-serif;
+  font-family: inherit;
   font-size: 16px;
   color: #6B7280;
   margin: 0;
@@ -53,7 +53,7 @@
 }
 
 .emptyTitle {
-  font-family: 'Arial', sans-serif;
+  font-family: inherit;
   font-size: 20px;
   font-weight: 600;
   color: #111827;
@@ -61,7 +61,7 @@
 }
 
 .emptyDescription {
-  font-family: 'Arial', sans-serif;
+  font-family: inherit;
   font-size: 16px;
   color: #6B7280;
   margin: 0;
@@ -103,7 +103,7 @@
 .tableHeader {
   padding: 16px 20px;
   text-align: left;
-  font-family: 'Arial', sans-serif;
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   color: #374151;
@@ -126,7 +126,7 @@
 
 .tableCell {
   padding: 16px 20px;
-  font-family: 'Arial', sans-serif;
+  font-family: inherit;
   font-size: 14px;
   color: #111827;
   vertical-align: top;
@@ -183,7 +183,7 @@
   background: #F3F4F6;
   color: #374151;
   border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 12px;
 }
 
@@ -670,7 +670,7 @@
   color: #475569;
   padding: 2px 4px;
   border-radius: 3px;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 11px;
 }
 
@@ -767,7 +767,7 @@
   color: #1D4ED8;
   padding: 4px 8px;
   border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 12px;
   border: 1px solid #DBEAFE;
 }

@@ -58,7 +58,7 @@
 }
 
 .title {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-style: normal;
   font-weight: 700;
   font-size: 35.6px;
@@ -71,7 +71,7 @@
 }
 
 .subtitle {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-style: normal;
   font-weight: 400;
   font-size: 16.62px;
@@ -97,7 +97,7 @@
 }
 
 .label {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-style: normal;
   font-weight: 400;
   font-size: 20.775px;
@@ -174,7 +174,7 @@
   display: flex;
   align-items: center;
   gap: 11.92px;
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-size: 13.9106px;
   color: #0a0a0a;
   cursor: pointer;
@@ -190,7 +190,7 @@
 }
 
 .forgotPassword {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-size: 13.9106px;
   color: #00a63e;
   text-decoration: none;
@@ -208,7 +208,7 @@
   border-radius: 9.49714px;
   border: none;
   color: #ffffff;
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-size: 16.62px;
   cursor: pointer;
   display: flex;
@@ -229,7 +229,7 @@
 }
 
 .supportText {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-size: 13.9106px;
   color: #4a5565;
   text-align: center;

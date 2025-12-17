@@ -106,7 +106,7 @@
   font-size: 14px;
   line-height: 1.4;
   color: #374151;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   word-break: break-word;
 }
 

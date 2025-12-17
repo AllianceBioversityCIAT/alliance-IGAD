@@ -11,7 +11,10 @@ aws-credentials.json
 
 # Amazon Q Rules and Configuration
 .amazonq/
-.copilot/
+# Allow .copilot/rules/ to be tracked (shared project rules)
+.copilot/*
+!.copilot/rules/
+!.copilot/rules/**
 .docs/archive/
 
 # Internal Planning and Development Documentation

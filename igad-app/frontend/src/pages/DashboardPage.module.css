@@ -273,7 +273,7 @@
 }
 
 .proposalCodeCell {
-  font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 13px;
   color: #4B5563;
   font-weight: 500;

@@ -96,7 +96,7 @@
   color: #DC2626;
   margin: 0;
   line-height: 18px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   word-break: break-word;
 }
 

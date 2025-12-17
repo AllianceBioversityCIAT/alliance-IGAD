@@ -257,7 +257,7 @@
   background: #f3f4f6;
   padding: 2px 4px;
   border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 11px;
 }
 
@@ -307,7 +307,7 @@
 .reviewPreview {
   color: #374151;
   font-size: 13px;
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   background: #f1f5f9;
   padding: 4px 8px;
   border-radius: 4px;

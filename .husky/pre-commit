@@ -1,8 +1,18 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Frontend linting
-cd igad-app/frontend && npx lint-staged
+# Exit on any error
+set -e
 
-# Backend linting
-cd ../backend && make check
+# Get repository root directory
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT" || exit 1
+
+# Frontend linting
+cd igad-app/frontend
+npx lint-staged || exit 1
+
+# Backend linting - return to repo root first
+cd "$REPO_ROOT"
+cd igad-app/backend
+make check || exit 1

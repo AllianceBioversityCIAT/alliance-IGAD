@@ -179,7 +179,7 @@
   border: 2px solid #E2E8F0;
   border-radius: 12px;
   padding: 16px 20px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 14px;
   color: #374151;
   flex: 1;

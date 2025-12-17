@@ -84,7 +84,7 @@
 }
 
 .tagline {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-weight: 700;
   font-size: 11px;
   line-height: 16px;
@@ -105,7 +105,7 @@
 }
 
 .title {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-weight: 700;
   font-size: clamp(18px, 6vw, 28px);
   line-height: 1.2;
@@ -117,7 +117,7 @@
 }
 
 .subtitle {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-weight: 400;
   font-size: 13px;
   line-height: 1.5;
@@ -150,7 +150,7 @@
 }
 
 .sectionTitle {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-weight: 400;
   font-size: 22px;
   line-height: 1.2;
@@ -159,7 +159,7 @@
 }
 
 .sectionSubtitle {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-weight: 400;
   font-size: 14px;
   line-height: 22px;
@@ -237,7 +237,7 @@
   align-items: center;
   padding: 4.06771px 12.2031px;
   border-radius: 999px;
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-size: 12.2031px;
   line-height: 16px;
   font-weight: 400;
@@ -279,7 +279,7 @@
 
 /* Card Title */
 .toolTitle {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-weight: 400;
   font-size: 17px;
   line-height: 24px;
@@ -289,7 +289,7 @@
 
 /* Card Description */
 .toolDescription {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-weight: 400;
   font-size: 14px;
   line-height: 22px;
@@ -307,7 +307,7 @@
   height: 44px; /* Touch-friendly minimum */
   min-height: 44px;
   border-radius: 8.13542px;
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-weight: 400;
   font-size: 14.237px;
   line-height: 20px;
@@ -359,7 +359,7 @@
 }
 
 .footerText {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-weight: 400;
   font-size: 13px;
   line-height: 18px;
@@ -369,7 +369,7 @@
 }
 
 .footerSubtext {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   font-weight: 400;
   font-size: 12px;
   line-height: 16px;
@@ -525,12 +525,13 @@
 
   .heroContent {
     gap: 16px;
-    max-width: 1068px;
+    max-width: 1200px;
   }
 
   .title {
-    font-size: clamp(28px, 5vw, 48px);
+    font-size: clamp(28px, 3.8vw, 38px);
     letter-spacing: -1.2px;
+    white-space: nowrap;
   }
 
   .subtitle {
@@ -629,8 +630,9 @@
   }
 
   .title {
-    font-size: clamp(38px, 5vw, 58px);
+    font-size: clamp(38px, 3.8vw, 44px);
     letter-spacing: -1.45px;
+    white-space: nowrap;
   }
 
   .subtitle {

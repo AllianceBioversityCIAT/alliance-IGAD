@@ -281,7 +281,7 @@
   border: 1px solid #D1D5DB;
   border-radius: 12px;
   font-size: 14px;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   line-height: 1.6;
   resize: vertical;
   min-height: 140px;
@@ -305,7 +305,7 @@
   border: 1px solid #D1D5DB;
   border-radius: 12px;
   font-size: 14px;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   line-height: 1.6;
   resize: vertical;
   min-height: 200px;
@@ -342,7 +342,7 @@
   color: #FFFFFF;
   padding: 6px 12px;
   border-radius: 6px;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.025em;
@@ -398,7 +398,7 @@
 .markdownContent {
   background: #FFFFFF;
   padding: 20px;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 13px;
   line-height: 1.6;
   color: #374151;
@@ -650,7 +650,7 @@
 .previewText {
   background: #FFFFFF;
   padding: 20px;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 13px;
   line-height: 1.6;
   color: #374151;
