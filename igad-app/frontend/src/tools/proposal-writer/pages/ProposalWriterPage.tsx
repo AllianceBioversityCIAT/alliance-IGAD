@@ -67,6 +67,8 @@ export function ProposalWriterPage() {
   const allowNavigation = useRef(false)
   const formDataLoadedFromDB = useRef(false)
   const localStorageLoaded = useRef(false)
+  // Flag to track intentional document clearing (to prevent auto-reload from DynamoDB)
+  const intentionalDocumentClearRef = useRef(false)
 
   const { createProposal, isCreating, deleteProposal, isDeleting } = useProposals()
   const { saveProposalId, saveProposalCode, saveFormData, saveRfpAnalysis, loadDraft, clearDraft } =
@@ -470,6 +472,9 @@ export function ProposalWriterPage() {
         console.log('   Comments changed')
       }
 
+      // Set flag to prevent auto-reload from DynamoDB
+      intentionalDocumentClearRef.current = true
+
       // Clear concept document
       setConceptDocument(null)
 
@@ -591,6 +596,13 @@ export function ProposalWriterPage() {
   // Load concept document from proposal when available
   useEffect(() => {
     const loadConceptDocument = async () => {
+      // Skip if document was intentionally cleared (user changed selections/comments)
+      if (intentionalDocumentClearRef.current) {
+        console.log('⏭️ Skipping concept document load - intentionally cleared')
+        intentionalDocumentClearRef.current = false
+        return
+      }
+
       if (proposalId && currentStep === 2 && !conceptDocument) {
         try {
           console.log('🔍 Loading concept document for proposalId:', proposalId)
