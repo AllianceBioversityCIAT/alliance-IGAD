@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, BarChart3, Search, Edit, Mail, Briefcase } from 'lucide-react'
 import { useResponsiveIconSize } from '../shared/hooks/useResponsiveIconSize'
 import styles from './HomePage.module.css'
@@ -18,8 +18,19 @@ import styles from './HomePage.module.css'
  * @returns {JSX.Element} The HomePage component
  */
 export function HomePage() {
+  const navigate = useNavigate()
   // Responsive icon sizing: 24px (mobile) -> 28px (tablet) -> 32px (desktop)
   const iconSize = useResponsiveIconSize()
+
+  const handleLaunchProposalWriter = () => {
+    // Clear any existing draft from localStorage to start fresh
+    localStorage.removeItem('draft_proposal_id')
+    localStorage.removeItem('draft_proposal_code')
+    localStorage.removeItem('draft_form_data')
+    localStorage.removeItem('draft_rfp_analysis')
+
+    navigate('/proposal-writer/step-1')
+  }
 
   return (
     <div className={styles.container}>
@@ -86,14 +97,14 @@ export function HomePage() {
               <p className={styles.toolDescription}>
                 Create compelling funding proposals for agricultural initiatives
               </p>
-              <Link
-                to="/proposal-writer"
+              <button
+                onClick={handleLaunchProposalWriter}
                 className={`${styles.toolButton} ${styles.toolButtonAvailable}`}
                 aria-label="Launch Proposal Writer tool"
               >
                 Launch Tool
                 <ArrowRight size={16} aria-hidden="true" />
-              </Link>
+              </button>
             </article>
 
             {/* Tool Card: Newsletter Generator (Available) */}

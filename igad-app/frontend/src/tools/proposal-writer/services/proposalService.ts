@@ -898,6 +898,72 @@ class ProposalService {
     })
     return response.data.proposal || response.data
   }
+
+  // ==================== AI Proposal Template Generation (Step 3) ====================
+
+  /**
+   * Start AI proposal template generation
+   *
+   * Triggers AI to generate a full draft proposal based on:
+   * - Selected sections from structure workplan
+   * - Concept document
+   * - RFP analysis
+   * - Reference proposals analysis (if available)
+   * - Existing work analysis (if available)
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @param selectedSections - Array of section titles to include
+   * @param userComments - Optional user comments per section
+   * @returns Status response
+   * @throws Error if prerequisites not met
+   */
+  async generateAiProposalTemplate(
+    proposalId: string,
+    selectedSections: string[],
+    userComments?: Record<string, string>
+  ): Promise<{
+    status: string
+    message: string
+  }> {
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/generate-ai-proposal-template`,
+      {
+        selected_sections: selectedSections,
+        user_comments: userComments || null,
+      }
+    )
+    return response.data
+  }
+
+  /**
+   * Get AI proposal template generation status
+   *
+   * Poll this endpoint to check if AI generation has completed.
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @returns Status and generated content when completed
+   */
+  async getProposalTemplateStatus(proposalId: string): Promise<{
+    status: string
+    data?: {
+      generated_proposal: string
+      sections: Record<string, string>
+      metadata: {
+        proposal_code: string
+        generated_at: string
+        generation_time_seconds: number
+        sections_count: number
+        selected_sections: string[]
+      }
+      s3_url?: string
+    }
+    error?: string
+    started_at?: string
+    completed_at?: string
+  }> {
+    const response = await apiClient.get(`/api/proposals/${proposalId}/proposal-template-status`)
+    return response.data
+  }
 }
 
 export const proposalService = new ProposalService()

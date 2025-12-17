@@ -62,10 +62,8 @@ export function ProposalWriterPage() {
   const [isRegeneratingConcept, setIsRegeneratingConcept] = useState(false)
   const [conceptDocument, setConceptDocument] = useState<ConceptDocument | null>(null)
   const [proposalTemplate, setProposalTemplate] = useState<ProposalTemplate | null>(null)
-  const [, setStructureSelectionData] = useState<{
-    selectedSections: string[]
-    userComments: { [key: string]: string }
-  } | null>(null)
+  const [generatedProposalContent, setGeneratedProposalContent] = useState<string | null>(null)
+  const [selectedSections, setSelectedSections] = useState<string[] | null>(null)
   const [formData, setFormData] = useState({
     uploadedFiles: {} as { [key: string]: File[] },
     textInputs: {} as { [key: string]: string },
@@ -682,30 +680,74 @@ export function ProposalWriterPage() {
     const loadProposalTemplate = async () => {
       if (proposalId && currentStep === 4 && !proposalTemplate) {
         try {
-          // Removed console.log'🔍 Loading proposal template for proposalId:', proposalId)
-
           // First check localStorage
           const cachedTemplate = localStorage.getItem(`proposal_template_${proposalId}`)
           if (cachedTemplate) {
-            // Removed console.log'✅ Found cached template in localStorage')
             setProposalTemplate(JSON.parse(cachedTemplate))
             return
           }
-
-          // TODO: Load from backend when API is ready
-          // const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-          // const response = await proposalService.getProposal(proposalId)
-          // if (response?.proposal_template) {
-          //   setProposalTemplate(response.proposal_template)
-          // }
         } catch (error) {
-          // Removed console.error❌ Error loading proposal template:', error)
+          // Error loading template
         }
       }
     }
 
     loadProposalTemplate()
   }, [proposalId, currentStep, proposalTemplate])
+
+  // Load generated proposal content and selected sections when entering Step 3
+  useEffect(() => {
+    const loadStep3Data = async () => {
+      if (proposalId && currentStep === 3) {
+        // Load selected sections from localStorage first
+        const cachedSections = localStorage.getItem(`proposal_selected_sections_${proposalId}`)
+        if (cachedSections && !selectedSections) {
+          try {
+            const parsed = JSON.parse(cachedSections)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setSelectedSections(parsed)
+            }
+          } catch {
+            // Invalid cache, ignore
+          }
+        }
+
+        // Load generated content if template was previously generated
+        if (proposalTemplate && !generatedProposalContent) {
+          try {
+            const status = await proposalService.getProposalTemplateStatus(proposalId)
+            if (status.status === 'completed' && status.data?.generated_proposal) {
+              setGeneratedProposalContent(status.data.generated_proposal)
+              // Also load selected sections from the generation metadata if available
+              const savedSections = status.data.metadata?.selected_sections
+              if (savedSections && Array.isArray(savedSections) && !selectedSections) {
+                setSelectedSections(savedSections)
+                localStorage.setItem(
+                  `proposal_selected_sections_${proposalId}`,
+                  JSON.stringify(savedSections)
+                )
+              }
+            }
+          } catch {
+            // No generated content found, that's ok
+          }
+        }
+      }
+    }
+
+    loadStep3Data()
+  }, [proposalId, currentStep, proposalTemplate, generatedProposalContent, selectedSections])
+
+  // Save selected sections to localStorage when they change
+  const handleSelectedSectionsChange = useCallback(
+    (sections: string[]) => {
+      setSelectedSections(sections)
+      if (proposalId) {
+        localStorage.setItem(`proposal_selected_sections_${proposalId}`, JSON.stringify(sections))
+      }
+    },
+    [proposalId]
+  )
 
   // Load concept evaluation from DynamoDB when entering Step 2
   useEffect(() => {
@@ -1820,9 +1862,14 @@ export function ProposalWriterPage() {
             {...stepProps}
             proposalId={proposalId}
             structureWorkplanAnalysis={structureWorkplanAnalysis}
+            initialGeneratedContent={generatedProposalContent}
+            onGeneratedContentChange={content => {
+              setGeneratedProposalContent(content)
+            }}
+            initialSelectedSections={selectedSections}
+            onSelectedSectionsChange={handleSelectedSectionsChange}
             onTemplateGenerated={async () => {
               const timestamp = new Date().toISOString()
-              // Removed console.log'✅ Template generated, enabling Next button')
               setProposalTemplate({ generated: true, timestamp })
 
               // Save to DynamoDB for persistence across sessions
@@ -1831,9 +1878,8 @@ export function ProposalWriterPage() {
                   await proposalService.updateProposal(proposalId, {
                     proposal_template_generated: timestamp,
                   } as { proposal_template_generated: string })
-                  // Removed console.log'💾 Saved proposal_template_generated to DynamoDB')
                 } catch (error) {
-                  // Removed console.error❌ Failed to save template status to DynamoDB:', error)
+                  // Failed to save template status
                 }
               }
             }}

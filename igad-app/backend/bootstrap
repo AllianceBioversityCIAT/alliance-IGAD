@@ -5,5 +5,8 @@ set -e
 export PORT=8080
 export AWS_LWA_INVOKE_MODE=response_stream
 
+# Log startup
+echo "Starting FastAPI application on port $PORT" >&2
+
 # Start FastAPI application
-exec python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+exec python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT --log-level info

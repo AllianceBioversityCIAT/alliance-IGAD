@@ -163,13 +163,23 @@
   cursor: not-allowed;
 }
 
-.confirmButton:disabled:hover {
-  background: inherit;
+.confirmButton.danger:disabled:hover {
+  background: #dc2626;
+}
+
+.confirmButton.warning:disabled:hover {
+  background: #f59e0b;
+}
+
+.confirmButton.info:disabled:hover {
+  background: #3b82f6;
 }
 
 .spinner {
   animation: spin 1s linear infinite;
   margin-right: 8px;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 @keyframes spin {

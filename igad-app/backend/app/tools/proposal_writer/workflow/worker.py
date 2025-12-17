@@ -22,6 +22,9 @@ from app.shared.vectors.service import VectorEmbeddingsService
 from app.tools.proposal_writer.concept_document_generation.service import (
     concept_generator,
 )
+from app.tools.proposal_writer.proposal_template_generation.service import (
+    proposal_template_generator,
+)
 from app.tools.proposal_writer.concept_evaluation.service import SimpleConceptAnalyzer
 from app.tools.proposal_writer.proposal_draft_feedback.service import (
     DraftFeedbackService,
@@ -120,6 +123,16 @@ def _set_processing_status(
             pk=f"PROPOSAL#{proposal_id}",
             sk="METADATA",
             update_expression="SET analysis_status_draft_feedback = :status, draft_feedback_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat(),
+            },
+        )
+    elif analysis_type == "proposal_template":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="SET proposal_template_status = :status, proposal_template_started_at = :started",
             expression_attribute_values={
                 ":status": "processing",
                 ":started": datetime.utcnow().isoformat(),
@@ -305,6 +318,35 @@ def _set_completed_status(
                 ":updated": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "proposal_template":
+        # Extract the generated proposal content
+        proposal_content = result.get("generated_proposal", "")
+        sections = result.get("sections", {})
+        metadata = result.get("metadata", {})
+        s3_url = result.get("s3_url", "")
+
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET proposal_template_content = :content,
+                    proposal_template_sections = :sections,
+                    proposal_template_metadata = :metadata,
+                    proposal_template_s3_url = :s3_url,
+                    proposal_template_status = :status,
+                    proposal_template_completed_at = :completed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":content": proposal_content,
+                ":sections": sections,
+                ":metadata": metadata,
+                ":s3_url": s3_url,
+                ":status": "completed",
+                ":completed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 def _set_failed_status(
@@ -433,6 +475,23 @@ def _set_failed_status(
                 SET analysis_status_draft_feedback = :status,
                     draft_feedback_error = :error,
                     draft_feedback_failed_at = :failed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":status": "failed",
+                ":error": error_msg,
+                ":failed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
+    elif analysis_type == "proposal_template":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET proposal_template_status = :status,
+                    proposal_template_error = :error,
+                    proposal_template_failed_at = :failed,
                     updated_at = :updated
             """,
             expression_attribute_values={
@@ -698,6 +757,98 @@ def _handle_structure_workplan_analysis(proposal_id: str) -> Dict[str, Any]:
 
     _set_completed_status(proposal_id, "structure_workplan", result)
     logger.info("💾 Structure workplan result saved to DynamoDB")
+
+    return result
+
+
+# ==================== PROPOSAL TEMPLATE GENERATION ====================
+
+
+def _handle_proposal_template_generation(
+    proposal_id: str, event: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Execute proposal template generation using AI.
+
+    Generates a full draft proposal based on:
+    - Selected sections from structure workplan
+    - Concept document
+    - RFP analysis
+    - Reference proposals analysis (optional)
+    - Existing work analysis (optional)
+
+    Args:
+        proposal_id: Proposal identifier
+        event: Event containing selected_sections and user_comments
+
+    Returns:
+        Generated proposal template result
+
+    Raises:
+        Exception: If prerequisites not met or generation fails
+    """
+    logger.info(f"📋 Processing proposal template generation for: {proposal_id}")
+
+    # Retrieve proposal and validate dependencies
+    proposal = db_client.get_item_sync(pk=f"PROPOSAL#{proposal_id}", sk="METADATA")
+
+    if not proposal:
+        raise Exception(f"Proposal {proposal_id} not found")
+
+    rfp_analysis = proposal.get("rfp_analysis")
+    if not rfp_analysis:
+        raise Exception("RFP analysis must be completed first")
+
+    structure_workplan = proposal.get("structure_workplan_analysis")
+    if not structure_workplan:
+        raise Exception("Structure and workplan analysis must be completed first")
+
+    concept_document = proposal.get("concept_document_v2")
+    if not concept_document:
+        raise Exception("Concept document must be generated first")
+
+    # Get optional analyses
+    reference_proposals_analysis = proposal.get("reference_proposal_analysis")
+    existing_work_analysis = proposal.get("existing_work_analysis")
+
+    # Get selected sections and user comments from event
+    selected_sections = event.get("selected_sections", [])
+    user_comments = event.get("user_comments", {})
+
+    if not selected_sections:
+        raise Exception("At least one section must be selected")
+
+    logger.info("✅ Prerequisites validated")
+    logger.info(f"   Selected sections: {len(selected_sections)}")
+
+    _set_processing_status(proposal_id, "proposal_template")
+
+    logger.info("🔍 Starting proposal template generation...")
+    result = proposal_template_generator.generate_template(
+        proposal_code=proposal_id,
+        selected_sections=selected_sections,
+        rfp_analysis=rfp_analysis,
+        concept_document=concept_document,
+        structure_workplan_analysis=structure_workplan,
+        reference_proposals_analysis=reference_proposals_analysis,
+        existing_work_analysis=existing_work_analysis,
+        user_comments=user_comments,
+    )
+
+    # Save to S3 if configured
+    s3_url = proposal_template_generator.save_to_s3(
+        proposal_code=proposal_id,
+        content=result.get("generated_proposal", ""),
+        filename="draft_proposal.md",
+    )
+    if s3_url:
+        result["s3_url"] = s3_url
+
+    logger.info("✅ Proposal template generation completed successfully")
+    logger.info(f"📊 Result keys: {list(result.keys())}")
+
+    _set_completed_status(proposal_id, "proposal_template", result)
+    logger.info("💾 Proposal template result saved to DynamoDB")
 
     return result
 
@@ -1143,6 +1294,8 @@ def handler(event, context):
             _handle_draft_feedback_analysis(proposal_id)
         elif analysis_type == "concept_document":
             _handle_concept_document_generation(proposal_id, event)
+        elif analysis_type == "proposal_template":
+            _handle_proposal_template_generation(proposal_id, event)
         elif analysis_type == "vectorize_document":
             _handle_document_vectorization(event)
         else:

@@ -64,10 +64,10 @@ export function ConfirmDialog({
             disabled={isLoading}
           >
             {isLoading ? (
-              <>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                 <Loader2 size={16} className={styles.spinner} />
                 Deleting...
-              </>
+              </span>
             ) : (
               confirmText
             )}

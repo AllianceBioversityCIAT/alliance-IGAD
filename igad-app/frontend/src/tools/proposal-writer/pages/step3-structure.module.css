@@ -588,3 +588,320 @@
     align-self: flex-start;
   }
 }
+
+/* ========================================
+   AI GENERATION STATES
+   ======================================== */
+
+/* Generating State */
+.generatingState {
+  display: flex;
+  gap: 20px;
+  padding: 24px;
+  background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+  border: 1px solid #DDD6FE;
+  border-radius: 12px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.generatingSpinner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #9810FA 0%, #7C0DD1 100%);
+  border-radius: 12px;
+}
+
+.spinnerIcon {
+  color: #FFFFFF;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.generatingInfo {
+  flex: 1;
+}
+
+.generatingTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #5B21B6;
+  margin: 0 0 8px 0;
+}
+
+.generatingText {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6D28D9;
+  margin: 0 0 16px 0;
+}
+
+.generatingSteps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.generatingStep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #7C3AED;
+}
+
+.stepDot {
+  width: 6px;
+  height: 6px;
+  background: #7C3AED;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.generatingStep:nth-child(2) .stepDot {
+  animation-delay: 0.3s;
+}
+
+.generatingStep:nth-child(3) .stepDot {
+  animation-delay: 0.6s;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Error State */
+.errorState {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.errorText {
+  font-size: 14px;
+  color: #DC2626;
+  margin: 0;
+}
+
+.retryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #DC2626;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.retryButton:hover {
+  background: #B91C1C;
+}
+
+/* Success State */
+.successState {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 12px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.successHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #166534;
+}
+
+.successIcon {
+  color: #22C55E;
+}
+
+.generatedPreview {
+  background: #FFFFFF;
+  border: 1px solid #D1FAE5;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+
+.generatedPreview::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, #FFFFFF);
+  pointer-events: none;
+}
+
+.previewContent {
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #374151;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.downloadActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.downloadButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #166534;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.downloadButton:hover {
+  background: #15803D;
+}
+
+.regenerateButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: transparent;
+  color: #6D28D9;
+  border: 1px solid #DDD6FE;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.regenerateButton:hover {
+  background: #F5F3FF;
+  border-color: #C4B5FD;
+}
+
+/* Sections Changed State */
+.sectionsChangedState {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 12px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.warningHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #92400E;
+}
+
+.warningIcon {
+  color: #F59E0B;
+}
+
+.warningText {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #78350F;
+  margin: 0;
+}
+
+.previousDraftNote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #92400E;
+  padding-top: 8px;
+  border-top: 1px solid #FDE68A;
+}
+
+.linkButton {
+  background: none;
+  border: none;
+  color: #D97706;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.linkButton:hover {
+  color: #B45309;
+}
+
+/* Responsive for generation states */
+@media (max-width: 768px) {
+  .generatingState {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .generatingSteps {
+    align-items: center;
+  }
+
+  .downloadActions {
+    flex-direction: column;
+  }
+
+  .downloadButton,
+  .regenerateButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Sparkles,
   Check,
@@ -9,10 +9,12 @@ import {
   Lightbulb,
   BookOpen,
   Download,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react'
-import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx'
 import styles from './step3-structure.module.css'
 import { StepProps } from './stepConfig'
+import { proposalService } from '../services/proposalService'
 
 // Removed unused Section interface
 
@@ -26,6 +28,10 @@ interface Step3Props extends StepProps {
   }
   onGenerateTemplate?: (selectedSections: string[]) => void
   onTemplateGenerated?: () => void
+  initialGeneratedContent?: string | null
+  onGeneratedContentChange?: (content: string | null) => void
+  initialSelectedSections?: string[] | null
+  onSelectedSectionsChange?: (sections: string[]) => void
 }
 
 interface ProposalSection {
@@ -210,6 +216,10 @@ export function Step3StructureWorkplan({
   structureWorkplanAnalysis,
   onGenerateTemplate: _onGenerateTemplate,
   onTemplateGenerated,
+  initialGeneratedContent,
+  onGeneratedContentChange,
+  initialSelectedSections,
+  onSelectedSectionsChange,
 }: Step3Props) {
   // Combine mandatory and outline sections
   const allSections = [
@@ -217,21 +227,73 @@ export function Step3StructureWorkplan({
     ...(structureWorkplanAnalysis?.proposal_outline || []),
   ]
 
-  const [selectedSections, setSelectedSections] = useState<string[]>([])
+  const [selectedSections, setSelectedSections] = useState<string[]>(initialSelectedSections || [])
   const [expandedSections, setExpandedSections] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [hasInitialized, setHasInitialized] = useState(false)
+  const [generatedProposal, setGeneratedProposal] = useState<string | null>(initialGeneratedContent || null)
+  const [generationStatus, setGenerationStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>(
+    initialGeneratedContent ? 'completed' : 'idle'
+  )
+  const [generationError, setGenerationError] = useState<string | null>(null)
+  // Track the sections used for last successful generation
+  const [lastGeneratedSections, setLastGeneratedSections] = useState<string[]>(
+    initialSelectedSections || []
+  )
 
-  // Initialize selected sections when data becomes available
+  // Initialize selected sections when data becomes available (only if not already initialized from props)
   useEffect(() => {
     if (structureWorkplanAnalysis?.proposal_mandatory && !hasInitialized) {
-      const mandatorySectionTitles = structureWorkplanAnalysis.proposal_mandatory.map(
-        s => s.section_title
-      )
-      setSelectedSections(mandatorySectionTitles)
+      // If we have initial sections from parent (loaded from storage), use those
+      if (initialSelectedSections && initialSelectedSections.length > 0) {
+        setSelectedSections(initialSelectedSections)
+        setLastGeneratedSections(initialSelectedSections)
+      } else {
+        // Otherwise default to mandatory sections
+        const mandatorySectionTitles = structureWorkplanAnalysis.proposal_mandatory.map(
+          s => s.section_title
+        )
+        setSelectedSections(mandatorySectionTitles)
+      }
       setHasInitialized(true)
     }
-  }, [structureWorkplanAnalysis, hasInitialized])
+  }, [structureWorkplanAnalysis, hasInitialized, initialSelectedSections])
+
+  // Update state when initialGeneratedContent changes (loaded from parent)
+  useEffect(() => {
+    if (initialGeneratedContent && !generatedProposal) {
+      setGeneratedProposal(initialGeneratedContent)
+      setGenerationStatus('completed')
+    }
+  }, [initialGeneratedContent, generatedProposal])
+
+  // Update state when initialSelectedSections changes (loaded from parent)
+  useEffect(() => {
+    if (initialSelectedSections && initialSelectedSections.length > 0 && hasInitialized) {
+      setSelectedSections(initialSelectedSections)
+      setLastGeneratedSections(initialSelectedSections)
+    }
+  }, [initialSelectedSections, hasInitialized])
+
+  // Notify parent when selected sections change
+  useEffect(() => {
+    if (hasInitialized && onSelectedSectionsChange) {
+      onSelectedSectionsChange(selectedSections)
+    }
+  }, [selectedSections, hasInitialized, onSelectedSectionsChange])
+
+  // Check if sections have changed since last generation (to show regenerate option)
+  const sectionsChangedSinceGeneration = useCallback(() => {
+    if (generationStatus !== 'completed') {
+      return false
+    }
+    if (selectedSections.length !== lastGeneratedSections.length) {
+      return true
+    }
+    const sortedCurrent = [...selectedSections].sort()
+    const sortedLast = [...lastGeneratedSections].sort()
+    return !sortedCurrent.every((s, i) => s === sortedLast[i])
+  }, [selectedSections, lastGeneratedSections, generationStatus])
 
   const toggleSection = (sectionName: string) => {
     setSelectedSections(prev =>
@@ -244,6 +306,57 @@ export function Step3StructureWorkplan({
       prev.includes(sectionName) ? prev.filter(s => s !== sectionName) : [...prev, sectionName]
     )
   }
+
+  // Poll for AI template generation status
+  const pollTemplateStatus = useCallback(async () => {
+    if (!proposalId) return
+
+    let attempts = 0
+    const maxAttempts = 120 // 6 minutes max (3 second intervals)
+
+    const poll = async () => {
+      attempts++
+      try {
+        const status = await proposalService.getProposalTemplateStatus(proposalId)
+
+        if (status.status === 'completed' && status.data) {
+          const content = status.data.generated_proposal
+          setGeneratedProposal(content)
+          setGenerationStatus('completed')
+          setIsGenerating(false)
+          // Save the sections used for this generation
+          setLastGeneratedSections([...selectedSections])
+
+          // Notify parent about the generated content
+          if (onGeneratedContentChange) {
+            onGeneratedContentChange(content)
+          }
+
+          // Notify parent that template was generated
+          if (onTemplateGenerated) {
+            onTemplateGenerated()
+          }
+        } else if (status.status === 'failed') {
+          setGenerationError(status.error || 'Generation failed')
+          setGenerationStatus('failed')
+          setIsGenerating(false)
+        } else if (attempts >= maxAttempts) {
+          setGenerationError('Generation timeout. Please try again.')
+          setGenerationStatus('failed')
+          setIsGenerating(false)
+        } else {
+          // Continue polling
+          setTimeout(poll, 3000)
+        }
+      } catch (error) {
+        setGenerationError('Failed to check generation status')
+        setGenerationStatus('failed')
+        setIsGenerating(false)
+      }
+    }
+
+    poll()
+  }, [proposalId, onTemplateGenerated, onGeneratedContentChange])
 
   const handleGenerateTemplate = async (e?: React.MouseEvent) => {
     // Prevent default behavior and stop propagation
@@ -264,360 +377,104 @@ export function Step3StructureWorkplan({
     }
 
     setIsGenerating(true)
+    setGenerationStatus('processing')
+    setGenerationError(null)
+
     try {
-      // Get all sections (mandatory + outline)
-      const mandatorySections = structureWorkplanAnalysis.proposal_mandatory || []
-      const outlineSections = structureWorkplanAnalysis.proposal_outline || []
-      const allAvailableSections = [...mandatorySections, ...outlineSections]
-
-      // ONLY include sections that are selected (checked)
-      const sectionsToInclude = allAvailableSections.filter(s =>
-        selectedSections.includes(s.section_title)
+      // Call the AI generation API
+      const result = await proposalService.generateAiProposalTemplate(
+        proposalId,
+        selectedSections
       )
 
-      // Create Word document sections (using docx library on frontend)
-      const documentSections: Paragraph[] = []
+      if (result.status === 'processing') {
+        // Start polling for completion
+        pollTemplateStatus()
+      } else if (result.status === 'completed') {
+        // Already completed (unlikely but handle it)
+        const status = await proposalService.getProposalTemplateStatus(proposalId)
+        if (status.data?.generated_proposal) {
+          const content = status.data.generated_proposal
+          setGeneratedProposal(content)
+          setGenerationStatus('completed')
+          setIsGenerating(false)
 
-      // Get formatted date
-      const currentDate = new Date().toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
+          if (onGeneratedContentChange) {
+            onGeneratedContentChange(content)
+          }
 
-      // Add title (centered, large, green)
-      documentSections.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: 'Proposal Template',
-              bold: true,
-              size: 36,
-              color: '166534',
-            }),
-          ],
-          spacing: { after: 200 },
-          alignment: AlignmentType.CENTER,
-        })
-      )
-
-      // Add metadata (centered, gray)
-      documentSections.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `Generated: ${currentDate}`,
-              size: 20,
-              color: '6B7280',
-            }),
-          ],
-          spacing: { after: 100 },
-          alignment: AlignmentType.CENTER,
-        })
-      )
-
-      documentSections.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `Proposal ID: ${proposalId}`,
-              size: 20,
-              color: '6B7280',
-            }),
-          ],
-          spacing: { after: 400 },
-          alignment: AlignmentType.CENTER,
-        })
-      )
-
-      // Add horizontal line separator
-      documentSections.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: '═══════════════════════════════════════════════════',
-              color: 'CCCCCC',
-            }),
-          ],
-          spacing: { after: 400 },
-          alignment: AlignmentType.CENTER,
-        })
-      )
-
-      // Add each section
-      for (const section of sectionsToInclude) {
-        const sectionTitle = section.section_title || 'Untitled Section'
-        const isMandatory = mandatorySections.some(s => s.section_title === sectionTitle)
-
-        // Section title (styled)
-        documentSections.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: sectionTitle,
-                bold: true,
-                size: 28,
-                color: '1F2937',
-              }),
-            ],
-            spacing: { before: 400, after: 200 },
-          })
-        )
-
-        // Mandatory badge
-        if (isMandatory) {
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: '⚠️ MANDATORY SECTION',
-                  bold: true,
-                  color: '9F0712',
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 120 },
-            })
-          )
+          if (onTemplateGenerated) {
+            onTemplateGenerated()
+          }
         }
-
-        // Word count
-        if (section.recommended_word_count) {
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: '📝 Recommended length: ',
-                  bold: true,
-                  size: 20,
-                  color: '4B5563',
-                }),
-                new TextRun({
-                  text: section.recommended_word_count,
-                  size: 20,
-                  color: '6B7280',
-                }),
-              ],
-              spacing: { after: 200 },
-            })
-          )
-        }
-
-        // Purpose
-        if (section.purpose) {
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: 'Purpose',
-                  bold: true,
-                  size: 22,
-                  color: '374151',
-                }),
-              ],
-              spacing: { before: 240, after: 100 },
-            })
-          )
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: section.purpose,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200, line: 276 },
-            })
-          )
-        }
-
-        // Content guidance
-        if (section.content_guidance) {
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: 'What to Include',
-                  bold: true,
-                  size: 22,
-                  color: '374151',
-                }),
-              ],
-              spacing: { before: 240, after: 100 },
-            })
-          )
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: section.content_guidance,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200, line: 276 },
-            })
-          )
-        }
-
-        // Guiding questions
-        if (section.guiding_questions && section.guiding_questions.length > 0) {
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: '💡 Guiding Questions',
-                  bold: true,
-                  size: 22,
-                  color: '374151',
-                }),
-              ],
-              spacing: { before: 240, after: 100 },
-            })
-          )
-          section.guiding_questions.forEach(question => {
-            if (question) {
-              documentSections.push(
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: question,
-                      size: 20,
-                    }),
-                  ],
-                  bullet: { level: 0 },
-                  spacing: { after: 60, line: 276 },
-                })
-              )
-            }
-          })
-        }
-
-        // Writing space
-        documentSections.push(
-          new Paragraph({
-            text: '',
-            spacing: { before: 300, after: 100 },
-          })
-        )
-        documentSections.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: '📄 Your Content',
-                bold: true,
-                size: 22,
-                color: '2563EB',
-              }),
-            ],
-            spacing: { after: 100 },
-          })
-        )
-        documentSections.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: '[Write your content here]',
-                size: 20,
-                color: '9CA3AF',
-                italics: true,
-              }),
-            ],
-            spacing: { after: 400, line: 276 },
-          })
-        )
-
-        // Section separator
-        documentSections.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: '─────────────────────────────────────────────────────',
-                color: 'E5E7EB',
-              }),
-            ],
-            spacing: { before: 200, after: 400 },
-            alignment: AlignmentType.CENTER,
-          })
-        )
-      }
-
-      // Add footer separator
-      documentSections.push(
-        new Paragraph({
-          text: '',
-          spacing: { before: 400, after: 200 },
-        })
-      )
-
-      documentSections.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: '═══════════════════════════════════════════════════',
-              color: 'CCCCCC',
-            }),
-          ],
-          spacing: { after: 200 },
-          alignment: AlignmentType.CENTER,
-        })
-      )
-
-      // Add footer
-      documentSections.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: 'Generated by IGAD Proposal Writer',
-              size: 18,
-              color: '9CA3AF',
-              italics: true,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-        })
-      )
-
-      // Create the document with page margins
-      const doc = new Document({
-        sections: [
-          {
-            children: documentSections,
-            properties: {
-              page: {
-                margin: {
-                  top: 1440, // 1 inch
-                  right: 1440,
-                  bottom: 1440,
-                  left: 1440,
-                },
-              },
-            },
-          },
-        ],
-      })
-
-      // Generate blob and download
-      const blob = await Packer.toBlob(doc)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `proposal_template_${proposalId}_${new Date().toISOString().slice(0, 10)}.docx`
-      a.click()
-      URL.revokeObjectURL(url)
-
-      // Removed console.log'✅ Template downloaded successfully')
-
-      // Notify parent that template was generated
-      if (onTemplateGenerated) {
-        onTemplateGenerated()
+      } else {
+        throw new Error(result.message || 'Failed to start generation')
       }
     } catch (error: unknown) {
-      // Removed console.error
       const err = error as { message?: string }
-      alert(`Failed to generate template: ${err.message || 'Unknown error'}`)
-    } finally {
+      setGenerationError(err.message || 'Failed to generate template')
+      setGenerationStatus('failed')
       setIsGenerating(false)
+      alert(`Failed to generate template: ${err.message || 'Unknown error'}`)
     }
+  }
+
+  // Download generated proposal as HTML
+  const handleDownloadGeneratedProposal = () => {
+    if (!generatedProposal) {
+      return
+    }
+
+    // Convert markdown to HTML (simple conversion)
+    const htmlContent = generatedProposal
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/^- (.*$)/gim, '<li>$1</li>')
+      .replace(/\n/g, '<br/>')
+
+    const fullHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>AI Generated Proposal Draft</title>
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; line-height: 1.8; max-width: 900px; margin: 40px auto; padding: 20px; color: #1f2937; }
+    h1 { color: #166534; border-bottom: 3px solid #166534; padding-bottom: 15px; margin-top: 40px; }
+    h2 { color: #1f2937; margin-top: 35px; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; }
+    h3 { color: #374151; margin-top: 25px; }
+    p { margin: 15px 0; }
+    strong { color: #1f2937; }
+    ul { margin: 15px 0; padding-left: 30px; }
+    li { margin: 8px 0; }
+    code { background-color: #f3f4f6; padding: 3px 8px; border-radius: 4px; font-size: 0.9em; }
+    .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
+    .footer { text-align: center; margin-top: 60px; padding-top: 20px; border-top: 2px solid #e5e7eb; color: #6b7280; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 style="border: none; margin: 0;">AI Generated Proposal Draft</h1>
+    <p style="color: #6b7280;">Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+  </div>
+  ${htmlContent}
+  <div class="footer">
+    <p>Generated by IGAD Proposal Writer - AI Assistant</p>
+  </div>
+</body>
+</html>`
+
+    const blob = new Blob([fullHtml], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `ai_proposal_draft_${proposalId}_${new Date().toISOString().slice(0, 10)}.html`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   // Show loading state if no analysis yet
@@ -777,33 +634,146 @@ export function Step3StructureWorkplan({
         {/* Generate Template Section */}
         <div className={styles.card}>
           <div className={styles.sectionHeader}>
-            <FileText className={styles.sectionIcon} size={20} />
+            <Sparkles className={styles.sectionIcon} size={20} />
             <div>
-              <h3 className={styles.sectionTitle}>Generate Proposal Template</h3>
+              <h3 className={styles.sectionTitle}>AI Proposal Draft Generation</h3>
               <p className={styles.sectionSubtitle}>
-                Create a customized Word template with instructions and suggested content based on
-                your RFP
+                Generate a complete AI-written proposal draft based on your selected sections,
+                concept document, and all previous analyses
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            className={styles.generateButton}
-            onClick={e => handleGenerateTemplate(e)}
-            disabled={isGenerating || selectedSections.length === 0}
-            title={
-              selectedSections.length === 0
-                ? 'Select at least one section to generate template'
-                : ''
-            }
-          >
-            <Download size={16} />
-            {isGenerating
-              ? 'Generating...'
-              : selectedSections.length === 0
+
+          {/* Generating State */}
+          {isGenerating && generationStatus === 'processing' && (
+            <div className={styles.generatingState}>
+              <div className={styles.generatingSpinner}>
+                <Loader2 className={styles.spinnerIcon} size={24} />
+              </div>
+              <div className={styles.generatingInfo}>
+                <h4 className={styles.generatingTitle}>Generating your proposal draft...</h4>
+                <p className={styles.generatingText}>
+                  Our AI is analyzing your RFP requirements, concept document, and selected sections
+                  to create a comprehensive proposal draft. This typically takes 3-5 minutes.
+                </p>
+                <div className={styles.generatingSteps}>
+                  <div className={styles.generatingStep}>
+                    <span className={styles.stepDot}></span>
+                    Analyzing all input documents and context
+                  </div>
+                  <div className={styles.generatingStep}>
+                    <span className={styles.stepDot}></span>
+                    Generating content for {selectedSections.length} sections
+                  </div>
+                  <div className={styles.generatingStep}>
+                    <span className={styles.stepDot}></span>
+                    Ensuring alignment with donor requirements
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {generationStatus === 'failed' && generationError && (
+            <div className={styles.errorState}>
+              <p className={styles.errorText}>{generationError}</p>
+              <button
+                type="button"
+                className={styles.retryButton}
+                onClick={e => handleGenerateTemplate(e)}
+              >
+                Retry Generation
+              </button>
+            </div>
+          )}
+
+          {/* Success State - Show Generated Content */}
+          {generationStatus === 'completed' && generatedProposal && !sectionsChangedSinceGeneration() && (
+            <div className={styles.successState}>
+              <div className={styles.successHeader}>
+                <Check className={styles.successIcon} size={20} />
+                <span>Proposal draft generated successfully!</span>
+              </div>
+              <div className={styles.generatedPreview}>
+                <div className={styles.previewContent}>
+                  {generatedProposal.slice(0, 500)}
+                  {generatedProposal.length > 500 && '...'}
+                </div>
+              </div>
+              <div className={styles.downloadActions}>
+                <button
+                  type="button"
+                  className={styles.downloadButton}
+                  onClick={handleDownloadGeneratedProposal}
+                >
+                  <Download size={16} />
+                  Download Full Draft (HTML)
+                </button>
+                <button
+                  type="button"
+                  className={styles.regenerateButton}
+                  onClick={e => handleGenerateTemplate(e)}
+                >
+                  <Sparkles size={16} />
+                  Regenerate
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Sections Changed State - Show Warning and Regenerate */}
+          {generationStatus === 'completed' && generatedProposal && sectionsChangedSinceGeneration() && (
+            <div className={styles.sectionsChangedState}>
+              <div className={styles.warningHeader}>
+                <AlertTriangle className={styles.warningIcon} size={20} />
+                <span>Selected sections have changed</span>
+              </div>
+              <p className={styles.warningText}>
+                You have modified the selected sections since the last draft was generated.
+                Please regenerate the proposal to include your updated selection.
+              </p>
+              <button
+                type="button"
+                className={styles.generateButton}
+                onClick={e => handleGenerateTemplate(e)}
+                disabled={isGenerating || selectedSections.length === 0}
+              >
+                <Sparkles size={16} />
+                Regenerate AI Proposal Draft ({selectedSections.length} sections)
+              </button>
+              <div className={styles.previousDraftNote}>
+                <span>Previous draft is still available: </span>
+                <button
+                  type="button"
+                  className={styles.linkButton}
+                  onClick={handleDownloadGeneratedProposal}
+                >
+                  Download Previous Draft
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Initial State - Show Generate Button */}
+          {generationStatus === 'idle' && (
+            <button
+              type="button"
+              className={styles.generateButton}
+              onClick={e => handleGenerateTemplate(e)}
+              disabled={isGenerating || selectedSections.length === 0}
+              title={
+                selectedSections.length === 0
+                  ? 'Select at least one section to generate template'
+                  : ''
+              }
+            >
+              <Sparkles size={16} />
+              {selectedSections.length === 0
                 ? 'Select sections first'
-                : `Generate Template (${selectedSections.length} sections)`}
-          </button>
+                : `Generate AI Proposal Draft (${selectedSections.length} sections)`}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -17,8 +17,8 @@ from app.database.client import db_client
 from app.middleware.auth_middleware import AuthMiddleware
 from app.shared.ai.bedrock_service import BedrockService
 from app.tools.admin.prompts_manager.service import PromptService
-from app.tools.proposal_writer.template_generation.service import (
-    TemplateGenerationService,
+from app.tools.proposal_writer.proposal_template_generation.service import (
+    ProposalTemplateGenerator,
 )
 
 router = APIRouter(prefix="/api/proposals", tags=["proposals"])
@@ -1978,7 +1978,7 @@ async def generate_proposal_template(
         # Generate template
         from fastapi.responses import StreamingResponse
 
-        service = TemplateGenerationService()
+        service = ProposalTemplateGenerator()
         buffer = service.generate_template(
             proposal_id=proposal_code,
             selected_sections=request.selected_sections,
@@ -2003,6 +2003,155 @@ async def generate_proposal_template(
         raise HTTPException(
             status_code=500, detail=f"Failed to generate template: {str(e)}"
         )
+
+
+@router.post("/{proposal_id}/generate-ai-proposal-template")
+async def generate_ai_proposal_template(
+    proposal_id: str, request: TemplateGenerationRequest, user=Depends(get_current_user)
+):
+    """
+    Generate AI-powered draft proposal based on all previous analyses.
+
+    This endpoint:
+    1. Validates all prerequisites (RFP, structure workplan, concept document)
+    2. Sets status to "processing"
+    3. Invokes Worker Lambda asynchronously
+    4. Returns immediately with status
+
+    Frontend should poll /proposal-template-status for completion
+
+    Prerequisites:
+    - RFP analysis must be completed
+    - Structure workplan must be completed
+    - Concept document must be generated
+
+    Request body:
+    - selected_sections: List of section titles to include (required)
+    - user_comments: Optional dict of user comments per section
+    """
+    try:
+        user_id = user.get("user_id")
+        print(f"🟢 Generate AI proposal template request for proposal: {proposal_id}")
+
+        # Verify proposal ownership using helper
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        # Validate prerequisites
+        if not proposal.get("rfp_analysis"):
+            raise HTTPException(
+                status_code=400, detail="RFP analysis must be completed first (Step 1)"
+            )
+
+        if not proposal.get("structure_workplan_analysis"):
+            raise HTTPException(
+                status_code=400,
+                detail="Structure and workplan analysis must be completed first (Step 3)",
+            )
+
+        if not proposal.get("concept_document_v2"):
+            raise HTTPException(
+                status_code=400,
+                detail="Concept document must be generated first (Step 2)",
+            )
+
+        # Validate selected sections
+        selected_sections = request.selected_sections
+        if not selected_sections or len(selected_sections) == 0:
+            raise HTTPException(
+                status_code=400, detail="At least one section must be selected"
+            )
+
+        print(f"   Selected sections: {len(selected_sections)}")
+        if request.user_comments:
+            print(f"   User comments: {len(request.user_comments)}")
+
+        # Update status to processing
+        await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="SET proposal_template_status = :status, proposal_template_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat(),
+            },
+        )
+
+        # Invoke Worker Lambda asynchronously
+        worker_function = os.getenv("WORKER_FUNCTION_NAME")
+
+        payload = {
+            "analysis_type": "proposal_template",
+            "proposal_id": proposal_code,
+            "user_id": user_id,
+            "selected_sections": selected_sections,
+            "user_comments": request.user_comments or {},
+        }
+
+        print(f"📡 Invoking worker lambda for proposal template generation: {proposal_code}")
+
+        lambda_client.invoke(
+            FunctionName=worker_function,
+            InvocationType="Event",  # Asynchronous
+            Payload=json.dumps(payload),
+        )
+
+        print(f"✅ Worker lambda invoked successfully for {proposal_code}")
+
+        return {
+            "status": "processing",
+            "message": "Proposal template generation started. Poll /proposal-template-status for updates.",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error starting proposal template generation: {str(e)}")
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{proposal_id}/proposal-template-status")
+async def get_proposal_template_status(proposal_id: str, user=Depends(get_current_user)):
+    """
+    Poll for AI proposal template generation completion status.
+
+    Returns:
+    - status: "not_started" | "processing" | "completed" | "failed"
+    - started_at: ISO timestamp when generation started
+    - completed_at: ISO timestamp when generation completed
+    - error: Error message (if failed)
+    - data: Generated proposal template content (if completed)
+    """
+    try:
+        # Verify proposal ownership using helper
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        status = proposal.get("proposal_template_status", "not_started")
+
+        response = {
+            "status": status,
+            "started_at": proposal.get("proposal_template_started_at"),
+            "completed_at": proposal.get("proposal_template_completed_at"),
+            "error": proposal.get("proposal_template_error"),
+        }
+
+        if status == "completed":
+            response["data"] = {
+                "generated_proposal": proposal.get("proposal_template_content"),
+                "sections": proposal.get("proposal_template_sections"),
+                "metadata": proposal.get("proposal_template_metadata"),
+                "s3_url": proposal.get("proposal_template_s3_url"),
+            }
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error getting proposal template status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to check status: {str(e)}")
 
 
 # ==================== STEP 4: DRAFT PROPOSAL FEEDBACK ====================
