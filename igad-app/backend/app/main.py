@@ -38,13 +38,14 @@ app = FastAPI(
     openapi_url="/openapi.json" if ENVIRONMENT != "production" else None,
 )
 
-# CORS configuration - SECURITY: Restrict origins in production
-if ENVIRONMENT == "production":
-    # En producción, solo dominios específicos
-    allowed_origins = os.getenv(
-        "CORS_ALLOWED_ORIGINS",
-        "https://igad-innovation-hub.com,https://www.igad-innovation-hub.com",
-    ).split(",")
+# CORS configuration - SECURITY: Restrict origins based on environment
+if ENVIRONMENT in ["production", "testing"]:
+    # En producción/testing, usar dominios específicos desde variable de entorno
+    # Incluir dominios de producción y testing por defecto
+    default_origins = "https://igad-innovation-hub.com,https://www.igad-innovation-hub.com,https://test-igad-hub.alliance.cgiar.org"
+    allowed_origins_str = os.getenv("CORS_ALLOWED_ORIGINS", default_origins)
+    # Limpiar espacios y dividir por comas
+    allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
 else:
     # En desarrollo, permitir localhost
     allowed_origins = [

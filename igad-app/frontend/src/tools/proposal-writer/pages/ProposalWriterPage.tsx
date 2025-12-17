@@ -78,6 +78,8 @@ export function ProposalWriterPage() {
   const [isUploadingConcept, setIsUploadingConcept] = useState(false)
   // Vectorization state - tracks if any files are being vectorized
   const [isVectorizingFiles, setIsVectorizingFiles] = useState(false)
+  // State for finishing process (Step 4)
+  const [isFinishingProcess, setIsFinishingProcess] = useState(false)
 
   const allowNavigation = useRef(false)
   const formDataLoadedFromDB = useRef(false)
@@ -1896,14 +1898,27 @@ export function ProposalWriterPage() {
           proceedToNextStep()
         } else if (currentStep === 4) {
           // Final step - finish process
-          // Removed console.log'🏁 Finishing process')
           if (proposalId) {
             try {
+              setIsFinishingProcess(true)
               await proposalService.updateProposalStatus(proposalId, 'completed')
               setProposalStatus('completed')
+
+              // Clear localStorage for this proposal
+              clearDraft()
+              localStorage.removeItem(`proposal_concept_analysis_${proposalId}`)
+              localStorage.removeItem(`proposal_concept_document_${proposalId}`)
+              localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
+              localStorage.removeItem(`proposal_reference_proposals_analysis_${proposalId}`)
+
               showSuccess('Process Complete', 'Your proposal has been marked as completed!')
+
+              // Redirect to dashboard after a short delay
+              setTimeout(() => {
+                navigate('/dashboard')
+              }, 1000)
             } catch (error) {
-              // Removed console.errorError finishing process:', error)
+              setIsFinishingProcess(false)
               showError('Error', 'Failed to complete process. Please try again.')
             }
           }
@@ -1912,6 +1927,8 @@ export function ProposalWriterPage() {
         }
       }}
       disabled={
+        // Step 4: Disable while finishing process
+        isFinishingProcess ||
         // Step 3: Disable until template is generated
         (currentStep === 3 && !proposalTemplate) ||
         // Step 2: Disable until concept document is generated
@@ -1970,6 +1987,11 @@ export function ProposalWriterPage() {
           <span className={styles.spinner}></span>
           Vectorizing documents...
         </>
+      ) : currentStep === 4 && isFinishingProcess ? (
+        <>
+          <span className={styles.spinner}></span>
+          Finishing...
+        </>
       ) : currentStep === 4 ? (
         'Finish process'
       ) : currentStep === 3 && proposalTemplate ? (
@@ -1981,7 +2003,7 @@ export function ProposalWriterPage() {
         'Generate Template First'
       ) : currentStep === 2 ? (
         <>
-          Continue to Structure & Workplan
+          Continue to Structure
           <ChevronRight size={16} />
         </>
       ) : currentStep === 1 && rfpAnalysis && conceptAnalysis ? (

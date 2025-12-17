@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { Eye, EyeOff } from 'lucide-react'
 import { authService } from '@/shared/services/authService'
 import { Spinner } from '@/shared/components/ui/Spinner'
 import styles from './LoginPage.module.css'
@@ -214,8 +215,13 @@ export function ForgotPasswordPage() {
                       type="button"
                       className={styles.passwordToggle}
                       onClick={() => setShowNewPassword(!showNewPassword)}
+                      aria-label={showNewPassword ? 'Hide password' : 'Show password'}
                     >
-                      {showNewPassword ? '👁️' : '👁️‍🗨️'}
+                      {showNewPassword ? (
+                        <EyeOff size={18} strokeWidth={1.5} />
+                      ) : (
+                        <Eye size={18} strokeWidth={1.5} />
+                      )}
                     </button>
                   </div>
                   {resetErrors.newPassword && (
@@ -238,8 +244,13 @@ export function ForgotPasswordPage() {
                       type="button"
                       className={styles.passwordToggle}
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                     >
-                      {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                      {showConfirmPassword ? (
+                        <EyeOff size={18} strokeWidth={1.5} />
+                      ) : (
+                        <Eye size={18} strokeWidth={1.5} />
+                      )}
                     </button>
                   </div>
                   {resetErrors.confirmPassword && (

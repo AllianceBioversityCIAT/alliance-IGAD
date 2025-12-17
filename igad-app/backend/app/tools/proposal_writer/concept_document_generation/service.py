@@ -790,7 +790,10 @@ class ConceptDocumentGenerator:
         """
         Extract sections from markdown text.
 
-        Looks for # Section Title or ## Section Title markers.
+        Looks for multiple section header formats:
+        - # Section Title (markdown h1)
+        - ## Section Title (markdown h2)
+        - **Section Title** (bold format - common Claude output)
 
         Args:
             text: Markdown or plain text
@@ -802,23 +805,39 @@ class ConceptDocumentGenerator:
         current_section = None
         current_content = []
 
+        # Regex pattern for **Bold Section Title** on its own line
+        bold_pattern = re.compile(r"^\*\*([^*]+)\*\*\s*$")
+
         for line in text.split("\n"):
-            # Check for # or ## section headers
-            if line.startswith("## "):
+            stripped_line = line.strip()
+
+            # Check for ## section headers
+            if stripped_line.startswith("## "):
                 if current_section:
                     sections[current_section] = "\n".join(current_content).strip()
-                current_section = line[3:].strip()
+                current_section = stripped_line[3:].strip()
                 current_content = []
-            elif line.startswith("# "):
+            # Check for # section headers
+            elif stripped_line.startswith("# "):
                 if current_section:
                     sections[current_section] = "\n".join(current_content).strip()
-                current_section = line[2:].strip()
+                current_section = stripped_line[2:].strip()
+                current_content = []
+            # Check for **Bold Title** format (common Claude output)
+            elif bold_match := bold_pattern.match(stripped_line):
+                if current_section:
+                    sections[current_section] = "\n".join(current_content).strip()
+                current_section = bold_match.group(1).strip()
                 current_content = []
             elif current_section:
                 current_content.append(line)
 
         if current_section:
             sections[current_section] = "\n".join(current_content).strip()
+
+        logger.info(f"📊 Extracted {len(sections)} sections from text")
+        for title in sections.keys():
+            logger.info(f"   ✓ {title}")
 
         return sections
 

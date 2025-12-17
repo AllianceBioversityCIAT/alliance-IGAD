@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { Eye, EyeOff } from 'lucide-react'
 import { authService } from '@/shared/services/authService'
 import { Spinner } from '@/shared/components/ui/Spinner'
 import styles from './LoginPage.module.css'
@@ -205,8 +206,13 @@ export function LoginPage() {
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className={styles.passwordToggle}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
                       >
-                        {showPassword ? '👁️' : '👁️🗨️'}
+                        {showPassword ? (
+                          <EyeOff size={18} strokeWidth={1.5} />
+                        ) : (
+                          <Eye size={18} strokeWidth={1.5} />
+                        )}
                       </button>
                     </div>
                     {errors.password && (

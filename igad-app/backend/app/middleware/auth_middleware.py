@@ -72,11 +72,12 @@ class AuthMiddleware:
             token = credentials.credentials
 
             # Try to decode as Cognito token first
-            # SECURITY: Only skip verification in development
+            # SECURITY: Only skip verification in development/testing
             try:
                 environment = os.getenv("ENVIRONMENT", "development")
-                if environment == "development":
-                    # Decode without verification for development only
+                if environment in ["development", "testing"]:
+                    # Decode without verification for development/testing
+                    # In production, we should verify Cognito tokens properly
                     payload = jwt.decode(
                         token, "", options={"verify_signature": False, "verify_aud": False}
                     )

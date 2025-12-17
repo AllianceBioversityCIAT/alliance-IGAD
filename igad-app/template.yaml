@@ -9,10 +9,9 @@ Resources:
     Properties:
       StageName: prod
       
-      Cors:
-        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
-        AllowOrigin: "'*'"
+      # CORS is handled by FastAPI middleware in Lambda
+      # API Gateway CORS removed to allow Lambda to handle it completely
+      # This allows FastAPI to set specific origins and credentials correctly
       
       BinaryMediaTypes:
         - 'multipart/form-data'
@@ -40,6 +39,9 @@ Resources:
           PROPOSALS_BUCKET: !Ref ProposalDocumentsBucket
           AWS_STACK_NAME: !Ref AWS::StackName
           WORKER_FUNCTION_NAME: !Ref AnalysisWorkerFunction
+          # Environment and CORS configuration
+          ENVIRONMENT: testing
+          CORS_ALLOWED_ORIGINS: https://igad-innovation-hub.com,https://www.igad-innovation-hub.com,https://test-igad-hub.alliance.cgiar.org
           # VECTOR_BUCKET: !Ref VectorStorageBucket  # Uncomment when S3 Vector bucket is enabled
       Policies:
         - AWSLambdaBasicExecutionRole

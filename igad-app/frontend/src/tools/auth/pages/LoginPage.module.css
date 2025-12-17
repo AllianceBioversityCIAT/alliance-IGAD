@@ -140,8 +140,20 @@
   border: none;
   cursor: pointer;
   color: #6b7280;
-  font-size: 18px;
   padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.passwordToggle:hover {
+  color: #4b5563;
+}
+
+.passwordToggle:focus {
+  outline: none;
+  color: #00a63e;
 }
 
 .errorText {

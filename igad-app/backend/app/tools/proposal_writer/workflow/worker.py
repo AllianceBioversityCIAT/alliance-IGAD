@@ -851,7 +851,7 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
         logger.info(f"   Downloaded {len(file_bytes)} bytes")
 
         # Extract text from file
-        from app.shared.documents.routes import chunk_text, extract_text_from_file
+        from app.utils.document_extraction import chunk_text, extract_text_from_file
 
         logger.info(f"📄 Extracting text from {filename}...")
         extracted_text = extract_text_from_file(file_bytes, filename)
