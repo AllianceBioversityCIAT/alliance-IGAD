@@ -39,15 +39,27 @@ app = FastAPI(
 )
 
 # CORS configuration - SECURITY: Restrict origins based on environment
-if ENVIRONMENT in ["production", "testing"]:
-    # En producción/testing, usar dominios específicos desde variable de entorno
-    # Incluir dominios de producción y testing por defecto
+if ENVIRONMENT == "production":
+    # En producción, usar dominios específicos desde variable de entorno
     default_origins = "https://igad-innovation-hub.com,https://www.igad-innovation-hub.com,https://test-igad-hub.alliance.cgiar.org"
     allowed_origins_str = os.getenv("CORS_ALLOWED_ORIGINS", default_origins)
     # Limpiar espacios y dividir por comas
     allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
+elif ENVIRONMENT == "testing":
+    # En testing, usar dominios específicos + localhost para desarrollo local
+    default_origins = "https://igad-innovation-hub.com,https://www.igad-innovation-hub.com,https://test-igad-hub.alliance.cgiar.org"
+    allowed_origins_str = os.getenv("CORS_ALLOWED_ORIGINS", default_origins)
+    # Limpiar espacios y dividir por comas
+    allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
+    # Agregar localhost para desarrollo local
+    allowed_origins.extend([
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ])
 else:
-    # En desarrollo, permitir localhost
+    # En desarrollo, permitir solo localhost
     allowed_origins = [
         "http://localhost:3000",
         "http://localhost:5173",
