@@ -12,6 +12,7 @@ aws-credentials.json
 # Amazon Q Rules and Configuration
 .amazonq/
 # Allow .copilot/rules/ to be tracked (shared project rules)
+# Note: Negation patterns must come AFTER the ignore pattern to override it
 .copilot/*
 !.copilot/rules/
 !.copilot/rules/**

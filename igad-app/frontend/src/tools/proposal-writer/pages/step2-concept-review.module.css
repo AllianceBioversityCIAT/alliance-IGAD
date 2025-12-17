@@ -10,14 +10,15 @@
 }
 
 .stepMainTitle {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.4;
   color: #111827;
   margin: 0 0 8px 0;
   display: flex;
   align-items: center;
   gap: 12px;
+  letter-spacing: -0.5px;
 }
 
 .stepMainDescription {
@@ -540,9 +541,20 @@
 }
 
 /* Responsive breakpoints */
+@media (max-width: 1024px) {
+  .stepMainTitle {
+    font-size: 28px;
+  }
+}
+
 @media (max-width: 768px) {
   .mainContent {
     padding: 24px 20px;
+  }
+
+  .stepMainTitle {
+    font-size: 24px;
+    line-height: 1.3;
   }
   
   .step2Container {

@@ -182,11 +182,16 @@ class BedrockService:
         Returns:
             Tuple of (output_text, tokens_used)
         """
-        # Extract content
+        # Extract content with proper validation
+        output = "No response generated"
         if "content" in response_body and response_body["content"]:
-            output = response_body["content"][0]["text"]
-        else:
-            output = "No response generated"
+            content = response_body["content"]
+            # Validate that content is a list with at least one element
+            if isinstance(content, list) and len(content) > 0:
+                first_item = content[0]
+                # Validate that the first item has a "text" key
+                if isinstance(first_item, dict) and "text" in first_item:
+                    output = first_item["text"]
 
         # Extract token usage
         tokens_used = response_body.get("usage", {}).get("output_tokens", 0)
