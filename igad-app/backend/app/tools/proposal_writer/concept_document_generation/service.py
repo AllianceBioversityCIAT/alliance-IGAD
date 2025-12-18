@@ -352,16 +352,25 @@ class ConceptDocumentGenerator:
         """
         try:
             table = self.dynamodb.Table(self.table_name)
-            response = table.scan(
-                FilterExpression=(
-                    Attr("is_active").eq(True)
-                    & Attr("section").eq("proposal_writer")
-                    & Attr("sub_section").eq("step-2")
-                    & Attr("categories").contains("Concept Review")
-                )
+            filter_expr = (
+                Attr("is_active").eq(True)
+                & Attr("section").eq("proposal_writer")
+                & Attr("sub_section").eq("step-2")
+                & Attr("categories").contains("Concept Review")
             )
 
-            items = response.get("Items", [])
+            # Handle DynamoDB pagination
+            items = []
+            response = table.scan(FilterExpression=filter_expr)
+            items.extend(response.get("Items", []))
+
+            while "LastEvaluatedKey" in response:
+                response = table.scan(
+                    FilterExpression=filter_expr,
+                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                )
+                items.extend(response.get("Items", []))
+
             if not items:
                 logger.warning("⚠️  No prompts found in DynamoDB")
                 return None
@@ -391,11 +400,20 @@ class ConceptDocumentGenerator:
         """
         try:
             table = self.dynamodb.Table(self.table_name)
-            response = table.scan(
-                FilterExpression=Attr("proposalCode").eq(proposal_code)
-            )
+            filter_expr = Attr("proposalCode").eq(proposal_code)
 
-            items = response.get("Items", [])
+            # Handle DynamoDB pagination
+            items = []
+            response = table.scan(FilterExpression=filter_expr)
+            items.extend(response.get("Items", []))
+
+            while "LastEvaluatedKey" in response:
+                response = table.scan(
+                    FilterExpression=filter_expr,
+                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                )
+                items.extend(response.get("Items", []))
+
             if not items:
                 logger.warning(f"⚠️  No proposal found: {proposal_code}")
                 return None

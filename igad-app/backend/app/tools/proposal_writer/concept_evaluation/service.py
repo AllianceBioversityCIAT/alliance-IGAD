@@ -506,16 +506,25 @@ class SimpleConceptAnalyzer:
         """
         try:
             table = self.dynamodb.Table(self.table_name)
-            response = table.scan(
-                FilterExpression=(
-                    Attr("is_active").eq(True)
-                    & Attr("section").eq("proposal_writer")
-                    & Attr("sub_section").eq("step-1")
-                    & Attr("categories").contains("Initial Concept")
-                )
+            filter_expr = (
+                Attr("is_active").eq(True)
+                & Attr("section").eq("proposal_writer")
+                & Attr("sub_section").eq("step-1")
+                & Attr("categories").contains("Initial Concept")
             )
 
-            items = response.get("Items", [])
+            # Handle DynamoDB pagination
+            items = []
+            response = table.scan(FilterExpression=filter_expr)
+            items.extend(response.get("Items", []))
+
+            while "LastEvaluatedKey" in response:
+                response = table.scan(
+                    FilterExpression=filter_expr,
+                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                )
+                items.extend(response.get("Items", []))
+
             if not items:
                 print("⚠️  No active prompts found in DynamoDB")
                 return None

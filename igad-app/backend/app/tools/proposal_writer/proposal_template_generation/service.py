@@ -194,22 +194,31 @@ class ProposalTemplateGenerator:
         """
         try:
             table = self.dynamodb.Table(self.table_name)
-            response = table.scan(
-                FilterExpression=(
-                    Attr("is_active").eq(True)
-                    & Attr("section").eq(
-                        PROPOSAL_TEMPLATE_GENERATION_SETTINGS["section"]
-                    )
-                    & Attr("sub_section").eq(
-                        PROPOSAL_TEMPLATE_GENERATION_SETTINGS["sub_section"]
-                    )
-                    & Attr("categories").contains(
-                        PROPOSAL_TEMPLATE_GENERATION_SETTINGS["category"]
-                    )
+            filter_expr = (
+                Attr("is_active").eq(True)
+                & Attr("section").eq(
+                    PROPOSAL_TEMPLATE_GENERATION_SETTINGS["section"]
+                )
+                & Attr("sub_section").eq(
+                    PROPOSAL_TEMPLATE_GENERATION_SETTINGS["sub_section"]
+                )
+                & Attr("categories").contains(
+                    PROPOSAL_TEMPLATE_GENERATION_SETTINGS["category"]
                 )
             )
 
-            items = response.get("Items", [])
+            # Handle DynamoDB pagination
+            items = []
+            response = table.scan(FilterExpression=filter_expr)
+            items.extend(response.get("Items", []))
+
+            while "LastEvaluatedKey" in response:
+                response = table.scan(
+                    FilterExpression=filter_expr,
+                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                )
+                items.extend(response.get("Items", []))
+
             if not items:
                 logger.warning("⚠️ No prompts found in DynamoDB for Draft Proposal")
                 return None

@@ -119,21 +119,31 @@ class StructureWorkplanService:
             logger.info(f"📝 Loading prompt from DynamoDB...")
 
             table = self.dynamodb.Table(self.table_name)
-            response = table.scan(
-                FilterExpression=(
-                    Attr("is_active").eq(True)
-                    & Attr("section").eq(STRUCTURE_WORKPLAN_SETTINGS["section"])
-                    & Attr("sub_section").eq(STRUCTURE_WORKPLAN_SETTINGS["sub_section"])
-                    & Attr("categories").contains(
-                        STRUCTURE_WORKPLAN_SETTINGS["category"]
-                    )
+            filter_expr = (
+                Attr("is_active").eq(True)
+                & Attr("section").eq(STRUCTURE_WORKPLAN_SETTINGS["section"])
+                & Attr("sub_section").eq(STRUCTURE_WORKPLAN_SETTINGS["sub_section"])
+                & Attr("categories").contains(
+                    STRUCTURE_WORKPLAN_SETTINGS["category"]
                 )
             )
 
-            if not response.get("Items"):
+            # Handle DynamoDB pagination
+            items = []
+            response = table.scan(FilterExpression=filter_expr)
+            items.extend(response.get("Items", []))
+
+            while "LastEvaluatedKey" in response:
+                response = table.scan(
+                    FilterExpression=filter_expr,
+                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                )
+                items.extend(response.get("Items", []))
+
+            if not items:
                 raise Exception("Structure workplan prompt not found in DynamoDB")
 
-            prompt_item = response["Items"][0]
+            prompt_item = items[0]
             system_prompt = prompt_item.get("system_prompt", "")
             user_prompt_template = prompt_item.get("user_prompt_template", "")
             output_format = prompt_item.get("output_format", "")
