@@ -20,6 +20,7 @@ import {
   Check,
   Clock,
 } from 'lucide-react'
+import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType } from 'docx'
 import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
 import AnalysisProgressModal from '@/tools/proposal-writer/components/AnalysisProgressModal'
@@ -58,6 +59,8 @@ interface Step4Props extends StepProps {
   onFeedbackAnalyzed?: (analysis: DraftFeedbackAnalysis) => void
   onFilesChanged?: (files: string[]) => void
   draftIsAiGenerated?: boolean
+  /** The markdown content of the AI-generated proposal template (for download) */
+  generatedProposalContent?: string | null
 }
 
 interface UploadedFile {
@@ -697,6 +700,7 @@ export function Step4ProposalReview({
   onFeedbackAnalyzed,
   onFilesChanged,
   draftIsAiGenerated = false,
+  generatedProposalContent,
 }: Step4Props) {
   // Toast notifications
   const { showSuccess, showError, showWarning } = useToast()
@@ -1027,6 +1031,85 @@ export function Step4ProposalReview({
     fileInputRef.current?.click()
   }, [])
 
+  /**
+   * Convert markdown content to docx Paragraph array (same logic as Step3)
+   */
+  const markdownToParagraphs = useCallback((markdown: string): Paragraph[] => {
+    const paragraphs: Paragraph[] = []
+    const lines = markdown.split('\n')
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      const trimmedLine = line.trim()
+
+      if (!trimmedLine) continue
+
+      // Headers
+      if (trimmedLine.startsWith('#### ')) {
+        paragraphs.push(new Paragraph({
+          text: trimmedLine.slice(5),
+          heading: HeadingLevel.HEADING_4,
+          spacing: { before: 200, after: 100 },
+        }))
+      } else if (trimmedLine.startsWith('### ')) {
+        paragraphs.push(new Paragraph({
+          text: trimmedLine.slice(4),
+          heading: HeadingLevel.HEADING_3,
+          spacing: { before: 240, after: 120 },
+        }))
+      } else if (trimmedLine.startsWith('## ')) {
+        paragraphs.push(new Paragraph({
+          text: trimmedLine.slice(3),
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 280, after: 140 },
+        }))
+      } else if (trimmedLine.startsWith('# ')) {
+        paragraphs.push(new Paragraph({
+          text: trimmedLine.slice(2),
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 320, after: 160 },
+        }))
+      }
+      // Bullet points
+      else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+        const text = trimmedLine.slice(2).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
+        paragraphs.push(new Paragraph({
+          children: [new TextRun({ text: '• ' }), new TextRun({ text })],
+          spacing: { before: 60, after: 60 },
+          indent: { left: 720 },
+        }))
+      }
+      // Numbered lists
+      else if (/^\d+\.\s/.test(trimmedLine)) {
+        const match = trimmedLine.match(/^(\d+\.)\s(.*)$/)
+        if (match) {
+          const text = match[2].replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
+          paragraphs.push(new Paragraph({
+            children: [new TextRun({ text: match[1] + ' ' }), new TextRun({ text })],
+            spacing: { before: 60, after: 60 },
+            indent: { left: 720 },
+          }))
+        }
+      }
+      // Regular paragraphs with bold handling
+      else {
+        const children: TextRun[] = []
+        const parts = trimmedLine.split(/(\*\*[^*]+\*\*)/g)
+        for (const part of parts) {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            children.push(new TextRun({ text: part.slice(2, -2), bold: true }))
+          } else if (part) {
+            children.push(new TextRun({ text: part }))
+          }
+        }
+        if (children.length > 0) {
+          paragraphs.push(new Paragraph({ children, spacing: { before: 120, after: 120 } }))
+        }
+      }
+    }
+    return paragraphs
+  }, [])
+
   const handleDownloadDraft = useCallback(async () => {
     if (!proposalId) {
       showError('Error', 'No proposal ID available')
@@ -1035,14 +1118,86 @@ export function Step4ProposalReview({
 
     setIsDownloadingDraft(true)
     try {
-      await proposalService.downloadDraft(proposalId)
+      // If AI-generated and we have the content, generate DOCX in frontend
+      if (draftIsAiGenerated && generatedProposalContent) {
+        const currentDate = new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+
+        const documentParagraphs: Paragraph[] = []
+
+        // Title
+        documentParagraphs.push(new Paragraph({
+          children: [new TextRun({ text: 'AI Generated Proposal Draft', bold: true, size: 32, color: '166534' })],
+          spacing: { after: 200 },
+          alignment: AlignmentType.CENTER,
+        }))
+
+        // Date
+        documentParagraphs.push(new Paragraph({
+          children: [new TextRun({ text: `Generated: ${currentDate}`, size: 20, color: '6B7280' })],
+          spacing: { after: 100 },
+          alignment: AlignmentType.CENTER,
+        }))
+
+        // Proposal ID
+        documentParagraphs.push(new Paragraph({
+          children: [new TextRun({ text: `Proposal ID: ${proposalId}`, size: 20, color: '6B7280' })],
+          spacing: { after: 400 },
+          alignment: AlignmentType.CENTER,
+        }))
+
+        // Separator
+        documentParagraphs.push(new Paragraph({
+          children: [new TextRun({ text: '═══════════════════════════════════════════════════', color: 'CCCCCC' })],
+          spacing: { after: 400 },
+          alignment: AlignmentType.CENTER,
+        }))
+
+        // Content
+        documentParagraphs.push(...markdownToParagraphs(generatedProposalContent))
+
+        // Footer separator
+        documentParagraphs.push(new Paragraph({ text: '', spacing: { before: 400, after: 200 } }))
+        documentParagraphs.push(new Paragraph({
+          children: [new TextRun({ text: '═══════════════════════════════════════════════════', color: 'CCCCCC' })],
+          spacing: { after: 200 },
+          alignment: AlignmentType.CENTER,
+        }))
+
+        // Footer
+        documentParagraphs.push(new Paragraph({
+          children: [new TextRun({ text: 'Generated by IGAD Proposal Writer - AI Assistant', size: 18, color: '9CA3AF', italics: true })],
+          alignment: AlignmentType.CENTER,
+        }))
+
+        const doc = new Document({
+          sections: [{
+            children: documentParagraphs,
+            properties: { page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
+          }],
+        })
+
+        const blob = await Packer.toBlob(doc)
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `ai_proposal_draft_${proposalId}_${new Date().toISOString().slice(0, 10)}.docx`
+        a.click()
+        URL.revokeObjectURL(url)
+      } else {
+        // For user-uploaded files, download from backend
+        await proposalService.downloadDraft(proposalId)
+      }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
       showError('Download Failed', error.response?.data?.message || 'Failed to download file')
     } finally {
       setIsDownloadingDraft(false)
     }
-  }, [proposalId, showError])
+  }, [proposalId, showError, draftIsAiGenerated, generatedProposalContent, markdownToParagraphs])
 
   const handleNewVersionSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

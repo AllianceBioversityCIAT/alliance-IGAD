@@ -328,6 +328,7 @@ class PromptService:
     async def list_prompts(
         self,
         section: Optional[ProposalSection] = None,
+        sub_section: Optional[str] = None,
         tag: Optional[str] = None,
         search: Optional[str] = None,
         route: Optional[str] = None,
@@ -340,8 +341,14 @@ class PromptService:
             # For MVP, we'll scan the table and filter in memory
             # In production, consider using GSIs for better performance
 
+            # Handle DynamoDB pagination
+            items = []
             response = self.table.scan()
-            items = response["Items"]
+            items.extend(response["Items"])
+
+            while "LastEvaluatedKey" in response:
+                response = self.table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
+                items.extend(response["Items"])
 
             # Filter out helper items
             items = [item for item in items if item["SK"].startswith("version#")]
@@ -349,6 +356,9 @@ class PromptService:
             # Apply filters
             if section:
                 items = [item for item in items if item.get("section") == section.value]
+
+            if sub_section:
+                items = [item for item in items if item.get("sub_section") == sub_section]
 
             if tag:
                 items = [item for item in items if tag in item.get("tags", [])]

@@ -322,27 +322,38 @@ export function Step3StructureWorkplan({
     }
   }, [])
 
+  // Track if we've applied initial sections from parent
+  const hasAppliedInitialSections = useRef(false)
+
   // Initialize selected sections when data becomes available
-  // Priority: initialSelectedSections (from parent/storage) > mandatory sections (fallback)
+  // Priority: initialSelectedSections (from parent/DynamoDB) > mandatory sections (fallback)
+  // This effect runs ONCE when initial data is available, not on every selection change
   useEffect(() => {
     if (!structureWorkplanAnalysis?.proposal_mandatory) {
       return
     }
 
-    // Always respect initialSelectedSections if provided
+    // Skip if already initialized to prevent overwriting user changes
+    if (hasAppliedInitialSections.current) {
+      return
+    }
+
+    // If parent provides initialSelectedSections (from DynamoDB), apply them once
     if (initialSelectedSections && initialSelectedSections.length > 0) {
       setSelectedSections(initialSelectedSections)
       setLastGeneratedSections(initialSelectedSections)
+      hasAppliedInitialSections.current = true
       setHasInitialized(true)
       return
     }
 
-    // Only use fallback to mandatory sections if not yet initialized
+    // Fallback to mandatory sections if no initial sections provided
     if (!hasInitialized) {
       const mandatorySectionTitles = structureWorkplanAnalysis.proposal_mandatory.map(
         s => s.section_title
       )
       setSelectedSections(mandatorySectionTitles)
+      hasAppliedInitialSections.current = true
       setHasInitialized(true)
     }
   }, [structureWorkplanAnalysis, initialSelectedSections, hasInitialized])

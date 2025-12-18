@@ -52,9 +52,55 @@ def get_current_admin_user(
     }
 
 
+@router.get("/", response_model=PromptListResponse)
+async def get_prompts(
+    section: Optional[ProposalSection] = Query(None),
+    sub_section: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_admin_user),
+):
+    """Get prompts - main endpoint for frontend"""
+    try:
+        return await prompt_service.list_prompts(
+            section=section,
+            sub_section=sub_section,
+            is_active=True,
+            limit=100,
+            offset=0,
+        )
+    except Exception as e:
+        logger.error(f"Error getting prompts: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get prompts",
+        )
+
+
+@router.get("/debug", response_model=PromptListResponse)
+async def debug_prompts(
+    section: Optional[ProposalSection] = Query(None),
+    sub_section: Optional[str] = Query(None),
+):
+    """Debug endpoint - no auth required"""
+    try:
+        return await prompt_service.list_prompts(
+            section=section,
+            sub_section=sub_section,
+            is_active=True,
+            limit=100,
+            offset=0,
+        )
+    except Exception as e:
+        logger.error(f"Error getting prompts: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get prompts: {str(e)}",
+        )
+
+
 @router.get("/list", response_model=PromptListResponse)
 async def list_prompts(
     section: Optional[ProposalSection] = Query(None),
+    sub_section: Optional[str] = Query(None),
     tag: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
     route: Optional[str] = Query(None),
@@ -67,6 +113,7 @@ async def list_prompts(
     try:
         return await prompt_service.list_prompts(
             section=section,
+            sub_section=sub_section,
             tag=tag,
             search=search,
             route=route,

@@ -259,13 +259,7 @@ export function Step1InformationConsolidation({
 
   /**
    * Load proposal data on component mount
-   * Priority: Backend documents > localStorage text inputs > proposal defaults
-   *
-   * This ensures we always have the most up-to-date file list from S3
-   * while preserving any unsaved text inputs from localStorage
-   *
-   * NOTE: Only depends on proposalId to prevent re-runs when proposal object changes
-   * (which happens frequently during data fetching)
+   * Loads uploaded documents from backend (source of truth for files)
    */
   useEffect(() => {
     if (!proposalId) {
@@ -273,119 +267,91 @@ export function Step1InformationConsolidation({
       return
     }
 
-    const loadProposalData = async () => {
+    const loadDocuments = async () => {
       setIsLoadingData(true)
 
       try {
-        // Check both localStorage keys:
-        // 1. draft_form_data - used by ProposalWriterPage (contains title + other text inputs)
-        // 2. proposal_draft_${proposalId} - used by Step1 (contains uploaded files)
-        const draftFormDataStr = localStorage.getItem('draft_form_data')
-        const step1StorageKey = `proposal_draft_${proposalId}`
-        const step1SavedData = localStorage.getItem(step1StorageKey)
+        // Load uploaded documents from backend (source of truth)
+        const { proposalService } =
+          await import('@/tools/proposal-writer/services/proposalService')
+        const documents = await proposalService.getUploadedDocuments(proposalId)
 
-        try {
-          // Load uploaded documents from backend (source of truth)
-          const { proposalService } =
-            await import('@/tools/proposal-writer/services/proposalService')
-          const documents = await proposalService.getUploadedDocuments(proposalId)
-
-          // Build initial textInputs from localStorage or proposal
-          let initialTextInputs: { [key: string]: string } = {}
-
-          // Priority: draft_form_data > step1 localStorage > proposal text_inputs
-          if (draftFormDataStr) {
-            try {
-              const parsed = JSON.parse(draftFormDataStr)
-              initialTextInputs = parsed.textInputs || {}
-            } catch {
-              // Silent fail - try next priority
-            }
-          } else if (step1SavedData) {
-            try {
-              const parsed = JSON.parse(step1SavedData)
-              initialTextInputs = parsed.textInputs || {}
-            } catch {
-              // Silent fail - try next priority
-            }
-          }
-
-          // If no localStorage data, use proposal text_inputs as fallback
-          if (Object.keys(initialTextInputs).length === 0 && proposal?.text_inputs) {
-            initialTextInputs = { ...proposal.text_inputs }
-          }
-
-          // Build formData from backend documents
-          const backendFormData = {
-            uploadedFiles: {
-              'rfp-document': documents.rfp_documents || [],
-              'concept-document': documents.concept_documents || [],
-              'reference-proposals': documents.reference_documents || [],
-              'supporting-docs': documents.supporting_documents || [],
-            },
-            textInputs: initialTextInputs,
-          }
-
-          setFormData(backendFormData)
-        } catch {
-          // Fallback to localStorage on error
-          if (draftFormDataStr) {
-            try {
-              const parsed = JSON.parse(draftFormDataStr)
-              setFormData(parsed)
-              return
-            } catch {
-              // Silent fail - use empty state
-            }
-          }
-
-          if (step1SavedData) {
-            try {
-              const parsed = JSON.parse(step1SavedData)
-              setFormData(parsed)
-              return
-            } catch {
-              // Silent fail - use empty state
-            }
-          }
-        }
+        // Update only uploadedFiles, preserve existing textInputs
+        setFormData(prev => ({
+          ...prev,
+          uploadedFiles: {
+            'rfp-document': documents.rfp_documents || [],
+            'concept-document': documents.concept_documents || [],
+            'reference-proposals': documents.reference_documents || [],
+            'supporting-docs': documents.supporting_documents || [],
+          },
+        }))
+      } catch {
+        // Silent fail - keep existing state
       } finally {
         setIsLoadingData(false)
       }
     }
 
-    loadProposalData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadDocuments()
   }, [proposalId, setFormData])
 
   /**
-   * Fill in missing text inputs from proposal when it loads
-   * This handles the case where proposal loads after the initial effect
-   * Uses a ref to track if we've already initialized to prevent re-runs
+   * Load text inputs from DynamoDB when proposal data is available
+   * This is the PRIMARY source for title and other text inputs
+   * Only fills in fields that are empty in current state
    */
-  const hasInitializedFromProposal = useRef(false)
+  const hasLoadedFromDynamoDB = useRef(false)
 
   useEffect(() => {
-    if (!proposalId || !proposal?.text_inputs || hasInitializedFromProposal.current) {
+    // Wait for proposal to finish loading from DynamoDB
+    if (!proposalId || isLoading || !proposal) {
       return
     }
 
-    // Only update if formData doesn't have a title but proposal does
-    // Use functional update to get current state without adding formData to dependencies
+    // Only run once per proposal load
+    if (hasLoadedFromDynamoDB.current) {
+      return
+    }
+
+    const proposalTextInputs = proposal.text_inputs || {}
+
+    // Check if there's any data to load
+    if (Object.keys(proposalTextInputs).length === 0) {
+      hasLoadedFromDynamoDB.current = true
+      return
+    }
+
+    // Merge DynamoDB data with current state (DynamoDB fills empty fields)
     setFormData(prev => {
-      if (!prev.textInputs['proposal-title'] && proposal.text_inputs['proposal-title']) {
-        hasInitializedFromProposal.current = true
+      const newTextInputs = { ...prev.textInputs }
+      let hasChanges = false
+
+      Object.entries(proposalTextInputs).forEach(([key, value]) => {
+        // Only fill if current value is empty and DynamoDB has a value
+        if (!newTextInputs[key] && value) {
+          newTextInputs[key] = value
+          hasChanges = true
+        }
+      })
+
+      if (hasChanges) {
+        hasLoadedFromDynamoDB.current = true
         return {
           ...prev,
-          textInputs: {
-            ...prev.textInputs,
-            ...proposal.text_inputs,
-          },
+          textInputs: newTextInputs,
         }
       }
+
+      hasLoadedFromDynamoDB.current = true
       return prev
     })
-  }, [proposal?.text_inputs, proposalId, setFormData])
+  }, [proposalId, proposal, isLoading, setFormData])
+
+  // Reset ref when proposalId changes (navigating to different proposal)
+  useEffect(() => {
+    hasLoadedFromDynamoDB.current = false
+  }, [proposalId])
 
   /**
    * Auto-save formData to localStorage on changes

@@ -709,29 +709,22 @@ export function ProposalWriterPage() {
   useEffect(() => {
     const loadStep3Data = async () => {
       if (proposalId && currentStep === 3) {
-        // Load selected sections from localStorage first
-        const cachedSections = localStorage.getItem(`proposal_selected_sections_${proposalId}`)
-        if (cachedSections && !selectedSections) {
-          try {
-            const parsed = JSON.parse(cachedSections)
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setSelectedSections(parsed)
-            }
-          } catch {
-            // Invalid cache, ignore
-          }
-        }
-
-        // Load generated content if template was previously generated
-        if (proposalTemplate && !generatedProposalContent) {
+        // Load generated content and sections if template was previously generated
+        // DynamoDB is the source of truth for sections used in generation
+        if (proposalTemplate) {
           try {
             const status = await proposalService.getProposalTemplateStatus(proposalId)
             if (status.status === 'completed' && status.data?.generated_proposal) {
-              setGeneratedProposalContent(status.data.generated_proposal)
-              // Also load selected sections from the generation metadata if available
+              // Load the generated content
+              if (!generatedProposalContent) {
+                setGeneratedProposalContent(status.data.generated_proposal)
+              }
+
+              // Load selected sections from DynamoDB metadata (source of truth)
               const savedSections = status.data.metadata?.selected_sections
-              if (savedSections && Array.isArray(savedSections) && !selectedSections) {
+              if (savedSections && Array.isArray(savedSections) && savedSections.length > 0) {
                 setSelectedSections(savedSections)
+                // Update localStorage cache
                 localStorage.setItem(
                   `proposal_selected_sections_${proposalId}`,
                   JSON.stringify(savedSections)
@@ -739,14 +732,38 @@ export function ProposalWriterPage() {
               }
             }
           } catch {
-            // No generated content found, that's ok
+            // No generated content found, try localStorage as fallback
+            const cachedSections = localStorage.getItem(`proposal_selected_sections_${proposalId}`)
+            if (cachedSections) {
+              try {
+                const parsed = JSON.parse(cachedSections)
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  setSelectedSections(parsed)
+                }
+              } catch {
+                // Invalid cache, ignore
+              }
+            }
+          }
+        } else {
+          // No template generated yet, load from localStorage if available
+          const cachedSections = localStorage.getItem(`proposal_selected_sections_${proposalId}`)
+          if (cachedSections) {
+            try {
+              const parsed = JSON.parse(cachedSections)
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setSelectedSections(parsed)
+              }
+            } catch {
+              // Invalid cache, ignore
+            }
           }
         }
       }
     }
 
     loadStep3Data()
-  }, [proposalId, currentStep, proposalTemplate, generatedProposalContent, selectedSections])
+  }, [proposalId, currentStep, proposalTemplate, generatedProposalContent])
 
   // Save selected sections to localStorage when they change
   const handleSelectedSectionsChange = useCallback(
@@ -1914,6 +1931,7 @@ export function ProposalWriterPage() {
               draftFeedbackAnalysis?.draft_feedback_analysis || draftFeedbackAnalysis
             }
             draftIsAiGenerated={draftIsAiGenerated}
+            generatedProposalContent={generatedProposalContent}
             onFeedbackAnalyzed={analysis => {
               // Removed console.log'✅ Draft feedback analysis received:', analysis)
               setDraftFeedbackAnalysis(analysis)
