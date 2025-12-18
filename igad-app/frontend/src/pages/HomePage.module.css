@@ -77,10 +77,13 @@
 
 .heroLogo {
   width: 44px;
-  height: 43px;
-  border-radius: 42px;
-  object-fit: cover;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: contain;
   flex-shrink: 0;
+  background: #ffffff;
+  padding: 2px;
+  box-sizing: border-box;
 }
 
 .tagline {
@@ -347,33 +350,182 @@
    =================================== */
 
 .footer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 16px;
-  gap: 8px;
   width: 100%;
   background: #016630;
   margin-top: auto;
+  padding: 0;
 }
 
-.footerText {
+.footerContainer {
+  max-width: 1562px;
+  margin: 0 auto;
+  padding: 40px 16px 24px;
+}
+
+.footerContent {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(220, 252, 231, 0.2);
+}
+
+.footerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footerLogoContainer {
+  margin-bottom: 12px;
+}
+
+.footerLogoLink {
+  display: inline-block;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.footerLogoLink:hover {
+  opacity: 0.9;
+}
+
+.footerLogo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.footerSectionTitle {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 24px;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.footerSectionText {
   font-family: inherit;
   font-weight: 400;
-  font-size: 13px;
-  line-height: 18px;
-  text-align: center;
+  font-size: 14px;
+  line-height: 20px;
   color: #dcfce7;
   margin: 0;
 }
 
-.footerSubtext {
+.footerLinks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footerLinks li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.footerLink {
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: #dcfce7;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease;
+}
+
+.footerLink:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.footerLinkDisabled {
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: #9ca3af;
+  text-decoration: none;
+}
+
+.externalIcon {
+  color: #b9f8cf;
+  flex-shrink: 0;
+}
+
+.comingSoonBadge {
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 16px;
+  color: #016630;
+  background: #dcfce7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.socialLinks {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.socialLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(220, 252, 231, 0.1);
+  color: #dcfce7;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.socialLink:hover {
+  background: rgba(220, 252, 231, 0.2);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.footerContact {
+  margin: 0;
+}
+
+.footerBottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.footerCopyright {
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 18px;
+  color: #dcfce7;
+  margin: 0;
+}
+
+.footerTagline {
   font-family: inherit;
   font-weight: 400;
   font-size: 12px;
   line-height: 16px;
-  text-align: center;
   color: #b9f8cf;
   margin: 0;
 }
@@ -407,7 +559,8 @@
 
   .heroLogo {
     width: 48px;
-    height: 47px;
+    height: 48px;
+    padding: 3px;
   }
 
   .tagline {
@@ -477,12 +630,42 @@
     margin: 0 0 20px 0;
   }
 
-  .footerText {
+  .footerContainer {
+    padding: 48px 30px 32px;
+  }
+
+  .footerContent {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+    margin-bottom: 40px;
+    padding-bottom: 40px;
+  }
+
+  .footerLogo {
+    height: 44px;
+  }
+
+  .footerSectionTitle {
+    font-size: 17px;
+    line-height: 26px;
+  }
+
+  .footerSectionText {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .footerLink {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .footerCopyright {
     font-size: 14px;
     line-height: 20px;
   }
 
-  .footerSubtext {
+  .footerTagline {
     font-size: 13px;
     line-height: 18px;
   }
@@ -513,8 +696,9 @@
   }
 
   .heroLogo {
-    width: 53px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
+    padding: 3px;
   }
 
   .tagline {
@@ -591,16 +775,55 @@
     min-height: 44px; /* Maintain touch-friendly size */
   }
 
-  .footer {
-    padding: 16px;
+  .footerContainer {
+    padding: 56px 40px 40px;
   }
 
-  .footerText {
-    font-size: 16px;
+  .footerContent {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 48px;
+    margin-bottom: 48px;
+    padding-bottom: 48px;
+  }
+
+  .footerLogo {
+    height: 48px;
+  }
+
+  .footerSectionTitle {
+    font-size: 18px;
+    line-height: 28px;
+    margin-bottom: 12px;
+  }
+
+  .footerSectionText {
+    font-size: 15px;
     line-height: 24px;
   }
 
-  .footerSubtext {
+  .footerLink {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .socialLink {
+    width: 40px;
+    height: 40px;
+  }
+
+  .footerBottom {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+  }
+
+  .footerCopyright {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .footerTagline {
     font-size: 14px;
     line-height: 20px;
   }
@@ -761,7 +984,9 @@
   }
 
   .heroLogo {
-    height: 30px;
+    width: 36px;
+    height: 36px;
+    padding: 2px;
   }
 
   .tagline {

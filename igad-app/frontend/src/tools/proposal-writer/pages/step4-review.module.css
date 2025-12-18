@@ -174,11 +174,35 @@
   gap: 2px;
 }
 
+.fileNameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .fileName {
   font-size: 16px;
   font-weight: 500;
   color: #111827;
   margin: 0;
+}
+
+.aiGeneratedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+  border: 1px solid #C7D2FE;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4F46E5;
+}
+
+.aiGeneratedBadge svg {
+  color: #6366F1;
 }
 
 .fileSize {
@@ -203,6 +227,35 @@
 
 .removeButton:hover {
   background: rgba(231, 0, 11, 0.1);
+}
+
+.fileActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.downloadFileButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #00A63E;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.downloadFileButton:hover {
+  background: rgba(0, 166, 62, 0.1);
+  border-color: #00A63E;
+}
+
+.downloadFileButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .uploadNewVersionButton {
@@ -1510,5 +1563,157 @@
   .skeletonStatCircle {
     width: 80px;
     height: 80px;
+  }
+}
+
+/* ============================================
+   READY TO ANALYZE STATE
+   ============================================ */
+
+.readyToAnalyzeCard {
+  background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+  border: 1px solid #DDD6FE;
+  border-radius: 14px;
+  padding: 28px;
+}
+
+.readyToAnalyzeHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.readyToAnalyzeIconWrapper {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.readyToAnalyzeIconWrapper svg {
+  color: #FFFFFF;
+}
+
+.readyToAnalyzeInfo {
+  flex: 1;
+}
+
+.readyToAnalyzeTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #5B21B6;
+  margin: 0 0 8px 0;
+}
+
+.readyToAnalyzeDescription {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6D28D9;
+  margin: 0;
+}
+
+.analysisFeatures {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 20px;
+  background: #FFFFFF;
+  border: 1px solid #E9D5FF;
+  border-radius: 10px;
+  margin-bottom: 24px;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #5B21B6;
+}
+
+.featureItem svg {
+  color: #8B5CF6;
+  flex-shrink: 0;
+}
+
+.readyToAnalyzeActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.startAnalysisButtonLarge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+  min-width: 220px;
+}
+
+.startAnalysisButtonLarge:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.45);
+  transform: translateY(-2px);
+}
+
+.startAnalysisButtonLarge:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.estimatedTime {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #7C3AED;
+  margin: 0;
+}
+
+.estimatedTime svg {
+  color: #8B5CF6;
+}
+
+/* Responsive for ready to analyze */
+@media (max-width: 768px) {
+  .readyToAnalyzeCard {
+    padding: 20px;
+  }
+
+  .readyToAnalyzeHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .readyToAnalyzeTitle {
+    font-size: 18px;
+  }
+
+  .analysisFeatures {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .startAnalysisButtonLarge {
+    width: 100%;
+    padding: 14px 24px;
   }
 }

@@ -250,6 +250,9 @@ export function Step1InformationConsolidation({
   /** Ref to track if polling is active */
   const vectorizationPollRef = useRef<NodeJS.Timeout | null>(null)
 
+  /** Ref for debouncing text input saves to backend */
+  const textSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   // ============================================================================
   // EFFECTS - Data Loading
   // ============================================================================
@@ -308,14 +311,9 @@ export function Step1InformationConsolidation({
           }
 
           // If no localStorage data, use proposal text_inputs as fallback
-          // Removed console.log📋 Step1 - proposal available:', !!proposal)
-          // Removed console.log📋 Step1 - proposal.text_inputs:', proposal?.text_inputs)
-          // Removed console.log📋 Step1 - initialTextInputs before proposal:', initialTextInputs)
           if (Object.keys(initialTextInputs).length === 0 && proposal?.text_inputs) {
-            // Removed console.log✅ Step1 - Using proposal.text_inputs as fallback')
             initialTextInputs = { ...proposal.text_inputs }
           }
-          // Removed console.log📋 Step1 - Final initialTextInputs:', initialTextInputs)
 
           // Build formData from backend documents
           const backendFormData = {
@@ -357,33 +355,37 @@ export function Step1InformationConsolidation({
     }
 
     loadProposalData()
-  }, [proposalId, setFormData, proposal?.text_inputs])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposalId, setFormData])
 
   /**
    * Fill in missing text inputs from proposal when it loads
    * This handles the case where proposal loads after the initial effect
+   * Uses a ref to track if we've already initialized to prevent re-runs
    */
+  const hasInitializedFromProposal = useRef(false)
+
   useEffect(() => {
-    if (!proposalId || !proposal?.text_inputs) {
+    if (!proposalId || !proposal?.text_inputs || hasInitializedFromProposal.current) {
       return
     }
 
-    // Removed console.log📋 Step1 - Proposal loaded, checking if text_inputs need updating')
-    // Removed console.log📋 Step1 - Current formData.textInputs:', formData.textInputs)
-    // Removed console.log📋 Step1 - Proposal text_inputs:', proposal.text_inputs)
-
     // Only update if formData doesn't have a title but proposal does
-    if (!formData.textInputs['proposal-title'] && proposal.text_inputs['proposal-title']) {
-      // Removed console.log✅ Step1 - Updating formData with proposal.text_inputs')
-      setFormData(prev => ({
-        ...prev,
-        textInputs: {
-          ...prev.textInputs,
-          ...proposal.text_inputs,
-        },
-      }))
-    }
-  }, [proposal?.text_inputs, proposalId, formData.textInputs, setFormData])
+    // Use functional update to get current state without adding formData to dependencies
+    setFormData(prev => {
+      if (!prev.textInputs['proposal-title'] && proposal.text_inputs['proposal-title']) {
+        hasInitializedFromProposal.current = true
+        return {
+          ...prev,
+          textInputs: {
+            ...prev.textInputs,
+            ...proposal.text_inputs,
+          },
+        }
+      }
+      return prev
+    })
+  }, [proposal?.text_inputs, proposalId, setFormData])
 
   /**
    * Auto-save formData to localStorage on changes
@@ -471,6 +473,18 @@ export function Step1InformationConsolidation({
       }
     }
   }, [hasVectorizingFiles, pollVectorizationStatus])
+
+  /**
+   * Cleanup text save debounce timeout on unmount
+   */
+  useEffect(() => {
+    return () => {
+      if (textSaveTimeoutRef.current) {
+        clearTimeout(textSaveTimeoutRef.current)
+        textSaveTimeoutRef.current = null
+      }
+    }
+  }, [])
 
   /**
    * Notify parent component when vectorization state changes
@@ -1344,27 +1358,37 @@ export function Step1InformationConsolidation({
    * @param section - Text input section identifier
    * @param value - New text value
    */
-  const handleTextChange = async (section: string, value: string) => {
+  const handleTextChange = (section: string, value: string) => {
     const updatedInputs = {
       ...formData.textInputs,
       [section]: value,
     }
 
+    // Update local state immediately for responsive UI
     setFormData(prev => ({
       ...prev,
       textInputs: updatedInputs,
     }))
 
-    // Auto-save to backend if proposal exists
+    // Debounce auto-save to backend (500ms) to prevent excessive API calls
+    // This prevents re-renders caused by React Query cache updates on every keystroke
     if (proposalId) {
-      try {
-        await updateFormData({
-          uploadedFiles: formData.uploadedFiles,
-          textInputs: updatedInputs,
-        })
-      } catch (error) {
-        // Silent fail - localStorage will preserve the change
+      // Clear any pending save
+      if (textSaveTimeoutRef.current) {
+        clearTimeout(textSaveTimeoutRef.current)
       }
+
+      // Schedule new save after 500ms of no typing
+      textSaveTimeoutRef.current = setTimeout(async () => {
+        try {
+          await updateFormData({
+            uploadedFiles: formData.uploadedFiles,
+            textInputs: updatedInputs,
+          })
+        } catch (error) {
+          // Silent fail - localStorage will preserve the change
+        }
+      }, 500)
     }
   }
 

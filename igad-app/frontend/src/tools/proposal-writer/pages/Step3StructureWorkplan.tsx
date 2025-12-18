@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Sparkles,
   Check,
@@ -12,6 +12,7 @@ import {
   Loader2,
   AlertTriangle,
 } from 'lucide-react'
+import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType } from 'docx'
 import styles from './step3-structure.module.css'
 import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
@@ -211,6 +212,71 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
 
 // Removed unused PROPOSAL_SECTIONS constant - was not being used
 
+/**
+ * Step3Skeleton Component
+ * Displays skeleton loading state while data is being fetched
+ */
+function Step3Skeleton() {
+  return (
+    <div className={styles.mainContent}>
+      {/* Header Skeleton */}
+      <div className={styles.stepHeader}>
+        <div className={`${styles.skeleton} ${styles.skeletonTitle}`}></div>
+        <div className={`${styles.skeleton} ${styles.skeletonText}`}></div>
+      </div>
+
+      <div className={styles.step3Container}>
+        {/* Narrative Overview Card Skeleton */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <div className={styles.sectionHeader}>
+              <div className={`${styles.skeleton}`} style={{ width: 24, height: 24, borderRadius: 6 }}></div>
+              <div>
+                <div className={`${styles.skeleton} ${styles.skeletonCardTitle}`}></div>
+                <div className={`${styles.skeleton} ${styles.skeletonTextShort}`}></div>
+              </div>
+            </div>
+          </div>
+          <div className={`${styles.skeleton} ${styles.skeletonNarrativeBox}`}></div>
+        </div>
+
+        {/* Sections Card Skeleton */}
+        <div className={styles.sectionsCard}>
+          <div className={styles.sectionsCardInner}>
+            <div className={styles.sectionHeader}>
+              <div className={`${styles.skeleton}`} style={{ width: 24, height: 24, borderRadius: 6 }}></div>
+              <div>
+                <div className={`${styles.skeleton} ${styles.skeletonCardTitle}`}></div>
+                <div className={`${styles.skeleton} ${styles.skeletonTextShort}`}></div>
+              </div>
+            </div>
+
+            <div className={`${styles.skeleton} ${styles.skeletonSelectionCount}`}></div>
+
+            <div className={styles.skeletonSections}>
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className={`${styles.skeleton} ${styles.skeletonSectionItem}`}></div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Generate Template Section Skeleton */}
+        <div className={styles.card}>
+          <div className={styles.sectionHeader}>
+            <div className={`${styles.skeleton}`} style={{ width: 20, height: 20, borderRadius: 6 }}></div>
+            <div>
+              <div className={`${styles.skeleton} ${styles.skeletonCardTitle}`}></div>
+              <div className={`${styles.skeleton} ${styles.skeletonTextShort}`}></div>
+            </div>
+          </div>
+          <div className={`${styles.skeleton} ${styles.skeletonGenerateButton}`}></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Step3StructureWorkplan({
   proposalId,
   structureWorkplanAnalysis,
@@ -241,23 +307,45 @@ export function Step3StructureWorkplan({
     initialSelectedSections || []
   )
 
-  // Initialize selected sections when data becomes available (only if not already initialized from props)
+  // Ref for polling timeout to allow cleanup
+  const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isPollingRef = useRef<boolean>(false)
+
+  // Cleanup polling on unmount
   useEffect(() => {
-    if (structureWorkplanAnalysis?.proposal_mandatory && !hasInitialized) {
-      // If we have initial sections from parent (loaded from storage), use those
-      if (initialSelectedSections && initialSelectedSections.length > 0) {
-        setSelectedSections(initialSelectedSections)
-        setLastGeneratedSections(initialSelectedSections)
-      } else {
-        // Otherwise default to mandatory sections
-        const mandatorySectionTitles = structureWorkplanAnalysis.proposal_mandatory.map(
-          s => s.section_title
-        )
-        setSelectedSections(mandatorySectionTitles)
+    return () => {
+      isPollingRef.current = false
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current)
+        pollingTimeoutRef.current = null
       }
+    }
+  }, [])
+
+  // Initialize selected sections when data becomes available
+  // Priority: initialSelectedSections (from parent/storage) > mandatory sections (fallback)
+  useEffect(() => {
+    if (!structureWorkplanAnalysis?.proposal_mandatory) {
+      return
+    }
+
+    // Always respect initialSelectedSections if provided
+    if (initialSelectedSections && initialSelectedSections.length > 0) {
+      setSelectedSections(initialSelectedSections)
+      setLastGeneratedSections(initialSelectedSections)
+      setHasInitialized(true)
+      return
+    }
+
+    // Only use fallback to mandatory sections if not yet initialized
+    if (!hasInitialized) {
+      const mandatorySectionTitles = structureWorkplanAnalysis.proposal_mandatory.map(
+        s => s.section_title
+      )
+      setSelectedSections(mandatorySectionTitles)
       setHasInitialized(true)
     }
-  }, [structureWorkplanAnalysis, hasInitialized, initialSelectedSections])
+  }, [structureWorkplanAnalysis, initialSelectedSections, hasInitialized])
 
   // Update state when initialGeneratedContent changes (loaded from parent)
   useEffect(() => {
@@ -266,14 +354,6 @@ export function Step3StructureWorkplan({
       setGenerationStatus('completed')
     }
   }, [initialGeneratedContent, generatedProposal])
-
-  // Update state when initialSelectedSections changes (loaded from parent)
-  useEffect(() => {
-    if (initialSelectedSections && initialSelectedSections.length > 0 && hasInitialized) {
-      setSelectedSections(initialSelectedSections)
-      setLastGeneratedSections(initialSelectedSections)
-    }
-  }, [initialSelectedSections, hasInitialized])
 
   // Notify parent when selected sections change
   useEffect(() => {
@@ -311,10 +391,25 @@ export function Step3StructureWorkplan({
   const pollTemplateStatus = useCallback(async () => {
     if (!proposalId) return
 
+    // Prevent multiple polling instances
+    if (isPollingRef.current) {
+      console.log('[Step3] Polling already in progress, skipping')
+      return
+    }
+
     let attempts = 0
     const maxAttempts = 120 // 6 minutes max (3 second intervals)
 
+    // Mark polling as active
+    isPollingRef.current = true
+
     const poll = async () => {
+      // Check if polling was cancelled (component unmounted or new generation started)
+      if (!isPollingRef.current) {
+        console.log('[Step3] Polling cancelled, stopping')
+        return
+      }
+
       attempts++
       try {
         const status = await proposalService.getProposalTemplateStatus(proposalId)
@@ -326,6 +421,8 @@ export function Step3StructureWorkplan({
           setIsGenerating(false)
           // Save the sections used for this generation
           setLastGeneratedSections([...selectedSections])
+          // Mark polling as complete
+          isPollingRef.current = false
 
           // Notify parent about the generated content
           if (onGeneratedContentChange) {
@@ -340,23 +437,28 @@ export function Step3StructureWorkplan({
           setGenerationError(status.error || 'Generation failed')
           setGenerationStatus('failed')
           setIsGenerating(false)
+          isPollingRef.current = false
         } else if (attempts >= maxAttempts) {
           setGenerationError('Generation timeout. Please try again.')
           setGenerationStatus('failed')
           setIsGenerating(false)
+          isPollingRef.current = false
         } else {
-          // Continue polling
-          setTimeout(poll, 3000)
+          // Continue polling only if still active
+          if (isPollingRef.current) {
+            pollingTimeoutRef.current = setTimeout(poll, 3000)
+          }
         }
       } catch (error) {
         setGenerationError('Failed to check generation status')
         setGenerationStatus('failed')
         setIsGenerating(false)
+        isPollingRef.current = false
       }
     }
 
     poll()
-  }, [proposalId, onTemplateGenerated, onGeneratedContentChange])
+  }, [proposalId, onTemplateGenerated, onGeneratedContentChange, selectedSections])
 
   const handleGenerateTemplate = async (e?: React.MouseEvent) => {
     // Prevent default behavior and stop propagation
@@ -374,6 +476,13 @@ export function Step3StructureWorkplan({
     if (selectedSections.length === 0) {
       alert('Please select at least one section to include in the template.')
       return
+    }
+
+    // Stop any existing polling before starting new generation
+    isPollingRef.current = false
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current)
+      pollingTimeoutRef.current = null
     }
 
     setIsGenerating(true)
@@ -419,79 +528,272 @@ export function Step3StructureWorkplan({
     }
   }
 
-  // Download generated proposal as HTML
-  const handleDownloadGeneratedProposal = () => {
+  // Download generated proposal as DOCX
+  const [isDownloading, setIsDownloading] = useState(false)
+
+  /**
+   * Convert markdown content to docx Paragraph array
+   */
+  const markdownToParagraphs = useCallback((markdown: string): Paragraph[] => {
+    const paragraphs: Paragraph[] = []
+    const lines = markdown.split('\n')
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      const trimmedLine = line.trim()
+
+      // Skip empty lines but add spacing
+      if (!trimmedLine) {
+        continue
+      }
+
+      // Headers
+      if (trimmedLine.startsWith('#### ')) {
+        paragraphs.push(
+          new Paragraph({
+            text: trimmedLine.slice(5),
+            heading: HeadingLevel.HEADING_4,
+            spacing: { before: 200, after: 100 },
+          })
+        )
+      } else if (trimmedLine.startsWith('### ')) {
+        paragraphs.push(
+          new Paragraph({
+            text: trimmedLine.slice(4),
+            heading: HeadingLevel.HEADING_3,
+            spacing: { before: 240, after: 120 },
+          })
+        )
+      } else if (trimmedLine.startsWith('## ')) {
+        paragraphs.push(
+          new Paragraph({
+            text: trimmedLine.slice(3),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 280, after: 140 },
+          })
+        )
+      } else if (trimmedLine.startsWith('# ')) {
+        paragraphs.push(
+          new Paragraph({
+            text: trimmedLine.slice(2),
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 320, after: 160 },
+          })
+        )
+      }
+      // Bullet points
+      else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+        const text = trimmedLine.slice(2).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: '• ' }),
+              new TextRun({ text }),
+            ],
+            spacing: { before: 60, after: 60 },
+            indent: { left: 720 }, // 0.5 inch indent
+          })
+        )
+      }
+      // Numbered lists
+      else if (/^\d+\.\s/.test(trimmedLine)) {
+        const match = trimmedLine.match(/^(\d+\.)\s(.*)$/)
+        if (match) {
+          const text = match[2].replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: match[1] + ' ' }),
+                new TextRun({ text }),
+              ],
+              spacing: { before: 60, after: 60 },
+              indent: { left: 720 },
+            })
+          )
+        }
+      }
+      // Regular paragraphs - handle bold text
+      else {
+        const children: TextRun[] = []
+        // Parse bold text (**text**)
+        const parts = trimmedLine.split(/(\*\*[^*]+\*\*)/g)
+        for (const part of parts) {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            children.push(new TextRun({ text: part.slice(2, -2), bold: true }))
+          } else if (part) {
+            children.push(new TextRun({ text: part }))
+          }
+        }
+        if (children.length > 0) {
+          paragraphs.push(
+            new Paragraph({
+              children,
+              spacing: { before: 120, after: 120 },
+            })
+          )
+        }
+      }
+    }
+
+    return paragraphs
+  }, [])
+
+  const handleDownloadGeneratedProposal = async () => {
     if (!generatedProposal) {
       return
     }
 
-    // Convert markdown to HTML (simple conversion)
-    const htmlContent = generatedProposal
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      .replace(/^- (.*$)/gim, '<li>$1</li>')
-      .replace(/\n/g, '<br/>')
+    setIsDownloading(true)
+    try {
+      const currentDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
 
-    const fullHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>AI Generated Proposal Draft</title>
-  <style>
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; line-height: 1.8; max-width: 900px; margin: 40px auto; padding: 20px; color: #1f2937; }
-    h1 { color: #166534; border-bottom: 3px solid #166534; padding-bottom: 15px; margin-top: 40px; }
-    h2 { color: #1f2937; margin-top: 35px; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; }
-    h3 { color: #374151; margin-top: 25px; }
-    p { margin: 15px 0; }
-    strong { color: #1f2937; }
-    ul { margin: 15px 0; padding-left: 30px; }
-    li { margin: 8px 0; }
-    code { background-color: #f3f4f6; padding: 3px 8px; border-radius: 4px; font-size: 0.9em; }
-    .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
-    .footer { text-align: center; margin-top: 60px; padding-top: 20px; border-top: 2px solid #e5e7eb; color: #6b7280; font-size: 0.9em; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1 style="border: none; margin: 0;">AI Generated Proposal Draft</h1>
-    <p style="color: #6b7280;">Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-  </div>
-  ${htmlContent}
-  <div class="footer">
-    <p>Generated by IGAD Proposal Writer - AI Assistant</p>
-  </div>
-</body>
-</html>`
+      // Build document paragraphs
+      const documentParagraphs: Paragraph[] = []
 
-    const blob = new Blob([fullHtml], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ai_proposal_draft_${proposalId}_${new Date().toISOString().slice(0, 10)}.html`
-    a.click()
-    URL.revokeObjectURL(url)
+      // Add title
+      documentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'AI Generated Proposal Draft',
+              bold: true,
+              size: 32,
+              color: '166534',
+            }),
+          ],
+          spacing: { after: 200 },
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Add generation date
+      documentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Generated: ${currentDate}`,
+              size: 20,
+              color: '6B7280',
+            }),
+          ],
+          spacing: { after: 100 },
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Add proposal ID if available
+      if (proposalId) {
+        documentParagraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Proposal ID: ${proposalId}`,
+                size: 20,
+                color: '6B7280',
+              }),
+            ],
+            spacing: { after: 400 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
+      }
+
+      // Add separator
+      documentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '═══════════════════════════════════════════════════',
+              color: 'CCCCCC',
+            }),
+          ],
+          spacing: { after: 400 },
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Add content sections
+      const contentSections = markdownToParagraphs(generatedProposal)
+      documentParagraphs.push(...contentSections)
+
+      // Add footer separator
+      documentParagraphs.push(
+        new Paragraph({
+          text: '',
+          spacing: { before: 400, after: 200 },
+        })
+      )
+
+      documentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '═══════════════════════════════════════════════════',
+              color: 'CCCCCC',
+            }),
+          ],
+          spacing: { after: 200 },
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Add footer
+      documentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'Generated by IGAD Proposal Writer - AI Assistant',
+              size: 18,
+              color: '9CA3AF',
+              italics: true,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Create document
+      const doc = new Document({
+        sections: [
+          {
+            children: documentParagraphs,
+            properties: {
+              page: {
+                margin: {
+                  top: 1440,
+                  right: 1440,
+                  bottom: 1440,
+                  left: 1440,
+                },
+              },
+            },
+          },
+        ],
+      })
+
+      // Generate blob and download
+      const blob = await Packer.toBlob(doc)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `ai_proposal_draft_${proposalId || 'draft'}_${new Date().toISOString().slice(0, 10)}.docx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to download template:', error)
+      alert('Failed to download document. Please try again.')
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
-  // Show loading state if no analysis yet
+  // Show skeleton loading state if no analysis yet
   if (!structureWorkplanAnalysis) {
-    return (
-      <div className={styles.mainContent}>
-        <div className={styles.stepHeader}>
-          <h1 className={styles.stepMainTitle}>
-            Step 3: Structure
-            <span className={`${styles.stepPhaseBadge} ${styles.stepPhaseBadgeProposal}`}>
-              Proposal
-            </span>
-          </h1>
-          <p className={styles.stepMainDescription}>Loading proposal structure and workplan...</p>
-        </div>
-      </div>
-    )
+    return <Step3Skeleton />
   }
 
   return (
@@ -706,14 +1008,16 @@ export function Step3StructureWorkplan({
                   type="button"
                   className={styles.downloadButton}
                   onClick={handleDownloadGeneratedProposal}
+                  disabled={isDownloading}
                 >
                   <Download size={16} />
-                  Download Full Draft (HTML)
+                  {isDownloading ? 'Downloading...' : 'Download Full Draft (DOCX)'}
                 </button>
                 <button
                   type="button"
                   className={styles.regenerateButton}
                   onClick={e => handleGenerateTemplate(e)}
+                  disabled={isDownloading}
                 >
                   <Sparkles size={16} />
                   Regenerate
@@ -748,8 +1052,9 @@ export function Step3StructureWorkplan({
                   type="button"
                   className={styles.linkButton}
                   onClick={handleDownloadGeneratedProposal}
+                  disabled={isDownloading}
                 >
-                  Download Previous Draft
+                  {isDownloading ? 'Downloading...' : 'Download Previous Draft (DOCX)'}
                 </button>
               </div>
             </div>

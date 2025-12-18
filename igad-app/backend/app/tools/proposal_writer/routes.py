@@ -2154,6 +2154,165 @@ async def get_proposal_template_status(proposal_id: str, user=Depends(get_curren
         raise HTTPException(status_code=500, detail=f"Failed to check status: {str(e)}")
 
 
+@router.post("/{proposal_id}/use-generated-template-as-draft")
+async def use_generated_template_as_draft(
+    proposal_id: str, user=Depends(get_current_user)
+):
+    """
+    Copy the AI-generated proposal template to the draft proposal location as DOCX.
+
+    This endpoint:
+    1. Verifies the generated template exists (proposal_template_content)
+    2. Converts Markdown content to DOCX format
+    3. Uploads to draft_proposal/ in S3
+    4. Updates uploaded_files["draft-proposal"] in DynamoDB
+    5. Sets draft_is_ai_generated flag
+
+    Returns:
+    - success: boolean
+    - filename: Name of the created draft file
+    - message: Status message
+    """
+    import io
+    import re
+    from docx import Document
+    from docx.shared import Pt, Inches
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    def markdown_to_docx(markdown_content: str) -> bytes:
+        """Convert markdown content to DOCX format."""
+        doc = Document()
+
+        # Set default font
+        style = doc.styles['Normal']
+        font = style.font
+        font.name = 'Calibri'
+        font.size = Pt(11)
+
+        lines = markdown_content.split('\n')
+        i = 0
+
+        while i < len(lines):
+            line = lines[i].strip()
+
+            # Skip empty lines
+            if not line:
+                i += 1
+                continue
+
+            # Headers
+            if line.startswith('# '):
+                p = doc.add_heading(line[2:], level=1)
+            elif line.startswith('## '):
+                p = doc.add_heading(line[3:], level=2)
+            elif line.startswith('### '):
+                p = doc.add_heading(line[4:], level=3)
+            elif line.startswith('#### '):
+                p = doc.add_heading(line[5:], level=4)
+            # Bullet points
+            elif line.startswith('- ') or line.startswith('* '):
+                text = line[2:]
+                # Handle bold and italic in bullet points
+                text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)  # Remove bold markers
+                text = re.sub(r'\*(.+?)\*', r'\1', text)  # Remove italic markers
+                p = doc.add_paragraph(text, style='List Bullet')
+            # Numbered lists
+            elif re.match(r'^\d+\.\s', line):
+                text = re.sub(r'^\d+\.\s', '', line)
+                text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+                text = re.sub(r'\*(.+?)\*', r'\1', text)
+                p = doc.add_paragraph(text, style='List Number')
+            # Regular paragraphs
+            else:
+                # Handle bold text
+                text = re.sub(r'\*\*(.+?)\*\*', r'\1', line)
+                text = re.sub(r'\*(.+?)\*', r'\1', text)
+                p = doc.add_paragraph(text)
+
+            i += 1
+
+        # Save to bytes
+        buffer = io.BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    try:
+        # Verify proposal ownership
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        # Check if generated template exists
+        template_content = proposal.get("proposal_template_content")
+        if not template_content:
+            raise HTTPException(
+                status_code=400,
+                detail="No generated proposal template found. Please generate a template first.",
+            )
+
+        # Get S3 bucket
+        bucket = os.environ.get("PROPOSALS_BUCKET")
+        if not bucket:
+            raise HTTPException(
+                status_code=500, detail="S3 bucket not configured"
+            )
+
+        # Convert markdown to DOCX
+        docx_content = markdown_to_docx(template_content)
+
+        # Define the draft filename (DOCX format)
+        draft_filename = "ai_generated_draft.docx"
+        draft_s3_key = f"{proposal_code}/documents/draft_proposal/{draft_filename}"
+
+        # Upload DOCX content to draft location in S3
+        s3_client = boto3.client("s3")
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=draft_s3_key,
+            Body=docx_content,
+            ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+
+        print(f"✅ Created AI draft DOCX at: s3://{bucket}/{draft_s3_key}")
+
+        # Update DynamoDB with the new draft file
+        current_uploaded_files = proposal.get("uploaded_files", {})
+        current_uploaded_files["draft-proposal"] = [draft_filename]
+
+        await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="""
+                SET uploaded_files = :files,
+                    draft_is_ai_generated = :is_ai,
+                    draft_source = :source,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":files": current_uploaded_files,
+                ":is_ai": True,
+                ":source": "ai_generated",
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
+
+        print(f"✅ Updated DynamoDB with AI draft: {draft_filename}")
+
+        return {
+            "success": True,
+            "filename": draft_filename,
+            "message": "AI-generated template copied to draft location successfully",
+            "s3_key": draft_s3_key,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error copying template to draft: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== STEP 4: DRAFT PROPOSAL FEEDBACK ====================
 
 
@@ -2485,4 +2644,209 @@ async def get_prompt_with_categories(
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to get prompt with categories: {str(e)}"
+        )
+
+
+@router.get("/{proposal_id}/download-draft")
+async def download_draft_proposal(
+    proposal_id: str, user=Depends(get_current_user)
+):
+    """
+    Download the draft proposal file from S3.
+    Returns the file as a downloadable response.
+    """
+    from fastapi.responses import Response
+
+    try:
+        # Verify proposal ownership
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        # Get uploaded draft files
+        uploaded_files = proposal.get("uploaded_files", {})
+        draft_files = uploaded_files.get("draft-proposal", [])
+
+        if not draft_files:
+            raise HTTPException(
+                status_code=404,
+                detail="No draft proposal found. Please upload a draft first.",
+            )
+
+        # Get the first draft file
+        draft_filename = draft_files[0]
+        draft_s3_key = f"{proposal_code}/documents/draft_proposal/{draft_filename}"
+
+        # Get S3 bucket
+        bucket = os.environ.get("PROPOSALS_BUCKET")
+        if not bucket:
+            raise HTTPException(
+                status_code=500, detail="S3 bucket not configured"
+            )
+
+        # Download file from S3
+        s3_client = boto3.client("s3")
+        try:
+            response = s3_client.get_object(Bucket=bucket, Key=draft_s3_key)
+            file_content = response["Body"].read()
+            content_type = response.get("ContentType", "application/octet-stream")
+        except Exception as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Draft file not found in storage: {str(e)}",
+            )
+
+        # Determine content type based on extension
+        if draft_filename.lower().endswith(".pdf"):
+            content_type = "application/pdf"
+        elif draft_filename.lower().endswith(".docx"):
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        elif draft_filename.lower().endswith(".doc"):
+            content_type = "application/msword"
+
+        # Return as downloadable file
+        return Response(
+            content=file_content,
+            media_type=content_type,
+            headers={
+                "Content-Disposition": f'attachment; filename="{draft_filename}"'
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to download draft: {str(e)}"
+        )
+
+
+@router.get("/{proposal_id}/download-template-docx")
+async def download_template_as_docx(
+    proposal_id: str, user=Depends(get_current_user)
+):
+    """
+    Download the AI-generated proposal template as a DOCX file.
+    Returns the file as a downloadable response.
+    """
+    import io
+    import re
+    from docx import Document
+    from docx.shared import Pt, Inches, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from fastapi.responses import Response
+
+    def markdown_to_docx(markdown_content: str, title: str = "AI Generated Proposal Draft") -> bytes:
+        """Convert markdown content to professionally formatted DOCX."""
+        doc = Document()
+
+        # Set default font
+        style = doc.styles['Normal']
+        font = style.font
+        font.name = 'Calibri'
+        font.size = Pt(11)
+
+        # Add title
+        title_para = doc.add_heading(title, level=0)
+        title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Add generation date
+        date_para = doc.add_paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y')}")
+        date_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        date_run = date_para.runs[0]
+        date_run.font.size = Pt(10)
+        date_run.font.color.rgb = RGBColor(128, 128, 128)
+
+        # Add separator
+        doc.add_paragraph()
+
+        lines = markdown_content.split('\n')
+        i = 0
+
+        while i < len(lines):
+            line = lines[i].strip()
+
+            # Skip empty lines
+            if not line:
+                i += 1
+                continue
+
+            # Headers
+            if line.startswith('# '):
+                p = doc.add_heading(line[2:], level=1)
+            elif line.startswith('## '):
+                p = doc.add_heading(line[3:], level=2)
+            elif line.startswith('### '):
+                p = doc.add_heading(line[4:], level=3)
+            elif line.startswith('#### '):
+                p = doc.add_heading(line[5:], level=4)
+            # Bullet points
+            elif line.startswith('- ') or line.startswith('* '):
+                text = line[2:]
+                # Handle bold and italic in bullet points
+                text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)  # Remove bold markers
+                text = re.sub(r'\*(.+?)\*', r'\1', text)  # Remove italic markers
+                p = doc.add_paragraph(text, style='List Bullet')
+            # Numbered lists
+            elif re.match(r'^\d+\.\s', line):
+                text = re.sub(r'^\d+\.\s', '', line)
+                text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+                text = re.sub(r'\*(.+?)\*', r'\1', text)
+                p = doc.add_paragraph(text, style='List Number')
+            # Regular paragraphs
+            else:
+                # Handle bold text
+                text = re.sub(r'\*\*(.+?)\*\*', r'\1', line)
+                text = re.sub(r'\*(.+?)\*', r'\1', text)
+                p = doc.add_paragraph(text)
+
+            i += 1
+
+        # Add footer
+        doc.add_paragraph()
+        footer_para = doc.add_paragraph("Generated by IGAD Proposal Writer - AI Assistant")
+        footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        footer_run = footer_para.runs[0]
+        footer_run.font.size = Pt(9)
+        footer_run.font.color.rgb = RGBColor(128, 128, 128)
+
+        # Save to bytes
+        buffer = io.BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    try:
+        # Verify proposal ownership
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        # Check if generated template exists
+        template_content = proposal.get("proposal_template_content")
+        if not template_content:
+            raise HTTPException(
+                status_code=400,
+                detail="No generated proposal template found. Please generate a template first.",
+            )
+
+        # Get proposal title for the document
+        proposal_title = proposal.get("title", "AI Generated Proposal Draft")
+
+        # Convert markdown to DOCX
+        docx_content = markdown_to_docx(template_content, proposal_title)
+
+        # Generate filename
+        filename = f"ai_proposal_draft_{proposal_code}_{datetime.now().strftime('%Y-%m-%d')}.docx"
+
+        # Return as downloadable file
+        return Response(
+            content=docx_content,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate DOCX: {str(e)}"
         )

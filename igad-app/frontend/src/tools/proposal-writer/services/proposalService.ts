@@ -37,6 +37,8 @@ export interface Proposal {
   structure_workplan_completed_at?: string // ISO timestamp when structure workplan analysis was completed
   structure_workplan_analysis?: StructureWorkplanAnalysis // Structure workplan analysis data from Step 3
   draft_feedback_analysis?: DraftFeedbackAnalysis // Draft feedback analysis data from Step 4
+  draft_is_ai_generated?: boolean // Flag indicating if draft was AI-generated (Step 3 → Step 4)
+  draft_source?: 'uploaded' | 'ai_generated' // Source of the draft
 }
 
 export interface ProposalSection {
@@ -963,6 +965,88 @@ class ProposalService {
   }> {
     const response = await apiClient.get(`/api/proposals/${proposalId}/proposal-template-status`)
     return response.data
+  }
+
+  /**
+   * Copy the AI-generated proposal template to the draft proposal location.
+   * This makes it available for Step 4's draft feedback analysis.
+   */
+  async useGeneratedTemplateAsDraft(proposalId: string): Promise<{
+    success: boolean
+    filename: string
+    message: string
+    s3_key?: string
+  }> {
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/use-generated-template-as-draft`
+    )
+    return response.data
+  }
+
+  /**
+   * Download the draft proposal file from S3.
+   * Triggers browser download of the file.
+   */
+  async downloadDraft(proposalId: string): Promise<void> {
+    const response = await apiClient.get(
+      `/api/proposals/${proposalId}/download-draft`,
+      { responseType: 'blob' }
+    )
+
+    // Get filename from Content-Disposition header or use default
+    const contentDisposition = response.headers['content-disposition']
+    let filename = `draft_proposal_${proposalId}.docx`
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+      if (filenameMatch) {
+        filename = filenameMatch[1]
+      }
+    }
+
+    // Create download link and trigger download
+    const blob = new Blob([response.data])
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+  }
+
+  /**
+   * Download the AI-generated proposal template as a DOCX file.
+   * Triggers browser download of the professionally formatted document.
+   */
+  async downloadTemplateAsDocx(proposalId: string): Promise<void> {
+    const response = await apiClient.get(
+      `/api/proposals/${proposalId}/download-template-docx`,
+      { responseType: 'blob' }
+    )
+
+    // Get filename from Content-Disposition header or use default
+    const contentDisposition = response.headers['content-disposition']
+    let filename = `ai_proposal_draft_${proposalId}.docx`
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+      if (filenameMatch) {
+        filename = filenameMatch[1]
+      }
+    }
+
+    // Create download link and trigger download
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
   }
 }
 

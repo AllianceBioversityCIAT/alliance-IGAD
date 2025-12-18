@@ -103,7 +103,7 @@ export function Navigation() {
         {/* IGAD Logo */}
         <Link to="/" style={{ textDecoration: 'none' }}>
           <img
-            src="/igad-logo.png"
+            src="/igad-navbar-logo.svg"
             alt="IGAD Innovation Hub"
             style={{
               height: '56px',

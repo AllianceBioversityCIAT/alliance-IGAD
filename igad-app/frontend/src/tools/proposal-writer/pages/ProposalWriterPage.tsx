@@ -78,6 +78,10 @@ export function ProposalWriterPage() {
   const [isVectorizingFiles, setIsVectorizingFiles] = useState(false)
   // State for finishing process (Step 4)
   const [isFinishingProcess, setIsFinishingProcess] = useState(false)
+  // Flag to track if draft was AI-generated
+  const [draftIsAiGenerated, setDraftIsAiGenerated] = useState(false)
+  // State for preparing draft transition (Step 3 → Step 4)
+  const [isPreparingDraft, setIsPreparingDraft] = useState(false)
 
   const allowNavigation = useRef(false)
   const formDataLoadedFromDB = useRef(false)
@@ -198,6 +202,7 @@ export function ProposalWriterPage() {
     }
 
     // Removed console.log'📊 Initial load complete - rfpAnalysis:', !!draft.rfpAnalysis)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadDraft])
 
   // Track if step completion data has been loaded for this session
@@ -276,6 +281,11 @@ export function ProposalWriterPage() {
                 'draft-proposal': draftFiles,
               },
             }))
+          }
+
+          // Load draft_is_ai_generated flag
+          if (proposal.draft_is_ai_generated) {
+            setDraftIsAiGenerated(true)
           }
 
           // Load proposal status
@@ -843,6 +853,11 @@ export function ProposalWriterPage() {
                 },
               }))
             }
+
+            // Load draft_is_ai_generated flag
+            if (proposal.draft_is_ai_generated) {
+              setDraftIsAiGenerated(true)
+            }
           }
         } catch (error) {
           // Removed console.log'⚠️ Error loading draft feedback data:', error)
@@ -851,6 +866,7 @@ export function ProposalWriterPage() {
     }
 
     loadDraftFeedback()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposalId, currentStep])
 
   useEffect(() => {
@@ -1897,6 +1913,7 @@ export function ProposalWriterPage() {
             draftFeedbackAnalysis={
               draftFeedbackAnalysis?.draft_feedback_analysis || draftFeedbackAnalysis
             }
+            draftIsAiGenerated={draftIsAiGenerated}
             onFeedbackAnalyzed={analysis => {
               // Removed console.log'✅ Draft feedback analysis received:', analysis)
               setDraftFeedbackAnalysis(analysis)
@@ -1910,6 +1927,10 @@ export function ProposalWriterPage() {
                   'draft-proposal': files as File[],
                 },
               }))
+              // If user uploads a new file, it's not AI-generated anymore
+              if (files.length > 0) {
+                setDraftIsAiGenerated(false)
+              }
             }}
           />
         )
@@ -1940,8 +1961,38 @@ export function ProposalWriterPage() {
         // Step 3 proceeds to next step
         // Step 4 is the final step - handled by Finish process button
         if (currentStep === 3) {
-          // Removed console.log`📥 Step ${currentStep}: Proceeding to next step`)
-          proceedToNextStep()
+          try {
+            // If template exists, copy it to draft location before proceeding
+            if (proposalTemplate && proposalId) {
+              // Show preparing overlay
+              setIsPreparingDraft(true)
+
+              // Copy AI-generated template to draft location for Step 4
+              const result = await proposalService.useGeneratedTemplateAsDraft(proposalId)
+
+              // Update form data with the copied file
+              setFormData(prev => ({
+                ...prev,
+                uploadedFiles: {
+                  ...prev.uploadedFiles,
+                  'draft-proposal': [result.filename] as unknown as File[],
+                },
+              }))
+
+              // Mark draft as AI-generated
+              setDraftIsAiGenerated(true)
+
+              // Small delay to ensure state updates propagate
+              await new Promise(resolve => setTimeout(resolve, 300))
+
+              // Hide preparing overlay
+              setIsPreparingDraft(false)
+            }
+            proceedToNextStep()
+          } catch (error) {
+            setIsPreparingDraft(false)
+            showError('Error', 'Failed to prepare draft for review. Please try again.')
+          }
         } else if (currentStep === 4) {
           // Final step - finish process
           if (proposalId) {
@@ -2074,34 +2125,46 @@ export function ProposalWriterPage() {
   return (
     <>
       <AnalysisProgressModal
-        isOpen={isAnalyzingRFP || isGeneratingDocument || isRegeneratingConcept}
+        isOpen={isAnalyzingRFP || isGeneratingDocument || isRegeneratingConcept || isPreparingDraft}
         progress={
-          isRegeneratingConcept
+          isPreparingDraft
             ? {
                 step: 1,
                 total: 2,
-                message: 'Regenerating Concept Analysis...',
+                message: 'Preparing Draft for Review...',
                 description:
-                  'Our AI is re-analyzing your concept note against the RFP requirements. This typically takes 1-2 minutes.',
+                  'Your AI-generated proposal draft is being prepared for the review process. This will only take a moment.',
                 steps: [
-                  'Analyzing concept note and RFP alignment',
-                  'Generating fit assessment and improvement areas',
+                  'Transferring AI-generated content',
+                  'Setting up for analysis',
                 ],
               }
-            : isGeneratingDocument
+            : isRegeneratingConcept
               ? {
-                  step: generationProgressStep,
-                  total: 3,
-                  message: 'Generating Enhanced Concept Document...',
+                  step: 1,
+                  total: 2,
+                  message: 'Regenerating Concept Analysis...',
                   description:
-                    'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
+                    'Our AI is re-analyzing your concept note against the RFP requirements. This typically takes 1-2 minutes.',
                   steps: [
-                    'Analyzing RFP requirements and selected sections',
-                    'Generating detailed narrative content with examples',
-                    'Finalizing and validating concept document',
+                    'Analyzing concept note and RFP alignment',
+                    'Generating fit assessment and improvement areas',
                   ],
                 }
-              : analysisProgress
+              : isGeneratingDocument
+                ? {
+                    step: generationProgressStep,
+                    total: 3,
+                    message: 'Generating Enhanced Concept Document...',
+                    description:
+                      'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
+                    steps: [
+                      'Analyzing RFP requirements and selected sections',
+                      'Generating detailed narrative content with examples',
+                      'Finalizing and validating concept document',
+                    ],
+                  }
+                : analysisProgress
         }
       />
       <DraftConfirmationModal

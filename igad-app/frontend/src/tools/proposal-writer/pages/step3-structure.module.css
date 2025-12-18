@@ -905,3 +905,90 @@
     justify-content: center;
   }
 }
+
+/* ========================================
+   SKELETON LOADING STYLES
+   ======================================== */
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeletonTitle {
+  height: 32px;
+  width: 320px;
+  margin-bottom: 12px;
+}
+
+.skeletonText {
+  height: 18px;
+  width: 500px;
+  max-width: 100%;
+}
+
+.skeletonCardTitle {
+  height: 22px;
+  width: 220px;
+  margin-bottom: 8px;
+}
+
+.skeletonTextShort {
+  height: 16px;
+  width: 350px;
+  max-width: 100%;
+  margin-bottom: 16px;
+}
+
+.skeletonNarrativeBox {
+  height: 120px;
+  width: 100%;
+  border-radius: 10px;
+}
+
+.skeletonSelectionCount {
+  height: 20px;
+  width: 140px;
+  margin-bottom: 16px;
+}
+
+.skeletonSections {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeletonSectionItem {
+  height: 72px;
+  width: 100%;
+  border-radius: 10px;
+}
+
+.skeletonGenerateButton {
+  height: 48px;
+  width: 280px;
+  border-radius: 8px;
+}
+
+/* Responsive skeleton */
+@media (max-width: 768px) {
+  .skeletonTitle {
+    width: 220px;
+    height: 28px;
+  }
+
+  .skeletonText {
+    width: 100%;
+  }
+}

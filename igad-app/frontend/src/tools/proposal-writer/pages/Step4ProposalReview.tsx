@@ -18,6 +18,7 @@ import {
   TrendingUp,
   ArrowRight,
   Check,
+  Clock,
 } from 'lucide-react'
 import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
@@ -56,6 +57,7 @@ interface Step4Props extends StepProps {
   draftFeedbackAnalysis?: DraftFeedbackAnalysis
   onFeedbackAnalyzed?: (analysis: DraftFeedbackAnalysis) => void
   onFilesChanged?: (files: string[]) => void
+  draftIsAiGenerated?: boolean
 }
 
 interface UploadedFile {
@@ -298,16 +300,22 @@ interface UploadedFileCardProps {
   file: UploadedFile
   onRemove: () => void
   onUploadNewVersion: () => void
+  onDownload: () => void
   isDeleting: boolean
   isAnalyzing: boolean
+  isDownloading: boolean
+  isAiGenerated?: boolean
 }
 
 function UploadedFileCard({
   file,
   onRemove,
   onUploadNewVersion,
+  onDownload,
   isDeleting,
   isAnalyzing,
+  isDownloading,
+  isAiGenerated,
 }: UploadedFileCardProps) {
   return (
     <div className={styles.uploadedFileContainer}>
@@ -315,19 +323,38 @@ function UploadedFileCard({
         <div className={styles.uploadedFileInfo}>
           <FileText className={styles.fileIcon} size={24} />
           <div className={styles.fileDetails}>
-            <p className={styles.fileName}>{file.name}</p>
+            <div className={styles.fileNameRow}>
+              <p className={styles.fileName}>{file.name}</p>
+              {isAiGenerated && (
+                <span className={styles.aiGeneratedBadge}>
+                  <Sparkles size={12} />
+                  AI Generated
+                </span>
+              )}
+            </div>
             {file.size > 0 && <p className={styles.fileSize}>{formatFileSize(file.size)}</p>}
           </div>
         </div>
-        <button
-          type="button"
-          className={styles.removeButton}
-          onClick={onRemove}
-          disabled={isDeleting || isAnalyzing}
-        >
-          {isDeleting ? <Loader2 size={16} className={styles.spinning} /> : <X size={16} />}
-          {isDeleting ? 'Removing...' : 'Remove'}
-        </button>
+        <div className={styles.fileActions}>
+          <button
+            type="button"
+            className={styles.downloadFileButton}
+            onClick={onDownload}
+            disabled={isDownloading || isDeleting || isAnalyzing}
+            title="Download file"
+          >
+            {isDownloading ? <Loader2 size={16} className={styles.spinning} /> : <Download size={16} />}
+          </button>
+          <button
+            type="button"
+            className={styles.removeButton}
+            onClick={onRemove}
+            disabled={isDeleting || isAnalyzing}
+          >
+            {isDeleting ? <Loader2 size={16} className={styles.spinning} /> : <X size={16} />}
+            {isDeleting ? 'Removing...' : 'Remove'}
+          </button>
+        </div>
       </div>
       <button
         type="button"
@@ -669,6 +696,7 @@ export function Step4ProposalReview({
   draftFeedbackAnalysis,
   onFeedbackAnalyzed,
   onFilesChanged,
+  draftIsAiGenerated = false,
 }: Step4Props) {
   // Toast notifications
   const { showSuccess, showError, showWarning } = useToast()
@@ -679,6 +707,7 @@ export function Step4ProposalReview({
   const [expandedSections, setExpandedSections] = useState<string[]>(['1'])
   const [isUploading, setIsUploading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isDownloadingDraft, setIsDownloadingDraft] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [feedbackData, setFeedbackData] = useState<SectionFeedback[]>([])
   const [analysisProgress, setAnalysisProgress] = useState<{
@@ -700,6 +729,7 @@ export function Step4ProposalReview({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const pollingStartTimeRef = useRef<number>(0)
+  const isPollingActiveRef = useRef<boolean>(false)
 
   // Initialize from props
   useEffect(() => {
@@ -720,20 +750,28 @@ export function Step4ProposalReview({
   // Cleanup polling on unmount
   useEffect(() => {
     return () => {
+      isPollingActiveRef.current = false
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
+        pollingRef.current = null
       }
     }
   }, [])
 
   // Poll for analysis completion
   const pollAnalysisStatus = useCallback(async () => {
-    if (!proposalId) {
+    // Check if polling should continue
+    if (!proposalId || !isPollingActiveRef.current) {
       return
     }
 
     try {
       const status = await proposalService.getDraftFeedbackStatus(proposalId)
+
+      // Double-check if polling was cancelled during the async call
+      if (!isPollingActiveRef.current) {
+        return
+      }
 
       // Update progress
       const elapsedTime = Date.now() - pollingStartTimeRef.current
@@ -748,6 +786,7 @@ export function Step4ProposalReview({
 
       if (status.status === 'completed') {
         // Stop polling
+        isPollingActiveRef.current = false
         if (pollingRef.current) {
           clearInterval(pollingRef.current)
           pollingRef.current = null
@@ -768,6 +807,7 @@ export function Step4ProposalReview({
         }
       } else if (status.status === 'failed') {
         // Stop polling
+        isPollingActiveRef.current = false
         if (pollingRef.current) {
           clearInterval(pollingRef.current)
           pollingRef.current = null
@@ -780,6 +820,7 @@ export function Step4ProposalReview({
 
       // Check for timeout
       if (elapsedTime > MAX_POLLING_TIME) {
+        isPollingActiveRef.current = false
         if (pollingRef.current) {
           clearInterval(pollingRef.current)
           pollingRef.current = null
@@ -789,7 +830,12 @@ export function Step4ProposalReview({
         showError('Timeout', 'Analysis timed out. Please try again.')
       }
     } catch (error) {
-      // Removed console.error
+      // Stop polling on error to prevent resource exhaustion
+      isPollingActiveRef.current = false
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
     }
   }, [
     proposalId,
@@ -808,6 +854,13 @@ export function Step4ProposalReview({
     }
 
     try {
+      // Stop any existing polling before starting new analysis
+      isPollingActiveRef.current = false
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+
       setIsAnalyzing(true)
       setAnalysisProgress({
         step: 1,
@@ -821,6 +874,7 @@ export function Step4ProposalReview({
 
       if (result.status === 'processing' || result.status === 'already_running') {
         // Start polling
+        isPollingActiveRef.current = true
         pollingStartTimeRef.current = Date.now()
         pollingRef.current = setInterval(pollAnalysisStatus, POLLING_INTERVAL)
 
@@ -847,7 +901,25 @@ export function Step4ProposalReview({
       // Removed console.error
       setIsAnalyzing(false)
       setAnalysisProgress(null)
-      showError('Analysis Failed', error.response?.data?.message || 'Failed to start analysis')
+
+      // Get error message from response
+      const err = error as { response?: { data?: { message?: string; detail?: string } } }
+      const errorMsg = err.response?.data?.message || err.response?.data?.detail || 'Failed to start analysis'
+
+      // Provide more specific error messages for common issues
+      if (errorMsg.toLowerCase().includes('extract text') || errorMsg.toLowerCase().includes('could not extract')) {
+        showError(
+          'Document Processing Error',
+          'Unable to extract text from the draft file. Please ensure it\'s a valid PDF, DOC, or DOCX file. If using an AI-generated draft, try downloading it first and re-uploading as a PDF.'
+        )
+      } else if (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('no draft')) {
+        showError(
+          'Draft Not Found',
+          'The draft file could not be found. Please upload a new draft proposal.'
+        )
+      } else {
+        showError('Analysis Failed', errorMsg)
+      }
     }
   }, [
     proposalId,
@@ -857,6 +929,9 @@ export function Step4ProposalReview({
     showSuccess,
     DRAFT_FEEDBACK_STEPS,
   ])
+
+  // NOTE: Auto-trigger removed for better UX - user now manually starts analysis
+  // This gives user control and prevents timing issues with file availability
 
   // Handle file upload
   const handleFileSelect = useCallback(
@@ -952,6 +1027,23 @@ export function Step4ProposalReview({
     fileInputRef.current?.click()
   }, [])
 
+  const handleDownloadDraft = useCallback(async () => {
+    if (!proposalId) {
+      showError('Error', 'No proposal ID available')
+      return
+    }
+
+    setIsDownloadingDraft(true)
+    try {
+      await proposalService.downloadDraft(proposalId)
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } }
+      showError('Download Failed', error.response?.data?.message || 'Failed to download file')
+    } finally {
+      setIsDownloadingDraft(false)
+    }
+  }, [proposalId, showError])
+
   const handleNewVersionSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
@@ -975,6 +1067,13 @@ export function Step4ProposalReview({
     }
 
     try {
+      // Stop any existing polling before starting new analysis
+      isPollingActiveRef.current = false
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+
       // Clear existing feedback data to show fresh analysis
       setFeedbackData([])
 
@@ -994,6 +1093,7 @@ export function Step4ProposalReview({
 
       if (result.status === 'processing' || result.status === 'already_running') {
         // Start polling
+        isPollingActiveRef.current = true
         pollingStartTimeRef.current = Date.now()
         pollingRef.current = setInterval(pollAnalysisStatus, POLLING_INTERVAL)
 
@@ -1086,11 +1186,68 @@ export function Step4ProposalReview({
               file={uploadedFile}
               onRemove={handleRemoveFile}
               onUploadNewVersion={handleUploadNewVersion}
+              onDownload={handleDownloadDraft}
               isDeleting={isDeleting}
               isAnalyzing={isAnalyzing}
+              isDownloading={isDownloadingDraft}
+              isAiGenerated={draftIsAiGenerated}
             />
           )}
         </div>
+
+        {/* Ready to Analyze State - Show when AI draft is loaded but no analysis yet */}
+        {uploadedFile && feedbackData.length === 0 && !isAnalyzing && (
+          <div className={styles.readyToAnalyzeCard}>
+            <div className={styles.readyToAnalyzeHeader}>
+              <div className={styles.readyToAnalyzeIconWrapper}>
+                <Sparkles size={24} />
+              </div>
+              <div className={styles.readyToAnalyzeInfo}>
+                <h3 className={styles.readyToAnalyzeTitle}>
+                  {draftIsAiGenerated ? 'Your AI-Generated Draft is Ready' : 'Your Draft is Ready for Review'}
+                </h3>
+                <p className={styles.readyToAnalyzeDescription}>
+                  Our AI will analyze your draft proposal and provide detailed section-by-section feedback to help you improve alignment with RFP requirements.
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.analysisFeatures}>
+              <div className={styles.featureItem}>
+                <Check size={16} />
+                <span>Overall proposal assessment</span>
+              </div>
+              <div className={styles.featureItem}>
+                <Check size={16} />
+                <span>Section-by-section quality ratings</span>
+              </div>
+              <div className={styles.featureItem}>
+                <Check size={16} />
+                <span>Specific improvement suggestions</span>
+              </div>
+              <div className={styles.featureItem}>
+                <Check size={16} />
+                <span>Alignment with donor requirements</span>
+              </div>
+            </div>
+
+            <div className={styles.readyToAnalyzeActions}>
+              <button
+                type="button"
+                className={styles.startAnalysisButtonLarge}
+                onClick={startAnalysis}
+                disabled={isAnalyzing}
+              >
+                <Sparkles size={20} />
+                Start AI Analysis
+              </button>
+              <p className={styles.estimatedTime}>
+                <Clock size={14} />
+                Expected time: 2-3 minutes
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Action Bar - Show when we have uploaded file and feedback data */}
         {uploadedFile && feedbackData.length > 0 && (
@@ -1126,64 +1283,42 @@ export function Step4ProposalReview({
           <OverallAssessmentCard assessment={draftFeedbackAnalysis.overall_assessment} />
         )}
 
-        {/* Section Feedback Card - Only show after file upload */}
-        {uploadedFile && (
+        {/* Section Feedback Card - Only show when we have feedback data */}
+        {uploadedFile && feedbackData.length > 0 && (
           <div className={styles.card}>
             <div className={styles.feedbackCardHeader}>
               <h2 className={styles.cardTitle}>Section-by-Section Feedback</h2>
-              {draftFeedbackAnalysis?.summary_stats && feedbackData.length > 0 && (
+              {draftFeedbackAnalysis?.summary_stats && (
                 <SummaryStats stats={draftFeedbackAnalysis.summary_stats} />
               )}
             </div>
 
-            {feedbackData.length === 0 && !isAnalyzing ? (
-              <div className={styles.noFeedbackState}>
-                <div className={styles.emptyStateIcon}>
-                  <Sparkles size={48} />
-                </div>
-                <h3 className={styles.emptyStateTitle}>Ready to Analyze</h3>
-                <p className={styles.emptyStateMessage}>
-                  Upload your draft proposal to receive AI-powered section-by-section feedback
-                </p>
-                <button
-                  type="button"
-                  className={styles.startAnalysisButton}
-                  onClick={startAnalysis}
-                >
-                  <Sparkles size={16} />
-                  Start Analysis
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className={styles.feedbackList}>
-                  {feedbackData.map(section => (
-                    <SectionFeedbackItem
-                      key={section.id}
-                      section={section}
-                      isExpanded={expandedSections.includes(section.id)}
-                      onToggle={() => toggleSection(section.id)}
-                    />
-                  ))}
-                </div>
+            <div className={styles.feedbackList}>
+              {feedbackData.map(section => (
+                <SectionFeedbackItem
+                  key={section.id}
+                  section={section}
+                  isExpanded={expandedSections.includes(section.id)}
+                  onToggle={() => toggleSection(section.id)}
+                />
+              ))}
+            </div>
 
-                {/* Bottom action bar after reviewing all sections */}
-                <div className={styles.bottomActionBar}>
-                  <div className={styles.bottomActionBarText}>
-                    <CheckCircle2 size={20} className={styles.bottomActionBarIcon} />
-                    <span>Reviewed all {feedbackData.length} sections</span>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.downloadFeedbackButton}
-                    onClick={handleDownloadWithFeedback}
-                  >
-                    <Download size={16} />
-                    Download with AI feedback
-                  </button>
-                </div>
-              </>
-            )}
+            {/* Bottom action bar after reviewing all sections */}
+            <div className={styles.bottomActionBar}>
+              <div className={styles.bottomActionBarText}>
+                <CheckCircle2 size={20} className={styles.bottomActionBarIcon} />
+                <span>Reviewed all {feedbackData.length} sections</span>
+              </div>
+              <button
+                type="button"
+                className={styles.downloadFeedbackButton}
+                onClick={handleDownloadWithFeedback}
+              >
+                <Download size={16} />
+                Download with AI feedback
+              </button>
+            </div>
           </div>
         )}
       </div>

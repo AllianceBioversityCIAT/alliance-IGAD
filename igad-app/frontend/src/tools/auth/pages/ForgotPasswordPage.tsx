@@ -244,7 +244,9 @@ export function ForgotPasswordPage() {
                       type="button"
                       className={styles.passwordToggle}
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                      aria-label={
+                        showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'
+                      }
                     >
                       {showConfirmPassword ? (
                         <EyeOff size={18} strokeWidth={1.5} />
