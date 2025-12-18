@@ -12,10 +12,23 @@ import {
   Loader2,
   AlertTriangle,
 } from 'lucide-react'
-import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType } from 'docx'
+import {
+  Document,
+  Packer,
+  Paragraph,
+  HeadingLevel,
+  TextRun,
+  AlignmentType,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+} from 'docx'
 import styles from './step3-structure.module.css'
 import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
+import { useToast } from '@/shared/components/ui/ToastContainer'
 
 // Removed unused Section interface
 
@@ -287,6 +300,9 @@ export function Step3StructureWorkplan({
   initialSelectedSections,
   onSelectedSectionsChange,
 }: Step3Props) {
+  // Toast notifications
+  const { showError } = useToast()
+
   // Combine mandatory and outline sections
   const allSections = [
     ...(structureWorkplanAnalysis?.proposal_mandatory || []),
@@ -479,13 +495,13 @@ export function Step3StructureWorkplan({
     }
 
     if (!proposalId || !structureWorkplanAnalysis) {
-      alert('Proposal data not found')
+      showError('Missing data', 'Proposal data not found')
       return
     }
 
     // Validate that at least one section is selected
     if (selectedSections.length === 0) {
-      alert('Please select at least one section to include in the template.')
+      showError('Missing selection', 'Please select at least one section to include in the template.')
       return
     }
 
@@ -535,7 +551,7 @@ export function Step3StructureWorkplan({
       setGenerationError(err.message || 'Failed to generate template')
       setGenerationStatus('failed')
       setIsGenerating(false)
-      alert(`Failed to generate template: ${err.message || 'Unknown error'}`)
+      showError('Generation failed', `Failed to generate template: ${err.message || 'Unknown error'}`)
     }
   }
 
@@ -543,15 +559,171 @@ export function Step3StructureWorkplan({
   const [isDownloading, setIsDownloading] = useState(false)
 
   /**
-   * Convert markdown content to docx Paragraph array
+   * Parse inline formatting (bold, italic) into TextRun array
    */
-  const markdownToParagraphs = useCallback((markdown: string): Paragraph[] => {
-    const paragraphs: Paragraph[] = []
+  const parseInlineFormatting = useCallback((text: string): TextRun[] => {
+    const runs: TextRun[] = []
+    // Match **bold** and *italic* patterns
+    const regex = /(\*\*[^*]+\*\*|\*[^*]+\*)/g
+    let lastIndex = 0
+    let match
+
+    while ((match = regex.exec(text)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        runs.push(new TextRun({ text: text.slice(lastIndex, match.index) }))
+      }
+
+      const matchedText = match[0]
+      if (matchedText.startsWith('**') && matchedText.endsWith('**')) {
+        runs.push(new TextRun({ text: matchedText.slice(2, -2), bold: true }))
+      } else if (matchedText.startsWith('*') && matchedText.endsWith('*')) {
+        runs.push(new TextRun({ text: matchedText.slice(1, -1), italics: true }))
+      }
+
+      lastIndex = regex.lastIndex
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      runs.push(new TextRun({ text: text.slice(lastIndex) }))
+    }
+
+    return runs.length > 0 ? runs : [new TextRun({ text })]
+  }, [])
+
+  /**
+   * Convert markdown content to docx Paragraph/Table array
+   */
+  const markdownToParagraphs = useCallback((markdown: string): (Paragraph | Table)[] => {
+    const elements: (Paragraph | Table)[] = []
     const lines = markdown.split('\n')
+    let tableRows: string[][] = []
+    let tableHeaders: string[] = []
+    let inTable = false
+
+    // Helper to check if line is a table row
+    const isTableRow = (line: string): boolean => {
+      const trimmed = line.trim()
+      return trimmed.includes('|') && (trimmed.startsWith('|') || trimmed.split('|').length >= 2)
+    }
+
+    // Helper to check if line is table separator
+    const isTableSeparator = (line: string): boolean => {
+      const trimmed = line.trim()
+      return /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(trimmed)
+    }
+
+    // Helper to parse table row into cells
+    const parseTableRowCells = (line: string): string[] => {
+      return line
+        .split('|')
+        .map(cell => cell.trim())
+        .filter((_, index, arr) => {
+          if (index === 0 && arr[0] === '') return false
+          if (index === arr.length - 1 && arr[arr.length - 1] === '') return false
+          return true
+        })
+    }
+
+    // Helper to flush table to elements
+    const flushTable = () => {
+      if (tableHeaders.length > 0 || tableRows.length > 0) {
+        const rows: TableRow[] = []
+
+        // Add header row
+        if (tableHeaders.length > 0) {
+          rows.push(
+            new TableRow({
+              tableHeader: true,
+              children: tableHeaders.map(
+                header =>
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: header,
+                            bold: true,
+                            size: 22,
+                          }),
+                        ],
+                      }),
+                    ],
+                    shading: { fill: 'F3F4F6' },
+                  })
+              ),
+            })
+          )
+        }
+
+        // Add data rows
+        tableRows.forEach(row => {
+          rows.push(
+            new TableRow({
+              children: row.map(
+                cell =>
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: parseInlineFormatting(cell),
+                      }),
+                    ],
+                  })
+              ),
+            })
+          )
+        })
+
+        // Create table with borders
+        elements.push(
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows,
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+              bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+              left: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+              right: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+              insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+              insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+            },
+          })
+        )
+
+        // Add spacing after table
+        elements.push(new Paragraph({ text: '', spacing: { after: 200 } }))
+
+        tableHeaders = []
+        tableRows = []
+        inTable = false
+      }
+    }
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       const trimmedLine = line.trim()
+
+      // Check for table rows
+      if (isTableRow(trimmedLine)) {
+        if (isTableSeparator(trimmedLine)) {
+          inTable = true
+          continue
+        }
+
+        if (!inTable && tableHeaders.length === 0) {
+          tableHeaders = parseTableRowCells(trimmedLine)
+        } else {
+          inTable = true
+          tableRows.push(parseTableRowCells(trimmedLine))
+        }
+        continue
+      }
+
+      // Flush table if we hit a non-table line
+      if (inTable || tableHeaders.length > 0) {
+        flushTable()
+      }
 
       // Skip empty lines but add spacing
       if (!trimmedLine) {
@@ -560,33 +732,33 @@ export function Step3StructureWorkplan({
 
       // Headers
       if (trimmedLine.startsWith('#### ')) {
-        paragraphs.push(
+        elements.push(
           new Paragraph({
-            text: trimmedLine.slice(5),
+            children: parseInlineFormatting(trimmedLine.slice(5)),
             heading: HeadingLevel.HEADING_4,
             spacing: { before: 200, after: 100 },
           })
         )
       } else if (trimmedLine.startsWith('### ')) {
-        paragraphs.push(
+        elements.push(
           new Paragraph({
-            text: trimmedLine.slice(4),
+            children: parseInlineFormatting(trimmedLine.slice(4)),
             heading: HeadingLevel.HEADING_3,
             spacing: { before: 240, after: 120 },
           })
         )
       } else if (trimmedLine.startsWith('## ')) {
-        paragraphs.push(
+        elements.push(
           new Paragraph({
-            text: trimmedLine.slice(3),
+            children: parseInlineFormatting(trimmedLine.slice(3)),
             heading: HeadingLevel.HEADING_2,
             spacing: { before: 280, after: 140 },
           })
         )
       } else if (trimmedLine.startsWith('# ')) {
-        paragraphs.push(
+        elements.push(
           new Paragraph({
-            text: trimmedLine.slice(2),
+            children: parseInlineFormatting(trimmedLine.slice(2)),
             heading: HeadingLevel.HEADING_1,
             spacing: { before: 320, after: 160 },
           })
@@ -594,15 +766,14 @@ export function Step3StructureWorkplan({
       }
       // Bullet points
       else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-        const text = trimmedLine.slice(2).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
-        paragraphs.push(
+        elements.push(
           new Paragraph({
             children: [
               new TextRun({ text: '• ' }),
-              new TextRun({ text }),
+              ...parseInlineFormatting(trimmedLine.slice(2)),
             ],
             spacing: { before: 60, after: 60 },
-            indent: { left: 720 }, // 0.5 inch indent
+            indent: { left: 720 },
           })
         )
       }
@@ -610,12 +781,11 @@ export function Step3StructureWorkplan({
       else if (/^\d+\.\s/.test(trimmedLine)) {
         const match = trimmedLine.match(/^(\d+\.)\s(.*)$/)
         if (match) {
-          const text = match[2].replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
-          paragraphs.push(
+          elements.push(
             new Paragraph({
               children: [
                 new TextRun({ text: match[1] + ' ' }),
-                new TextRun({ text }),
+                ...parseInlineFormatting(match[2]),
               ],
               spacing: { before: 60, after: 60 },
               indent: { left: 720 },
@@ -623,31 +793,22 @@ export function Step3StructureWorkplan({
           )
         }
       }
-      // Regular paragraphs - handle bold text
+      // Regular paragraphs
       else {
-        const children: TextRun[] = []
-        // Parse bold text (**text**)
-        const parts = trimmedLine.split(/(\*\*[^*]+\*\*)/g)
-        for (const part of parts) {
-          if (part.startsWith('**') && part.endsWith('**')) {
-            children.push(new TextRun({ text: part.slice(2, -2), bold: true }))
-          } else if (part) {
-            children.push(new TextRun({ text: part }))
-          }
-        }
-        if (children.length > 0) {
-          paragraphs.push(
-            new Paragraph({
-              children,
-              spacing: { before: 120, after: 120 },
-            })
-          )
-        }
+        elements.push(
+          new Paragraph({
+            children: parseInlineFormatting(trimmedLine),
+            spacing: { before: 120, after: 120 },
+          })
+        )
       }
     }
 
-    return paragraphs
-  }, [])
+    // Flush any remaining table
+    flushTable()
+
+    return elements
+  }, [parseInlineFormatting])
 
   const handleDownloadGeneratedProposal = async () => {
     if (!generatedProposal) {
@@ -663,7 +824,7 @@ export function Step3StructureWorkplan({
       })
 
       // Build document paragraphs
-      const documentParagraphs: Paragraph[] = []
+      const documentParagraphs: (Paragraph | Table)[] = []
 
       // Add title
       documentParagraphs.push(
@@ -795,8 +956,8 @@ export function Step3StructureWorkplan({
       a.click()
       URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Failed to download template:', error)
-      alert('Failed to download document. Please try again.')
+      // Removed console.error
+      showError('Download failed', 'Failed to download document. Please try again.')
     } finally {
       setIsDownloading(false)
     }

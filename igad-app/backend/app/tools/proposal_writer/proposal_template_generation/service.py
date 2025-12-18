@@ -376,7 +376,7 @@ class ProposalTemplateGenerator:
         """
         context = {
             "PROPOSAL STRUCTURE": json.dumps(proposal_structure, indent=2),
-            "INITIAL CONCEPT": concept_text,
+            "CONCEPT DOCUMENT V2": concept_text,
             "RFP ANALYSIS": json.dumps(rfp_analysis, indent=2),
         }
 

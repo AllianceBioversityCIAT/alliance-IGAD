@@ -781,6 +781,74 @@
   color: #DB2777;
 }
 
+.markdownH4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0A0A0A;
+  margin: 14px 0 6px 0;
+}
+
+/* Markdown Tables */
+.tableWrapper {
+  margin: 16px 0;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+}
+
+.markdownTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: #FFFFFF;
+}
+
+.markdownTable thead {
+  background: #F9FAFB;
+}
+
+.markdownTable th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #0A0A0A;
+  border-bottom: 2px solid #E5E7EB;
+  white-space: nowrap;
+}
+
+.markdownTable td {
+  padding: 10px 16px;
+  color: #374151;
+  border-bottom: 1px solid #F3F4F6;
+  line-height: 1.6;
+}
+
+.markdownTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.markdownTable tbody tr:hover {
+  background: #F9FAFB;
+}
+
+.markdownTable td strong {
+  font-weight: 600;
+  color: #0A0A0A;
+}
+
+.markdownTable td em {
+  font-style: italic;
+}
+
+.markdownTable td code {
+  background: #F3F4F6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
+  font-size: 13px;
+  color: #DB2777;
+}
+
 /* Action Buttons */
 .buttonGroup {
   display: flex;

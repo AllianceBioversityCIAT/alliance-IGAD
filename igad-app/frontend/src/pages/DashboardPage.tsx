@@ -63,7 +63,8 @@ export function DashboardPage() {
     }
 
     fetchProposals()
-  }, [showError])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Filter proposals when search or status filter changes
   useEffect(() => {

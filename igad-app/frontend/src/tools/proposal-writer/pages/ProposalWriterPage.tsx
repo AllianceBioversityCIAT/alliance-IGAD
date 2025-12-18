@@ -979,7 +979,7 @@ export function ProposalWriterPage() {
           navigate('/', { replace: true })
         },
         onError: () => {
-          alert('Failed to delete draft. Please try again.')
+          showError('Failed to delete draft', 'Please try again.')
         },
       })
     }
@@ -1058,7 +1058,7 @@ export function ProposalWriterPage() {
     // Removed console.log'📋 User comments:', userComments)
 
     if (!proposalId || selectedSections.length === 0) {
-      alert('Please select at least one section before generating template')
+      showError('Missing selection', 'Please select at least one section before generating template')
       return
     }
 
@@ -1101,7 +1101,7 @@ export function ProposalWriterPage() {
     } catch (error: unknown) {
       // Removed console.error
       setIsGeneratingDocument(false)
-      alert(`Generation failed: ${error.message || 'Unknown error'}`)
+      showError('Generation failed', error.message || 'Unknown error')
     }
   }
 
@@ -1119,12 +1119,12 @@ export function ProposalWriterPage() {
       // Removed console.log'🔵 Step 1 validation:', { hasRFP, hasConcept })
 
       if (!hasRFP) {
-        alert('Please upload an RFP document before proceeding.')
+        showError('Missing RFP', 'Please upload an RFP document before proceeding.')
         return
       }
 
       if (!hasConcept) {
-        alert('Please provide an Initial Concept (text or file) before proceeding.')
+        showError('Missing Concept', 'Please provide an Initial Concept (text or file) before proceeding.')
         return
       }
 
@@ -1212,7 +1212,7 @@ export function ProposalWriterPage() {
         // Removed console.error❌ Analysis failed:', error)
         setIsAnalyzingRFP(false)
         setAnalysisProgress(null)
-        alert(`Analysis failed: ${error.message || 'Unknown error'}`)
+        showError('Analysis failed', error.message || 'Unknown error')
       }
 
       return
@@ -1288,8 +1288,9 @@ export function ProposalWriterPage() {
 
         // Show detailed error message
         const errorMsg = error.response?.data?.detail || error.message || 'Unknown error'
-        alert(
-          `Structure and Workplan analysis failed:\n\n${errorMsg}\n\nPlease ensure Step 1 (RFP) and Step 2 (Concept) are completed.`
+        showError(
+          'Structure and Workplan analysis failed',
+          `${errorMsg}. Please ensure Step 1 (RFP) and Step 2 (Concept) are completed.`
         )
       }
 
@@ -1467,7 +1468,7 @@ export function ProposalWriterPage() {
     }
 
     if (!proposalId || !evaluationData) {
-      alert('Please select sections before generating')
+      showError('Missing selection', 'Please select sections before generating')
       return
     }
 
@@ -1572,7 +1573,7 @@ export function ProposalWriterPage() {
       // Removed console.error❌ Concept document generation failed:', error)
       setIsGeneratingDocument(false)
       setGenerationProgressStep(1) // Reset on error
-      alert(`Generation failed: ${error.message || 'Unknown error'}`)
+      showError('Generation failed', error.message || 'Unknown error')
     }
   }
 
@@ -1607,18 +1608,18 @@ export function ProposalWriterPage() {
         } else if (status.status === 'failed') {
           setIsGeneratingDocument(false)
           setGenerationProgressStep(1) // Reset on failure
-          alert(`Generation failed: ${status.error}`)
+          showError('Generation failed', status.error || 'Unknown error')
         } else if (attempts >= maxAttempts) {
           setIsGeneratingDocument(false)
           setGenerationProgressStep(1) // Reset on timeout
-          alert('Generation timeout. Please try again.')
+          showError('Generation timeout', 'Please try again.')
         } else {
           setTimeout(poll, 3000)
         }
       } catch (error) {
         setIsGeneratingDocument(false)
         setGenerationProgressStep(1) // Reset on error
-        alert('Failed to check generation status')
+        showError('Generation error', 'Failed to check generation status')
       }
     }
 
@@ -1757,7 +1758,7 @@ export function ProposalWriterPage() {
       // Removed console.log'✅ Download complete!')
     } catch (error) {
       // Removed console.error❌ Download failed:', error)
-      alert('Failed to download document')
+      showError('Download failed', 'Failed to download document. Please try again.')
     }
   }
 
