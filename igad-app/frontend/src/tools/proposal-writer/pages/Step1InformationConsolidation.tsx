@@ -762,6 +762,16 @@ export function Step1InformationConsolidation({
           'concept-document': [],
         },
       }))
+
+      // Notify parent and dispatch invalidation event for concept file deletion
+      if (onConceptDocumentChanged) {
+        onConceptDocumentChanged()
+      }
+      window.dispatchEvent(
+        new CustomEvent('documents-updated', {
+          detail: { type: 'concept-deleted', step: 1 },
+        })
+      )
     } catch (error: Record<string, unknown>) {
       const errorMsg =
         (error?.response as Record<string, unknown>)?.data?.detail ||
@@ -777,6 +787,7 @@ export function Step1InformationConsolidation({
   /**
    * Save concept text to backend
    * Triggers vectorization for AI analysis
+   * Also triggers invalidation cascade if concept was previously saved
    */
   const handleSaveConceptText = async () => {
     const text = formData.textInputs['initial-concept'] || ''
@@ -790,6 +801,9 @@ export function Step1InformationConsolidation({
       return
     }
 
+    // Track if this is an update (concept was already saved before)
+    const isUpdate = conceptTextSaved
+
     setIsSavingConceptText(true)
     setConceptUploadError('')
 
@@ -799,6 +813,19 @@ export function Step1InformationConsolidation({
 
       setConceptTextSaved(true)
       setIsEditingConceptText(false)
+
+      // If this is an update to existing concept text, trigger invalidation cascade
+      // This ensures downstream analyses are recalculated with the new concept
+      if (isUpdate) {
+        if (onConceptDocumentChanged) {
+          onConceptDocumentChanged()
+        }
+        window.dispatchEvent(
+          new CustomEvent('documents-updated', {
+            detail: { type: 'concept-text-changed', step: 1 },
+          })
+        )
+      }
     } catch (error: Record<string, unknown>) {
       const errorMsg =
         (error?.response as Record<string, unknown>)?.data?.detail || 'Failed to save concept text'
@@ -818,6 +845,7 @@ export function Step1InformationConsolidation({
 
   /**
    * Delete saved concept text from backend
+   * Triggers invalidation cascade since concept is being removed
    */
   const handleDeleteConceptText = async () => {
     if (!confirm('Delete saved concept text?') || !proposalId) {
@@ -835,6 +863,16 @@ export function Step1InformationConsolidation({
 
       setConceptTextSaved(false)
       setIsEditingConceptText(false)
+
+      // Trigger invalidation cascade since concept is being deleted
+      if (onConceptDocumentChanged) {
+        onConceptDocumentChanged()
+      }
+      window.dispatchEvent(
+        new CustomEvent('documents-updated', {
+          detail: { type: 'concept-text-deleted', step: 1 },
+        })
+      )
     } catch (error: Record<string, unknown>) {
       const errorMsg =
         (error?.response as Record<string, unknown>)?.data?.detail ||
@@ -1082,6 +1120,13 @@ export function Step1InformationConsolidation({
             'reference-proposals': updatedFiles,
           },
         }))
+
+        // Dispatch invalidation event for reference file deletion
+        window.dispatchEvent(
+          new CustomEvent('documents-updated', {
+            detail: { type: 'reference-deleted', step: 1 },
+          })
+        )
       } else if (fileToDelete.type === 'supporting') {
         await proposalService.deleteSupportingFile(proposalId, fileToDelete.filename)
 
@@ -1095,6 +1140,13 @@ export function Step1InformationConsolidation({
             'supporting-docs': updatedFiles,
           },
         }))
+
+        // Dispatch invalidation event for supporting file deletion
+        window.dispatchEvent(
+          new CustomEvent('documents-updated', {
+            detail: { type: 'supporting-deleted', step: 1 },
+          })
+        )
       }
 
       showSuccess('File deleted successfully')

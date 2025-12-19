@@ -312,6 +312,12 @@
   color: #6A7282;
 }
 
+.stepCircleInvalidated {
+  background: #FEF3C7;
+  color: #D97706;
+  border: 1px solid #F59E0B;
+}
+
 .stepLine {
   width: 2px;
   height: 16px;
@@ -325,6 +331,10 @@
 
 .stepLinePending {
   background: #D1D5DC;
+}
+
+.stepLineInvalidated {
+  background: #F59E0B;
 }
 
 .sidebarStepTitle {
@@ -347,6 +357,18 @@
   color: #6A7282;
   font-weight: 400;
   opacity: 0.4;
+}
+
+.sidebarStepTitleInvalidated {
+  color: #D97706;
+  font-weight: 400;
+}
+
+.invalidatedHint {
+  font-size: 11px;
+  color: #D97706;
+  font-weight: 500;
+  line-height: 14px;
 }
 
 /* Step content for sidebar */

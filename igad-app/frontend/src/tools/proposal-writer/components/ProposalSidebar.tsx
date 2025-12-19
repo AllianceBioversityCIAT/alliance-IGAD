@@ -1,4 +1,4 @@
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, AlertCircle } from 'lucide-react'
 import { stepConfig } from '../pages/stepConfig'
 import styles from '../pages/proposalWriter.module.css'
 
@@ -6,6 +6,8 @@ interface ProposalSidebarProps {
   currentStep: number
   completedSteps: number[]
   isLoading?: boolean
+  /** Step from which invalidation occurred (null if no invalidation) */
+  lastModifiedStep?: number | null
 }
 
 /**
@@ -50,6 +52,7 @@ export function ProposalSidebar({
   currentStep,
   completedSteps,
   isLoading = false,
+  lastModifiedStep = null,
 }: ProposalSidebarProps) {
   // Show skeleton while loading
   if (isLoading) {
@@ -58,6 +61,18 @@ export function ProposalSidebar({
   // Calculate progress percentage based on completed steps
   const totalSteps = stepConfig.length
   const progressPercentage = Math.round((completedSteps.length / totalSteps) * 100)
+
+  /**
+   * Determine if a step needs recalculation (was invalidated)
+   * A step needs recalculation if:
+   * - lastModifiedStep is set (some invalidation occurred)
+   * - The step number is greater than the lastModifiedStep
+   * - The step is not currently completed
+   */
+  const needsRecalculation = (stepId: number): boolean => {
+    if (lastModifiedStep === null) return false
+    return stepId > lastModifiedStep && !completedSteps.includes(stepId)
+  }
 
   return (
     <div className={styles.sidebar}>
@@ -81,25 +96,37 @@ export function ProposalSidebar({
           {stepConfig.map((step, index) => {
             const isCompleted = completedSteps.includes(step.id)
             const isActive = step.id === currentStep
+            const isInvalidated = needsRecalculation(step.id)
+
+            // Determine circle style - invalidated takes precedence over pending
+            const getCircleStyle = () => {
+              if (isActive) return styles.stepCircleActive
+              if (isCompleted) return styles.stepCircleCompleted
+              if (isInvalidated) return styles.stepCircleInvalidated
+              return styles.stepCirclePending
+            }
+
+            // Determine what to render inside the circle
+            const renderCircleContent = () => {
+              if (isCompleted) return <CheckCircle size={16} />
+              if (isInvalidated) return <AlertCircle size={16} />
+              return step.id
+            }
 
             return (
               <div key={step.id} className={styles.sidebarStep}>
                 <div className={styles.stepIndicator}>
-                  <div
-                    className={`${styles.stepCircle} ${
-                      isActive
-                        ? styles.stepCircleActive
-                        : isCompleted
-                          ? styles.stepCircleCompleted
-                          : styles.stepCirclePending
-                    }`}
-                  >
-                    {isCompleted ? <CheckCircle size={16} /> : step.id}
+                  <div className={`${styles.stepCircle} ${getCircleStyle()}`}>
+                    {renderCircleContent()}
                   </div>
                   {index < stepConfig.length - 1 && (
                     <div
                       className={`${styles.stepLine} ${
-                        isCompleted ? styles.stepLineCompleted : styles.stepLinePending
+                        isCompleted
+                          ? styles.stepLineCompleted
+                          : isInvalidated
+                            ? styles.stepLineInvalidated
+                            : styles.stepLinePending
                       }`}
                     />
                   )}
@@ -111,11 +138,16 @@ export function ProposalSidebar({
                         ? styles.sidebarStepTitleActive
                         : isCompleted
                           ? styles.sidebarStepTitleCompleted
-                          : styles.sidebarStepTitlePending
+                          : isInvalidated
+                            ? styles.sidebarStepTitleInvalidated
+                            : styles.sidebarStepTitlePending
                     }`}
                   >
                     {step.title}
                   </span>
+                  {isInvalidated && (
+                    <span className={styles.invalidatedHint}>Needs update</span>
+                  )}
                 </div>
               </div>
             )

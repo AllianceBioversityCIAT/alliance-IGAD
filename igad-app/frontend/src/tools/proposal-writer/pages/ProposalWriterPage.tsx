@@ -83,6 +83,31 @@ export function ProposalWriterPage() {
   // State for preparing draft transition (Step 3 → Step 4)
   const [isPreparingDraft, setIsPreparingDraft] = useState(false)
 
+  // ========================================
+  // INVALIDATION CASCADE STATE
+  // ========================================
+  // Track if there are pending changes that require recalculation
+  const [hasPendingChanges, setHasPendingChanges] = useState(false)
+  // Track which step was last modified (for UI indicators)
+  const [lastModifiedStep, setLastModifiedStep] = useState<number | null>(null)
+
+  // Ref for snapshot of data when entering a step (for change detection)
+  const stepDataSnapshotRef = useRef<{
+    step1: {
+      rfpFiles: string[]
+      referenceFiles: string[]
+      supportingFiles: string[]
+      conceptText: string
+      conceptFiles: string[]
+    }
+    step2: { selectedSections: string[]; userComments: Record<string, string> }
+    step3: { selectedSections: string[] }
+  }>({
+    step1: { rfpFiles: [], referenceFiles: [], supportingFiles: [], conceptText: '', conceptFiles: [] },
+    step2: { selectedSections: [], userComments: {} },
+    step3: { selectedSections: [] },
+  })
+
   const allowNavigation = useRef(false)
   const formDataLoadedFromDB = useRef(false)
   // Use useState instead of useRef so changes trigger re-renders
@@ -96,10 +121,145 @@ export function ProposalWriterPage() {
   const { saveProposalId, saveProposalCode, saveFormData, saveRfpAnalysis, loadDraft, clearDraft } =
     useProposalDraft()
 
+  // ========================================
+  // INVALIDATION CASCADE FUNCTIONS
+  // ========================================
+
+  /**
+   * Clear localStorage entries for a given step and all downstream steps
+   * This ensures no stale data is loaded on next visit
+   */
+  const clearLocalStorageForStep = useCallback(
+    (fromStep: number) => {
+      if (!proposalId) return
+
+      // Step 1 localStorage keys
+      if (fromStep <= 1) {
+        localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
+        localStorage.removeItem(`proposal_reference_proposals_analysis_${proposalId}`)
+        localStorage.removeItem(`proposal_concept_analysis_${proposalId}`)
+      }
+
+      // Step 2 localStorage keys
+      if (fromStep <= 2) {
+        localStorage.removeItem(`proposal_concept_document_${proposalId}`)
+        localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
+      }
+
+      // Step 3 localStorage keys
+      if (fromStep <= 3) {
+        localStorage.removeItem(`proposal_structure_workplan_${proposalId}`)
+        localStorage.removeItem(`proposal_selected_sections_${proposalId}`)
+        localStorage.removeItem(`proposal_template_${proposalId}`)
+        localStorage.removeItem(`proposal_structure_selection_${proposalId}`)
+      }
+
+      // Step 4 localStorage keys
+      if (fromStep <= 4) {
+        localStorage.removeItem(`proposal_draft_feedback_${proposalId}`)
+      }
+    },
+    [proposalId]
+  )
+
+  /**
+   * Centralized invalidation function that clears all downstream analyses
+   * when changes are made in a previous step.
+   *
+   * @param fromStep - The step number where the change occurred (1-4)
+   *
+   * Invalidation cascade:
+   * - Step 1 change → clears ALL analyses (RFP, Concept, Structure, Template, Draft Feedback)
+   * - Step 2 change → clears Concept Document, Structure, Template, Draft Feedback
+   * - Step 3 change → clears Template, Draft Feedback
+   * - Step 4 change → clears Draft Feedback only
+   */
+  const invalidateFromStep = useCallback(
+    (fromStep: number) => {
+      // Step 1 changes → invalidate everything
+      if (fromStep <= 1) {
+        setRfpAnalysis(null)
+        setReferenceProposalsAnalysis(null)
+        setConceptAnalysis(null)
+        setConceptDocument(null)
+        setConceptEvaluationData(null)
+        setStructureWorkplanAnalysis(null)
+        setProposalTemplate(null)
+        setGeneratedProposalContent(null)
+        setSelectedSections(null)
+        setDraftFeedbackAnalysis(null)
+        setDraftIsAiGenerated(false)
+      }
+      // Step 2 changes → invalidate Step 2, 3, 4
+      else if (fromStep <= 2) {
+        setConceptDocument(null)
+        setStructureWorkplanAnalysis(null)
+        setProposalTemplate(null)
+        setGeneratedProposalContent(null)
+        setSelectedSections(null)
+        setDraftFeedbackAnalysis(null)
+        setDraftIsAiGenerated(false)
+      }
+      // Step 3 changes → invalidate Step 3, 4
+      else if (fromStep <= 3) {
+        setProposalTemplate(null)
+        setGeneratedProposalContent(null)
+        setDraftFeedbackAnalysis(null)
+        setDraftIsAiGenerated(false)
+      }
+      // Step 4 changes → invalidate only Step 4
+      else {
+        setDraftFeedbackAnalysis(null)
+      }
+
+      // Clear localStorage for the affected steps
+      clearLocalStorageForStep(fromStep)
+
+      // Mark that there are pending changes
+      setHasPendingChanges(true)
+      setLastModifiedStep(fromStep)
+    },
+    [clearLocalStorageForStep]
+  )
+
   // Scroll to top when step changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [currentStep])
+
+  // ========================================
+  // SNAPSHOT SYSTEM: Capture state when entering a step
+  // ========================================
+  // This allows detection of changes when leaving a step
+  useEffect(() => {
+    // Capture snapshot of current step's data
+    if (currentStep === 1) {
+      stepDataSnapshotRef.current.step1 = {
+        rfpFiles: [...(formData.uploadedFiles['rfp-document'] || [])].map(f =>
+          typeof f === 'string' ? f : f.name
+        ),
+        referenceFiles: [...(formData.uploadedFiles['reference-proposals'] || [])].map(f =>
+          typeof f === 'string' ? f : f.name
+        ),
+        supportingFiles: [...(formData.uploadedFiles['supporting-docs'] || [])].map(f =>
+          typeof f === 'string' ? f : f.name
+        ),
+        conceptText: formData.textInputs['initial-concept'] || '',
+        conceptFiles: [...(formData.uploadedFiles['concept-document'] || [])].map(f =>
+          typeof f === 'string' ? f : f.name
+        ),
+      }
+    } else if (currentStep === 2) {
+      stepDataSnapshotRef.current.step2 = {
+        selectedSections: [...(conceptEvaluationData?.selectedSections || [])],
+        userComments: { ...(conceptEvaluationData?.userComments || {}) },
+      }
+    } else if (currentStep === 3) {
+      stepDataSnapshotRef.current.step3 = {
+        selectedSections: [...(selectedSections || [])],
+      }
+    }
+  }, [currentStep, formData, conceptEvaluationData, selectedSections])
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -527,72 +687,78 @@ export function ProposalWriterPage() {
     conceptDocument,
   ])
 
-  // Calculate completed steps based on available data
+  // Calculate completed steps based on available data AND analyses
+  // This ensures steps are only marked complete when their analyses exist
+  // Invalidation cascade will clear analyses, causing steps to be unmarked
   useEffect(() => {
     const completed: number[] = []
 
-    // Step 1 is completed if we have RFP uploaded
-    if (formData.uploadedFiles['rfp-document']?.length > 0) {
+    // Step 1: Requires RFP uploaded AND (concept text OR file) AND analyses completed
+    const hasRfp = formData.uploadedFiles['rfp-document']?.length > 0
+    const hasConceptText = (formData.textInputs['initial-concept'] || '').length >= 100
+    const hasConceptFile = formData.uploadedFiles['concept-document']?.length > 0
+    const hasConcept = hasConceptText || hasConceptFile
+    const hasStep1Analyses = rfpAnalysis && conceptAnalysis
+
+    // Step 1 is complete only if it has requirements AND analyses
+    if (hasRfp && hasConcept && hasStep1Analyses) {
       completed.push(1)
     }
 
-    // Step 2 is completed if we have concept document generated
-    // (conceptDocument is generated in Step 2 - Concept Review)
-    if (conceptDocument) {
+    // Step 2: Requires Step 1 complete AND concept document generated
+    // The concept document is what the user generates in Step 2
+    if (completed.includes(1) && conceptDocument) {
       completed.push(2)
     }
 
-    // Step 3 is completed if we have proposal template generated OR structure workplan analysis
-    // (proposalTemplate is generated in Step 3 - Structure & Workplan)
-    // Also check structureWorkplanAnalysis as fallback for when proposalTemplate isn't loaded yet
-    // Also check draftFeedbackAnalysis - if Step 4 is done, Step 3 must have been completed
-    if (proposalTemplate || structureWorkplanAnalysis || draftFeedbackAnalysis) {
+    // Step 3: Requires Step 2 complete AND proposal template/content generated
+    // generatedProposalContent is the AI-generated proposal draft
+    if (completed.includes(2) && (proposalTemplate || generatedProposalContent)) {
       completed.push(3)
     }
 
-    // Step 4 is completed if we have draft feedback analysis
-    if (draftFeedbackAnalysis) {
+    // Step 4: Requires Step 3 complete AND draft feedback analysis
+    if (completed.includes(3) && draftFeedbackAnalysis) {
       completed.push(4)
     }
 
     // Only update if different to avoid infinite loops
     if (JSON.stringify(completed) !== JSON.stringify(completedSteps)) {
       setCompletedSteps(completed)
+      // Reset pending changes flag if we're recalculating progress
+      if (hasPendingChanges) {
+        setHasPendingChanges(false)
+      }
     }
   }, [
     formData.uploadedFiles,
+    formData.textInputs,
+    rfpAnalysis,
+    conceptAnalysis,
     conceptDocument,
     proposalTemplate,
-    structureWorkplanAnalysis,
+    generatedProposalContent,
     draftFeedbackAnalysis,
     completedSteps,
+    hasPendingChanges,
   ])
 
-  // Detect RFP/document changes and invalidate analyses
+  // Detect RFP/document changes and invalidate analyses using centralized function
   useEffect(() => {
     if (proposalId) {
-      // Listen for document update events
-      const handleDocumentsUpdated = () => {
-        // Removed console.log'📄 [ProposalWriterPage] documents-updated event received - clearing analyses')
-        setRfpAnalysis(null)
-        setReferenceProposalsAnalysis(null)
-        setConceptAnalysis(null)
-        setConceptDocument(null)
-        setConceptEvaluationData(null)
-        setProposalTemplate(null)
-        setStructureSelectionData(null)
-        localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
-        localStorage.removeItem(`proposal_reference_proposals_analysis_${proposalId}`)
-        localStorage.removeItem(`proposal_concept_analysis_${proposalId}`)
-        localStorage.removeItem(`proposal_concept_document_${proposalId}`)
-        localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
-        localStorage.removeItem(`proposal_template_${proposalId}`)
-        localStorage.removeItem(`proposal_structure_selection_${proposalId}`)
+      // Listen for document update events - uses centralized invalidation
+      const handleDocumentsUpdated = (event: Event) => {
+        // Extract step info from event detail if available, default to step 1
+        const customEvent = event as CustomEvent<{ type?: string; step?: number }>
+        const fromStep = customEvent.detail?.step || 1
+
+        // Use centralized invalidation function
+        invalidateFromStep(fromStep)
       }
 
-      // Listen for RFP deletion events (legacy)
+      // Listen for RFP deletion events (legacy) - also invalidates from step 1
       const handleRfpDeleted = () => {
-        handleDocumentsUpdated()
+        invalidateFromStep(1)
       }
 
       window.addEventListener('rfp-deleted', handleRfpDeleted)
@@ -602,7 +768,7 @@ export function ProposalWriterPage() {
         window.removeEventListener('documents-updated', handleDocumentsUpdated)
       }
     }
-  }, [proposalId])
+  }, [proposalId, invalidateFromStep])
 
   // Create a proposal when the component mounts (only if authenticated and no saved proposal)
   // IMPORTANT: Wait for localStorage to be loaded first to prevent creating a new proposal
@@ -2205,6 +2371,7 @@ export function ProposalWriterPage() {
         isLoadingProposal={isCreating}
         isLoadingStepData={isLoadingStepData}
         onNavigateAway={handleNavigateAway}
+        lastModifiedStep={lastModifiedStep}
       >
         {renderCurrentStep()}
       </ProposalLayout>

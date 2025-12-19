@@ -17,6 +17,8 @@ interface ProposalLayoutProps {
   isLoadingProposal?: boolean
   isLoadingStepData?: boolean
   onNavigateAway?: () => void
+  /** Step from which invalidation occurred (null if no invalidation) */
+  lastModifiedStep?: number | null
 }
 
 export function ProposalLayout({
@@ -30,6 +32,7 @@ export function ProposalLayout({
   isLoadingProposal = false,
   isLoadingStepData = false,
   onNavigateAway,
+  lastModifiedStep = null,
 }: ProposalLayoutProps) {
   const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
@@ -101,6 +104,7 @@ export function ProposalLayout({
           currentStep={currentStep}
           completedSteps={completedSteps}
           isLoading={isLoadingStepData}
+          lastModifiedStep={lastModifiedStep}
         />
         <div className={styles.contentArea}>
           {children}
