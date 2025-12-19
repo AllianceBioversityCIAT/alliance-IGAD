@@ -19,6 +19,7 @@ import { Step3StructureWorkplan } from './Step3StructureWorkplan'
 import { Step4ProposalReview } from './Step4ProposalReview'
 import { useProposals } from '@/tools/proposal-writer/hooks/useProposal'
 import { useProposalDraft } from '@/tools/proposal-writer/hooks/useProposalDraft'
+import { useProcessingResumption } from '@/tools/proposal-writer/hooks/useProcessingResumption'
 import { authService } from '@/shared/services/authService'
 import { proposalService } from '../services/proposalService'
 import { useToast } from '@/shared/components/ui/ToastContainer'
@@ -103,7 +104,13 @@ export function ProposalWriterPage() {
     step2: { selectedSections: string[]; userComments: Record<string, string> }
     step3: { selectedSections: string[] }
   }>({
-    step1: { rfpFiles: [], referenceFiles: [], supportingFiles: [], conceptText: '', conceptFiles: [] },
+    step1: {
+      rfpFiles: [],
+      referenceFiles: [],
+      supportingFiles: [],
+      conceptText: '',
+      conceptFiles: [],
+    },
     step2: { selectedSections: [], userComments: {} },
     step3: { selectedSections: [] },
   })
@@ -122,6 +129,38 @@ export function ProposalWriterPage() {
     useProposalDraft()
 
   // ========================================
+  // PROCESSING RESUMPTION (for page refresh)
+  // ========================================
+  const { isResuming, resumingOperations } = useProcessingResumption({
+    proposalId,
+    enabled: !!proposalId && !isCreating && localStorageLoaded,
+
+    onRfpAnalysisComplete: data => {
+      setRfpAnalysis(data)
+      showSuccess('Analysis resumed', 'RFP analysis completed.')
+    },
+    onConceptAnalysisComplete: data => {
+      setConceptAnalysis(data)
+      showSuccess('Analysis resumed', 'Concept analysis completed.')
+    },
+    onConceptDocumentComplete: data => {
+      setConceptDocument(data)
+      showSuccess('Generation resumed', 'Concept document ready.')
+    },
+    onStructureAnalysisComplete: data => {
+      setStructureWorkplanAnalysis(data)
+      showSuccess('Analysis resumed', 'Structure analysis completed.')
+    },
+    onDraftFeedbackComplete: data => {
+      setDraftFeedbackAnalysis(data)
+      showSuccess('Analysis resumed', 'Draft feedback ready.')
+    },
+    onOperationError: (operationName, error) => {
+      showError(`${operationName} failed`, error)
+    },
+  })
+
+  // ========================================
   // INVALIDATION CASCADE FUNCTIONS
   // ========================================
 
@@ -131,7 +170,9 @@ export function ProposalWriterPage() {
    */
   const clearLocalStorageForStep = useCallback(
     (fromStep: number) => {
-      if (!proposalId) return
+      if (!proposalId) {
+        return
+      }
 
       // Step 1 localStorage keys
       if (fromStep <= 1) {
@@ -1224,7 +1265,10 @@ export function ProposalWriterPage() {
     // Removed console.log'📋 User comments:', userComments)
 
     if (!proposalId || selectedSections.length === 0) {
-      showError('Missing selection', 'Please select at least one section before generating template')
+      showError(
+        'Missing selection',
+        'Please select at least one section before generating template'
+      )
       return
     }
 
@@ -1290,7 +1334,10 @@ export function ProposalWriterPage() {
       }
 
       if (!hasConcept) {
-        showError('Missing Concept', 'Please provide an Initial Concept (text or file) before proceeding.')
+        showError(
+          'Missing Concept',
+          'Please provide an Initial Concept (text or file) before proceeding.'
+        )
         return
       }
 
@@ -2065,6 +2112,11 @@ export function ProposalWriterPage() {
             initialGeneratedContent={generatedProposalContent}
             onGeneratedContentChange={content => {
               setGeneratedProposalContent(content)
+              // When AI draft is regenerated, invalidate the draft feedback analysis
+              // so Step 4 shows the "Ready to Analyze" option
+              if (content) {
+                setDraftFeedbackAnalysis(null)
+              }
             }}
             initialSelectedSections={selectedSections}
             onSelectedSectionsChange={handleSelectedSectionsChange}
@@ -2310,46 +2362,58 @@ export function ProposalWriterPage() {
   return (
     <>
       <AnalysisProgressModal
-        isOpen={isAnalyzingRFP || isGeneratingDocument || isRegeneratingConcept || isPreparingDraft}
+        isOpen={
+          isAnalyzingRFP ||
+          isGeneratingDocument ||
+          isRegeneratingConcept ||
+          isPreparingDraft ||
+          isResuming
+        }
         progress={
-          isPreparingDraft
+          isResuming
             ? {
                 step: 1,
-                total: 2,
-                message: 'Preparing Draft for Review...',
+                total: resumingOperations.length,
+                message: 'Resuming Analysis...',
                 description:
-                  'Your AI-generated proposal draft is being prepared for the review process. This will only take a moment.',
-                steps: [
-                  'Transferring AI-generated content',
-                  'Setting up for analysis',
-                ],
+                  'We detected an analysis that was in progress. Waiting for it to complete.',
+                steps: resumingOperations,
               }
-            : isRegeneratingConcept
+            : isPreparingDraft
               ? {
                   step: 1,
                   total: 2,
-                  message: 'Regenerating Concept Analysis...',
+                  message: 'Preparing Draft for Review...',
                   description:
-                    'Our AI is re-analyzing your concept note against the RFP requirements. This typically takes 1-2 minutes.',
-                  steps: [
-                    'Analyzing concept note and RFP alignment',
-                    'Generating fit assessment and improvement areas',
-                  ],
+                    'Your AI-generated proposal draft is being prepared for the review process. This will only take a moment.',
+                  steps: ['Transferring AI-generated content', 'Setting up for analysis'],
                 }
-              : isGeneratingDocument
+              : isRegeneratingConcept
                 ? {
-                    step: generationProgressStep,
-                    total: 3,
-                    message: 'Generating Enhanced Concept Document...',
+                    step: 1,
+                    total: 2,
+                    message: 'Regenerating Concept Analysis...',
                     description:
-                      'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
+                      'Our AI is re-analyzing your concept note against the RFP requirements. This typically takes 1-2 minutes.',
                     steps: [
-                      'Analyzing RFP requirements and selected sections',
-                      'Generating detailed narrative content with examples',
-                      'Finalizing and validating concept document',
+                      'Analyzing concept note and RFP alignment',
+                      'Generating fit assessment and improvement areas',
                     ],
                   }
-                : analysisProgress
+                : isGeneratingDocument
+                  ? {
+                      step: generationProgressStep,
+                      total: 3,
+                      message: 'Generating Enhanced Concept Document...',
+                      description:
+                        'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
+                      steps: [
+                        'Analyzing RFP requirements and selected sections',
+                        'Generating detailed narrative content with examples',
+                        'Finalizing and validating concept document',
+                      ],
+                    }
+                  : analysisProgress
         }
       />
       <DraftConfirmationModal

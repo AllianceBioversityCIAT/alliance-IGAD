@@ -20,7 +20,19 @@ import {
   Check,
   Clock,
 } from 'lucide-react'
-import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType } from 'docx'
+import {
+  Document,
+  Packer,
+  Paragraph,
+  HeadingLevel,
+  TextRun,
+  AlignmentType,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+} from 'docx'
 import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
 import AnalysisProgressModal from '@/tools/proposal-writer/components/AnalysisProgressModal'
@@ -346,7 +358,11 @@ function UploadedFileCard({
             disabled={isDownloading || isDeleting || isAnalyzing}
             title="Download file"
           >
-            {isDownloading ? <Loader2 size={16} className={styles.spinning} /> : <Download size={16} />}
+            {isDownloading ? (
+              <Loader2 size={16} className={styles.spinning} />
+            ) : (
+              <Download size={16} />
+            )}
           </button>
           <button
             type="button"
@@ -762,6 +778,104 @@ export function Step4ProposalReview({
     }
   }, [])
 
+  // Check if there's an analysis in progress on mount (for page refresh resumption)
+  useEffect(() => {
+    if (!proposalId) {
+      return
+    }
+
+    const checkExistingAnalysis = async () => {
+      try {
+        const status = await proposalService.getDraftFeedbackStatus(proposalId)
+
+        if (status.status === 'processing') {
+          // Analysis is in progress - resume polling
+          setIsAnalyzing(true)
+          setAnalysisProgress({
+            step: 2,
+            total: 2,
+            message: 'Resuming Analysis...',
+            description: 'Waiting for draft feedback analysis to complete.',
+            steps: DRAFT_FEEDBACK_STEPS,
+          })
+
+          // Start polling
+          isPollingActiveRef.current = true
+          pollingStartTimeRef.current = Date.now()
+          pollingRef.current = setInterval(() => {
+            if (isPollingActiveRef.current) {
+              // Call pollAnalysisStatus - but we need to define it first
+              // So we'll inline the polling logic here
+              proposalService.getDraftFeedbackStatus(proposalId).then(s => {
+                if (!isPollingActiveRef.current) {
+                  return
+                }
+
+                if (s.status === 'completed') {
+                  isPollingActiveRef.current = false
+                  if (pollingRef.current) {
+                    clearInterval(pollingRef.current)
+                    pollingRef.current = null
+                  }
+                  setIsAnalyzing(false)
+                  setAnalysisProgress(null)
+
+                  const analysis =
+                    s.data?.draft_feedback_analysis || (s.data?.section_feedback ? s.data : null)
+                  if (analysis) {
+                    setFeedbackData(mapAnalysisToFeedback(analysis))
+                    onFeedbackAnalyzed?.(analysis)
+                    showSuccess('Analysis Complete', 'Draft feedback analysis completed!')
+                  }
+                } else if (s.status === 'failed') {
+                  isPollingActiveRef.current = false
+                  if (pollingRef.current) {
+                    clearInterval(pollingRef.current)
+                    pollingRef.current = null
+                  }
+                  setIsAnalyzing(false)
+                  setAnalysisProgress(null)
+                  showError('Analysis Failed', s.error || 'Unknown error')
+                }
+
+                // Check timeout
+                if (Date.now() - pollingStartTimeRef.current > MAX_POLLING_TIME) {
+                  isPollingActiveRef.current = false
+                  if (pollingRef.current) {
+                    clearInterval(pollingRef.current)
+                    pollingRef.current = null
+                  }
+                  setIsAnalyzing(false)
+                  setAnalysisProgress(null)
+                  showError('Timeout', 'Analysis timed out. Please try again.')
+                }
+              })
+            }
+          }, POLLING_INTERVAL)
+        } else if (status.status === 'completed' && status.data && !draftFeedbackAnalysis) {
+          // Analysis completed while we were away - load the data
+          const analysis =
+            status.data?.draft_feedback_analysis ||
+            (status.data?.section_feedback ? status.data : null)
+          if (analysis) {
+            setFeedbackData(mapAnalysisToFeedback(analysis))
+            onFeedbackAnalyzed?.(analysis)
+            showSuccess('Analysis Ready', 'Draft feedback analysis completed while you were away.')
+          }
+        } else if (status.status === 'failed' && status.error) {
+          // Analysis failed while we were away
+          showError('Analysis Failed', status.error)
+        }
+      } catch {
+        // No analysis in progress or error - ignore silently
+      }
+    }
+
+    checkExistingAnalysis()
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposalId])
+
   // Poll for analysis completion
   const pollAnalysisStatus = useCallback(async () => {
     // Check if polling should continue
@@ -908,15 +1022,22 @@ export function Step4ProposalReview({
 
       // Get error message from response
       const err = error as { response?: { data?: { message?: string; detail?: string } } }
-      const errorMsg = err.response?.data?.message || err.response?.data?.detail || 'Failed to start analysis'
+      const errorMsg =
+        err.response?.data?.message || err.response?.data?.detail || 'Failed to start analysis'
 
       // Provide more specific error messages for common issues
-      if (errorMsg.toLowerCase().includes('extract text') || errorMsg.toLowerCase().includes('could not extract')) {
+      if (
+        errorMsg.toLowerCase().includes('extract text') ||
+        errorMsg.toLowerCase().includes('could not extract')
+      ) {
         showError(
           'Document Processing Error',
-          'Unable to extract text from the draft file. Please ensure it\'s a valid PDF, DOC, or DOCX file. If using an AI-generated draft, try downloading it first and re-uploading as a PDF.'
+          "Unable to extract text from the draft file. Please ensure it's a valid PDF, DOC, or DOCX file. If using an AI-generated draft, try downloading it first and re-uploading as a PDF."
         )
-      } else if (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('no draft')) {
+      } else if (
+        errorMsg.toLowerCase().includes('not found') ||
+        errorMsg.toLowerCase().includes('no draft')
+      ) {
         showError(
           'Draft Not Found',
           'The draft file could not be found. Please upload a new draft proposal.'
@@ -1032,83 +1153,263 @@ export function Step4ProposalReview({
   }, [])
 
   /**
-   * Convert markdown content to docx Paragraph array (same logic as Step3)
+   * Parse inline formatting (bold, italic) into TextRun array
    */
-  const markdownToParagraphs = useCallback((markdown: string): Paragraph[] => {
-    const paragraphs: Paragraph[] = []
-    const lines = markdown.split('\n')
+  const parseInlineFormatting = useCallback((text: string): TextRun[] => {
+    const runs: TextRun[] = []
+    // Match **bold** and *italic* patterns
+    const regex = /(\*\*[^*]+\*\*|\*[^*]+\*)/g
+    let lastIndex = 0
+    let match
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      const trimmedLine = line.trim()
-
-      if (!trimmedLine) continue
-
-      // Headers
-      if (trimmedLine.startsWith('#### ')) {
-        paragraphs.push(new Paragraph({
-          text: trimmedLine.slice(5),
-          heading: HeadingLevel.HEADING_4,
-          spacing: { before: 200, after: 100 },
-        }))
-      } else if (trimmedLine.startsWith('### ')) {
-        paragraphs.push(new Paragraph({
-          text: trimmedLine.slice(4),
-          heading: HeadingLevel.HEADING_3,
-          spacing: { before: 240, after: 120 },
-        }))
-      } else if (trimmedLine.startsWith('## ')) {
-        paragraphs.push(new Paragraph({
-          text: trimmedLine.slice(3),
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 280, after: 140 },
-        }))
-      } else if (trimmedLine.startsWith('# ')) {
-        paragraphs.push(new Paragraph({
-          text: trimmedLine.slice(2),
-          heading: HeadingLevel.HEADING_1,
-          spacing: { before: 320, after: 160 },
-        }))
+    while ((match = regex.exec(text)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        runs.push(new TextRun({ text: text.slice(lastIndex, match.index) }))
       }
-      // Bullet points
-      else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-        const text = trimmedLine.slice(2).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
-        paragraphs.push(new Paragraph({
-          children: [new TextRun({ text: '• ' }), new TextRun({ text })],
-          spacing: { before: 60, after: 60 },
-          indent: { left: 720 },
-        }))
+
+      const matchedText = match[0]
+      if (matchedText.startsWith('**') && matchedText.endsWith('**')) {
+        runs.push(new TextRun({ text: matchedText.slice(2, -2), bold: true }))
+      } else if (matchedText.startsWith('*') && matchedText.endsWith('*')) {
+        runs.push(new TextRun({ text: matchedText.slice(1, -1), italics: true }))
       }
-      // Numbered lists
-      else if (/^\d+\.\s/.test(trimmedLine)) {
-        const match = trimmedLine.match(/^(\d+\.)\s(.*)$/)
-        if (match) {
-          const text = match[2].replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
-          paragraphs.push(new Paragraph({
-            children: [new TextRun({ text: match[1] + ' ' }), new TextRun({ text })],
-            spacing: { before: 60, after: 60 },
-            indent: { left: 720 },
-          }))
+
+      lastIndex = regex.lastIndex
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      runs.push(new TextRun({ text: text.slice(lastIndex) }))
+    }
+
+    return runs.length > 0 ? runs : [new TextRun({ text })]
+  }, [])
+
+  /**
+   * Convert markdown content to docx Paragraph/Table array (same logic as Step3)
+   */
+  const markdownToParagraphs = useCallback(
+    (markdown: string): (Paragraph | Table)[] => {
+      const elements: (Paragraph | Table)[] = []
+      const lines = markdown.split('\n')
+      let tableRows: string[][] = []
+      let tableHeaders: string[] = []
+      let inTable = false
+
+      // Helper to check if line is a table row
+      const isTableRow = (line: string): boolean => {
+        const trimmed = line.trim()
+        return trimmed.includes('|') && (trimmed.startsWith('|') || trimmed.split('|').length >= 2)
+      }
+
+      // Helper to check if line is table separator
+      const isTableSeparator = (line: string): boolean => {
+        const trimmed = line.trim()
+        return /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(trimmed)
+      }
+
+      // Helper to parse table row into cells
+      const parseTableRowCells = (line: string): string[] => {
+        return line
+          .split('|')
+          .map(cell => cell.trim())
+          .filter((_, index, arr) => {
+            if (index === 0 && arr[0] === '') {
+              return false
+            }
+            if (index === arr.length - 1 && arr[arr.length - 1] === '') {
+              return false
+            }
+            return true
+          })
+      }
+
+      // Helper to flush table to elements
+      const flushTable = () => {
+        if (tableHeaders.length > 0 || tableRows.length > 0) {
+          const rows: TableRow[] = []
+
+          // Add header row
+          if (tableHeaders.length > 0) {
+            rows.push(
+              new TableRow({
+                tableHeader: true,
+                children: tableHeaders.map(
+                  header =>
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: header,
+                              bold: true,
+                              size: 22,
+                            }),
+                          ],
+                        }),
+                      ],
+                      shading: { fill: 'F3F4F6' },
+                    })
+                ),
+              })
+            )
+          }
+
+          // Add data rows
+          tableRows.forEach(row => {
+            rows.push(
+              new TableRow({
+                children: row.map(
+                  cell =>
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: parseInlineFormatting(cell),
+                        }),
+                      ],
+                    })
+                ),
+              })
+            )
+          })
+
+          // Create table with borders
+          elements.push(
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows,
+              borders: {
+                top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                left: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                right: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+              },
+            })
+          )
+
+          // Add spacing after table
+          elements.push(new Paragraph({ text: '', spacing: { after: 200 } }))
+
+          tableHeaders = []
+          tableRows = []
+          inTable = false
         }
       }
-      // Regular paragraphs with bold handling
-      else {
-        const children: TextRun[] = []
-        const parts = trimmedLine.split(/(\*\*[^*]+\*\*)/g)
-        for (const part of parts) {
-          if (part.startsWith('**') && part.endsWith('**')) {
-            children.push(new TextRun({ text: part.slice(2, -2), bold: true }))
-          } else if (part) {
-            children.push(new TextRun({ text: part }))
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        const trimmedLine = line.trim()
+
+        // Check for table rows
+        if (isTableRow(trimmedLine)) {
+          if (isTableSeparator(trimmedLine)) {
+            inTable = true
+            continue
+          }
+
+          if (!inTable && tableHeaders.length === 0) {
+            tableHeaders = parseTableRowCells(trimmedLine)
+          } else {
+            inTable = true
+            tableRows.push(parseTableRowCells(trimmedLine))
+          }
+          continue
+        }
+
+        // Flush table if we hit a non-table line
+        if (inTable || tableHeaders.length > 0) {
+          flushTable()
+        }
+
+        // Skip empty lines but add spacing
+        if (!trimmedLine) {
+          continue
+        }
+
+        // Headers
+        if (trimmedLine.startsWith('#### ')) {
+          elements.push(
+            new Paragraph({
+              children: parseInlineFormatting(trimmedLine.slice(5)),
+              heading: HeadingLevel.HEADING_4,
+              spacing: { before: 200, after: 100 },
+            })
+          )
+        } else if (trimmedLine.startsWith('### ')) {
+          elements.push(
+            new Paragraph({
+              children: parseInlineFormatting(trimmedLine.slice(4)),
+              heading: HeadingLevel.HEADING_3,
+              spacing: { before: 240, after: 120 },
+            })
+          )
+        } else if (trimmedLine.startsWith('## ')) {
+          elements.push(
+            new Paragraph({
+              children: parseInlineFormatting(trimmedLine.slice(3)),
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 280, after: 140 },
+            })
+          )
+        } else if (trimmedLine.startsWith('# ')) {
+          elements.push(
+            new Paragraph({
+              children: parseInlineFormatting(trimmedLine.slice(2)),
+              heading: HeadingLevel.HEADING_1,
+              spacing: { before: 320, after: 160 },
+            })
+          )
+        }
+        // Bullet points
+        else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+          elements.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: '• ' }),
+                ...parseInlineFormatting(trimmedLine.slice(2)),
+              ],
+              spacing: { before: 60, after: 60 },
+              indent: { left: 720 },
+            })
+          )
+        }
+        // Numbered lists
+        else if (/^\d+\.\s/.test(trimmedLine)) {
+          const match = trimmedLine.match(/^(\d+\.)\s(.*)$/)
+          if (match) {
+            elements.push(
+              new Paragraph({
+                children: [
+                  new TextRun({ text: match[1] + ' ' }),
+                  ...parseInlineFormatting(match[2]),
+                ],
+                spacing: { before: 60, after: 60 },
+                indent: { left: 720 },
+              })
+            )
           }
         }
-        if (children.length > 0) {
-          paragraphs.push(new Paragraph({ children, spacing: { before: 120, after: 120 } }))
+        // Regular paragraphs
+        else {
+          elements.push(
+            new Paragraph({
+              children: parseInlineFormatting(trimmedLine),
+              spacing: { before: 120, after: 120 },
+            })
+          )
         }
       }
-    }
-    return paragraphs
-  }, [])
+
+      // Flush any remaining table
+      flushTable()
+
+      return elements
+    },
+    [parseInlineFormatting]
+  )
 
   const handleDownloadDraft = useCallback(async () => {
     if (!proposalId) {
@@ -1126,58 +1427,102 @@ export function Step4ProposalReview({
           day: 'numeric',
         })
 
-        const documentParagraphs: Paragraph[] = []
+        const documentElements: (Paragraph | Table)[] = []
 
         // Title
-        documentParagraphs.push(new Paragraph({
-          children: [new TextRun({ text: 'AI Generated Proposal Draft', bold: true, size: 32, color: '166534' })],
-          spacing: { after: 200 },
-          alignment: AlignmentType.CENTER,
-        }))
+        documentElements.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'AI Generated Proposal Draft',
+                bold: true,
+                size: 32,
+                color: '166534',
+              }),
+            ],
+            spacing: { after: 200 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
 
         // Date
-        documentParagraphs.push(new Paragraph({
-          children: [new TextRun({ text: `Generated: ${currentDate}`, size: 20, color: '6B7280' })],
-          spacing: { after: 100 },
-          alignment: AlignmentType.CENTER,
-        }))
+        documentElements.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: `Generated: ${currentDate}`, size: 20, color: '6B7280' }),
+            ],
+            spacing: { after: 100 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
 
         // Proposal ID
-        documentParagraphs.push(new Paragraph({
-          children: [new TextRun({ text: `Proposal ID: ${proposalId}`, size: 20, color: '6B7280' })],
-          spacing: { after: 400 },
-          alignment: AlignmentType.CENTER,
-        }))
+        documentElements.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: `Proposal ID: ${proposalId}`, size: 20, color: '6B7280' }),
+            ],
+            spacing: { after: 400 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
 
         // Separator
-        documentParagraphs.push(new Paragraph({
-          children: [new TextRun({ text: '═══════════════════════════════════════════════════', color: 'CCCCCC' })],
-          spacing: { after: 400 },
-          alignment: AlignmentType.CENTER,
-        }))
+        documentElements.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: '═══════════════════════════════════════════════════',
+                color: 'CCCCCC',
+              }),
+            ],
+            spacing: { after: 400 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
 
         // Content
-        documentParagraphs.push(...markdownToParagraphs(generatedProposalContent))
+        documentElements.push(...markdownToParagraphs(generatedProposalContent))
 
         // Footer separator
-        documentParagraphs.push(new Paragraph({ text: '', spacing: { before: 400, after: 200 } }))
-        documentParagraphs.push(new Paragraph({
-          children: [new TextRun({ text: '═══════════════════════════════════════════════════', color: 'CCCCCC' })],
-          spacing: { after: 200 },
-          alignment: AlignmentType.CENTER,
-        }))
+        documentElements.push(new Paragraph({ text: '', spacing: { before: 400, after: 200 } }))
+        documentElements.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: '═══════════════════════════════════════════════════',
+                color: 'CCCCCC',
+              }),
+            ],
+            spacing: { after: 200 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
 
         // Footer
-        documentParagraphs.push(new Paragraph({
-          children: [new TextRun({ text: 'Generated by IGAD Proposal Writer - AI Assistant', size: 18, color: '9CA3AF', italics: true })],
-          alignment: AlignmentType.CENTER,
-        }))
+        documentElements.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Generated by IGAD Proposal Writer - AI Assistant',
+                size: 18,
+                color: '9CA3AF',
+                italics: true,
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+          })
+        )
 
         const doc = new Document({
-          sections: [{
-            children: documentParagraphs,
-            properties: { page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
-          }],
+          sections: [
+            {
+              children: documentElements,
+              properties: {
+                page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } },
+              },
+            },
+          ],
         })
 
         const blob = await Packer.toBlob(doc)
@@ -1359,10 +1704,13 @@ export function Step4ProposalReview({
               </div>
               <div className={styles.readyToAnalyzeInfo}>
                 <h3 className={styles.readyToAnalyzeTitle}>
-                  {draftIsAiGenerated ? 'Your AI-Generated Draft is Ready' : 'Your Draft is Ready for Review'}
+                  {draftIsAiGenerated
+                    ? 'Your AI-Generated Draft is Ready'
+                    : 'Your Draft is Ready for Review'}
                 </h3>
                 <p className={styles.readyToAnalyzeDescription}>
-                  Our AI will analyze your draft proposal and provide detailed section-by-section feedback to help you improve alignment with RFP requirements.
+                  Our AI will analyze your draft proposal and provide detailed section-by-section
+                  feedback to help you improve alignment with RFP requirements.
                 </p>
               </div>
             </div>

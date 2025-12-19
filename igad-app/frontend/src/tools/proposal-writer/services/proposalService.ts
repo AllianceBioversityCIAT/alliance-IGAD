@@ -65,6 +65,23 @@ export interface AISuggestion {
   action: string
 }
 
+// Types for processing status check (page refresh resumption)
+export interface OperationStatus {
+  status: 'not_started' | 'processing' | 'completed' | 'failed'
+  data?: unknown
+  error?: string
+}
+
+export interface AllProcessingStatus {
+  step1_rfp: OperationStatus
+  step1_reference: OperationStatus
+  step1_concept: OperationStatus
+  step2_concept_document: OperationStatus
+  step3_structure: OperationStatus
+  step3_ai_template: OperationStatus
+  step4_draft_feedback: OperationStatus
+}
+
 class ProposalService {
   async createProposal(data: {
     title: string
@@ -1047,6 +1064,100 @@ class ProposalService {
     a.click()
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
+  }
+
+  // ==================== Processing Status Check (for page refresh resumption) ====================
+
+  /**
+   * Get all processing status in parallel
+   *
+   * Checks the status of all analysis operations to detect any in-progress
+   * processes when the page is refreshed. Used to resume polling for
+   * operations that were interrupted by page refresh.
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @returns Status of all analysis operations
+   *
+   * @example
+   * ```typescript
+   * const status = await proposalService.getAllProcessingStatus('abc-123')
+   * if (status.step1_rfp.status === 'processing') {
+   *   // Resume polling for RFP analysis
+   * }
+   * ```
+   */
+  async getAllProcessingStatus(proposalId: string): Promise<AllProcessingStatus> {
+    // Fetch all status endpoints in parallel for performance
+    const [step1Status, step2Status, conceptStatus, conceptDocStatus, structureStatus, templateStatus, draftFeedbackStatus] =
+      await Promise.all([
+        this.getStep1Status(proposalId).catch(() => null),
+        this.getStep2Status(proposalId).catch(() => null),
+        this.getConceptStatus(proposalId).catch(() => null),
+        this.getConceptDocumentStatus(proposalId).catch(() => null),
+        this.getStructureWorkplanStatus(proposalId).catch(() => null),
+        this.getProposalTemplateStatus(proposalId).catch(() => null),
+        this.getDraftFeedbackStatus(proposalId).catch(() => null),
+      ])
+
+    const defaultStatus: OperationStatus = { status: 'not_started' }
+
+    return {
+      step1_rfp: step1Status?.rfp_analysis
+        ? {
+            status: step1Status.rfp_analysis.status as OperationStatus['status'],
+            data: step1Status.rfp_analysis.data,
+            error: step1Status.rfp_analysis.error,
+          }
+        : defaultStatus,
+
+      step1_reference: step2Status?.reference_proposals_analysis
+        ? {
+            status: step2Status.reference_proposals_analysis.status as OperationStatus['status'],
+            data: step2Status.reference_proposals_analysis.data,
+            error: step2Status.reference_proposals_analysis.error,
+          }
+        : defaultStatus,
+
+      step1_concept: conceptStatus
+        ? {
+            status: conceptStatus.status as OperationStatus['status'],
+            data: conceptStatus.concept_analysis,
+            error: conceptStatus.error,
+          }
+        : defaultStatus,
+
+      step2_concept_document: conceptDocStatus
+        ? {
+            status: conceptDocStatus.status as OperationStatus['status'],
+            data: conceptDocStatus.concept_document,
+            error: conceptDocStatus.error,
+          }
+        : defaultStatus,
+
+      step3_structure: structureStatus
+        ? {
+            status: structureStatus.status as OperationStatus['status'],
+            data: structureStatus.data,
+            error: structureStatus.error,
+          }
+        : defaultStatus,
+
+      step3_ai_template: templateStatus
+        ? {
+            status: templateStatus.status as OperationStatus['status'],
+            data: templateStatus.data,
+            error: templateStatus.error,
+          }
+        : defaultStatus,
+
+      step4_draft_feedback: draftFeedbackStatus
+        ? {
+            status: draftFeedbackStatus.status as OperationStatus['status'],
+            data: draftFeedbackStatus.data,
+            error: draftFeedbackStatus.error,
+          }
+        : defaultStatus,
+    }
   }
 }
 

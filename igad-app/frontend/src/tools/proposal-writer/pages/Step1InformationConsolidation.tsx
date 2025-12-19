@@ -14,6 +14,7 @@ import {
   SUCCESS_MESSAGES,
   ERROR_MESSAGES,
 } from '@/tools/proposal-writer/constants/notificationMessages'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 
 // ============================================================================
 // CONSTANTS
@@ -214,6 +215,23 @@ export function Step1InformationConsolidation({
   const [isDeletingFile, setIsDeletingFile] = useState(false)
 
   // ============================================================================
+  // STATE - Delete Confirmation Dialogs
+  // ============================================================================
+
+  /** Concept file pending deletion (using ConfirmDialog instead of native confirm) */
+  const [conceptFileToDelete, setConceptFileToDelete] = useState<string | null>(null)
+  /** Loading state for concept file deletion */
+  const [isDeletingConceptFile, setIsDeletingConceptFile] = useState(false)
+  /** Show delete concept text confirmation dialog */
+  const [showDeleteConceptTextDialog, setShowDeleteConceptTextDialog] = useState(false)
+  /** Loading state for concept text deletion */
+  const [isDeletingConceptText, setIsDeletingConceptText] = useState(false)
+  /** Show delete work text confirmation dialog */
+  const [showDeleteWorkTextDialog, setShowDeleteWorkTextDialog] = useState(false)
+  /** Loading state for work text deletion */
+  const [isDeletingWorkText, setIsDeletingWorkText] = useState(false)
+
+  // ============================================================================
   // STATE - Existing Work & Experience
   // ============================================================================
 
@@ -272,8 +290,7 @@ export function Step1InformationConsolidation({
 
       try {
         // Load uploaded documents from backend (source of truth)
-        const { proposalService } =
-          await import('@/tools/proposal-writer/services/proposalService')
+        const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
         const documents = await proposalService.getUploadedDocuments(proposalId)
 
         // Update only uploadedFiles, preserve existing textInputs
@@ -740,16 +757,36 @@ export function Step1InformationConsolidation({
 
   /**
    * Delete concept document file
+   * Shows confirmation dialog before deletion
    *
    * @param filename - Name of file to delete
+   * @param skipConfirm - If true, skip confirmation dialog (used for replace operations)
    */
   const handleDeleteConceptFile = async (filename: string, skipConfirm?: boolean) => {
-    if (!skipConfirm && !confirm(`Delete ${filename}?`)) {
-      return
-    }
     if (!proposalId) {
       return
     }
+
+    if (!skipConfirm) {
+      // Show confirmation dialog
+      setConceptFileToDelete(filename)
+      return
+    }
+
+    // Execute deletion directly (when skipConfirm is true)
+    await executeDeleteConceptFile(filename)
+  }
+
+  /**
+   * Execute the actual concept file deletion
+   * Called after confirmation or when skipConfirm is true
+   */
+  const executeDeleteConceptFile = async (filename: string) => {
+    if (!proposalId) {
+      return
+    }
+
+    setIsDeletingConceptFile(true)
 
     try {
       const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
@@ -777,7 +814,20 @@ export function Step1InformationConsolidation({
         (error?.response as Record<string, unknown>)?.data?.detail ||
         'Failed to delete concept file'
       setConceptUploadError(String(errorMsg))
+    } finally {
+      setIsDeletingConceptFile(false)
+      setConceptFileToDelete(null)
     }
+  }
+
+  /**
+   * Confirm and execute concept file deletion from dialog
+   */
+  const confirmDeleteConceptFile = async () => {
+    if (!conceptFileToDelete) {
+      return
+    }
+    await executeDeleteConceptFile(conceptFileToDelete)
   }
 
   // ============================================================================
@@ -845,12 +895,25 @@ export function Step1InformationConsolidation({
 
   /**
    * Delete saved concept text from backend
-   * Triggers invalidation cascade since concept is being removed
+   * Shows confirmation dialog before deletion
    */
-  const handleDeleteConceptText = async () => {
-    if (!confirm('Delete saved concept text?') || !proposalId) {
+  const handleDeleteConceptText = () => {
+    if (!proposalId) {
       return
     }
+    setShowDeleteConceptTextDialog(true)
+  }
+
+  /**
+   * Execute the actual concept text deletion
+   * Called after confirmation from dialog
+   */
+  const confirmDeleteConceptText = async () => {
+    if (!proposalId) {
+      return
+    }
+
+    setIsDeletingConceptText(true)
 
     try {
       const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
@@ -878,6 +941,9 @@ export function Step1InformationConsolidation({
         (error?.response as Record<string, unknown>)?.data?.detail ||
         'Failed to delete concept text'
       setConceptUploadError(String(errorMsg))
+    } finally {
+      setIsDeletingConceptText(false)
+      setShowDeleteConceptTextDialog(false)
     }
   }
 
@@ -1341,11 +1407,25 @@ export function Step1InformationConsolidation({
 
   /**
    * Delete saved existing work text from backend
+   * Shows confirmation dialog before deletion
    */
-  const handleDeleteWorkText = async () => {
-    if (!confirm('Delete saved work text?') || !proposalId) {
+  const handleDeleteWorkText = () => {
+    if (!proposalId) {
       return
     }
+    setShowDeleteWorkTextDialog(true)
+  }
+
+  /**
+   * Execute the actual work text deletion
+   * Called after confirmation from dialog
+   */
+  const confirmDeleteWorkText = async () => {
+    if (!proposalId) {
+      return
+    }
+
+    setIsDeletingWorkText(true)
 
     try {
       const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
@@ -1362,6 +1442,9 @@ export function Step1InformationConsolidation({
       const errorMsg =
         (error as Record<string, unknown>)?.response?.data?.detail || 'Failed to delete work text'
       setWorkUploadError(String(errorMsg))
+    } finally {
+      setIsDeletingWorkText(false)
+      setShowDeleteWorkTextDialog(false)
     }
   }
 
@@ -2475,6 +2558,45 @@ export function Step1InformationConsolidation({
           </div>
         </div>
       )}
+
+      {/* ===== Concept File Delete Confirmation Dialog ===== */}
+      <ConfirmDialog
+        isOpen={conceptFileToDelete !== null}
+        title="Delete Concept Document"
+        message={`Are you sure you want to delete "${conceptFileToDelete}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeletingConceptFile}
+        onConfirm={confirmDeleteConceptFile}
+        onCancel={() => setConceptFileToDelete(null)}
+      />
+
+      {/* ===== Concept Text Delete Confirmation Dialog ===== */}
+      <ConfirmDialog
+        isOpen={showDeleteConceptTextDialog}
+        title="Delete Concept Text"
+        message="Are you sure you want to delete the saved concept text? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeletingConceptText}
+        onConfirm={confirmDeleteConceptText}
+        onCancel={() => setShowDeleteConceptTextDialog(false)}
+      />
+
+      {/* ===== Work Text Delete Confirmation Dialog ===== */}
+      <ConfirmDialog
+        isOpen={showDeleteWorkTextDialog}
+        title="Delete Work Experience Text"
+        message="Are you sure you want to delete the saved work experience text? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeletingWorkText}
+        onConfirm={confirmDeleteWorkText}
+        onCancel={() => setShowDeleteWorkTextDialog(false)}
+      />
     </div>
   )
 }
