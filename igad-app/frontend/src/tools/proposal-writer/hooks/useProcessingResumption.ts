@@ -1,9 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import {
-  proposalService,
-  AllProcessingStatus,
-  OperationStatus,
-} from '../services/proposalService'
+import { proposalService, AllProcessingStatus, OperationStatus } from '../services/proposalService'
 import type {
   RFPAnalysis,
   ConceptAnalysis,
@@ -109,7 +105,9 @@ export function useProcessingResumption(
   // Get the status check function for a specific operation
   const getStatusChecker = useCallback(
     (operationKey: keyof AllProcessingStatus) => {
-      if (!proposalId) return null
+      if (!proposalId) {
+        return null
+      }
 
       switch (operationKey) {
         case 'step1_rfp':
@@ -226,17 +224,23 @@ export function useProcessingResumption(
   const startPolling = useCallback(
     (operationKey: keyof AllProcessingStatus) => {
       // Don't start if already polling
-      if (pollingStatesRef.current.has(operationKey)) return
+      if (pollingStatesRef.current.has(operationKey)) {
+        return
+      }
 
       const statusChecker = getStatusChecker(operationKey)
-      if (!statusChecker) return
+      if (!statusChecker) {
+        return
+      }
 
       const operationName = OPERATION_NAMES[operationKey]
       setResumingOperations(prev => [...prev, operationName])
 
       const intervalId = setInterval(async () => {
         const state = pollingStatesRef.current.get(operationKey)
-        if (!state) return
+        if (!state) {
+          return
+        }
 
         state.attempts++
 
@@ -270,7 +274,9 @@ export function useProcessingResumption(
 
   // Check all processing status and start polling for in-progress operations
   const checkAndResumeOperations = useCallback(async () => {
-    if (!proposalId || !enabled) return
+    if (!proposalId || !enabled) {
+      return
+    }
 
     setIsCheckingStatus(true)
 
@@ -285,25 +291,25 @@ export function useProcessingResumption(
 
         if (status.status === 'processing') {
           // Operation is in progress - start polling
+          // This is the ONLY case where we need to resume and show toasts
           startPolling(key)
-        } else if (status.status === 'completed' && status.data) {
-          // Operation completed while we were away - call the callback
-          handleOperationComplete(key, status.data)
-        } else if (status.status === 'failed' && status.error) {
-          // Operation failed while we were away - notify error
-          onOperationError?.(OPERATION_NAMES[key], status.error)
         }
+        // NOTE: We intentionally don't call callbacks for 'completed' or 'failed' operations
+        // The parent component already loads completed data from localStorage/DynamoDB
+        // We only need to resume polling for operations that are actually still processing
       }
     } catch {
       // Failed to check status - silently ignore
     } finally {
       setIsCheckingStatus(false)
     }
-  }, [proposalId, enabled, startPolling, handleOperationComplete, onOperationError])
+  }, [proposalId, enabled, startPolling])
 
   // Check status on mount (only once per proposal)
   useEffect(() => {
-    if (!proposalId || !enabled || hasCheckedRef.current) return
+    if (!proposalId || !enabled || hasCheckedRef.current) {
+      return
+    }
 
     hasCheckedRef.current = true
     checkAndResumeOperations()
