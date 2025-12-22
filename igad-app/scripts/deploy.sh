@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Get absolute paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "🚀 IGAD Innovation Hub - Deployment Helper"
 echo "=========================================="
 
@@ -18,11 +21,11 @@ ENVIRONMENT=$1
 case $ENVIRONMENT in
     testing)
         echo "🧪 Deploying to TESTING environment..."
-        ./scripts/deploy-testing.sh
+        "$SCRIPT_DIR/deploy-testing.sh"
         ;;
     production)
         echo "🏭 Deploying to PRODUCTION environment..."
-        ./scripts/deploy-production.sh
+        "$SCRIPT_DIR/deploy-production.sh"
         ;;
     *)
         echo "❌ Invalid environment: $ENVIRONMENT"

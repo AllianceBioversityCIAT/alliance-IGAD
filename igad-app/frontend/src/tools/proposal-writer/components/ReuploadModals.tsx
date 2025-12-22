@@ -358,7 +358,7 @@ export function ReuploadProgressModal({
     return null
   }
 
-  const renderStageIcon = (stage: ReuploadStage, index: number) => {
+  const renderStageIcon = (_stage: ReuploadStage, index: number) => {
     const isPast = currentStageIndex > index
     const isCurrent = currentStageIndex === index
     const isError = hasError && isCurrent

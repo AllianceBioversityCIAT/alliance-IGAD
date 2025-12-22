@@ -90,9 +90,9 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
               </button>
             </div>
             <div className={styles.promptContent}>
-              <ReactMarkdown className={styles.markdownContent}>
-                {getTemplateView(prompt.system_prompt)}
-              </ReactMarkdown>
+              <div className={styles.markdownContent}>
+                <ReactMarkdown>{getTemplateView(prompt.system_prompt)}</ReactMarkdown>
+              </div>
             </div>
           </div>
 
@@ -110,9 +110,9 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
               </button>
             </div>
             <div className={styles.promptContent}>
-              <ReactMarkdown className={styles.markdownContent}>
-                {getTemplateView(prompt.user_prompt_template)}
-              </ReactMarkdown>
+              <div className={styles.markdownContent}>
+                <ReactMarkdown>{getTemplateView(prompt.user_prompt_template)}</ReactMarkdown>
+              </div>
             </div>
           </div>
 
@@ -121,7 +121,7 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
               <div className={styles.sectionHeader}>
                 <h3 className={styles.sectionTitle}>Expected Output Format</h3>
                 <button
-                  onClick={() => copyToClipboard(prompt.output_format, 'output')}
+                  onClick={() => copyToClipboard(prompt.output_format || '', 'output')}
                   className={styles.copyButton}
                   title="Copy to clipboard"
                 >
@@ -129,9 +129,9 @@ export function PromptTemplateModal({ prompt, isOpen, onClose }: PromptTemplateM
                 </button>
               </div>
               <div className={styles.promptContent}>
-                <ReactMarkdown className={styles.markdownContent}>
-                  {prompt.output_format}
-                </ReactMarkdown>
+                <div className={styles.markdownContent}>
+                  <ReactMarkdown>{prompt.output_format}</ReactMarkdown>
+                </div>
               </div>
             </div>
           )}

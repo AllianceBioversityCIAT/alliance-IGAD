@@ -58,7 +58,7 @@ export function ChangePasswordPage() {
       )
 
       // Password changed successfully - store token and redirect
-      authService.setToken(response.access_token, false)
+      authService.setToken(response.access_token, response.refresh_token, false)
       authService.setUserEmail(state.username, false)
 
       navigate('/', {

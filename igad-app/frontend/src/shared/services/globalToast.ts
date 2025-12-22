@@ -110,6 +110,8 @@ export function parseApiError(error: unknown): { title: string; message: string 
   // Axios error with response
   const err = error as {
     response?: { status?: number; data?: { detail?: unknown; message?: string; error?: string } }
+    request?: unknown
+    message?: string
   }
   if (err.response) {
     const status = err.response.status
@@ -179,18 +181,18 @@ export function parseApiError(error: unknown): { title: string; message: string 
     if (message.toLowerCase().includes('bedrock') || message.toLowerCase().includes('model')) {
       title = 'AI Processing Error'
     }
-  } else if (error.request) {
+  } else if (err.request) {
     // Request was made but no response received
     title = 'Network Error'
     message = 'Unable to connect to the server. Please check your internet connection.'
-  } else if (error.message) {
+  } else if (err.message) {
     // Error setting up the request
-    message = error.message
+    message = err.message
 
-    if (error.message.toLowerCase().includes('timeout')) {
+    if (err.message.toLowerCase().includes('timeout')) {
       title = 'Request Timeout'
       message = 'The request took too long. Please try again.'
-    } else if (error.message.toLowerCase().includes('network')) {
+    } else if (err.message.toLowerCase().includes('network')) {
       title = 'Network Error'
     }
   }

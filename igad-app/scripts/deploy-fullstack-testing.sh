@@ -1,6 +1,17 @@
 #!/bin/bash
 set -e
 
+# Get absolute paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Resolve commands to absolute paths
+AWS="$(command -v aws)"
+SAM="$(command -v sam)"
+NPM="$(command -v npm)"
+PIP3="$(command -v pip3)"
+PYTHON3="$(command -v python3)"
+
 # Parse command line arguments
 DEPLOY_FRONTEND=true
 DEPLOY_BACKEND=true
@@ -41,7 +52,7 @@ echo "============================================"
 
 # Validate AWS profile
 export AWS_PROFILE=IBD-DEV
-CURRENT_REGION=$(aws configure get region --profile IBD-DEV 2>/dev/null || echo "")
+CURRENT_REGION=$("$AWS" configure get region --profile IBD-DEV 2>/dev/null || echo "")
 
 if [ "$CURRENT_REGION" != "us-east-1" ]; then
     echo "❌ ERROR: Must deploy to us-east-1 region"
@@ -52,7 +63,7 @@ fi
 echo "✅ AWS profile and region validated"
 
 # Check project structure
-if [ ! -f "frontend/package.json" ] || [ ! -f "backend/requirements.txt" ]; then
+if [ ! -f "$PROJECT_ROOT/frontend/package.json" ] || [ ! -f "$PROJECT_ROOT/backend/requirements.txt" ]; then
     echo "❌ ERROR: Must run from igad-app root directory"
     exit 1
 fi
@@ -65,7 +76,7 @@ echo "✅ Project structure validated"
 echo ""
 echo "🎯 Setting up S3 Vectors Infrastructure..."
 
-python3 - <<'PYTHON_SCRIPT'
+"$PYTHON3" - <<'PYTHON_SCRIPT'
 import boto3
 import sys
 
@@ -73,7 +84,7 @@ def setup_s3_vectors():
     try:
         s3vectors = boto3.client('s3vectors', region_name='us-east-1')
         bucket_name = "igad-proposals-vectors-testing"
-        
+
         # Check/Create vector bucket
         try:
             s3vectors.list_indexes(vectorBucketName=bucket_name)
@@ -88,13 +99,13 @@ def setup_s3_vectors():
                 print(f"✅ Vector bucket created")
             else:
                 raise
-        
+
         # Create indexes
         indexes = [
             {'name': 'reference-proposals-index'},
             {'name': 'existing-work-index'}
         ]
-        
+
         for idx in indexes:
             try:
                 s3vectors.get_index(vectorBucketName=bucket_name, indexName=idx['name'])
@@ -115,9 +126,9 @@ def setup_s3_vectors():
                     print(f"✅ Index created")
                 else:
                     raise
-        
+
         print("✅ S3 Vectors ready")
-        
+
     except Exception as e:
         if 'InvalidAction' in str(e) or 'UnknownOperation' in str(e):
             print("⚠️  S3 Vectors not available yet - continuing")
@@ -132,10 +143,8 @@ echo ""
 # Build Frontend
 if [ "$DEPLOY_FRONTEND" = true ]; then
     echo "🔨 Building frontend..."
-    cd frontend
-    npm install
-    npm run build
-    cd ..
+    "$NPM" --prefix "$PROJECT_ROOT/frontend" install
+    "$NPM" --prefix "$PROJECT_ROOT/frontend" run build
 else
     echo "⏭️  Skipping frontend build"
 fi
@@ -143,14 +152,12 @@ fi
 # Build Backend
 if [ "$DEPLOY_BACKEND" = true ]; then
     echo "🔨 Building backend..."
-    cd backend
-    rm -rf dist
-    mkdir -p dist
-    cp -r app dist/
-    cp requirements.txt dist/
-    cp bootstrap dist/
-    cp .env dist/ 2>/dev/null || true
-    cd ..
+    rm -rf "$PROJECT_ROOT/backend/dist"
+    mkdir -p "$PROJECT_ROOT/backend/dist"
+    cp -r "$PROJECT_ROOT/backend/app" "$PROJECT_ROOT/backend/dist/"
+    cp "$PROJECT_ROOT/backend/requirements.txt" "$PROJECT_ROOT/backend/dist/"
+    cp "$PROJECT_ROOT/backend/bootstrap" "$PROJECT_ROOT/backend/dist/"
+    cp "$PROJECT_ROOT/backend/.env" "$PROJECT_ROOT/backend/dist/" 2>/dev/null || true
 else
     echo "⏭️  Skipping backend build"
 fi
@@ -160,10 +167,10 @@ if [ "$DEPLOY_BACKEND" = true ]; then
     echo "🚀 Deploying backend..."
 
     # Use local build (faster on ARM64 Macs)
-    sam build --skip-pull-image
-    
+    "$SAM" build --skip-pull-image
+
     # Deploy with error handling
-    if sam deploy --stack-name igad-backend-testing; then
+    if "$SAM" deploy --stack-name igad-backend-testing; then
         echo "✅ Backend deployment successful"
     else
         echo "⚠️  Backend deployment skipped (no changes detected)"
@@ -174,7 +181,7 @@ fi
 
 # Get S3 bucket name dynamically (find bucket with igad-testing pattern)
 echo "🔍 Finding S3 bucket for testing environment..."
-BUCKET_NAME=$(aws s3 ls --profile IBD-DEV --region us-east-1 | grep "igad.*testing.*websitebucket" | awk '{print $3}' | head -1)
+BUCKET_NAME=$("$AWS" s3 ls --profile IBD-DEV --region us-east-1 | grep "igad.*testing.*websitebucket" | awk '{print $3}' | head -1)
 
 if [ -z "$BUCKET_NAME" ]; then
     echo "❌ ERROR: Could not find S3 bucket for testing environment"
@@ -184,8 +191,8 @@ fi
 # Get CloudFront distribution ID dynamically (find distribution serving the S3 bucket)
 echo "🔍 Finding CloudFront distribution for S3 bucket..."
 DISTRIBUTION_ID=""
-for dist_id in $(aws cloudfront list-distributions --profile IBD-DEV --region us-east-1 --query "DistributionList.Items[].Id" --output text); do
-  origin=$(aws cloudfront get-distribution --id $dist_id --profile IBD-DEV --region us-east-1 --query "Distribution.DistributionConfig.Origins.Items[0].DomainName" --output text 2>/dev/null)
+for dist_id in $("$AWS" cloudfront list-distributions --profile IBD-DEV --region us-east-1 --query "DistributionList.Items[].Id" --output text); do
+  origin=$("$AWS" cloudfront get-distribution --id $dist_id --profile IBD-DEV --region us-east-1 --query "Distribution.DistributionConfig.Origins.Items[0].DomainName" --output text 2>/dev/null)
   if [[ $origin == *"$BUCKET_NAME"* ]]; then
     DISTRIBUTION_ID=$dist_id
     break
@@ -205,11 +212,11 @@ fi
 # Upload frontend to S3
 if [ "$DEPLOY_FRONTEND" = true ]; then
     echo "📤 Uploading frontend to S3..."
-    aws s3 sync frontend/dist/ s3://$BUCKET_NAME --delete
+    "$AWS" s3 sync "$PROJECT_ROOT/frontend/dist/" "s3://$BUCKET_NAME" --delete
 
     # Invalidate CloudFront cache
     echo "🔄 Invalidating CloudFront cache..."
-    INVALIDATION_ID=$(aws cloudfront create-invalidation \
+    INVALIDATION_ID=$("$AWS" cloudfront create-invalidation \
       --distribution-id $DISTRIBUTION_ID \
       --paths "/*" \
       --query 'Invalidation.Id' \
@@ -232,7 +239,7 @@ if [ "$DEPLOY_BACKEND" = true ]; then
 fi
 echo "   - Database: DynamoDB (igad-testing-main-table)"
 echo "   - Auth: Cognito (us-east-1_EULeelICj)"
-echo "   - Documents: S3 (igad-proposal-documents-${AWS::AccountId})"
+echo "   - Documents: S3 (igad-proposal-documents-\${AWS::AccountId})"
 echo ""
 echo "📝 Note: S3 Vector bucket is commented out in template.yaml"
 echo "   Uncomment VectorStorageBucket when ready to use S3 Vector metadata"

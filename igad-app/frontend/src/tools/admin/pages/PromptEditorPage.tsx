@@ -169,19 +169,20 @@ export function PromptEditorPage() {
       // Parse error message for better UX
       let title = 'Failed to Save Prompt'
       let message = 'An unexpected error occurred while saving your prompt.'
-      let details = error.message || 'Please try again.'
+      const err = error as { message?: string }
+      let details = err.message || 'Please try again.'
 
       // Handle specific error cases
-      if (error.message?.includes('Duplicate active prompt')) {
+      if (err.message?.includes('Duplicate active prompt')) {
         title = 'Duplicate Prompt Detected'
         message = 'A prompt with the same configuration already exists and is currently active.'
         details =
           "Please check if there's already an active prompt for this section, route, subsection, and categories combination. You can either deactivate the existing prompt or modify your current prompt's configuration."
-      } else if (error.message?.includes('validation')) {
+      } else if (err.message?.includes('validation')) {
         title = 'Validation Error'
         message = 'Please check your input and try again.'
-        details = error.message
-      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        details = err.message
+      } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
         title = 'Connection Error'
         message = 'Unable to connect to the server. Please check your internet connection.'
         details = 'If the problem persists, please contact support.'

@@ -2,7 +2,7 @@ import { useEffect, useCallback } from 'react'
 import type { RFPAnalysis } from '../types/analysis'
 
 interface FormData {
-  uploadedFiles: Record<string, File[]>
+  uploadedFiles: Record<string, File[] | string[]>
   textInputs: Record<string, string>
 }
 
@@ -25,12 +25,12 @@ export function useProposalDraft() {
   }
 
   // Save form data
-  const saveFormData = (data: FormData) => {
+  const saveFormData = (data: { uploadedFiles: Record<string, File[] | string[]>; textInputs: Record<string, string> }) => {
     localStorage.setItem(DRAFT_KEYS.FORM_DATA, JSON.stringify(data))
   }
 
   // Save RFP analysis
-  const saveRfpAnalysis = (analysis: RFPAnalysis) => {
+  const saveRfpAnalysis = (analysis: RFPAnalysis | null) => {
     localStorage.setItem(DRAFT_KEYS.RFP_ANALYSIS, JSON.stringify(analysis))
   }
 

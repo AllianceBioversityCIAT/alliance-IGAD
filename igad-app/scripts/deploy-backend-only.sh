@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e
 
+# Get absolute paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Resolve commands to absolute paths
+AWS="$(command -v aws)"
+SAM="$(command -v sam)"
+PIP3="$(command -v pip3)"
+
 echo "🚀 IGAD Innovation Hub - Backend Only Deployment"
 echo "===================================================="
 
@@ -8,7 +17,7 @@ echo "===================================================="
 export AWS_PROFILE=IBD-DEV
 
 # Validate AWS profile
-CURRENT_REGION=$(aws configure get region --profile IBD-DEV 2>/dev/null || echo "")
+CURRENT_REGION=$("$AWS" configure get region --profile IBD-DEV 2>/dev/null || echo "")
 
 if [ "$CURRENT_REGION" != "us-east-1" ]; then
     echo "❌ ERROR: Must deploy to us-east-1 region"
@@ -19,7 +28,7 @@ fi
 echo "✅ AWS profile and region validated"
 
 # Check project structure
-if [ ! -f "backend/requirements.txt" ]; then
+if [ ! -f "$PROJECT_ROOT/backend/requirements.txt" ]; then
     echo "❌ ERROR: Must run from igad-app root directory"
     exit 1
 fi
@@ -28,20 +37,18 @@ echo "✅ Project structure validated"
 
 # Build Backend
 echo "🔨 Building backend..."
-cd backend
-rm -rf dist
-mkdir -p dist
-cp -r app dist/
-cp requirements.txt dist/
-cp bootstrap dist/
-cp .env dist/
-pip3 install -r requirements.txt -t dist/
-cd ..
+rm -rf "$PROJECT_ROOT/backend/dist"
+mkdir -p "$PROJECT_ROOT/backend/dist"
+cp -r "$PROJECT_ROOT/backend/app" "$PROJECT_ROOT/backend/dist/"
+cp "$PROJECT_ROOT/backend/requirements.txt" "$PROJECT_ROOT/backend/dist/"
+cp "$PROJECT_ROOT/backend/bootstrap" "$PROJECT_ROOT/backend/dist/"
+cp "$PROJECT_ROOT/backend/.env" "$PROJECT_ROOT/backend/dist/"
+"$PIP3" install -r "$PROJECT_ROOT/backend/requirements.txt" -t "$PROJECT_ROOT/backend/dist/"
 
 # Deploy using SAM
 echo "🚀 Deploying backend..."
-sam build --use-container
-sam deploy --stack-name igad-backend-testing --profile IBD-DEV --region us-east-1
+"$SAM" build --use-container
+"$SAM" deploy --stack-name igad-backend-testing --profile IBD-DEV --region us-east-1
 
 echo ""
 echo "✅ Backend deployment completed!"

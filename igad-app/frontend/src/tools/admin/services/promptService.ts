@@ -7,7 +7,7 @@ import type {
   PromptPreviewRequest,
   PromptPreviewResponse,
   ProposalSection,
-} from '../types/prompt'
+} from '@/types/prompt'
 
 class PromptService {
   private baseUrl = '/admin/prompts'

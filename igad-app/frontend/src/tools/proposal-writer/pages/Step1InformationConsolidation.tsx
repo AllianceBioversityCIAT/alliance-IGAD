@@ -549,9 +549,10 @@ export function Step1InformationConsolidation({
         }
         window.dispatchEvent(new CustomEvent('documents-updated'))
       } catch (error: unknown) {
+        const err = error as { response?: { data?: { detail?: unknown } }; message?: string }
         const errorMsg =
-          (error as Record<string, unknown>)?.response?.data?.detail ||
-          (error as Error)?.message ||
+          (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
+          err.message ||
           'Upload failed. Please try again.'
         setUploadError(String(errorMsg))
 
@@ -615,10 +616,11 @@ export function Step1InformationConsolidation({
           'Content-Type': 'multipart/form-data',
         },
       })
-    } catch (error: Record<string, unknown>) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } }; message?: string }
       const errorMessage =
-        (error?.response as Record<string, unknown>)?.data?.detail ||
-        (error as Error)?.message ||
+        (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
+        err.message ||
         'Unknown error'
       setUploadError(String(errorMessage))
     } finally {
@@ -668,7 +670,7 @@ export function Step1InformationConsolidation({
         localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
         window.dispatchEvent(new CustomEvent('rfp-deleted'))
       }
-    } catch (error: Record<string, unknown>) {
+    } catch (error: unknown) {
       const errorMsg = 'Failed to delete file from server'
       setUploadError(errorMsg)
       showError(ERROR_MESSAGES.FILE_DELETE_FAILED.title, errorMsg)
@@ -741,9 +743,10 @@ export function Step1InformationConsolidation({
         onConceptDocumentChanged()
       }
       window.dispatchEvent(new CustomEvent('documents-updated'))
-    } catch (error: Record<string, unknown>) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } } }
       const errorMsg =
-        (error?.response as Record<string, unknown>)?.data?.detail ||
+        (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
         'Failed to upload concept file'
       setConceptUploadError(String(errorMsg))
       showError(ERROR_MESSAGES.CONCEPT_UPLOAD_FAILED.title, String(errorMsg), {
@@ -809,9 +812,10 @@ export function Step1InformationConsolidation({
           detail: { type: 'concept-deleted', step: 1 },
         })
       )
-    } catch (error: Record<string, unknown>) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } } }
       const errorMsg =
-        (error?.response as Record<string, unknown>)?.data?.detail ||
+        (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
         'Failed to delete concept file'
       setConceptUploadError(String(errorMsg))
     } finally {
@@ -876,9 +880,11 @@ export function Step1InformationConsolidation({
           })
         )
       }
-    } catch (error: Record<string, unknown>) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } } }
       const errorMsg =
-        (error?.response as Record<string, unknown>)?.data?.detail || 'Failed to save concept text'
+        (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
+        'Failed to save concept text'
       setConceptUploadError(String(errorMsg))
     } finally {
       setIsSavingConceptText(false)
@@ -936,9 +942,10 @@ export function Step1InformationConsolidation({
           detail: { type: 'concept-text-deleted', step: 1 },
         })
       )
-    } catch (error: Record<string, unknown>) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } } }
       const errorMsg =
-        (error?.response as Record<string, unknown>)?.data?.detail ||
+        (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
         'Failed to delete concept text'
       setConceptUploadError(String(errorMsg))
     } finally {
@@ -1125,8 +1132,9 @@ export function Step1InformationConsolidation({
       // Invalidate analyses when reference documents are updated
       window.dispatchEvent(new CustomEvent('documents-updated'))
     } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } } }
       const errorMsg =
-        (error as Record<string, unknown>)?.response?.data?.detail ||
+        (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
         'Failed to upload reference file'
 
       // Check if it's a timeout error
@@ -1217,8 +1225,10 @@ export function Step1InformationConsolidation({
 
       showSuccess('File deleted successfully')
     } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } } }
       const errorMsg =
-        (error as Record<string, unknown>)?.response?.data?.detail || 'Failed to delete file'
+        (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
+        'Failed to delete file'
       showError('Delete Failed', String(errorMsg))
     } finally {
       setIsDeletingFile(false)
@@ -1329,8 +1339,9 @@ export function Step1InformationConsolidation({
       // Invalidate analyses when supporting documents are updated
       window.dispatchEvent(new CustomEvent('documents-updated'))
     } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } } }
       const errorMsg =
-        (error as Record<string, unknown>)?.response?.data?.detail ||
+        (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
         'Failed to upload supporting file'
 
       // Check if it's a timeout error
@@ -1389,8 +1400,10 @@ export function Step1InformationConsolidation({
       setWorkTextSaved(true)
       setIsEditingWorkText(false)
     } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } } }
       const errorMsg =
-        (error as Record<string, unknown>)?.response?.data?.detail || 'Failed to save work text'
+        (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
+        'Failed to save work text'
       setWorkUploadError(String(errorMsg))
     } finally {
       setIsSavingWorkText(false)
@@ -1439,8 +1452,10 @@ export function Step1InformationConsolidation({
       setWorkTextSaved(false)
       setIsEditingWorkText(false)
     } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: unknown } } }
       const errorMsg =
-        (error as Record<string, unknown>)?.response?.data?.detail || 'Failed to delete work text'
+        (typeof err.response?.data?.detail === 'string' ? err.response.data.detail : undefined) ||
+        'Failed to delete work text'
       setWorkUploadError(String(errorMsg))
     } finally {
       setIsDeletingWorkText(false)

@@ -12,7 +12,7 @@ import { CommentsPanel } from './components/CommentsPanel'
 import { PromptTemplateModal } from './components/PromptTemplateModal'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { LoadingSpinner } from '@/shared/components/ui/LoadingSpinner'
-import type { ProposalSection, Prompt } from '@/types/prompt'
+import { ProposalSection, type Prompt } from '@/types/prompt'
 import styles from './PromptManagerPage.module.css'
 
 interface PromptManagerFilters {
@@ -114,12 +114,30 @@ export function PromptManagerPage() {
     navigate(`/admin/prompt-manager/edit/${promptId}`)
   }
 
-  const handleFiltersChange = (newFilters: PromptManagerFilters) => {
-    setFilters(newFilters)
+  const handleFiltersChange = (
+    newFilters: PromptManagerFilters | {
+      section?: ProposalSection | string
+      sub_section?: string
+      category?: string
+      tag?: string
+      search?: string
+      route?: string
+      is_active?: boolean
+    }
+  ) => {
+    // Convert string section to ProposalSection if needed
+    const convertedFilters: PromptManagerFilters = {
+      ...newFilters,
+      section:
+        typeof newFilters.section === 'string'
+          ? (newFilters.section as ProposalSection)
+          : (newFilters.section as ProposalSection | undefined),
+    }
+    setFilters(convertedFilters)
     setCurrentPage(0) // Reset to first page when filters change
   }
 
-  const handlePublishPrompt = async (id: string, version: number) => {
+  const _handlePublishPrompt = async (id: string, version: number) => {
     try {
       await publishPrompt({ id, version })
       showSuccess('Prompt published successfully', 'The prompt is now available for use.')
@@ -177,11 +195,11 @@ export function PromptManagerPage() {
         `"${prompt?.name}" is now ${prompt?.is_active ? 'inactive' : 'active'}.`
       )
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: unknown } } }
+      const err = error as { response?: { data?: { detail?: unknown } }; message?: string }
       const errorMessage =
         typeof err.response?.data?.detail === 'string'
-          ? error.response.data.detail
-          : error.message || 'Please try again.'
+          ? err.response.data.detail
+          : err.message || 'Please try again.'
       if (errorMessage.includes('already active')) {
         showError(
           'Cannot activate prompt',
@@ -220,8 +238,8 @@ export function PromptManagerPage() {
               <List size={16} />
             </button>
             <button
-              onClick={() => setViewMode('grid')}
-              className={`${styles.viewButton} ${viewMode === 'grid' ? styles.active : ''}`}
+              onClick={() => setViewMode('cards')}
+              className={`${styles.viewButton} ${viewMode === 'cards' ? styles.active : ''}`}
             >
               <Grid size={16} />
             </button>
@@ -318,11 +336,9 @@ export function PromptManagerPage() {
               prompts={prompts}
               isLoading={isLoading}
               onEdit={handleEditPrompt}
-              onPublish={handlePublishPrompt}
               onDelete={handleDeletePrompt}
               onClone={handleClonePrompt}
               onToggleActive={handleToggleActive}
-              onComments={id => setCommentsPromptId(id)}
               onTemplate={handleTemplateView}
             />
           ) : (
@@ -330,7 +346,12 @@ export function PromptManagerPage() {
               prompts={prompts}
               onEdit={handleEditPrompt}
               onDelete={handleDeletePrompt}
-              onClone={handleClonePrompt}
+              onClone={async (id: string) => {
+                const prompt = prompts.find(p => p.id === id)
+                if (prompt) {
+                  await handleClonePrompt(prompt)
+                }
+              }}
               onToggleActive={handleToggleActive}
               onPreview={_id => {}}
               onTemplate={handleTemplateView}
@@ -397,7 +418,6 @@ export function PromptManagerPage() {
         isOpen={confirmDialog.isOpen}
         title={confirmDialog.title}
         message={confirmDialog.message}
-        variant="danger"
         confirmText="Delete"
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}

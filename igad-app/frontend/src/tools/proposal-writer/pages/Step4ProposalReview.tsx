@@ -1618,7 +1618,8 @@ export function Step4ProposalReview({
       // Removed console.error
       setIsAnalyzing(false)
       setAnalysisProgress(null)
-      showError('Re-analysis Failed', error.response?.data?.message || 'Failed to re-analyze')
+      const err = error as { response?: { data?: { message?: string } } }
+      showError('Re-analysis Failed', err.response?.data?.message || 'Failed to re-analyze')
     }
   }, [
     proposalId,

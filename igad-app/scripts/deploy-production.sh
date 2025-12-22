@@ -1,11 +1,20 @@
 #!/bin/bash
 set -e
 
+# Get absolute paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Resolve commands to absolute paths
+AWS="$(command -v aws)"
+SAM="$(command -v sam)"
+NPM="$(command -v npm)"
+
 echo "🚀 IGAD Innovation Hub - Production Environment Deployment"
 echo "========================================================="
 
 # Validate AWS profile
-CURRENT_PROFILE=$(aws configure get profile 2>/dev/null || echo "default")
+CURRENT_PROFILE=$("$AWS" configure get profile 2>/dev/null || echo "default")
 if [ "$CURRENT_PROFILE" != "IBD-DEV" ]; then
     echo "❌ ERROR: Must use IBD-DEV profile"
     echo "Run: aws configure set profile IBD-DEV"
@@ -13,7 +22,7 @@ if [ "$CURRENT_PROFILE" != "IBD-DEV" ]; then
 fi
 
 # Validate AWS region
-CURRENT_REGION=$(aws configure get region 2>/dev/null || echo "")
+CURRENT_REGION=$("$AWS" configure get region 2>/dev/null || echo "")
 if [ "$CURRENT_REGION" != "us-east-1" ]; then
     echo "❌ ERROR: Must deploy to us-east-1 region"
     echo "Run: aws configure set region us-east-1"
@@ -41,18 +50,18 @@ echo "✅ Production deployment confirmed"
 
 # Copy source to dist
 echo "📦 Copying source files to dist..."
-cd backend && cp -r app/* dist/ && cd ..
+cp -r "$PROJECT_ROOT/backend/app/"* "$PROJECT_ROOT/backend/dist/"
 
 # Build and deploy
 echo "🔨 Building SAM application..."
-sam build --use-container
+"$SAM" build --use-container
 
 echo "🚀 Deploying to production environment..."
-sam deploy --config-env production
+"$SAM" deploy --config-env production
 
 # Get CloudFront distribution ID from stack outputs
 echo "🔍 Getting CloudFront distribution ID..."
-DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+DISTRIBUTION_ID=$("$AWS" cloudformation describe-stacks \
   --stack-name igad-backend-production \
   --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
   --output text)
@@ -66,14 +75,12 @@ echo "📤 CloudFront Distribution ID: $DISTRIBUTION_ID"
 
 # Build and deploy frontend
 echo "🔨 Building frontend..."
-cd frontend
-npm install
-npm run build
+"$NPM" --prefix "$PROJECT_ROOT/frontend" install
+"$NPM" --prefix "$PROJECT_ROOT/frontend" run build
 
 # Get S3 bucket name from stack outputs
 echo "🔍 Getting S3 bucket name..."
-cd ..
-BUCKET_NAME=$(aws cloudformation describe-stacks \
+BUCKET_NAME=$("$AWS" cloudformation describe-stacks \
   --stack-name igad-backend-production \
   --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucket`].OutputValue' \
   --output text)
@@ -87,11 +94,11 @@ echo "📤 S3 Bucket: $BUCKET_NAME"
 
 # Upload frontend to S3
 echo "📤 Uploading frontend to S3..."
-aws s3 sync frontend/dist/ s3://$BUCKET_NAME --delete
+"$AWS" s3 sync "$PROJECT_ROOT/frontend/dist/" "s3://$BUCKET_NAME" --delete
 
 # Invalidate CloudFront cache
 echo "🔄 Invalidating CloudFront cache..."
-INVALIDATION_ID=$(aws cloudfront create-invalidation \
+INVALIDATION_ID=$("$AWS" cloudfront create-invalidation \
   --distribution-id $DISTRIBUTION_ID \
   --paths "/*" \
   --query 'Invalidation.Id' \
@@ -101,8 +108,8 @@ echo "✅ CloudFront invalidation created: $INVALIDATION_ID"
 echo "🎉 Production deployment completed successfully!"
 echo ""
 echo "📋 Deployment Summary:"
-echo "   Frontend: https://$(aws cloudformation describe-stacks --stack-name igad-backend-production --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontURL`].OutputValue' --output text | sed 's|https://||')"
-echo "   API: $(aws cloudformation describe-stacks --stack-name igad-backend-production --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --output text)"
+echo "   Frontend: https://$("$AWS" cloudformation describe-stacks --stack-name igad-backend-production --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontURL`].OutputValue' --output text | sed 's|https://||')"
+echo "   API: $("$AWS" cloudformation describe-stacks --stack-name igad-backend-production --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --output text)"
 
 echo ""
 echo "✅ Production deployment completed successfully!"

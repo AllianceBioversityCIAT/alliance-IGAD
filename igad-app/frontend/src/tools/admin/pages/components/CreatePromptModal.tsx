@@ -78,7 +78,7 @@ export function CreatePromptModal({
   onSave,
   isLoading = false,
   mode = 'create',
-  initialData = null,
+  initialData = undefined,
   onHistory,
   contextData = {},
 }: CreatePromptModalProps) {
@@ -91,6 +91,8 @@ export function CreatePromptModal({
     system_prompt: '',
     user_prompt_template: '',
     tags: [] as string[],
+    categories: [] as string[],
+    is_active: true,
     tone: '',
     output_format: '',
   })
@@ -105,6 +107,8 @@ export function CreatePromptModal({
         system_prompt: initialData.system_prompt || '',
         user_prompt_template: initialData.user_prompt_template || '',
         tags: initialData.tags || [],
+        categories: initialData.categories || [],
+        is_active: initialData.is_active ?? true,
         tone: initialData.tone || '',
         output_format: initialData.output_format || '',
       })
@@ -117,6 +121,8 @@ export function CreatePromptModal({
         system_prompt: '',
         user_prompt_template: '',
         tags: [],
+        categories: [],
+        is_active: true,
         tone: '',
         output_format: '',
       })
@@ -147,6 +153,8 @@ export function CreatePromptModal({
         name: '',
         section: ProposalSection.PROPOSAL_WRITER,
         route: '',
+        categories: [],
+        is_active: true,
         system_prompt: '',
         user_prompt_template: '',
         tags: [],

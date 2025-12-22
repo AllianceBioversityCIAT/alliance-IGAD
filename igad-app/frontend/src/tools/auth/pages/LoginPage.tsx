@@ -88,7 +88,7 @@ export function LoginPage() {
       }
 
       // Store the token and user email (normalized)
-      authService.setToken(response.access_token, data.rememberMe)
+      authService.setToken(response.access_token, response.refresh_token, data.rememberMe)
       authService.setUserEmail(normalizedEmail, data.rememberMe)
 
       // Navigate to dashboard

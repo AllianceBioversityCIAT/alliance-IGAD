@@ -178,9 +178,9 @@ export function PromptEditorDrawer({
   const applyTemplate = (template: Partial<import('@/types/prompt').Prompt>) => {
     setFormData(prev => ({
       ...prev,
-      name: template.name,
-      system_prompt: template.system_prompt,
-      user_prompt_template: template.user_prompt_template,
+      name: template.name ?? prev.name,
+      system_prompt: template.system_prompt ?? prev.system_prompt,
+      user_prompt_template: template.user_prompt_template ?? prev.user_prompt_template,
     }))
     setShowTemplates(false)
   }
@@ -190,6 +190,7 @@ export function PromptEditorDrawer({
     section: contextData?.defaultSection || ProposalSection.PROPOSAL_WRITER,
     route: contextData?.fromRoute || '',
     tags: [] as string[],
+    categories: [] as string[],
     system_prompt: '',
     user_prompt_template: '',
     is_active: true,
@@ -211,6 +212,7 @@ export function PromptEditorDrawer({
         section: existingPrompt.section,
         route: existingPrompt.route || '',
         tags: existingPrompt.tags,
+        categories: existingPrompt.categories || [],
         system_prompt: existingPrompt.system_prompt,
         user_prompt_template: existingPrompt.user_prompt_template,
         is_active: existingPrompt.is_active,

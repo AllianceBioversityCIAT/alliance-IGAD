@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { History, Clock, User, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react'
 import styles from './HistoryPanel.module.css'
 
-interface PromptChange {
+export interface PromptChange {
   id: string
   prompt_id: string
   version: number
@@ -14,7 +14,7 @@ interface PromptChange {
   created_at: string
 }
 
-interface PromptHistory {
+export interface PromptHistory {
   prompt_id: string
   changes: PromptChange[]
   total: number

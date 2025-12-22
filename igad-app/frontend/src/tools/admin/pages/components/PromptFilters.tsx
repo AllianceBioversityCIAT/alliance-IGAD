@@ -11,7 +11,15 @@ interface PromptFiltersProps {
     route?: string
     is_active?: boolean
   }
-  onChange: (filters: { section?: string; sub_section?: string; is_active?: boolean }) => void
+  onChange: (filters: {
+    section?: ProposalSection | string
+    sub_section?: string
+    category?: string
+    tag?: string
+    search?: string
+    route?: string
+    is_active?: boolean
+  }) => void
 }
 
 export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
@@ -127,7 +135,7 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
           type="text"
           placeholder="Filter by tag..."
           value={filters.tag || ''}
-          onChange={e => onChange({ ...filters, tags: e.target.value })}
+          onChange={e => onChange({ ...filters, tag: e.target.value })}
           className={styles.input}
         />
       </div>
