@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "executeautomation-playwright-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ]
+    },
+    "n8n-mcp": {
+      "command": "npx",
+      "args": ["n8n-mcp"],
+      "env": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "https://ibdteam.app.n8n.cloud/",
+        "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzZTlhM2YxMS1kNmI1LTRjZDEtOGMzNS0xNTY2MGY1ZWVhNWQiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY3OTAxODE0fQ.GhFkDH_q3ONT5R34ehQuvAcI7H3BG5Vp79NjxLfU9UM"
+      }
+    }
+  }
+}
