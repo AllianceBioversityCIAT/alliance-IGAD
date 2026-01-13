@@ -1668,12 +1668,9 @@ export function Step4ProposalReview({
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>Upload Your Draft Proposal</h2>
             <p className={styles.cardSubtitle}>
-              In case you made adjustments to the downloaded Concept Document, please upload the new
-              version here to take it into consideration.
+              In case you made adjustments to the downloaded Proposal Draft Document, please upload the new version here to take it into consideration.
             </p>
-          </div>
-
-          {!uploadedFile ? (
+            {/* linter: Ensure correct newline formatting for multi-line elements */}
             <FileUploadZone
               onFileSelect={handleFileSelect}
               isDragging={isDragging}
