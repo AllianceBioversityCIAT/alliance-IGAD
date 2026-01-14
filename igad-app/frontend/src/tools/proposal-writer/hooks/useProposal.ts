@@ -10,53 +10,47 @@ export function useProposal(proposalId?: string) {
     isLoading,
     error,
     refetch,
-  } = useQuery(['proposal', proposalId], () => proposalService.getProposal(proposalId!), {
+  } = useQuery({
+    queryKey: ['proposal', proposalId],
+    queryFn: () => proposalService.getProposal(proposalId!),
     enabled: !!proposalId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
   // Update proposal mutation
-  const updateMutation = useMutation(
-    (updates: Partial<Proposal>) => proposalService.updateProposal(proposalId!, updates),
-    {
-      onSuccess: updatedProposal => {
-        queryClient.setQueryData(['proposal', proposalId], updatedProposal)
-        queryClient.invalidateQueries(['proposals'])
-      },
-    }
-  )
+  const updateMutation = useMutation({
+    mutationFn: (updates: Partial<Proposal>) => proposalService.updateProposal(proposalId!, updates),
+    onSuccess: updatedProposal => {
+      queryClient.setQueryData({ queryKey: ['proposal', proposalId] }, updatedProposal)
+      queryClient.invalidateQueries({ queryKey: ['proposals'] })
+    },
+  })
 
   // Generate content mutation
-  const generateContentMutation = useMutation(
-    ({ sectionId, contextData }: { sectionId: string; contextData?: Record<string, unknown> }) =>
+  const generateContentMutation = useMutation({
+    mutationFn: ({ sectionId, contextData }: { sectionId: string; contextData?: Record<string, unknown> }) =>
       proposalService.generateSectionContent(proposalId!, sectionId, contextData),
-    {
-      onSuccess: () => {
-        refetch() // Refresh proposal data after content generation
-      },
-    }
-  )
+    onSuccess: () => {
+      refetch() // Refresh proposal data after content generation
+    },
+  })
 
   // Improve content mutation
-  const improveContentMutation = useMutation(
-    ({ sectionId, improvementType }: { sectionId: string; improvementType?: string }) =>
+  const improveContentMutation = useMutation({
+    mutationFn: ({ sectionId, improvementType }: { sectionId: string; improvementType?: string }) =>
       proposalService.improveSectionContent(proposalId!, sectionId, improvementType),
-    {
-      onSuccess: () => {
-        refetch() // Refresh proposal data after content improvement
-      },
-    }
-  )
+    onSuccess: () => {
+      refetch() // Refresh proposal data after content improvement
+    },
+  })
 
   // Generate summary mutation
-  const generateSummaryMutation = useMutation(
-    () => proposalService.generateExecutiveSummary(proposalId!),
-    {
-      onSuccess: () => {
-        refetch() // Refresh proposal data after summary generation
-      },
-    }
-  )
+  const generateSummaryMutation = useMutation({
+    mutationFn: () => proposalService.generateExecutiveSummary(proposalId!),
+    onSuccess: () => {
+      refetch() // Refresh proposal data after summary generation
+    },
+  })
 
   // Update form data
   const updateFormData = async (formData: {
@@ -68,7 +62,7 @@ export function useProposal(proposalId?: string) {
     }
 
     const updatedProposal = await proposalService.updateFormData(proposalId, formData)
-    queryClient.setQueryData(['proposal', proposalId], updatedProposal)
+    queryClient.setQueryData({ queryKey: ['proposal', proposalId] }, updatedProposal)
     return updatedProposal
   }
 
@@ -78,16 +72,16 @@ export function useProposal(proposalId?: string) {
     error,
     refetch,
     updateProposal: updateMutation.mutate,
-    isUpdating: updateMutation.isLoading,
+    isUpdating: updateMutation.isPending,
     updateError: updateMutation.error,
     generateContent: generateContentMutation.mutate,
-    isGenerating: generateContentMutation.isLoading,
+    isGenerating: generateContentMutation.isPending,
     generateError: generateContentMutation.error,
     improveContent: improveContentMutation.mutate,
-    isImproving: improveContentMutation.isLoading,
+    isImproving: improveContentMutation.isPending,
     improveError: improveContentMutation.error,
     generateSummary: generateSummaryMutation.mutate,
-    isGeneratingSummary: generateSummaryMutation.isLoading,
+    isGeneratingSummary: generateSummaryMutation.isPending,
     summaryError: generateSummaryMutation.error,
     updateFormData,
   }
@@ -102,25 +96,29 @@ export function useProposals() {
     isLoading,
     error,
     refetch,
-  } = useQuery(['proposals'], proposalService.listProposals, {
+  } = useQuery({
+    queryKey: ['proposals'],
+    queryFn: proposalService.listProposals,
     staleTime: 2 * 60 * 1000, // 2 minutes
   })
 
   // Create proposal mutation
-  const createMutation = useMutation(proposalService.createProposal, {
+  const createMutation = useMutation({
+    mutationFn: proposalService.createProposal,
     onSuccess: newProposal => {
-      queryClient.setQueryData(['proposals'], (old: Proposal[] = []) => [newProposal, ...old])
-      queryClient.setQueryData(['proposal', newProposal.id], newProposal)
+      queryClient.setQueryData({ queryKey: ['proposals'] }, (old: Proposal[] = []) => [newProposal, ...old])
+      queryClient.setQueryData({ queryKey: ['proposal', newProposal.id] }, newProposal)
     },
   })
 
   // Delete proposal mutation
-  const deleteMutation = useMutation(proposalService.deleteProposal, {
+  const deleteMutation = useMutation({
+    mutationFn: proposalService.deleteProposal,
     onSuccess: (_, proposalId) => {
-      queryClient.setQueryData(['proposals'], (old: Proposal[] = []) =>
+      queryClient.setQueryData({ queryKey: ['proposals'] }, (old: Proposal[] = []) =>
         old.filter(p => p.id !== proposalId)
       )
-      queryClient.removeQueries(['proposal', proposalId])
+      queryClient.removeQueries({ queryKey: ['proposal', proposalId] })
     },
   })
 
@@ -130,10 +128,10 @@ export function useProposals() {
     error,
     refetch,
     createProposal: createMutation.mutate,
-    isCreating: createMutation.isLoading,
+    isCreating: createMutation.isPending,
     createError: createMutation.error,
     deleteProposal: deleteMutation.mutate,
-    isDeleting: deleteMutation.isLoading,
+    isDeleting: deleteMutation.isPending,
     deleteError: deleteMutation.error,
   }
 }
@@ -144,14 +142,12 @@ export function useProposalSuggestions(proposalId?: string) {
     isLoading,
     error,
     refetch,
-  } = useQuery(
-    ['proposal-suggestions', proposalId],
-    () => proposalService.getSuggestions(proposalId!),
-    {
-      enabled: !!proposalId,
-      staleTime: 1 * 60 * 1000, // 1 minute
-    }
-  )
+  } = useQuery({
+    queryKey: ['proposal-suggestions', proposalId],
+    queryFn: () => proposalService.getSuggestions(proposalId!),
+    enabled: !!proposalId,
+    staleTime: 1 * 60 * 1000, // 1 minute
+  })
 
   return {
     suggestions,

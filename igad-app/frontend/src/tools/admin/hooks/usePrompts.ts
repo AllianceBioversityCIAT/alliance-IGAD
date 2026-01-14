@@ -28,72 +28,63 @@ export function usePrompts(filters?: UsePromptsFilters) {
     isLoading,
     error,
     refetch,
-  } = useQuery(
-    ['prompts', filters, currentPage],
-    () =>
+  } = useQuery({
+    queryKey: ['prompts', filters, currentPage],
+    queryFn: () =>
       promptService.listPrompts({
         ...filters,
         limit,
         offset: currentPage * limit,
       }),
-    {
-      placeholderData: (previousData) => previousData,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  )
+    placeholderData: (previousData) => previousData,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
 
   // Create prompt mutation
-  const createMutation = useMutation(
-    (data: CreatePromptRequest) => promptService.createPrompt(data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['prompts'])
-      },
-    }
-  )
+  const createMutation = useMutation({
+    mutationFn: (data: CreatePromptRequest) => promptService.createPrompt(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prompts'] })
+    },
+  })
 
   // Update prompt mutation
-  const updateMutation = useMutation(
-    ({ id, data }: { id: string; data: UpdatePromptRequest }) =>
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdatePromptRequest }) =>
       promptService.updatePrompt(id, data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['prompts'])
-      },
-    }
-  )
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prompts'] })
+    },
+  })
 
   // Publish prompt mutation
-  const publishMutation = useMutation(
-    ({ id, version }: { id: string; version: number }) => promptService.publishPrompt(id, version),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['prompts'])
-      },
-    }
-  )
+  const publishMutation = useMutation({
+    mutationFn: ({ id, version }: { id: string; version: number }) => promptService.publishPrompt(id, version),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prompts'] })
+    },
+  })
 
   // Delete prompt mutation
-  const deleteMutation = useMutation(
-    ({ id, version }: { id: string; version?: number }) => promptService.deletePrompt(id, version),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['prompts'])
-      },
-    }
-  )
+  const deleteMutation = useMutation({
+    mutationFn: ({ id, version }: { id: string; version?: number }) => promptService.deletePrompt(id, version),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prompts'] })
+    },
+  })
 
   // Toggle active mutation
-  const toggleActiveMutation = useMutation((id: string) => promptService.toggleActive(id), {
+  const toggleActiveMutation = useMutation({
+    mutationFn: (id: string) => promptService.toggleActive(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['prompts'])
+      queryClient.invalidateQueries({ queryKey: ['prompts'] })
     },
   })
 
   // Preview prompt mutation
-  const previewMutation = useMutation((data: PromptPreviewRequest) =>
-    promptService.previewPrompt(data)
-  )
+  const previewMutation = useMutation({
+    mutationFn: (data: PromptPreviewRequest) => promptService.previewPrompt(data),
+  })
 
   return {
     // Data
@@ -104,12 +95,12 @@ export function usePrompts(filters?: UsePromptsFilters) {
 
     // Loading states
     isLoading,
-    isCreating: createMutation.isLoading,
-    isUpdating: updateMutation.isLoading,
-    isPublishing: publishMutation.isLoading,
-    isDeleting: deleteMutation.isLoading,
-    isPreviewing: previewMutation.isLoading,
-    isTogglingActive: toggleActiveMutation.isLoading,
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isPublishing: publishMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+    isPreviewing: previewMutation.isPending,
+    isTogglingActive: toggleActiveMutation.isPending,
 
     // Error states
     error,
@@ -139,14 +130,18 @@ export function usePrompts(filters?: UsePromptsFilters) {
 }
 
 export function usePrompt(id: string, version?: number | 'latest') {
-  return useQuery(['prompt', id, version], () => promptService.getPrompt(id, version), {
+  return useQuery({
+    queryKey: ['prompt', id, version],
+    queryFn: () => promptService.getPrompt(id, version),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   })
 }
 
 export function usePromptBySection(section: ProposalSection) {
-  return useQuery(['prompt-by-section', section], () => promptService.getPromptBySection(section), {
+  return useQuery({
+    queryKey: ['prompt-by-section', section],
+    queryFn: () => promptService.getPromptBySection(section),
     staleTime: 2 * 60 * 1000, // 2 minutes cache for runtime
   })
 }
