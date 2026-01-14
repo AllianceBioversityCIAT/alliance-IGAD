@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { promptService } from '@/tools/admin/services/promptService'
 import type {
   CreatePromptRequest,
@@ -37,7 +37,7 @@ export function usePrompts(filters?: UsePromptsFilters) {
         offset: currentPage * limit,
       }),
     {
-      keepPreviousData: true,
+      placeholderData: (previousData) => previousData,
       staleTime: 5 * 60 * 1000, // 5 minutes
     }
   )
