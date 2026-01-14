@@ -1,6 +1,7 @@
 """
 Vector embeddings endpoints for testing S3 Vectors
 """
+
 from typing import Dict, Optional
 
 from fastapi import APIRouter, HTTPException

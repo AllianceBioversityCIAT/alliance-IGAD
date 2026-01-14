@@ -70,7 +70,9 @@ export function ProposalSidebar({
    * - The step is not currently completed
    */
   const needsRecalculation = (stepId: number): boolean => {
-    if (lastModifiedStep === null) return false
+    if (lastModifiedStep === null) {
+      return false
+    }
     return stepId > lastModifiedStep && !completedSteps.includes(stepId)
   }
 
@@ -100,16 +102,26 @@ export function ProposalSidebar({
 
             // Determine circle style - invalidated takes precedence over pending
             const getCircleStyle = () => {
-              if (isActive) return styles.stepCircleActive
-              if (isCompleted) return styles.stepCircleCompleted
-              if (isInvalidated) return styles.stepCircleInvalidated
+              if (isActive) {
+                return styles.stepCircleActive
+              }
+              if (isCompleted) {
+                return styles.stepCircleCompleted
+              }
+              if (isInvalidated) {
+                return styles.stepCircleInvalidated
+              }
               return styles.stepCirclePending
             }
 
             // Determine what to render inside the circle
             const renderCircleContent = () => {
-              if (isCompleted) return <CheckCircle size={16} />
-              if (isInvalidated) return <AlertCircle size={16} />
+              if (isCompleted) {
+                return <CheckCircle size={16} />
+              }
+              if (isInvalidated) {
+                return <AlertCircle size={16} />
+              }
               return step.id
             }
 
@@ -145,9 +157,7 @@ export function ProposalSidebar({
                   >
                     {step.title}
                   </span>
-                  {isInvalidated && (
-                    <span className={styles.invalidatedHint}>Needs update</span>
-                  )}
+                  {isInvalidated && <span className={styles.invalidatedHint}>Needs update</span>}
                 </div>
               </div>
             )

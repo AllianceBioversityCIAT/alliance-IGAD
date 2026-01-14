@@ -72,12 +72,12 @@ async def test_category_injection(
                     "user_prompt_template": original_prompt.user_prompt_template,
                 },
                 "injected": {
-                    "system_prompt": injected_prompt.system_prompt
-                    if injected_prompt
-                    else "",
-                    "user_prompt_template": injected_prompt.user_prompt_template
-                    if injected_prompt
-                    else "",
+                    "system_prompt": (
+                        injected_prompt.system_prompt if injected_prompt else ""
+                    ),
+                    "user_prompt_template": (
+                        injected_prompt.user_prompt_template if injected_prompt else ""
+                    ),
                 },
             }
         else:

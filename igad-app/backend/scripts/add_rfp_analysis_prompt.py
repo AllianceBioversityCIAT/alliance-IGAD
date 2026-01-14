@@ -25,7 +25,7 @@ def add_rfp_analysis_prompt():
 You have extensive experience with:
 - IGAD regional priorities and strategic frameworks
 - Livestock development and agricultural projects
-- Climate security and resilience initiatives  
+- Climate security and resilience initiatives
 - Cross-border collaboration requirements
 - Donor preferences and evaluation methodologies
 - Technical proposal requirements and compliance standards

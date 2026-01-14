@@ -1668,8 +1668,8 @@ export function Step4ProposalReview({
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>Upload Your Draft Proposal</h2>
             <p className={styles.cardSubtitle}>
-              In case you made adjustments to the downloaded Proposal Draft Document, please upload the new
-              version here to take it into consideration.
+              In case you made adjustments to the downloaded Proposal Draft Document, please upload
+              the new version here to take it into consideration.
             </p>
           </div>
 

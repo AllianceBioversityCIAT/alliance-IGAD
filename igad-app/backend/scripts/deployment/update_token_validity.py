@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Update Cognito User Pool Client token validity settings.
-Based on conversation summary: extend tokens from 1 hour to 24 hours for access/ID tokens 
+Based on conversation summary: extend tokens from 1 hour to 24 hours for access/ID tokens
 and 10 years for refresh tokens.
 """
 import boto3
@@ -41,7 +41,7 @@ def update_token_validity(cognito_client, user_pool_id, client_id):
         )
 
         client_config = current_config["UserPoolClient"]
-        print(f"Current token settings:")
+        print("Current token settings:")
         print(
             f"  AccessTokenValidity: {client_config.get('AccessTokenValidity', 'Not set')}"
         )

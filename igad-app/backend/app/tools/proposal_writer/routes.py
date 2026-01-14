@@ -734,7 +734,7 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
             ),
         )
 
-        print(f"✅ Worker Lambda invoked successfully")
+        print("✅ Worker Lambda invoked successfully")
 
         return {
             "status": "processing",
@@ -748,7 +748,7 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
         import traceback
 
         error_details = traceback.format_exc()
-        print(f"❌ ERROR in analyze_rfp endpoint:")
+        print("❌ ERROR in analyze_rfp endpoint:")
         print(error_details)
         raise HTTPException(status_code=500, detail=f"RFP analysis failed: {str(e)}")
 
@@ -940,7 +940,7 @@ async def analyze_concept(
             ),
         )
 
-        print(f"✅ Concept analysis worker invoked successfully")
+        print("✅ Concept analysis worker invoked successfully")
 
         return {
             "status": "processing",
@@ -954,7 +954,7 @@ async def analyze_concept(
         import traceback
 
         error_details = traceback.format_exc()
-        print(f"❌ ERROR in analyze_concept endpoint:")
+        print("❌ ERROR in analyze_concept endpoint:")
         print(error_details)
         raise HTTPException(
             status_code=500, detail=f"Concept analysis failed: {str(e)}"
@@ -1327,7 +1327,7 @@ async def analyze_step_1(proposal_id: str, user=Depends(get_current_user)):
         import traceback
 
         error_details = traceback.format_exc()
-        print(f"❌ ERROR in analyze_step_1 endpoint:")
+        print("❌ ERROR in analyze_step_1 endpoint:")
         print(error_details)
         raise HTTPException(status_code=500, detail=f"Step 1 analysis failed: {str(e)}")
 
@@ -1529,7 +1529,7 @@ async def analyze_step_2(proposal_id: str, user=Depends(get_current_user)):
         import traceback
 
         error_details = traceback.format_exc()
-        print(f"❌ ERROR in analyze_step_2 endpoint:")
+        print("❌ ERROR in analyze_step_2 endpoint:")
         print(error_details)
         raise HTTPException(status_code=500, detail=f"Step 2 analysis failed: {str(e)}")
 
@@ -1863,7 +1863,7 @@ async def analyze_step_3(proposal_id: str, user=Depends(get_current_user)):
             ),
         )
 
-        print(f"✅ Structure workplan analysis worker invoked successfully")
+        print("✅ Structure workplan analysis worker invoked successfully")
 
         return {
             "status": "processing",
@@ -2087,7 +2087,9 @@ async def generate_ai_proposal_template(
             "user_comments": request.user_comments or {},
         }
 
-        print(f"📡 Invoking worker lambda for proposal template generation: {proposal_code}")
+        print(
+            f"📡 Invoking worker lambda for proposal template generation: {proposal_code}"
+        )
 
         lambda_client.invoke(
             FunctionName=worker_function,
@@ -2113,7 +2115,9 @@ async def generate_ai_proposal_template(
 
 
 @router.get("/{proposal_id}/proposal-template-status")
-async def get_proposal_template_status(proposal_id: str, user=Depends(get_current_user)):
+async def get_proposal_template_status(
+    proposal_id: str, user=Depends(get_current_user)
+):
     """
     Poll for AI proposal template generation completion status.
 
@@ -2175,21 +2179,21 @@ async def use_generated_template_as_draft(
     """
     import io
     import re
+
     from docx import Document
-    from docx.shared import Pt, Inches
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Pt
 
     def markdown_to_docx(markdown_content: str) -> bytes:
         """Convert markdown content to DOCX format."""
         doc = Document()
 
         # Set default font
-        style = doc.styles['Normal']
+        style = doc.styles["Normal"]
         font = style.font
-        font.name = 'Calibri'
+        font.name = "Calibri"
         font.size = Pt(11)
 
-        lines = markdown_content.split('\n')
+        lines = markdown_content.split("\n")
         i = 0
 
         while i < len(lines):
@@ -2201,33 +2205,33 @@ async def use_generated_template_as_draft(
                 continue
 
             # Headers
-            if line.startswith('# '):
-                p = doc.add_heading(line[2:], level=1)
-            elif line.startswith('## '):
-                p = doc.add_heading(line[3:], level=2)
-            elif line.startswith('### '):
-                p = doc.add_heading(line[4:], level=3)
-            elif line.startswith('#### '):
-                p = doc.add_heading(line[5:], level=4)
+            if line.startswith("# "):
+                doc.add_heading(line[2:], level=1)
+            elif line.startswith("## "):
+                doc.add_heading(line[3:], level=2)
+            elif line.startswith("### "):
+                doc.add_heading(line[4:], level=3)
+            elif line.startswith("#### "):
+                doc.add_heading(line[5:], level=4)
             # Bullet points
-            elif line.startswith('- ') or line.startswith('* '):
+            elif line.startswith("- ") or line.startswith("* "):
                 text = line[2:]
                 # Handle bold and italic in bullet points
-                text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)  # Remove bold markers
-                text = re.sub(r'\*(.+?)\*', r'\1', text)  # Remove italic markers
-                p = doc.add_paragraph(text, style='List Bullet')
+                text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)  # Remove bold markers
+                text = re.sub(r"\*(.+?)\*", r"\1", text)  # Remove italic markers
+                doc.add_paragraph(text, style="List Bullet")
             # Numbered lists
-            elif re.match(r'^\d+\.\s', line):
-                text = re.sub(r'^\d+\.\s', '', line)
-                text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
-                text = re.sub(r'\*(.+?)\*', r'\1', text)
-                p = doc.add_paragraph(text, style='List Number')
+            elif re.match(r"^\d+\.\s", line):
+                text = re.sub(r"^\d+\.\s", "", line)
+                text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+                text = re.sub(r"\*(.+?)\*", r"\1", text)
+                doc.add_paragraph(text, style="List Number")
             # Regular paragraphs
             else:
                 # Handle bold text
-                text = re.sub(r'\*\*(.+?)\*\*', r'\1', line)
-                text = re.sub(r'\*(.+?)\*', r'\1', text)
-                p = doc.add_paragraph(text)
+                text = re.sub(r"\*\*(.+?)\*\*", r"\1", line)
+                text = re.sub(r"\*(.+?)\*", r"\1", text)
+                doc.add_paragraph(text)
 
             i += 1
 
@@ -2252,9 +2256,7 @@ async def use_generated_template_as_draft(
         # Get S3 bucket
         bucket = os.environ.get("PROPOSALS_BUCKET")
         if not bucket:
-            raise HTTPException(
-                status_code=500, detail="S3 bucket not configured"
-            )
+            raise HTTPException(status_code=500, detail="S3 bucket not configured")
 
         # Convert markdown to DOCX
         docx_content = markdown_to_docx(template_content)
@@ -2309,6 +2311,7 @@ async def use_generated_template_as_draft(
     except Exception as e:
         print(f"❌ Error copying template to draft: {str(e)}")
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -2648,9 +2651,7 @@ async def get_prompt_with_categories(
 
 
 @router.get("/{proposal_id}/download-draft")
-async def download_draft_proposal(
-    proposal_id: str, user=Depends(get_current_user)
-):
+async def download_draft_proposal(proposal_id: str, user=Depends(get_current_user)):
     """
     Download the draft proposal file from S3.
     Returns the file as a downloadable response.
@@ -2678,9 +2679,7 @@ async def download_draft_proposal(
         # Get S3 bucket
         bucket = os.environ.get("PROPOSALS_BUCKET")
         if not bucket:
-            raise HTTPException(
-                status_code=500, detail="S3 bucket not configured"
-            )
+            raise HTTPException(status_code=500, detail="S3 bucket not configured")
 
         # Download file from S3
         s3_client = boto3.client("s3")
@@ -2706,9 +2705,7 @@ async def download_draft_proposal(
         return Response(
             content=file_content,
             media_type=content_type,
-            headers={
-                "Content-Disposition": f'attachment; filename="{draft_filename}"'
-            }
+            headers={"Content-Disposition": f'attachment; filename="{draft_filename}"'},
         )
 
     except HTTPException:
@@ -2720,28 +2717,29 @@ async def download_draft_proposal(
 
 
 @router.get("/{proposal_id}/download-template-docx")
-async def download_template_as_docx(
-    proposal_id: str, user=Depends(get_current_user)
-):
+async def download_template_as_docx(proposal_id: str, user=Depends(get_current_user)):
     """
     Download the AI-generated proposal template as a DOCX file.
     Returns the file as a downloadable response.
     """
     import io
     import re
+
     from docx import Document
-    from docx.shared import Pt, Inches, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Pt, RGBColor
     from fastapi.responses import Response
 
-    def markdown_to_docx(markdown_content: str, title: str = "AI Generated Proposal Draft") -> bytes:
+    def markdown_to_docx(
+        markdown_content: str, title: str = "AI Generated Proposal Draft"
+    ) -> bytes:
         """Convert markdown content to professionally formatted DOCX."""
         doc = Document()
 
         # Set default font
-        style = doc.styles['Normal']
+        style = doc.styles["Normal"]
         font = style.font
-        font.name = 'Calibri'
+        font.name = "Calibri"
         font.size = Pt(11)
 
         # Add title
@@ -2749,7 +2747,9 @@ async def download_template_as_docx(
         title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         # Add generation date
-        date_para = doc.add_paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y')}")
+        date_para = doc.add_paragraph(
+            f"Generated on {datetime.now().strftime('%B %d, %Y')}"
+        )
         date_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
         date_run = date_para.runs[0]
         date_run.font.size = Pt(10)
@@ -2758,7 +2758,7 @@ async def download_template_as_docx(
         # Add separator
         doc.add_paragraph()
 
-        lines = markdown_content.split('\n')
+        lines = markdown_content.split("\n")
         i = 0
 
         while i < len(lines):
@@ -2770,39 +2770,41 @@ async def download_template_as_docx(
                 continue
 
             # Headers
-            if line.startswith('# '):
-                p = doc.add_heading(line[2:], level=1)
-            elif line.startswith('## '):
-                p = doc.add_heading(line[3:], level=2)
-            elif line.startswith('### '):
-                p = doc.add_heading(line[4:], level=3)
-            elif line.startswith('#### '):
-                p = doc.add_heading(line[5:], level=4)
+            if line.startswith("# "):
+                doc.add_heading(line[2:], level=1)
+            elif line.startswith("## "):
+                doc.add_heading(line[3:], level=2)
+            elif line.startswith("### "):
+                doc.add_heading(line[4:], level=3)
+            elif line.startswith("#### "):
+                doc.add_heading(line[5:], level=4)
             # Bullet points
-            elif line.startswith('- ') or line.startswith('* '):
+            elif line.startswith("- ") or line.startswith("* "):
                 text = line[2:]
                 # Handle bold and italic in bullet points
-                text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)  # Remove bold markers
-                text = re.sub(r'\*(.+?)\*', r'\1', text)  # Remove italic markers
-                p = doc.add_paragraph(text, style='List Bullet')
+                text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)  # Remove bold markers
+                text = re.sub(r"\*(.+?)\*", r"\1", text)  # Remove italic markers
+                doc.add_paragraph(text, style="List Bullet")
             # Numbered lists
-            elif re.match(r'^\d+\.\s', line):
-                text = re.sub(r'^\d+\.\s', '', line)
-                text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
-                text = re.sub(r'\*(.+?)\*', r'\1', text)
-                p = doc.add_paragraph(text, style='List Number')
+            elif re.match(r"^\d+\.\s", line):
+                text = re.sub(r"^\d+\.\s", "", line)
+                text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+                text = re.sub(r"\*(.+?)\*", r"\1", text)
+                doc.add_paragraph(text, style="List Number")
             # Regular paragraphs
             else:
                 # Handle bold text
-                text = re.sub(r'\*\*(.+?)\*\*', r'\1', line)
-                text = re.sub(r'\*(.+?)\*', r'\1', text)
-                p = doc.add_paragraph(text)
+                text = re.sub(r"\*\*(.+?)\*\*", r"\1", line)
+                text = re.sub(r"\*(.+?)\*", r"\1", text)
+                doc.add_paragraph(text)
 
             i += 1
 
         # Add footer
         doc.add_paragraph()
-        footer_para = doc.add_paragraph("Generated by IGAD Proposal Writer - AI Assistant")
+        footer_para = doc.add_paragraph(
+            "Generated by IGAD Proposal Writer - AI Assistant"
+        )
         footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
         footer_run = footer_para.runs[0]
         footer_run.font.size = Pt(9)
@@ -2839,9 +2841,7 @@ async def download_template_as_docx(
         return Response(
             content=docx_content,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}"'
-            }
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
 
     except HTTPException:

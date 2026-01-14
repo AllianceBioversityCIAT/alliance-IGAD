@@ -36,7 +36,7 @@ export function usePrompts(filters?: UsePromptsFilters) {
         limit,
         offset: currentPage * limit,
       }),
-    placeholderData: (previousData) => previousData,
+    placeholderData: previousData => previousData,
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
@@ -59,7 +59,8 @@ export function usePrompts(filters?: UsePromptsFilters) {
 
   // Publish prompt mutation
   const publishMutation = useMutation({
-    mutationFn: ({ id, version }: { id: string; version: number }) => promptService.publishPrompt(id, version),
+    mutationFn: ({ id, version }: { id: string; version: number }) =>
+      promptService.publishPrompt(id, version),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prompts'] })
     },
@@ -67,7 +68,8 @@ export function usePrompts(filters?: UsePromptsFilters) {
 
   // Delete prompt mutation
   const deleteMutation = useMutation({
-    mutationFn: ({ id, version }: { id: string; version?: number }) => promptService.deletePrompt(id, version),
+    mutationFn: ({ id, version }: { id: string; version?: number }) =>
+      promptService.deletePrompt(id, version),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prompts'] })
     },

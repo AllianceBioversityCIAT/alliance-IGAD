@@ -6,6 +6,7 @@ Run from backend directory:
 
 Requires AWS credentials and TABLE_NAME environment variable.
 """
+
 import os
 
 import boto3
@@ -24,7 +25,7 @@ REQUIRED_PLACEHOLDERS = [
 def verify_prompt():
     print(f"🔍 Searching for Step 3 prompt in table: {TABLE_NAME}")
     print(
-        f"   Criteria: section='proposal_writer', sub_section='step-3', categories contains 'Initial Proposal'"
+        "   Criteria: section='proposal_writer', sub_section='step-3', categories contains 'Initial Proposal'"
     )
     print()
 
@@ -63,7 +64,7 @@ def verify_prompt():
 
         user_prompt = item.get("user_prompt_template", "")
 
-        print(f"\n🔎 Checking placeholders in user_prompt_template:")
+        print("\n🔎 Checking placeholders in user_prompt_template:")
         print(f"   Template length: {len(user_prompt)} characters")
 
         all_found = True
@@ -75,15 +76,15 @@ def verify_prompt():
                 all_found = False
 
         if all_found:
-            print(f"\n✅ All required placeholders found!")
+            print("\n✅ All required placeholders found!")
         else:
-            print(f"\n⚠️  Some placeholders are MISSING. Please update the prompt.")
+            print("\n⚠️  Some placeholders are MISSING. Please update the prompt.")
             print(
-                f"   The prompt needs these placeholders for Step 3 to work correctly."
+                "   The prompt needs these placeholders for Step 3 to work correctly."
             )
 
         # Show a preview of the template
-        print(f"\n📄 Template preview (first 500 chars):")
+        print("\n📄 Template preview (first 500 chars):")
         print(f"   {user_prompt[:500]}...")
 
     return all_found

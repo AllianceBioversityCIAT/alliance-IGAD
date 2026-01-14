@@ -19,7 +19,8 @@ export function useProposal(proposalId?: string) {
 
   // Update proposal mutation
   const updateMutation = useMutation({
-    mutationFn: (updates: Partial<Proposal>) => proposalService.updateProposal(proposalId!, updates),
+    mutationFn: (updates: Partial<Proposal>) =>
+      proposalService.updateProposal(proposalId!, updates),
     onSuccess: updatedProposal => {
       queryClient.setQueryData({ queryKey: ['proposal', proposalId] }, updatedProposal)
       queryClient.invalidateQueries({ queryKey: ['proposals'] })
@@ -28,8 +29,13 @@ export function useProposal(proposalId?: string) {
 
   // Generate content mutation
   const generateContentMutation = useMutation({
-    mutationFn: ({ sectionId, contextData }: { sectionId: string; contextData?: Record<string, unknown> }) =>
-      proposalService.generateSectionContent(proposalId!, sectionId, contextData),
+    mutationFn: ({
+      sectionId,
+      contextData,
+    }: {
+      sectionId: string
+      contextData?: Record<string, unknown>
+    }) => proposalService.generateSectionContent(proposalId!, sectionId, contextData),
     onSuccess: () => {
       refetch() // Refresh proposal data after content generation
     },
@@ -106,7 +112,10 @@ export function useProposals() {
   const createMutation = useMutation({
     mutationFn: proposalService.createProposal,
     onSuccess: newProposal => {
-      queryClient.setQueryData({ queryKey: ['proposals'] }, (old: Proposal[] = []) => [newProposal, ...old])
+      queryClient.setQueryData({ queryKey: ['proposals'] }, (old: Proposal[] = []) => [
+        newProposal,
+        ...old,
+      ])
       queryClient.setQueryData({ queryKey: ['proposal', newProposal.id] }, newProposal)
     },
   })

@@ -840,8 +840,12 @@ function UpdatedConceptDocumentCard({
         .map(cell => cell.trim())
         .filter((_, index, arr) => {
           // Remove empty first/last cells from | at beginning/end
-          if (index === 0 && arr[0] === '') return false
-          if (index === arr.length - 1 && arr[arr.length - 1] === '') return false
+          if (index === 0 && arr[0] === '') {
+            return false
+          }
+          if (index === arr.length - 1 && arr[arr.length - 1] === '') {
+            return false
+          }
           return true
         })
     }
@@ -1278,7 +1282,14 @@ export function Step2ConceptReview({
         setProgressMessage(null)
       }
     },
-    [proposalId, selectedSections, userComments, conceptAnalysis, onConceptDocumentChanged, showError]
+    [
+      proposalId,
+      selectedSections,
+      userComments,
+      conceptAnalysis,
+      onConceptDocumentChanged,
+      showError,
+    ]
   )
 
   // ========================================
@@ -1461,6 +1472,7 @@ export function Step2ConceptReview({
       onConceptDocumentChanged,
       onConceptAnalysisChanged,
       setSelectedSections,
+      showError,
     ]
   )
 
@@ -1613,8 +1625,12 @@ export function Step2ConceptReview({
           .split('|')
           .map(cell => cell.trim())
           .filter((_, index, arr) => {
-            if (index === 0 && arr[0] === '') return false
-            if (index === arr.length - 1 && arr[arr.length - 1] === '') return false
+            if (index === 0 && arr[0] === '') {
+              return false
+            }
+            if (index === arr.length - 1 && arr[arr.length - 1] === '') {
+              return false
+            }
             return true
           })
       }

@@ -139,7 +139,7 @@ async def delete_document(
 ):
     """Delete an uploaded RFP document"""
     try:
-        print(f"\n🗑️ DELETE REQUEST:")
+        print("\n🗑️ DELETE REQUEST:")
         print(f"  - Proposal ID: {proposal_id}")
         print(f"  - Filename: {filename}")
         print(f"  - User ID: {user.get('user_id')}")
@@ -182,7 +182,7 @@ async def delete_document(
             raise
 
         # Update proposal metadata - remove file AND clear RFP analysis
-        print(f"  - Updating DynamoDB...")
+        print("  - Updating DynamoDB...")
         await db_client.update_item(
             pk=f"PROPOSAL#{proposal_code}",
             sk="METADATA",
@@ -190,9 +190,9 @@ async def delete_document(
             expression_attribute_names={"#rfp": "rfp-document"},
             expression_attribute_values={":updated": datetime.utcnow().isoformat()},
         )
-        print(f"✅ Updated DynamoDB")
+        print("✅ Updated DynamoDB")
 
-        print(f"✅ DELETE SUCCESSFUL\n")
+        print("✅ DELETE SUCCESSFUL\n")
 
         return {"success": True, "message": "Document deleted successfully"}
 
@@ -630,7 +630,7 @@ async def upload_reference_file(
                 ":updated": datetime.utcnow().isoformat(),
             },
         )
-        print(f"✅ DynamoDB updated with file info")
+        print("✅ DynamoDB updated with file info")
 
         # Trigger async vectorization via Lambda
         import json
@@ -664,7 +664,7 @@ async def upload_reference_file(
             InvocationType="Event",  # Async invocation
             Payload=json.dumps(worker_event),
         )
-        print(f"✅ Lambda invoked asynchronously for vectorization")
+        print("✅ Lambda invoked asynchronously for vectorization")
 
         return {
             "success": True,
@@ -871,7 +871,7 @@ async def upload_supporting_file(
                 ":updated": datetime.utcnow().isoformat(),
             },
         )
-        print(f"✅ DynamoDB updated with file info")
+        print("✅ DynamoDB updated with file info")
 
         # Trigger async vectorization via Lambda
         import json
@@ -904,7 +904,7 @@ async def upload_supporting_file(
             InvocationType="Event",  # Async invocation
             Payload=json.dumps(worker_event),
         )
-        print(f"✅ Lambda invoked asynchronously for vectorization")
+        print("✅ Lambda invoked asynchronously for vectorization")
 
         return {
             "success": True,
@@ -1235,7 +1235,7 @@ async def save_work_text(
                 print(f"Warning: Vector storage failed for work text chunk {idx}")
 
         if not vector_result:
-            print(f"Warning: Vector storage failed for work text")
+            print("Warning: Vector storage failed for work text")
 
         # Update DynamoDB text_inputs
         await db_client.update_item(
@@ -1302,7 +1302,7 @@ async def delete_work_text(proposal_id: str, user=Depends(get_current_user)):
             # Continue even if S3 delete fails
 
         # Delete from S3 Vectors
-        print(f"Deleting vectors for work text")
+        print("Deleting vectors for work text")
         from app.shared.vectors.service import VectorEmbeddingsService
 
         vector_service = VectorEmbeddingsService()
@@ -1312,7 +1312,7 @@ async def delete_work_text(proposal_id: str, user=Depends(get_current_user)):
         )
 
         if not vector_deleted:
-            print(f"Warning: Failed to delete vectors for work text")
+            print("Warning: Failed to delete vectors for work text")
 
         # Update DynamoDB
         await db_client.update_item(

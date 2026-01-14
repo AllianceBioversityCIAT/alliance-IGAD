@@ -1,11 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import type { RFPAnalysis } from '../types/analysis'
 
-interface FormData {
-  uploadedFiles: Record<string, File[] | string[]>
-  textInputs: Record<string, string>
-}
-
 const DRAFT_KEYS = {
   PROPOSAL_ID: 'draft_proposal_id',
   PROPOSAL_CODE: 'draft_proposal_code',
@@ -25,7 +20,10 @@ export function useProposalDraft() {
   }
 
   // Save form data
-  const saveFormData = (data: { uploadedFiles: Record<string, File[] | string[]>; textInputs: Record<string, string> }) => {
+  const saveFormData = (data: {
+    uploadedFiles: Record<string, File[] | string[]>
+    textInputs: Record<string, string>
+  }) => {
     localStorage.setItem(DRAFT_KEYS.FORM_DATA, JSON.stringify(data))
   }
 

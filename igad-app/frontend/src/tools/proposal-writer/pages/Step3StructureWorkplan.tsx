@@ -243,7 +243,10 @@ function Step3Skeleton() {
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <div className={styles.sectionHeader}>
-              <div className={`${styles.skeleton}`} style={{ width: 24, height: 24, borderRadius: 6 }}></div>
+              <div
+                className={`${styles.skeleton}`}
+                style={{ width: 24, height: 24, borderRadius: 6 }}
+              ></div>
               <div>
                 <div className={`${styles.skeleton} ${styles.skeletonCardTitle}`}></div>
                 <div className={`${styles.skeleton} ${styles.skeletonTextShort}`}></div>
@@ -257,7 +260,10 @@ function Step3Skeleton() {
         <div className={styles.sectionsCard}>
           <div className={styles.sectionsCardInner}>
             <div className={styles.sectionHeader}>
-              <div className={`${styles.skeleton}`} style={{ width: 24, height: 24, borderRadius: 6 }}></div>
+              <div
+                className={`${styles.skeleton}`}
+                style={{ width: 24, height: 24, borderRadius: 6 }}
+              ></div>
               <div>
                 <div className={`${styles.skeleton} ${styles.skeletonCardTitle}`}></div>
                 <div className={`${styles.skeleton} ${styles.skeletonTextShort}`}></div>
@@ -277,7 +283,10 @@ function Step3Skeleton() {
         {/* Generate Template Section Skeleton */}
         <div className={styles.card}>
           <div className={styles.sectionHeader}>
-            <div className={`${styles.skeleton}`} style={{ width: 20, height: 20, borderRadius: 6 }}></div>
+            <div
+              className={`${styles.skeleton}`}
+              style={{ width: 20, height: 20, borderRadius: 6 }}
+            ></div>
             <div>
               <div className={`${styles.skeleton} ${styles.skeletonCardTitle}`}></div>
               <div className={`${styles.skeleton} ${styles.skeletonTextShort}`}></div>
@@ -313,10 +322,12 @@ export function Step3StructureWorkplan({
   const [expandedSections, setExpandedSections] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [hasInitialized, setHasInitialized] = useState(false)
-  const [generatedProposal, setGeneratedProposal] = useState<string | null>(initialGeneratedContent || null)
-  const [generationStatus, setGenerationStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>(
-    initialGeneratedContent ? 'completed' : 'idle'
+  const [generatedProposal, setGeneratedProposal] = useState<string | null>(
+    initialGeneratedContent || null
   )
+  const [generationStatus, setGenerationStatus] = useState<
+    'idle' | 'processing' | 'completed' | 'failed'
+  >(initialGeneratedContent ? 'completed' : 'idle')
   const [generationError, setGenerationError] = useState<string | null>(null)
   // Track the sections used for last successful generation
   const [lastGeneratedSections, setLastGeneratedSections] = useState<string[]>(
@@ -416,11 +427,13 @@ export function Step3StructureWorkplan({
 
   // Poll for AI template generation status
   const pollTemplateStatus = useCallback(async () => {
-    if (!proposalId) return
+    if (!proposalId) {
+      return
+    }
 
     // Prevent multiple polling instances
     if (isPollingRef.current) {
-      console.log('[Step3] Polling already in progress, skipping')
+      // Polling already in progress, skipping
       return
     }
 
@@ -433,7 +446,7 @@ export function Step3StructureWorkplan({
     const poll = async () => {
       // Check if polling was cancelled (component unmounted or new generation started)
       if (!isPollingRef.current) {
-        console.log('[Step3] Polling cancelled, stopping')
+        // Polling cancelled, stopping
         return
       }
 
@@ -501,7 +514,10 @@ export function Step3StructureWorkplan({
 
     // Validate that at least one section is selected
     if (selectedSections.length === 0) {
-      showError('Missing selection', 'Please select at least one section to include in the template.')
+      showError(
+        'Missing selection',
+        'Please select at least one section to include in the template.'
+      )
       return
     }
 
@@ -518,10 +534,7 @@ export function Step3StructureWorkplan({
 
     try {
       // Call the AI generation API
-      const result = await proposalService.generateAiProposalTemplate(
-        proposalId,
-        selectedSections
-      )
+      const result = await proposalService.generateAiProposalTemplate(proposalId, selectedSections)
 
       if (result.status === 'processing') {
         // Start polling for completion
@@ -551,7 +564,10 @@ export function Step3StructureWorkplan({
       setGenerationError(err.message || 'Failed to generate template')
       setGenerationStatus('failed')
       setIsGenerating(false)
-      showError('Generation failed', `Failed to generate template: ${err.message || 'Unknown error'}`)
+      showError(
+        'Generation failed',
+        `Failed to generate template: ${err.message || 'Unknown error'}`
+      )
     }
   }
 
@@ -595,220 +611,227 @@ export function Step3StructureWorkplan({
   /**
    * Convert markdown content to docx Paragraph/Table array
    */
-  const markdownToParagraphs = useCallback((markdown: string): (Paragraph | Table)[] => {
-    const elements: (Paragraph | Table)[] = []
-    const lines = markdown.split('\n')
-    let tableRows: string[][] = []
-    let tableHeaders: string[] = []
-    let inTable = false
+  const markdownToParagraphs = useCallback(
+    (markdown: string): (Paragraph | Table)[] => {
+      const elements: (Paragraph | Table)[] = []
+      const lines = markdown.split('\n')
+      let tableRows: string[][] = []
+      let tableHeaders: string[] = []
+      let inTable = false
 
-    // Helper to check if line is a table row
-    const isTableRow = (line: string): boolean => {
-      const trimmed = line.trim()
-      return trimmed.includes('|') && (trimmed.startsWith('|') || trimmed.split('|').length >= 2)
-    }
-
-    // Helper to check if line is table separator
-    const isTableSeparator = (line: string): boolean => {
-      const trimmed = line.trim()
-      return /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(trimmed)
-    }
-
-    // Helper to parse table row into cells
-    const parseTableRowCells = (line: string): string[] => {
-      return line
-        .split('|')
-        .map(cell => cell.trim())
-        .filter((_, index, arr) => {
-          if (index === 0 && arr[0] === '') return false
-          if (index === arr.length - 1 && arr[arr.length - 1] === '') return false
-          return true
-        })
-    }
-
-    // Helper to flush table to elements
-    const flushTable = () => {
-      if (tableHeaders.length > 0 || tableRows.length > 0) {
-        const rows: TableRow[] = []
-
-        // Add header row
-        if (tableHeaders.length > 0) {
-          rows.push(
-            new TableRow({
-              tableHeader: true,
-              children: tableHeaders.map(
-                header =>
-                  new TableCell({
-                    children: [
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: header,
-                            bold: true,
-                            size: 22,
-                          }),
-                        ],
-                      }),
-                    ],
-                    shading: { fill: 'F3F4F6' },
-                  })
-              ),
-            })
-          )
-        }
-
-        // Add data rows
-        tableRows.forEach(row => {
-          rows.push(
-            new TableRow({
-              children: row.map(
-                cell =>
-                  new TableCell({
-                    children: [
-                      new Paragraph({
-                        children: parseInlineFormatting(cell),
-                      }),
-                    ],
-                  })
-              ),
-            })
-          )
-        })
-
-        // Create table with borders
-        elements.push(
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows,
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-              bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-              left: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-              right: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-              insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-              insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-            },
-          })
-        )
-
-        // Add spacing after table
-        elements.push(new Paragraph({ text: '', spacing: { after: 200 } }))
-
-        tableHeaders = []
-        tableRows = []
-        inTable = false
+      // Helper to check if line is a table row
+      const isTableRow = (line: string): boolean => {
+        const trimmed = line.trim()
+        return trimmed.includes('|') && (trimmed.startsWith('|') || trimmed.split('|').length >= 2)
       }
-    }
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      const trimmedLine = line.trim()
+      // Helper to check if line is table separator
+      const isTableSeparator = (line: string): boolean => {
+        const trimmed = line.trim()
+        return /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(trimmed)
+      }
 
-      // Check for table rows
-      if (isTableRow(trimmedLine)) {
-        if (isTableSeparator(trimmedLine)) {
-          inTable = true
+      // Helper to parse table row into cells
+      const parseTableRowCells = (line: string): string[] => {
+        return line
+          .split('|')
+          .map(cell => cell.trim())
+          .filter((_, index, arr) => {
+            if (index === 0 && arr[0] === '') {
+              return false
+            }
+            if (index === arr.length - 1 && arr[arr.length - 1] === '') {
+              return false
+            }
+            return true
+          })
+      }
+
+      // Helper to flush table to elements
+      const flushTable = () => {
+        if (tableHeaders.length > 0 || tableRows.length > 0) {
+          const rows: TableRow[] = []
+
+          // Add header row
+          if (tableHeaders.length > 0) {
+            rows.push(
+              new TableRow({
+                tableHeader: true,
+                children: tableHeaders.map(
+                  header =>
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: header,
+                              bold: true,
+                              size: 22,
+                            }),
+                          ],
+                        }),
+                      ],
+                      shading: { fill: 'F3F4F6' },
+                    })
+                ),
+              })
+            )
+          }
+
+          // Add data rows
+          tableRows.forEach(row => {
+            rows.push(
+              new TableRow({
+                children: row.map(
+                  cell =>
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: parseInlineFormatting(cell),
+                        }),
+                      ],
+                    })
+                ),
+              })
+            )
+          })
+
+          // Create table with borders
+          elements.push(
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows,
+              borders: {
+                top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                left: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                right: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+              },
+            })
+          )
+
+          // Add spacing after table
+          elements.push(new Paragraph({ text: '', spacing: { after: 200 } }))
+
+          tableHeaders = []
+          tableRows = []
+          inTable = false
+        }
+      }
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        const trimmedLine = line.trim()
+
+        // Check for table rows
+        if (isTableRow(trimmedLine)) {
+          if (isTableSeparator(trimmedLine)) {
+            inTable = true
+            continue
+          }
+
+          if (!inTable && tableHeaders.length === 0) {
+            tableHeaders = parseTableRowCells(trimmedLine)
+          } else {
+            inTable = true
+            tableRows.push(parseTableRowCells(trimmedLine))
+          }
           continue
         }
 
-        if (!inTable && tableHeaders.length === 0) {
-          tableHeaders = parseTableRowCells(trimmedLine)
-        } else {
-          inTable = true
-          tableRows.push(parseTableRowCells(trimmedLine))
+        // Flush table if we hit a non-table line
+        if (inTable || tableHeaders.length > 0) {
+          flushTable()
         }
-        continue
-      }
 
-      // Flush table if we hit a non-table line
-      if (inTable || tableHeaders.length > 0) {
-        flushTable()
-      }
+        // Skip empty lines but add spacing
+        if (!trimmedLine) {
+          continue
+        }
 
-      // Skip empty lines but add spacing
-      if (!trimmedLine) {
-        continue
-      }
-
-      // Headers
-      if (trimmedLine.startsWith('#### ')) {
-        elements.push(
-          new Paragraph({
-            children: parseInlineFormatting(trimmedLine.slice(5)),
-            heading: HeadingLevel.HEADING_4,
-            spacing: { before: 200, after: 100 },
-          })
-        )
-      } else if (trimmedLine.startsWith('### ')) {
-        elements.push(
-          new Paragraph({
-            children: parseInlineFormatting(trimmedLine.slice(4)),
-            heading: HeadingLevel.HEADING_3,
-            spacing: { before: 240, after: 120 },
-          })
-        )
-      } else if (trimmedLine.startsWith('## ')) {
-        elements.push(
-          new Paragraph({
-            children: parseInlineFormatting(trimmedLine.slice(3)),
-            heading: HeadingLevel.HEADING_2,
-            spacing: { before: 280, after: 140 },
-          })
-        )
-      } else if (trimmedLine.startsWith('# ')) {
-        elements.push(
-          new Paragraph({
-            children: parseInlineFormatting(trimmedLine.slice(2)),
-            heading: HeadingLevel.HEADING_1,
-            spacing: { before: 320, after: 160 },
-          })
-        )
-      }
-      // Bullet points
-      else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-        elements.push(
-          new Paragraph({
-            children: [
-              new TextRun({ text: '• ' }),
-              ...parseInlineFormatting(trimmedLine.slice(2)),
-            ],
-            spacing: { before: 60, after: 60 },
-            indent: { left: 720 },
-          })
-        )
-      }
-      // Numbered lists
-      else if (/^\d+\.\s/.test(trimmedLine)) {
-        const match = trimmedLine.match(/^(\d+\.)\s(.*)$/)
-        if (match) {
+        // Headers
+        if (trimmedLine.startsWith('#### ')) {
+          elements.push(
+            new Paragraph({
+              children: parseInlineFormatting(trimmedLine.slice(5)),
+              heading: HeadingLevel.HEADING_4,
+              spacing: { before: 200, after: 100 },
+            })
+          )
+        } else if (trimmedLine.startsWith('### ')) {
+          elements.push(
+            new Paragraph({
+              children: parseInlineFormatting(trimmedLine.slice(4)),
+              heading: HeadingLevel.HEADING_3,
+              spacing: { before: 240, after: 120 },
+            })
+          )
+        } else if (trimmedLine.startsWith('## ')) {
+          elements.push(
+            new Paragraph({
+              children: parseInlineFormatting(trimmedLine.slice(3)),
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 280, after: 140 },
+            })
+          )
+        } else if (trimmedLine.startsWith('# ')) {
+          elements.push(
+            new Paragraph({
+              children: parseInlineFormatting(trimmedLine.slice(2)),
+              heading: HeadingLevel.HEADING_1,
+              spacing: { before: 320, after: 160 },
+            })
+          )
+        }
+        // Bullet points
+        else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
           elements.push(
             new Paragraph({
               children: [
-                new TextRun({ text: match[1] + ' ' }),
-                ...parseInlineFormatting(match[2]),
+                new TextRun({ text: '• ' }),
+                ...parseInlineFormatting(trimmedLine.slice(2)),
               ],
               spacing: { before: 60, after: 60 },
               indent: { left: 720 },
             })
           )
         }
+        // Numbered lists
+        else if (/^\d+\.\s/.test(trimmedLine)) {
+          const match = trimmedLine.match(/^(\d+\.)\s(.*)$/)
+          if (match) {
+            elements.push(
+              new Paragraph({
+                children: [
+                  new TextRun({ text: match[1] + ' ' }),
+                  ...parseInlineFormatting(match[2]),
+                ],
+                spacing: { before: 60, after: 60 },
+                indent: { left: 720 },
+              })
+            )
+          }
+        }
+        // Regular paragraphs
+        else {
+          elements.push(
+            new Paragraph({
+              children: parseInlineFormatting(trimmedLine),
+              spacing: { before: 120, after: 120 },
+            })
+          )
+        }
       }
-      // Regular paragraphs
-      else {
-        elements.push(
-          new Paragraph({
-            children: parseInlineFormatting(trimmedLine),
-            spacing: { before: 120, after: 120 },
-          })
-        )
-      }
-    }
 
-    // Flush any remaining table
-    flushTable()
+      // Flush any remaining table
+      flushTable()
 
-    return elements
-  }, [parseInlineFormatting])
+      return elements
+    },
+    [parseInlineFormatting]
+  )
 
   const handleDownloadGeneratedProposal = async () => {
     if (!generatedProposal) {
@@ -1163,74 +1186,78 @@ export function Step3StructureWorkplan({
           )}
 
           {/* Success State - Show Generated Content */}
-          {generationStatus === 'completed' && generatedProposal && !sectionsChangedSinceGeneration() && (
-            <div className={styles.successState}>
-              <div className={styles.successHeader}>
-                <Check className={styles.successIcon} size={20} />
-                <span>Proposal draft generated successfully!</span>
-              </div>
-              <div className={styles.generatedPreview}>
-                <div className={styles.previewContent}>
-                  {generatedProposal.slice(0, 500)}
-                  {generatedProposal.length > 500 && '...'}
+          {generationStatus === 'completed' &&
+            generatedProposal &&
+            !sectionsChangedSinceGeneration() && (
+              <div className={styles.successState}>
+                <div className={styles.successHeader}>
+                  <Check className={styles.successIcon} size={20} />
+                  <span>Proposal draft generated successfully!</span>
+                </div>
+                <div className={styles.generatedPreview}>
+                  <div className={styles.previewContent}>
+                    {generatedProposal.slice(0, 500)}
+                    {generatedProposal.length > 500 && '...'}
+                  </div>
+                </div>
+                <div className={styles.downloadActions}>
+                  <button
+                    type="button"
+                    className={styles.downloadButton}
+                    onClick={handleDownloadGeneratedProposal}
+                    disabled={isDownloading}
+                  >
+                    <Download size={16} />
+                    {isDownloading ? 'Downloading...' : 'Download Full Draft (DOCX)'}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.regenerateButton}
+                    onClick={e => handleGenerateTemplate(e)}
+                    disabled={isDownloading}
+                  >
+                    <Sparkles size={16} />
+                    Regenerate
+                  </button>
                 </div>
               </div>
-              <div className={styles.downloadActions}>
-                <button
-                  type="button"
-                  className={styles.downloadButton}
-                  onClick={handleDownloadGeneratedProposal}
-                  disabled={isDownloading}
-                >
-                  <Download size={16} />
-                  {isDownloading ? 'Downloading...' : 'Download Full Draft (DOCX)'}
-                </button>
-                <button
-                  type="button"
-                  className={styles.regenerateButton}
-                  onClick={e => handleGenerateTemplate(e)}
-                  disabled={isDownloading}
-                >
-                  <Sparkles size={16} />
-                  Regenerate
-                </button>
-              </div>
-            </div>
-          )}
+            )}
 
           {/* Sections Changed State - Show Warning and Regenerate */}
-          {generationStatus === 'completed' && generatedProposal && sectionsChangedSinceGeneration() && (
-            <div className={styles.sectionsChangedState}>
-              <div className={styles.warningHeader}>
-                <AlertTriangle className={styles.warningIcon} size={20} />
-                <span>Selected sections have changed</span>
-              </div>
-              <p className={styles.warningText}>
-                You have modified the selected sections since the last draft was generated.
-                Please regenerate the proposal to include your updated selection.
-              </p>
-              <button
-                type="button"
-                className={styles.generateButton}
-                onClick={e => handleGenerateTemplate(e)}
-                disabled={isGenerating || selectedSections.length === 0}
-              >
-                <Sparkles size={16} />
-                Regenerate AI Proposal Draft ({selectedSections.length} sections)
-              </button>
-              <div className={styles.previousDraftNote}>
-                <span>Previous draft is still available: </span>
+          {generationStatus === 'completed' &&
+            generatedProposal &&
+            sectionsChangedSinceGeneration() && (
+              <div className={styles.sectionsChangedState}>
+                <div className={styles.warningHeader}>
+                  <AlertTriangle className={styles.warningIcon} size={20} />
+                  <span>Selected sections have changed</span>
+                </div>
+                <p className={styles.warningText}>
+                  You have modified the selected sections since the last draft was generated. Please
+                  regenerate the proposal to include your updated selection.
+                </p>
                 <button
                   type="button"
-                  className={styles.linkButton}
-                  onClick={handleDownloadGeneratedProposal}
-                  disabled={isDownloading}
+                  className={styles.generateButton}
+                  onClick={e => handleGenerateTemplate(e)}
+                  disabled={isGenerating || selectedSections.length === 0}
                 >
-                  {isDownloading ? 'Downloading...' : 'Download Previous Draft (DOCX)'}
+                  <Sparkles size={16} />
+                  Regenerate AI Proposal Draft ({selectedSections.length} sections)
                 </button>
+                <div className={styles.previousDraftNote}>
+                  <span>Previous draft is still available: </span>
+                  <button
+                    type="button"
+                    className={styles.linkButton}
+                    onClick={handleDownloadGeneratedProposal}
+                    disabled={isDownloading}
+                  >
+                    {isDownloading ? 'Downloading...' : 'Download Previous Draft (DOCX)'}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Initial State - Show Generate Button */}
           {generationStatus === 'idle' && (

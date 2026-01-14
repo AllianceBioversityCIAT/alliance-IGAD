@@ -158,7 +158,7 @@ class ConceptDocumentGenerator:
             logger.info("📊 Parsing response...")
             document = self._parse_response(ai_response)
 
-            logger.info(f"✅ Document generated successfully")
+            logger.info("✅ Document generated successfully")
             return document
 
         except Exception as e:
@@ -367,7 +367,7 @@ class ConceptDocumentGenerator:
             while "LastEvaluatedKey" in response:
                 response = table.scan(
                     FilterExpression=filter_expr,
-                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                    ExclusiveStartKey=response["LastEvaluatedKey"],
                 )
                 items.extend(response.get("Items", []))
 
@@ -410,7 +410,7 @@ class ConceptDocumentGenerator:
             while "LastEvaluatedKey" in response:
                 response = table.scan(
                     FilterExpression=filter_expr,
-                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                    ExclusiveStartKey=response["LastEvaluatedKey"],
                 )
                 items.extend(response.get("Items", []))
 
@@ -420,7 +420,7 @@ class ConceptDocumentGenerator:
 
             proposal_outline = items[0].get("proposal_outline")
             if not proposal_outline:
-                logger.warning(f"⚠️  No outline found in proposal")
+                logger.warning("⚠️  No outline found in proposal")
                 return None
 
             logger.info(f"✅ Loaded outline for {proposal_code}")
@@ -688,7 +688,7 @@ class ConceptDocumentGenerator:
 
         return (
             f"{beginning}\n\n"
-            f"[... Middle section truncated - "
+            "[... Middle section truncated - "
             f"total document: {len(concept_text)} characters ...]\n\n"
             f"{ending}"
         )

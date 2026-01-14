@@ -5,6 +5,7 @@ Analyzes user's draft proposal against RFP requirements to provide:
 - Specific improvement suggestions for each section
 - Overall assessment and alignment with RFP requirements
 """
+
 import json
 import logging
 import os
@@ -110,14 +111,16 @@ class DraftFeedbackService:
                     "Could not extract text from draft proposal document or document is too short."
                 )
 
-            logger.info(f"✅ Extracted {len(draft_text)} characters from draft proposal")
+            logger.info(
+                f"✅ Extracted {len(draft_text)} characters from draft proposal"
+            )
 
             # Step 4: Get RFP analysis (required context)
             rfp_analysis = proposal.get("rfp_analysis", {})
             if not rfp_analysis:
                 raise Exception("RFP analysis not found. Please complete Step 1 first.")
 
-            logger.info(f"✅ Found RFP analysis")
+            logger.info("✅ Found RFP analysis")
 
             # Step 4b: Get Step 2 analyses (optional context)
             reference_proposals_analysis = proposal.get(
@@ -133,7 +136,7 @@ class DraftFeedbackService:
             )
 
             # Step 5: Load prompt from DynamoDB
-            logger.info(f"📝 Loading prompt from DynamoDB...")
+            logger.info("📝 Loading prompt from DynamoDB...")
 
             table = self.dynamodb.Table(self.table_name)
             filter_expr = (
@@ -155,7 +158,7 @@ class DraftFeedbackService:
             while "LastEvaluatedKey" in response:
                 response = table.scan(
                     FilterExpression=filter_expr,
-                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                    ExclusiveStartKey=response["LastEvaluatedKey"],
                 )
                 items.extend(response.get("Items", []))
 
@@ -179,7 +182,7 @@ class DraftFeedbackService:
                 existing_work_analysis=existing_work_analysis,
             )
 
-            logger.info(f"🤖 Sending to Bedrock...")
+            logger.info("🤖 Sending to Bedrock...")
             logger.info(f"   Model: {PROPOSAL_DRAFT_FEEDBACK_SETTINGS['model']}")
             logger.info(
                 f"   Max tokens: {PROPOSAL_DRAFT_FEEDBACK_SETTINGS['max_tokens']}"
@@ -203,14 +206,14 @@ class DraftFeedbackService:
             logger.info(f"✅ Bedrock response received in {elapsed_time:.2f}s")
 
             # Step 8: Parse response
-            logger.info(f"📄 Bedrock response preview (first 500 chars):")
+            logger.info("📄 Bedrock response preview (first 500 chars):")
             logger.info(f"{response_text[:500]}")
 
             analysis_result = self._parse_response(response_text)
 
             # Step 9: Save to DynamoDB (including status update)
             # Save the analysis result directly (not nested inside another object)
-            logger.info(f"💾 Saving draft feedback analysis...")
+            logger.info("💾 Saving draft feedback analysis...")
             completed_at = time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
 
             try:
@@ -230,12 +233,12 @@ class DraftFeedbackService:
                         ":updated": completed_at,
                     },
                 )
-                logger.info(f"✅ Draft feedback analysis saved successfully")
+                logger.info("✅ Draft feedback analysis saved successfully")
             except Exception as db_error:
                 logger.error(f"❌ Failed to save to DynamoDB: {db_error}")
                 raise
 
-            logger.info(f"✅ Draft feedback analysis completed")
+            logger.info("✅ Draft feedback analysis completed")
             return {"draft_feedback_analysis": analysis_result, "status": "completed"}
 
         except ValueError as ve:

@@ -1470,7 +1470,11 @@ export function ProposalWriterPage() {
           await pollAnalysisStatus(
             () => proposalService.getStructureWorkplanStatus(proposalId!),
             (statusResult: { data?: unknown }) => {
-              if (statusResult.data && typeof statusResult.data === 'object' && statusResult.data !== null) {
+              if (
+                statusResult.data &&
+                typeof statusResult.data === 'object' &&
+                statusResult.data !== null
+              ) {
                 const analysis = statusResult.data as StructureWorkplanAnalysis
                 setStructureWorkplanAnalysis(analysis)
                 localStorage.setItem(
@@ -1763,7 +1767,8 @@ export function ProposalWriterPage() {
 
       // Update local state with saved concept evaluation
       // Keep the existing structure, just update the sections
-      const updatedConceptAnalysis = updateResult.concept_evaluation?.concept_analysis || updateResult.concept_evaluation
+      const updatedConceptAnalysis =
+        updateResult.concept_evaluation?.concept_analysis || updateResult.concept_evaluation
       if (updatedConceptAnalysis) {
         // Removed console.log'📊 Updated conceptAnalysis:', updatedConceptAnalysis)
         setConceptAnalysis(updatedConceptAnalysis as ConceptAnalysis)
@@ -1889,7 +1894,10 @@ export function ProposalWriterPage() {
       // Extract content from conceptDocument
       if (typeof conceptDocument === 'string') {
         content = conceptDocument
-      } else if (conceptDocument?.generated_concept_document && typeof conceptDocument.generated_concept_document === 'string') {
+      } else if (
+        conceptDocument?.generated_concept_document &&
+        typeof conceptDocument.generated_concept_document === 'string'
+      ) {
         content = conceptDocument.generated_concept_document
       } else if (conceptDocument?.content && typeof conceptDocument.content === 'string') {
         content = conceptDocument.content

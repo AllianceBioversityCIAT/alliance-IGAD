@@ -1005,10 +1005,9 @@ class ProposalService {
    * Triggers browser download of the file.
    */
   async downloadDraft(proposalId: string): Promise<void> {
-    const response = await apiClient.get(
-      `/api/proposals/${proposalId}/download-draft`,
-      { responseType: 'blob' }
-    )
+    const response = await apiClient.get(`/api/proposals/${proposalId}/download-draft`, {
+      responseType: 'blob',
+    })
 
     // Get filename from Content-Disposition header or use default
     const contentDisposition = response.headers['content-disposition']
@@ -1037,10 +1036,9 @@ class ProposalService {
    * Triggers browser download of the professionally formatted document.
    */
   async downloadTemplateAsDocx(proposalId: string): Promise<void> {
-    const response = await apiClient.get(
-      `/api/proposals/${proposalId}/download-template-docx`,
-      { responseType: 'blob' }
-    )
+    const response = await apiClient.get(`/api/proposals/${proposalId}/download-template-docx`, {
+      responseType: 'blob',
+    })
 
     // Get filename from Content-Disposition header or use default
     const contentDisposition = response.headers['content-disposition']
@@ -1088,16 +1086,23 @@ class ProposalService {
    */
   async getAllProcessingStatus(proposalId: string): Promise<AllProcessingStatus> {
     // Fetch all status endpoints in parallel for performance
-    const [step1Status, step2Status, conceptStatus, conceptDocStatus, structureStatus, templateStatus, draftFeedbackStatus] =
-      await Promise.all([
-        this.getStep1Status(proposalId).catch(() => null),
-        this.getStep2Status(proposalId).catch(() => null),
-        this.getConceptStatus(proposalId).catch(() => null),
-        this.getConceptDocumentStatus(proposalId).catch(() => null),
-        this.getStructureWorkplanStatus(proposalId).catch(() => null),
-        this.getProposalTemplateStatus(proposalId).catch(() => null),
-        this.getDraftFeedbackStatus(proposalId).catch(() => null),
-      ])
+    const [
+      step1Status,
+      step2Status,
+      conceptStatus,
+      conceptDocStatus,
+      structureStatus,
+      templateStatus,
+      draftFeedbackStatus,
+    ] = await Promise.all([
+      this.getStep1Status(proposalId).catch(() => null),
+      this.getStep2Status(proposalId).catch(() => null),
+      this.getConceptStatus(proposalId).catch(() => null),
+      this.getConceptDocumentStatus(proposalId).catch(() => null),
+      this.getStructureWorkplanStatus(proposalId).catch(() => null),
+      this.getProposalTemplateStatus(proposalId).catch(() => null),
+      this.getDraftFeedbackStatus(proposalId).catch(() => null),
+    ])
 
     const defaultStatus: OperationStatus = { status: 'not_started' }
 

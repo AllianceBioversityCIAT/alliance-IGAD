@@ -22,12 +22,12 @@ from app.shared.vectors.service import VectorEmbeddingsService
 from app.tools.proposal_writer.concept_document_generation.service import (
     concept_generator,
 )
-from app.tools.proposal_writer.proposal_template_generation.service import (
-    proposal_template_generator,
-)
 from app.tools.proposal_writer.concept_evaluation.service import SimpleConceptAnalyzer
 from app.tools.proposal_writer.proposal_draft_feedback.service import (
     DraftFeedbackService,
+)
+from app.tools.proposal_writer.proposal_template_generation.service import (
+    proposal_template_generator,
 )
 from app.tools.proposal_writer.reference_proposals_analysis.service import (
     ReferenceProposalsAnalyzer,
@@ -187,9 +187,9 @@ def _set_completed_status(
                     ":updated": datetime.utcnow().isoformat(),
                 },
             )
-            print(f"✅ Successfully saved RFP analysis to DynamoDB")
+            print("✅ Successfully saved RFP analysis to DynamoDB")
         except Exception as e:
-            print(f"❌ CRITICAL: Failed to save RFP analysis to DynamoDB!")
+            print("❌ CRITICAL: Failed to save RFP analysis to DynamoDB!")
             print(f"   Error: {str(e)}")
             print(f"   Result size: {result_size_kb:.2f} KB")
             print(f"   Result keys: {list(result.keys())}")
@@ -688,9 +688,7 @@ def _handle_concept_analysis(proposal_id: str) -> Dict[str, Any]:
     if existing_work_analysis:
         logger.info("✅ Existing work analysis available for context")
     else:
-        logger.info(
-            "⚠️  Existing work analysis not available (will proceed without it)"
-        )
+        logger.info("⚠️  Existing work analysis not available (will proceed without it)")
 
     _set_processing_status(proposal_id, "concept")
 

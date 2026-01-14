@@ -79,7 +79,9 @@ class AuthMiddleware:
                     # Decode without verification for development/testing
                     # In production, we should verify Cognito tokens properly
                     payload = jwt.decode(
-                        token, "", options={"verify_signature": False, "verify_aud": False}
+                        token,
+                        "",
+                        options={"verify_signature": False, "verify_aud": False},
                     )
                 else:
                     # In production, we should verify Cognito tokens properly

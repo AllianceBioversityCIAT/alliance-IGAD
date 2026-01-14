@@ -1,4 +1,5 @@
 """Vector Embeddings Service for S3 Vectors"""
+
 import json
 from typing import Any, Dict, List, Optional
 
@@ -436,7 +437,7 @@ class VectorEmbeddingsService:
             - metadata: Decoded metadata from key
         """
         try:
-            print(f"🔍 Generating embedding for semantic search...")
+            print("🔍 Generating embedding for semantic search...")
             # 1. Generate query embedding
             query_embedding = self.generate_embedding(query_text)
 

@@ -11,7 +11,7 @@ COLORS = {
 
 
 def create_base_template(content):
-    return f"""<div style="font-family: Arial, sans-serif; padding: 20px; background-color: {COLORS['background']};">
+    return """<div style="font-family: Arial, sans-serif; padding: 20px; background-color: {COLORS['background']};">
 <div style="background-color: white; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
 <h1 style="color: {COLORS['primary']}; text-align: center; margin: 0 0 10px 0;">IGAD Innovation Hub</h1>
 <hr style="border: 2px solid {COLORS['accent']}; margin: 20px 0; width: 60px; margin-left: auto; margin-right: auto;">
@@ -29,7 +29,7 @@ client = boto3.Session(profile_name=profile).client(
     "cognito-idp", region_name="us-east-1"
 )
 
-content = f"""<p style="color: {COLORS['text']};">Welcome to IGAD Innovation Hub! Your account has been successfully created.</p>
+content = """<p style="color: {COLORS['text']};">Welcome to IGAD Innovation Hub! Your account has been successfully created.</p>
 <div style="background-color: {COLORS['light_green']}; padding: 20px; border-radius: 6px; margin: 20px 0;">
 <p style="margin: 0; color: {COLORS['primary']}; font-weight: bold;">Your account information:</p>
 <p style="margin: 10px 0 0 0; color: {COLORS['text']};"><strong>Username:</strong> {{username}}</p>
@@ -56,6 +56,6 @@ try:
         },
     )
     print("✅ Invite template updated successfully!")
-    print(f"   URL: https://test-igad-hub.alliance.cgiar.org/login")
+    print("   URL: https://test-igad-hub.alliance.cgiar.org/login")
 except Exception as e:
     print(f"❌ Error: {e}")

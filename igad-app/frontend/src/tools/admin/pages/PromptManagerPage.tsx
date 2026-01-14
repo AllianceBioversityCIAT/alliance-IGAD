@@ -88,7 +88,6 @@ export function PromptManagerPage() {
     isDeleting,
     isTogglingActive,
     createPrompt,
-    publishPrompt,
     deletePrompt,
     toggleActive,
     setCurrentPage,
@@ -115,15 +114,17 @@ export function PromptManagerPage() {
   }
 
   const handleFiltersChange = (
-    newFilters: PromptManagerFilters | {
-      section?: ProposalSection | string
-      sub_section?: string
-      category?: string
-      tag?: string
-      search?: string
-      route?: string
-      is_active?: boolean
-    }
+    newFilters:
+      | PromptManagerFilters
+      | {
+          section?: ProposalSection | string
+          sub_section?: string
+          category?: string
+          tag?: string
+          search?: string
+          route?: string
+          is_active?: boolean
+        }
   ) => {
     // Convert string section to ProposalSection if needed
     const convertedFilters: PromptManagerFilters = {
@@ -135,16 +136,6 @@ export function PromptManagerPage() {
     }
     setFilters(convertedFilters)
     setCurrentPage(0) // Reset to first page when filters change
-  }
-
-  const _handlePublishPrompt = async (id: string, version: number) => {
-    try {
-      await publishPrompt({ id, version })
-      showSuccess('Prompt published successfully', 'The prompt is now available for use.')
-    } catch (error: unknown) {
-      const err = error as { message?: string }
-      showError('Failed to publish prompt', err.message || 'Please try again.')
-    }
   }
 
   const handleDeletePrompt = (id: string, version?: number) => {

@@ -6,6 +6,7 @@ Refactored with clean architecture
 
 import logging
 import os
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,15 +55,19 @@ if ENVIRONMENT in ["production", "testing"]:
     default_origins = "https://igad-innovation-hub.com,https://www.igad-innovation-hub.com,https://test-igad-hub.alliance.cgiar.org"
     allowed_origins_str = os.getenv("CORS_ALLOWED_ORIGINS", default_origins)
     # Limpiar espacios y dividir por comas
-    allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
+    allowed_origins = [
+        origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()
+    ]
     # Agregar localhost para desarrollo local en testing
     if ENVIRONMENT == "testing":
-        allowed_origins.extend([
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:5173",
-        ])
+        allowed_origins.extend(
+            [
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:5173",
+            ]
+        )
     logger.info(f"CORS allowed origins: {allowed_origins}")
 else:
     # En desarrollo, permitir solo localhost
@@ -74,6 +79,7 @@ else:
     ]
     logger.info(f"CORS allowed origins (development): {allowed_origins}")
 
+
 # Explicit OPTIONS handler for all routes to ensure CORS preflight works
 # This must be defined BEFORE adding routers
 @app.options("/{full_path:path}")
@@ -84,11 +90,16 @@ async def options_handler(full_path: str, request: Request):
         response = Response()
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization,X-Request-ID"
+        response.headers["Access-Control-Allow-Methods"] = (
+            "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        )
+        response.headers["Access-Control-Allow-Headers"] = (
+            "Content-Type,Authorization,X-Request-ID"
+        )
         response.headers["Access-Control-Max-Age"] = "3600"
         return response
     return Response(status_code=403)
+
 
 # Add CORS middleware - MUST be added before other middleware
 app.add_middleware(

@@ -158,7 +158,7 @@ class SimpleRFPAnalyzer:
 
         # Fallback to old structure
         if "Contents" not in response or len(response["Contents"]) == 0:
-            print(f"ℹ️  No RFP in /rfp/ folder, trying legacy path...")
+            print("ℹ️  No RFP in /rfp/ folder, trying legacy path...")
             pdf_key = f"{proposal_code}/documents/"
             response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=pdf_key)
 
@@ -308,7 +308,7 @@ class SimpleRFPAnalyzer:
             while "LastEvaluatedKey" in response:
                 response = table.scan(
                     FilterExpression=filter_expr,
-                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                    ExclusiveStartKey=response["LastEvaluatedKey"],
                 )
                 items.extend(response.get("Items", []))
 
@@ -558,7 +558,7 @@ Use this structure:
         semantic_query = " ".join(query_parts)
 
         # Log for debugging
-        print(f"📋 Semantic query components:")
+        print("📋 Semantic query components:")
         print(f"   - Donor: {donor or 'N/A'}")
         print(
             f"   - Focus: {key_focus[:50] if key_focus else objectives[:50] if objectives else 'N/A'}..."

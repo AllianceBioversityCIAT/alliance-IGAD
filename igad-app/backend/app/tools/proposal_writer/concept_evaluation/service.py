@@ -269,7 +269,7 @@ class SimpleConceptAnalyzer:
 
         return (
             f"{beginning}\n\n"
-            f"[... Middle section truncated - "
+            "[... Middle section truncated - "
             f"total document: {len(concept_text)} characters ...]\n\n"
             f"{ending}"
         )
@@ -380,7 +380,7 @@ class SimpleConceptAnalyzer:
         final_prompt = f"{user_prompt}\n\n{prompt_parts['output_format']}".strip()
 
         print(f"📝 Final prompt: {len(final_prompt)} characters")
-        print(f"   - RFP analysis: ✅")
+        print("   - RFP analysis: ✅")
         print(
             f"   - Reference proposals: {'✅' if reference_proposals_analysis else '⚠️  (empty)'}"
         )
@@ -521,7 +521,7 @@ class SimpleConceptAnalyzer:
             while "LastEvaluatedKey" in response:
                 response = table.scan(
                     FilterExpression=filter_expr,
-                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                    ExclusiveStartKey=response["LastEvaluatedKey"],
                 )
                 items.extend(response.get("Items", []))
 

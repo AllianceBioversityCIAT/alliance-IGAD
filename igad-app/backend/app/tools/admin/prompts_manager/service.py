@@ -347,7 +347,9 @@ class PromptService:
             items.extend(response["Items"])
 
             while "LastEvaluatedKey" in response:
-                response = self.table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
+                response = self.table.scan(
+                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                )
                 items.extend(response["Items"])
 
             # Filter out helper items
@@ -358,7 +360,9 @@ class PromptService:
                 items = [item for item in items if item.get("section") == section.value]
 
             if sub_section:
-                items = [item for item in items if item.get("sub_section") == sub_section]
+                items = [
+                    item for item in items if item.get("sub_section") == sub_section
+                ]
 
             if tag:
                 items = [item for item in items if tag in item.get("tags", [])]

@@ -196,9 +196,7 @@ class ProposalTemplateGenerator:
             table = self.dynamodb.Table(self.table_name)
             filter_expr = (
                 Attr("is_active").eq(True)
-                & Attr("section").eq(
-                    PROPOSAL_TEMPLATE_GENERATION_SETTINGS["section"]
-                )
+                & Attr("section").eq(PROPOSAL_TEMPLATE_GENERATION_SETTINGS["section"])
                 & Attr("sub_section").eq(
                     PROPOSAL_TEMPLATE_GENERATION_SETTINGS["sub_section"]
                 )
@@ -215,7 +213,7 @@ class ProposalTemplateGenerator:
             while "LastEvaluatedKey" in response:
                 response = table.scan(
                     FilterExpression=filter_expr,
-                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                    ExclusiveStartKey=response["LastEvaluatedKey"],
                 )
                 items.extend(response.get("Items", []))
 
@@ -274,12 +272,10 @@ class ProposalTemplateGenerator:
             selected_set = set(selected_sections)
 
             filtered_mandatory = [
-                s for s in mandatory_sections
-                if s.get("section_title") in selected_set
+                s for s in mandatory_sections if s.get("section_title") in selected_set
             ]
             filtered_outline = [
-                s for s in outline_sections
-                if s.get("section_title") in selected_set
+                s for s in outline_sections if s.get("section_title") in selected_set
             ]
 
             # Add user comments if provided
@@ -336,8 +332,7 @@ class ProposalTemplateGenerator:
                 sections = doc.get("sections", {})
                 if sections:
                     text = "\n\n".join(
-                        f"## {title}\n{content}"
-                        for title, content in sections.items()
+                        f"## {title}\n{content}" for title, content in sections.items()
                     )
                     logger.info(f"✅ Built from sections: {len(text)} chars")
                     return self._truncate_text(text, 50000)

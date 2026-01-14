@@ -101,7 +101,7 @@ class ExistingWorkAnalyzer:
                 semantic_query = nested_rfp.get("semantic_query")
                 if semantic_query:
                     print(
-                        f"ℹ️  Found semantic_query in nested structure (data.rfp_analysis.semantic_query)"
+                        "ℹ️  Found semantic_query in nested structure (data.rfp_analysis.semantic_query)"
                     )
 
             if not semantic_query:
@@ -125,7 +125,7 @@ class ExistingWorkAnalyzer:
                     "Please run RFP analysis first before searching existing work."
                 )
 
-            print(f"🔍 Using semantic query from RFP analysis:")
+            print("🔍 Using semantic query from RFP analysis:")
             print(f"   Query: {semantic_query[:150]}...")
 
             # Step 3: Get all existing work documents for this proposal
@@ -184,7 +184,7 @@ class ExistingWorkAnalyzer:
                 print(f"     Document text length: {len(doc_text)} characters")
 
                 if not doc_text or len(doc_text.strip()) < 50:
-                    print(f"     ⚠️  Warning: Document text is empty or very short!")
+                    print("     ⚠️  Warning: Document text is empty or very short!")
 
                 analysis = self._analyze_single_document(
                     document_text=doc_text,
@@ -250,7 +250,7 @@ class ExistingWorkAnalyzer:
             while "LastEvaluatedKey" in response:
                 response = table.scan(
                     FilterExpression=filter_expr,
-                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                    ExclusiveStartKey=response["LastEvaluatedKey"],
                 )
                 items.extend(response.get("Items", []))
 

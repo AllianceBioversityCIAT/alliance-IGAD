@@ -6,6 +6,7 @@ Generates proposal structure and workplan based on:
 - Reference Proposals Analysis (from Step 2)
 - Existing Work Analysis (from Step 2)
 """
+
 import json
 import logging
 import os
@@ -102,30 +103,28 @@ class StructureWorkplanService:
                 "reference_proposals_analysis", {}
             )
             if reference_proposals_analysis:
-                logger.info(f"✅ Found reference proposals analysis")
+                logger.info("✅ Found reference proposals analysis")
             else:
-                logger.warning(f"⚠️  No reference proposals analysis found (optional)")
+                logger.warning("⚠️  No reference proposals analysis found (optional)")
 
             # Step 5: Get existing work analysis (optional but recommended)
             existing_work_analysis = proposal.get("existing_work_analysis", {})
             if existing_work_analysis:
-                logger.info(f"✅ Found existing work analysis")
+                logger.info("✅ Found existing work analysis")
             else:
-                logger.warning(f"⚠️  No existing work analysis found (optional)")
+                logger.warning("⚠️  No existing work analysis found (optional)")
 
-            logger.info(f"✅ Found RFP analysis and concept document")
+            logger.info("✅ Found RFP analysis and concept document")
 
             # Step 6: Get prompt from DynamoDB
-            logger.info(f"📝 Loading prompt from DynamoDB...")
+            logger.info("📝 Loading prompt from DynamoDB...")
 
             table = self.dynamodb.Table(self.table_name)
             filter_expr = (
                 Attr("is_active").eq(True)
                 & Attr("section").eq(STRUCTURE_WORKPLAN_SETTINGS["section"])
                 & Attr("sub_section").eq(STRUCTURE_WORKPLAN_SETTINGS["sub_section"])
-                & Attr("categories").contains(
-                    STRUCTURE_WORKPLAN_SETTINGS["category"]
-                )
+                & Attr("categories").contains(STRUCTURE_WORKPLAN_SETTINGS["category"])
             )
 
             # Handle DynamoDB pagination
@@ -136,7 +135,7 @@ class StructureWorkplanService:
             while "LastEvaluatedKey" in response:
                 response = table.scan(
                     FilterExpression=filter_expr,
-                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                    ExclusiveStartKey=response["LastEvaluatedKey"],
                 )
                 items.extend(response.get("Items", []))
 
@@ -160,7 +159,7 @@ class StructureWorkplanService:
                 existing_work_analysis=existing_work_analysis,
             )
 
-            logger.info(f"🤖 Sending to Bedrock...")
+            logger.info("🤖 Sending to Bedrock...")
             logger.info(f"   Model: {STRUCTURE_WORKPLAN_SETTINGS['model']}")
             logger.info(f"   Max tokens: {STRUCTURE_WORKPLAN_SETTINGS['max_tokens']}")
             logger.info(f"   Temperature: {STRUCTURE_WORKPLAN_SETTINGS['temperature']}")
@@ -183,7 +182,7 @@ class StructureWorkplanService:
             analysis_text = response_text
 
             # Log first 500 chars for debugging
-            logger.info(f"📄 Bedrock response preview (first 500 chars):")
+            logger.info("📄 Bedrock response preview (first 500 chars):")
             logger.info(f"{analysis_text[:500]}")
 
             # Extract JSON from response
@@ -213,7 +212,7 @@ class StructureWorkplanService:
             }
 
             # Step 10: Save to DynamoDB
-            logger.info(f"💾 Saving structure workplan analysis...")
+            logger.info("💾 Saving structure workplan analysis...")
 
             try:
                 db_client.update_item_sync(
@@ -222,12 +221,12 @@ class StructureWorkplanService:
                     update_expression="SET structure_workplan_analysis = :analysis",
                     expression_attribute_values={":analysis": result},
                 )
-                logger.info(f"✅ Structure workplan analysis saved successfully")
+                logger.info("✅ Structure workplan analysis saved successfully")
             except Exception as db_error:
                 logger.error(f"❌ Failed to save to DynamoDB: {db_error}")
                 raise
 
-            logger.info(f"✅ Structure workplan analysis completed")
+            logger.info("✅ Structure workplan analysis completed")
             return result
 
         except ValueError as ve:

@@ -8,12 +8,11 @@ Provides:
 - IP whitelisting (optional)
 """
 
-import os
 import time
 from collections import defaultdict
 from typing import Callable
 
-from fastapi import HTTPException, Request, status
+from fastapi import Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
@@ -99,10 +98,14 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         client_requests = _rate_limit_store[client_ip]
 
         # Clean old requests (older than 1 hour)
-        client_requests[:] = [req_time for req_time in client_requests if now - req_time < 3600]
+        client_requests[:] = [
+            req_time for req_time in client_requests if now - req_time < 3600
+        ]
 
         # Check per-minute limit
-        recent_requests = [req_time for req_time in client_requests if now - req_time < 60]
+        recent_requests = [
+            req_time for req_time in client_requests if now - req_time < 60
+        ]
         if len(recent_requests) >= self.max_requests_per_minute:
             return False
 
@@ -116,11 +119,6 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
     def _get_security_headers(self) -> dict[str, str]:
         """Get security headers to add to responses."""
-        # Get allowed origins from environment
-        allowed_origins = os.getenv(
-            "CORS_ALLOWED_ORIGINS", "https://igad-innovation-hub.com,https://www.igad-innovation-hub.com"
-        ).split(",")
-
         # Build Content-Security-Policy
         csp = (
             "default-src 'self'; "
@@ -150,4 +148,3 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             # Remove server information
             "Server": "",  # Remove server header
         }
-

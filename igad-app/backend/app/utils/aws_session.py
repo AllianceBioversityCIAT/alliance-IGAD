@@ -1,4 +1,5 @@
 """AWS session utility for handling different environments."""
+
 import os
 
 import boto3

@@ -2,6 +2,7 @@
 Document text extraction utilities
 Supports PDF and DOCX files
 """
+
 from io import BytesIO
 from typing import Optional
 
@@ -101,7 +102,7 @@ def extract_text_from_file(file_bytes: bytes, filename: str) -> Optional[str]:
     elif filename_lower.endswith(".doc"):
         # .doc files (old Word format) are not supported by python-docx
         # Return None and handle as fallback
-        print(f"Warning: .doc files not supported, only .docx")
+        print("Warning: .doc files not supported, only .docx")
         return None
     else:
         print(f"Warning: Unsupported file type: {filename}")

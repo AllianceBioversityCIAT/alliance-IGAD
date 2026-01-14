@@ -101,7 +101,7 @@ class ReferenceProposalsAnalyzer:
                 semantic_query = nested_rfp.get("semantic_query")
                 if semantic_query:
                     print(
-                        f"ℹ️  Found semantic_query in nested structure (data.rfp_analysis.semantic_query)"
+                        "ℹ️  Found semantic_query in nested structure (data.rfp_analysis.semantic_query)"
                     )
 
             if not semantic_query:
@@ -125,7 +125,7 @@ class ReferenceProposalsAnalyzer:
                     "Please run RFP analysis first before searching reference proposals."
                 )
 
-            print(f"🔍 Using semantic query from RFP analysis:")
+            print("🔍 Using semantic query from RFP analysis:")
             print(f"   Query: {semantic_query[:150]}...")
 
             # Step 3: Get all reference proposals for this proposal
@@ -244,7 +244,7 @@ class ReferenceProposalsAnalyzer:
             while "LastEvaluatedKey" in response:
                 response = table.scan(
                     FilterExpression=filter_expr,
-                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                    ExclusiveStartKey=response["LastEvaluatedKey"],
                 )
                 items.extend(response.get("Items", []))
 
