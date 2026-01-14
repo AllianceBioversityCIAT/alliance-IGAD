@@ -11,13 +11,10 @@ aws-credentials.json
 
 # Amazon Q Rules and Configuration
 .amazonq/
-# Allow .copilot/rules/ to be tracked (shared project rules)
-# Ignore everything in .copilot/ first
-.copilot/*
-# Then unignore the rules directory and its contents (negation patterns override)
-!.copilot/rules/
-!.copilot/rules/**
+.copilot/
 .docs/archive/
+
+.claude/
 
 # Internal Planning and Development Documentation
 planning/
