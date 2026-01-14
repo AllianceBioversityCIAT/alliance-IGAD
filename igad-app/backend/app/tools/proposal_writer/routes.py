@@ -1968,6 +1968,16 @@ async def generate_proposal_template(
                 status_code=400,
                 detail="Structure and workplan analysis must be completed before generating template.",
             )
+        if not proposal.get("rfp_analysis"):
+            raise HTTPException(
+                status_code=400,
+                detail="RFP analysis must be completed before generating template.",
+            )
+        if not proposal.get("concept_document_v2"):
+            raise HTTPException(
+                status_code=400,
+                detail="Concept document must be generated before generating template.",
+            )
 
         print(f"✓ Generating template for {proposal_code}")
         if request.selected_sections:
@@ -1980,8 +1990,13 @@ async def generate_proposal_template(
 
         service = ProposalTemplateGenerator()
         buffer = service.generate_template(
-            proposal_id=proposal_code,
-            selected_sections=request.selected_sections,
+            proposal_code=proposal_code,
+            selected_sections=request.selected_sections or [],
+            rfp_analysis=proposal.get("rfp_analysis"),
+            concept_document=proposal.get("concept_document_v2"),
+            structure_workplan_analysis=proposal.get("structure_workplan_analysis"),
+            reference_proposals_analysis=proposal.get("reference_proposals_analysis"),
+            existing_work_analysis=proposal.get("existing_work_analysis"),
             user_comments=request.user_comments,
         )
 

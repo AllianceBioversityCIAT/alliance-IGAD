@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional
+from datetime import datetime
+from typing import Any, Dict, Optional, cast
 
 from botocore.exceptions import ClientError
 
@@ -421,6 +422,9 @@ class CognitoUserManagementService:
         for attr in user_data.get("Attributes", []):
             attributes[attr["Name"]] = attr["Value"]
 
+        created_date = cast(Optional[datetime], user_data.get("UserCreateDate"))
+        last_modified_date = cast(Optional[datetime], user_data.get("UserLastModifiedDate"))
+
         return {
             "username": user_data.get("Username"),
             "email": attributes.get("email", ""),
@@ -428,14 +432,10 @@ class CognitoUserManagementService:
             "enabled": user_data.get("Enabled", True),
             "user_status": user_data.get("UserStatus", "UNKNOWN"),
             "created_date": (
-                user_data.get("UserCreateDate").isoformat()
-                if user_data.get("UserCreateDate")
-                else None
+                created_date.isoformat() if created_date is not None else None
             ),
             "last_modified_date": (
-                user_data.get("UserLastModifiedDate").isoformat()
-                if user_data.get("UserLastModifiedDate")
-                else None
+                last_modified_date.isoformat() if last_modified_date is not None else None
             ),
             "attributes": attributes,
         }

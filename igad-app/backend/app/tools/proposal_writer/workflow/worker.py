@@ -1170,6 +1170,9 @@ def _generate_document_with_retry(
                 logger.error(f"❌ All {max_retries} attempts failed")
                 raise
 
+    # Defensive fallback: should never reach here due to raise in loop
+    raise RuntimeError("Concept document generation failed after retries")
+
 
 def _handle_concept_document_generation(
     proposal_id: str, event: Dict[str, Any]
