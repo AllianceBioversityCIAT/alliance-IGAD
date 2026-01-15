@@ -85,7 +85,7 @@ export function Navigation() {
         boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1)',
         position: 'sticky',
         top: 0,
-        zIndex: 50,
+        zIndex: 200,
       }}
     >
       <div
@@ -264,7 +264,7 @@ export function Navigation() {
                   boxShadow:
                     '0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1)',
                   borderRadius: '8px',
-                  zIndex: 50,
+                  zIndex: 210,
                   padding: '4px 0',
                 }}
               >
@@ -477,7 +477,7 @@ export function Navigation() {
                   boxShadow:
                     '0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1)',
                   borderRadius: '8px',
-                  zIndex: 50,
+                  zIndex: 210,
                   padding: '4px 0',
                 }}
               >
