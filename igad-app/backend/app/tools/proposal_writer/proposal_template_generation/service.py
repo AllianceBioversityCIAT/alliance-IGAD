@@ -137,6 +137,30 @@ class ProposalTemplateGenerator:
             user_prompt = self._inject_context(prompt_parts["user_prompt"], context)
             final_prompt = f"{user_prompt}\n\n{prompt_parts['output_format']}".strip()
 
+            # DEBUG: Verify PROPOSAL_STRUCTURE was injected correctly
+            structure_start = user_prompt.find("<PROPOSAL_STRUCTURE>")
+            structure_end = user_prompt.find("</PROPOSAL_STRUCTURE>")
+            if structure_start != -1 and structure_end != -1:
+                structure_content = user_prompt[structure_start:structure_end + 22]
+                # Count section_title occurrences in the injected structure
+                section_count_in_prompt = structure_content.count('"section_title"')
+                logger.info(f"🔍 DEBUG: PROPOSAL_STRUCTURE found in prompt")
+                logger.info(f"🔍 DEBUG: section_title count in injected structure: {section_count_in_prompt}")
+                # Log first 1500 chars of the structure for inspection
+                logger.info(f"🔍 DEBUG: Injected PROPOSAL_STRUCTURE (first 1500 chars):\n{structure_content[:1500]}")
+            else:
+                logger.error("❌ DEBUG: PROPOSAL_STRUCTURE tags NOT FOUND in injected prompt!")
+                logger.error(f"🔍 DEBUG: Checking for placeholder - found: {'{[PROPOSAL STRUCTURE]}' in user_prompt}")
+
+            # DEBUG: Log prompt lengths and section count
+            logger.info(f"🔍 DEBUG: System prompt length: {len(prompt_parts['system_prompt'])} chars")
+            logger.info(f"🔍 DEBUG: User prompt length: {len(user_prompt)} chars")
+            logger.info(f"🔍 DEBUG: Final prompt length: {len(final_prompt)} chars")
+
+            # Count total section_title occurrences in the entire prompt
+            total_section_titles = len(re.findall(r'"section_title":\s*"([^"]+)"', final_prompt))
+            logger.info(f"🔍 DEBUG: Total section_title entries in final prompt: {total_section_titles}")
+
             # Step 6: Call Bedrock
             logger.info("📡 Calling Bedrock (this may take 5-10 minutes)...")
             start_time = datetime.utcnow()
@@ -156,9 +180,9 @@ class ProposalTemplateGenerator:
             elapsed = (datetime.utcnow() - start_time).total_seconds()
             logger.info(f"✅ Response received in {elapsed:.1f} seconds")
 
-            # Step 7: Parse response
+            # Step 7: Parse response and validate sections
             logger.info("📊 Parsing response...")
-            document = self._parse_response(ai_response)
+            document = self._parse_response(ai_response, expected_sections=selected_sections)
 
             # Add metadata (using Decimal for float to avoid DynamoDB Float error)
             document["metadata"] = {
@@ -255,6 +279,10 @@ class ProposalTemplateGenerator:
             Filtered proposal structure with selected sections
         """
         try:
+            # DEBUG: Log incoming selected sections
+            logger.info(f"🔍 DEBUG: Received {len(selected_sections)} selected_sections")
+            logger.info(f"🔍 DEBUG: selected_sections = {selected_sections}")
+
             # Unwrap nested structure if present
             analysis = structure_workplan_analysis.get(
                 "structure_workplan_analysis", structure_workplan_analysis
@@ -263,6 +291,12 @@ class ProposalTemplateGenerator:
             mandatory_sections = analysis.get("proposal_mandatory", [])
             outline_sections = analysis.get("proposal_outline", [])
 
+            # DEBUG: Log all available section titles
+            mandatory_titles = [s.get("section_title") for s in mandatory_sections]
+            outline_titles = [s.get("section_title") for s in outline_sections]
+            logger.info(f"🔍 DEBUG: Available mandatory titles ({len(mandatory_titles)}): {mandatory_titles}")
+            logger.info(f"🔍 DEBUG: Available outline titles ({len(outline_titles)}): {outline_titles}")
+
             logger.info(
                 f"📊 Total sections: {len(mandatory_sections)} mandatory + "
                 f"{len(outline_sections)} outline"
@@ -270,6 +304,16 @@ class ProposalTemplateGenerator:
 
             # Filter sections based on selection
             selected_set = set(selected_sections)
+            logger.info(f"🔍 DEBUG: selected_set = {selected_set}")
+
+            # DEBUG: Check for exact matches
+            for selected in selected_sections:
+                if selected in mandatory_titles:
+                    logger.info(f"   ✓ '{selected}' found in mandatory")
+                elif selected in outline_titles:
+                    logger.info(f"   ✓ '{selected}' found in outline")
+                else:
+                    logger.warning(f"   ✗ '{selected}' NOT FOUND in any section list!")
 
             filtered_mandatory = [
                 s for s in mandatory_sections if s.get("section_title") in selected_set
@@ -277,6 +321,12 @@ class ProposalTemplateGenerator:
             filtered_outline = [
                 s for s in outline_sections if s.get("section_title") in selected_set
             ]
+
+            # DEBUG: Log filtered section titles
+            filtered_mandatory_titles = [s.get("section_title") for s in filtered_mandatory]
+            filtered_outline_titles = [s.get("section_title") for s in filtered_outline]
+            logger.info(f"🔍 DEBUG: Filtered mandatory titles: {filtered_mandatory_titles}")
+            logger.info(f"🔍 DEBUG: Filtered outline titles: {filtered_outline_titles}")
 
             # Add user comments if provided
             if user_comments:
@@ -286,10 +336,18 @@ class ProposalTemplateGenerator:
                         section["user_comment"] = user_comments[title]
                         logger.info(f"   📝 Added comment for: {title}")
 
+            total_filtered = len(filtered_mandatory) + len(filtered_outline)
             logger.info(
                 f"✅ Filtered to {len(filtered_mandatory)} mandatory + "
-                f"{len(filtered_outline)} outline sections"
+                f"{len(filtered_outline)} outline sections (total: {total_filtered})"
             )
+
+            # DEBUG: Warning if filtered count doesn't match selected count
+            if total_filtered != len(selected_sections):
+                logger.warning(
+                    f"⚠️ MISMATCH: Selected {len(selected_sections)} sections but "
+                    f"filtered to {total_filtered} sections!"
+                )
 
             return {
                 "proposal_mandatory": filtered_mandatory,
@@ -403,46 +461,120 @@ class ProposalTemplateGenerator:
         """
         Inject context variables into prompt template.
 
-        Replaces {[KEY]} with context values.
-        Note: Uses {[KEY]} format (different from {{key}} in other services).
+        Supports multiple placeholder formats for flexibility:
+        - {[KEY]} - Original format (e.g., {[PROPOSAL STRUCTURE]})
+        - {{key}} - Alternative format (e.g., {{proposal_structure}})
 
         Args:
-            template: Prompt template with {[PLACEHOLDER]} markers
+            template: Prompt template with placeholder markers
             context: Dict of context values
 
         Returns:
             Prompt with injected context
         """
         prompt = template
+        replacements_made = 0
+
         for key, value in context.items():
-            # Format: {[KEY]}
-            placeholder = "{[" + key + "]}"
-            prompt = prompt.replace(placeholder, str(value))
+            value_str = str(value)
+
+            # Format 1: {[KEY]} (original format with spaces and uppercase)
+            placeholder_bracket = "{[" + key + "]}"
+            if placeholder_bracket in prompt:
+                prompt = prompt.replace(placeholder_bracket, value_str)
+                replacements_made += 1
+                logger.info(f"✅ Replaced placeholder: {placeholder_bracket}")
+
+            # Format 2: {{key}} (alternative format with underscores and lowercase)
+            # Convert "PROPOSAL STRUCTURE" -> "proposal_structure"
+            key_snake_case = key.lower().replace(" ", "_")
+            placeholder_double_brace = "{{" + key_snake_case + "}}"
+            if placeholder_double_brace in prompt:
+                prompt = prompt.replace(placeholder_double_brace, value_str)
+                replacements_made += 1
+                logger.info(f"✅ Replaced placeholder: {placeholder_double_brace}")
+
+            # Format 3: {{ key }} (with spaces inside braces)
+            placeholder_with_spaces = "{{ " + key_snake_case + " }}"
+            if placeholder_with_spaces in prompt:
+                prompt = prompt.replace(placeholder_with_spaces, value_str)
+                replacements_made += 1
+                logger.info(f"✅ Replaced placeholder: {placeholder_with_spaces}")
+
+        logger.info(f"🔄 Total placeholders replaced: {replacements_made}")
+
+        # DEBUG: Check for any remaining unreplaced placeholders
+        remaining_brackets = re.findall(r'\{\[[^\]]+\]\}', prompt)
+        remaining_braces = re.findall(r'\{\{[^}]+\}\}', prompt)
+        if remaining_brackets:
+            logger.warning(f"⚠️ Unreplaced {'{[...]}' } placeholders: {remaining_brackets[:5]}")
+        if remaining_braces:
+            logger.warning(f"⚠️ Unreplaced {'{{...}}'} placeholders: {remaining_braces[:5]}")
+
         return prompt
 
     # ==================== RESPONSE PARSING ====================
 
-    def _parse_response(self, response: str) -> Dict[str, Any]:
+    def _parse_response(
+        self, response: str, expected_sections: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
         """
-        Parse AI response into structured document.
+        Parse AI response into structured document and validate section count.
 
         The response is expected to be a continuous markdown document
         with section headers.
 
         Args:
             response: Raw response from Claude
+            expected_sections: Optional list of expected section titles for validation
 
         Returns:
-            Dict with 'generated_proposal' and 'sections'
+            Dict with 'generated_proposal', 'sections', and 'validation' (if expected_sections provided)
         """
         try:
             # Extract sections from markdown
             sections = self._extract_sections_from_text(response)
 
-            return {
+            result = {
                 "generated_proposal": response,
                 "sections": sections,
             }
+
+            # DEBUG: Validate generated sections against expected
+            if expected_sections:
+                generated_titles = set(sections.keys())
+                expected_titles = set(expected_sections)
+
+                extra_sections = generated_titles - expected_titles
+                missing_sections = expected_titles - generated_titles
+
+                logger.info(f"🔍 DEBUG: Section validation:")
+                logger.info(f"   Expected sections ({len(expected_titles)}): {sorted(expected_titles)}")
+                logger.info(f"   Generated sections ({len(generated_titles)}): {sorted(generated_titles)}")
+
+                if extra_sections:
+                    logger.warning(
+                        f"⚠️ AI generated {len(extra_sections)} EXTRA sections not in selection: "
+                        f"{sorted(extra_sections)}"
+                    )
+                if missing_sections:
+                    logger.warning(
+                        f"⚠️ AI MISSING {len(missing_sections)} sections from selection: "
+                        f"{sorted(missing_sections)}"
+                    )
+
+                if not extra_sections and not missing_sections:
+                    logger.info("✅ Section validation PASSED - exact match!")
+
+                result["validation"] = {
+                    "expected_count": len(expected_titles),
+                    "generated_count": len(generated_titles),
+                    "extra_sections": sorted(list(extra_sections)),
+                    "missing_sections": sorted(list(missing_sections)),
+                    "is_valid": len(extra_sections) == 0 and len(missing_sections) == 0,
+                }
+
+            return result
 
         except Exception as e:
             logger.error(f"❌ Error parsing response: {str(e)}")
