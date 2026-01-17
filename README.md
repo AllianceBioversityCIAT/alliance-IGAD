@@ -1,176 +1,89 @@
-# Alliance IGAD - Current Status
-**Last Updated:** November 18, 2025 - 19:44 EST
+# Alliance IGAD
 
----
+AI-powered platform for proposal writing and administrative prompt management, built on a serverless AWS stack. The core application lives in `igad-app/`, with planning, prompts, and specs at the repo root.
 
-## 📍 Current Session
+## Product Modules
+- Proposal Writer: multi-step workflow for RFP ingestion, concept review, structure/workplan generation, and draft feedback.
+- Document Management: upload/delete RFPs, concept files, reference proposals, and supporting documents with async vectorization.
+- Admin Prompt Manager: create, edit, publish, and audit AI prompts used by the proposal workflow.
+- Authentication: AWS Cognito-backed login, password reset, and session refresh.
+- Newsletter Generator: UI placeholder (coming soon).
 
-Working on: **RFP Analysis & Document Management**
+## Architecture Summary
+- Frontend: React 18 + TypeScript + Vite + Tailwind CSS.
+- Backend: FastAPI API layer, AWS Lambda workers for async processing.
+- AI: AWS Bedrock (prompts stored in DynamoDB and managed via admin UI).
+- Storage: DynamoDB single-table, S3 documents bucket, S3 Vectors for embeddings.
+- Infrastructure: AWS CDK.
 
-See: [SESSION_NOV18_EVENING.md](./SESSION_NOV18_EVENING.md) for detailed documentation.
+## Key API Surface (Proposal Writer)
+- `POST /api/proposals` create draft proposals.
+- `GET /api/proposals/{proposal_id}` fetch proposal metadata and analysis.
+- `POST /api/proposals/{proposal_id}/analyze-rfp` start async RFP analysis.
+- `GET /api/proposals/{proposal_id}/analysis-status` poll RFP analysis.
+- `POST /api/proposals/{proposal_id}/generate-concept-document` create concept doc.
+- `POST /api/proposals/{proposal_id}/generate-proposal-template` generate templates.
+- `POST /api/proposals/{proposal_id}/analyze-draft-feedback` evaluate draft quality.
+- `POST /api/proposals/{proposal_id}/documents/upload` upload RFP PDFs.
+- `POST /api/proposals/{proposal_id}/documents/upload-reference-file` upload references.
+- `POST /api/proposals/{proposal_id}/documents/upload-supporting-file` upload supporting docs.
 
----
-
-## ✅ What's Working
-
-### Proposal Writer - Step 1 (Information Consolidation)
-- ✅ Auto-create proposal draft on entry
-- ✅ Upload RFP PDF to S3
-- ✅ Upload reference proposals
-- ✅ Enter existing work (text)
-- ✅ Enter initial concept (text)
-- ✅ Delete documents (S3 + DynamoDB cleanup)
-- ✅ LocalStorage persistence
-- ✅ Draft confirmation modal on exit
-
-### Proposal Writer - Step 2 (Concept Review)
-- ✅ Display RFP Analysis Results
-  - Summary (title, donor, deadline, budget)
-  - Geographic scope
-  - Target beneficiaries
-  - Deliverables
-  - Mandatory requirements
-  - Evaluation criteria
-
-### RFP Analysis Backend
-- ✅ Extract text from PDF (PyPDF2)
-- ✅ Get prompt from DynamoDB
-- ✅ Send to Bedrock (Claude 3.5 Sonnet)
-- ✅ Save analysis to DynamoDB
-- ✅ Async processing with polling
-- ✅ Status endpoint for frontend polling
-
-### Document Deletion
-- ✅ Delete from S3 bucket
-- ✅ Remove from DynamoDB metadata
-- ✅ Clear RFP analysis when RFP deleted
-- ✅ Event-driven UI updates
-
----
-
-## 🔧 In Progress / Debugging
-
-### RFP Analysis Trigger
-- ❓ Testing "Analyze & Continue" button flow
-- ❓ Verifying polling mechanism
-- ✅ Added comprehensive debug logging
-
-**Debug Logs Added:**
-- 🔵 Function entry points
-- 🟢 Analysis start
-- 📡 API calls
-- ⏳ Polling status
-- ✅ Success states
-- ❌ Error states
-
-**Next Action:** Test the flow and review console logs.
-
----
-
-## 📂 Project Structure
-
+## Repository Structure
 ```
 alliance-IGAD/
-├── SESSION_NOV18_EVENING.md     ← Current session (detailed)
-├── README.md                     ← Project overview
-├── docs/
-│   └── archive/                  ← Old documentation
-│       ├── CURRENT_STATUS.md
-│       ├── SESSION_SUMMARY.md
-│       ├── TODAYS_WORK.md
-│       └── WORK_NOV18.md
-└── igad-app/
-    ├── frontend/                 ← React + TypeScript + Vite
-    │   └── src/
-    │       ├── pages/proposalWriter/
-    │       │   ├── ProposalWriterPage.tsx
-    │       │   ├── Step1InformationConsolidation.tsx
-    │       │   ├── Step2ContentGeneration.tsx
-    │       │   └── components/
-    │       │       └── RFPAnalysisResults.tsx
-    │       └── services/
-    │           └── proposalService.ts
-    └── backend/                  ← FastAPI + AWS Lambda
-        └── app/
-            ├── routers/
-            │   ├── proposals.py
-            │   └── documents.py
-            └── services/
-                └── simple_rfp_analyzer.py
+├── README.md
+├── igad-app/                     # Application source
+│   ├── frontend/                 # React + TypeScript + Vite
+│   ├── backend/                  # FastAPI + Lambda services
+│   ├── infrastructure/           # AWS CDK stacks
+│   ├── config/                   # Environment configs
+│   ├── scripts/                  # Deployment and ops scripts
+│   └── docs/                     # Architecture/deployment docs
+├── planning/                     # Planning notes and debug logs
+├── prompts/                      # Prompt templates and experiments
+└── specs/                        # Designs and mockups
 ```
 
----
+## Local Development
+### Prerequisites
+- Node.js 18+
+- Python 3.11+
+- AWS credentials with access to required services
 
-## 🎯 User Flow
-
-```
-1. User goes to /proposal-writer
-   └─→ Auto-create draft proposal
-   
-2. Step 1: Upload RFP + Enter Info
-   └─→ Click "Analyze & Continue"
-        ├─→ Modal shows "Analyzing RFP..."
-        ├─→ Backend extracts text + sends to Bedrock
-        └─→ Frontend polls for completion
-   
-3. Step 2: View RFP Analysis + Review Concept
-   └─→ See analyzed RFP data
-   └─→ Continue with concept review
-```
-
----
-
-## 🔗 Key Endpoints
-
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| POST | `/api/proposals` | Create draft proposal |
-| GET | `/api/proposals/{id}` | Get proposal details |
-| PUT | `/api/proposals/{id}` | Update proposal |
-| DELETE | `/api/proposals/{id}` | Delete proposal + S3 folder |
-| POST | `/api/proposals/{id}/documents/upload` | Upload PDF to S3 |
-| DELETE | `/api/proposals/{id}/documents/{filename}` | Delete doc from S3 + clear analysis |
-| POST | `/api/proposals/{id}/analyze-rfp` | Start RFP analysis (async) |
-| GET | `/api/proposals/{id}/analysis-status` | Poll analysis status |
-
----
-
-## 💾 Data Storage
-
-### DynamoDB Table: `IGADProposalsTable`
-- **PK:** `PROPOSAL#{proposalCode}`
-- **SK:** `METADATA`
-- **GSI1:** `USER#{user_id}` (for user queries)
-
-### S3 Bucket: `igad-proposal-documents-{account-id}`
-- **Structure:** `{proposalCode}/documents/{filename}.pdf`
-
-### LocalStorage:
-- `proposal_draft_{proposalId}` - Form data
-- `proposal_rfp_analysis_{proposalId}` - Analysis results
-
----
-
-## 📚 Archive
-
-Old documentation moved to: `docs/archive/`
-
----
-
-## 🚀 Quick Start
-
-### Run Frontend:
+### Frontend
 ```bash
 cd igad-app/frontend
+npm install
 npm run dev
 ```
 
-### Deploy Backend:
+### Backend
 ```bash
-cd igad-app
-./scripts/deploy-fullstack-testing.sh
+cd igad-app/backend
+pip install -r requirements.txt
+python start_server.py
 ```
 
----
+## Deployment
+Scripts live in `igad-app/scripts/`:
+- `deploy-fullstack-testing.sh`
+- `deploy-fullstack-production.sh`
+- `deploy-backend-only.sh`
+- `deploy-testing.sh` / `deploy-production.sh`
 
-**For detailed session notes, see:** [SESSION_NOV18_EVENING.md](./SESSION_NOV18_EVENING.md)
+## Configuration
+Frontend expects:
+- `VITE_API_BASE_URL`
+
+Backend expects (env vars):
+- `ENVIRONMENT`
+- `COGNITO_USER_POOL_ID`
+- `COGNITO_CLIENT_ID`
+- `PROPOSALS_BUCKET`
+- `WORKER_FUNCTION_NAME`
+- `CORS_ALLOWED_ORIGINS`
+
+## Documentation
+- `igad-app/docs/deployment.md`
+- `igad-app/docs/backend-architecture.md`
+- `igad-app/docs/frontend-architecture.md`
