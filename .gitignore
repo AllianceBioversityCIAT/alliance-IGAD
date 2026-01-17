@@ -16,6 +16,11 @@ aws-credentials.json
 
 .claude/
 
+# OpenCode local config and data
+.opencode/
+.opencode-local.json
+
+
 # Internal Planning and Development Documentation
 planning/
 specs/cost/
