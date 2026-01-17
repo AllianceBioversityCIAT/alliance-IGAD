@@ -728,19 +728,63 @@ class ConceptDocumentGenerator:
         """
         Inject context variables into prompt template.
 
-        Replaces {{key}} with context values.
+        Supports multiple placeholder formats for flexibility:
+        - {[KEY]} - Original format (e.g., {[PROPOSAL STRUCTURE]})
+        - {{key}} - Alternative format (e.g., {{proposal_structure}})
 
         Args:
-            template: Prompt template with {{placeholders}}
+            template: Prompt template with placeholder markers
             context: Dict of context values
 
         Returns:
             Prompt with injected context
         """
         prompt = template
+        replacements_made = 0
+
         for key, value in context.items():
-            placeholder = f"{{{{{key}}}}}"
-            prompt = prompt.replace(placeholder, str(value))
+            value_str = str(value)
+
+            # Format 1: {{key}} (original format for this service)
+            placeholder_double_brace = f"{{{{{key}}}}}"
+            if placeholder_double_brace in prompt:
+                prompt = prompt.replace(placeholder_double_brace, value_str)
+                replacements_made += 1
+                logger.info(f"✅ Replaced placeholder: {placeholder_double_brace}")
+
+            # Format 2: {[KEY]} (uppercase with spaces)
+            # Convert "proposal_structure" -> "PROPOSAL STRUCTURE"
+            key_upper = key.upper().replace("_", " ")
+            placeholder_bracket = "{[" + key_upper + "]}"
+            if placeholder_bracket in prompt:
+                prompt = prompt.replace(placeholder_bracket, value_str)
+                replacements_made += 1
+                logger.info(f"✅ Replaced placeholder: {placeholder_bracket}")
+
+            # Format 3: {[key]} (original key in bracket format)
+            placeholder_bracket_original = "{[" + key + "]}"
+            if placeholder_bracket_original in prompt:
+                prompt = prompt.replace(placeholder_bracket_original, value_str)
+                replacements_made += 1
+                logger.info(f"✅ Replaced placeholder: {placeholder_bracket_original}")
+
+            # Format 4: {{ key }} (with spaces inside braces)
+            placeholder_with_spaces = "{{ " + key + " }}"
+            if placeholder_with_spaces in prompt:
+                prompt = prompt.replace(placeholder_with_spaces, value_str)
+                replacements_made += 1
+                logger.info(f"✅ Replaced placeholder: {placeholder_with_spaces}")
+
+        logger.info(f"🔄 Total placeholders replaced: {replacements_made}")
+
+        # DEBUG: Check for any remaining unreplaced placeholders
+        remaining_brackets = re.findall(r'\{\[[^\]]+\]\}', prompt)
+        remaining_braces = re.findall(r'\{\{[^}]+\}\}', prompt)
+        if remaining_brackets:
+            logger.warning(f"⚠️ Unreplaced {{[...]}} placeholders: {remaining_brackets[:5]}")
+        if remaining_braces:
+            logger.warning(f"⚠️ Unreplaced {{{{...}}}} placeholders: {remaining_braces[:5]}")
+
         return prompt
 
     # ==================== RESPONSE PARSING ====================
