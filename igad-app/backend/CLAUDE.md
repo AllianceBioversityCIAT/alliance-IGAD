@@ -84,6 +84,26 @@ routes.py                        # API endpoints
 - **Type checking:** Mypy
 - **Docstrings:** Google style (pydocstyle)
 
+## Prompt Placeholder Formats
+
+When writing code that handles prompt variables/placeholders, **always handle both formats**:
+
+| Format | Example | Pattern |
+|--------|---------|---------|
+| Double curly braces | `{{VARIABLE_NAME}}` | `{{KEY}}` |
+| Curly + square brackets | `{[VARIABLE_NAME]}` | `{[KEY]}` |
+
+**Implementation pattern:**
+```python
+for key, value in context.items():
+    # Format 1: {{KEY}}
+    template = template.replace("{{" + key + "}}", str(value))
+    # Format 2: {[KEY]}
+    template = template.replace("{[" + key + "]}", str(value))
+```
+
+**Why:** Prompts come from different sources (DynamoDB, files) with inconsistent formats. Missing replacement causes AI to see raw placeholders instead of actual data.
+
 ## Environment Variables
 
 Required in `.env`:
