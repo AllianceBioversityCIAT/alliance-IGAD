@@ -937,9 +937,7 @@ class ProposalService {
     started_at?: string
     completed_at?: string
   }> {
-    const response = await apiClient.get(
-      `/api/proposals/${proposalId}/proposal-document-status`
-    )
+    const response = await apiClient.get(`/api/proposals/${proposalId}/proposal-document-status`)
     return response.data
   }
 

@@ -15,7 +15,11 @@ import logging
 import time
 import traceback
 from datetime import datetime
+from io import BytesIO
 from typing import Any, Dict, Optional
+
+from docx import Document
+from PyPDF2 import PdfReader
 
 from app.database.client import db_client
 from app.shared.vectors.service import VectorEmbeddingsService
@@ -23,6 +27,9 @@ from app.tools.proposal_writer.concept_document_generation.service import (
     concept_generator,
 )
 from app.tools.proposal_writer.concept_evaluation.service import SimpleConceptAnalyzer
+from app.tools.proposal_writer.proposal_document_generation.service import (
+    proposal_document_generator,
+)
 from app.tools.proposal_writer.proposal_draft_feedback.service import (
     DraftFeedbackService,
 )
@@ -35,15 +42,6 @@ from app.tools.proposal_writer.reference_proposals_analysis.service import (
 from app.tools.proposal_writer.rfp_analysis.service import SimpleRFPAnalyzer
 from app.tools.proposal_writer.structure_workplan.service import (
     StructureWorkplanService,
-)
-
-# For proposal document generation (Step 4)
-from io import BytesIO
-from docx import Document
-from PyPDF2 import PdfReader
-
-from app.tools.proposal_writer.proposal_document_generation.service import (
-    proposal_document_generator,
 )
 
 logger = logging.getLogger(__name__)
@@ -750,7 +748,9 @@ def _handle_concept_analysis(proposal_id: str) -> Dict[str, Any]:
     if existing_work_analysis:
         logger.info("✅ Existing work analysis available for context")
     else:
-        logger.info("⚠️  Existing work analysis not available (will proceed without it)")
+        logger.info(
+            "⚠️  Existing work analysis not available (will proceed without it)"
+        )
 
     _set_processing_status(proposal_id, "concept")
 
@@ -1416,6 +1416,9 @@ def _generate_document_with_retry(
             else:
                 logger.error(f"❌ All {max_retries} attempts failed")
                 raise
+
+    # Mypy type checking: this is unreachable but needed for static analysis
+    assert False, "Loop should always exit via return or raise"  # noqa: B011
 
 
 def _handle_concept_document_generation(

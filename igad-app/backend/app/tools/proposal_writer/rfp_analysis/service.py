@@ -400,7 +400,11 @@ Use this structure:
                     response = json_match.group(0)
                 else:
                     # Remove markdown markers if present
-                    response = response.lstrip("```json").lstrip("```").rstrip("```")
+                    response = (
+                        response.removeprefix("```json")
+                        .removeprefix("```")
+                        .removesuffix("```")
+                    )
 
             response = response.strip()
             parsed = json.loads(response)

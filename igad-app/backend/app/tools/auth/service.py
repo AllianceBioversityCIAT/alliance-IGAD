@@ -423,7 +423,9 @@ class CognitoUserManagementService:
             attributes[attr["Name"]] = attr["Value"]
 
         created_date = cast(Optional[datetime], user_data.get("UserCreateDate"))
-        last_modified_date = cast(Optional[datetime], user_data.get("UserLastModifiedDate"))
+        last_modified_date = cast(
+            Optional[datetime], user_data.get("UserLastModifiedDate")
+        )
 
         return {
             "username": user_data.get("Username"),
@@ -435,7 +437,9 @@ class CognitoUserManagementService:
                 created_date.isoformat() if created_date is not None else None
             ),
             "last_modified_date": (
-                last_modified_date.isoformat() if last_modified_date is not None else None
+                last_modified_date.isoformat()
+                if last_modified_date is not None
+                else None
             ),
             "attributes": attributes,
         }

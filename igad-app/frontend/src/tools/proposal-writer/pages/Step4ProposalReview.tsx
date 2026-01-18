@@ -73,6 +73,18 @@ interface Step4Props extends StepProps {
   draftIsAiGenerated?: boolean
   /** The markdown content of the AI-generated proposal template (for download) */
   generatedProposalContent?: string | null
+  /** Initial selected sections from parent (for persistence) */
+  initialSelectedSections?: string[] | null
+  /** Initial user comments from parent (for persistence) */
+  initialUserComments?: Record<string, string> | null
+  /** Initial refined document from parent (for persistence) */
+  initialRefinedDocument?: string | null
+  /** Callback when selected sections change */
+  onSelectedSectionsChange?: (sections: string[]) => void
+  /** Callback when user comments change */
+  onUserCommentsChange?: (comments: Record<string, string>) => void
+  /** Callback when refined document changes */
+  onRefinedDocumentChange?: (document: string | null) => void
 }
 
 interface UploadedFile {
@@ -130,6 +142,12 @@ const STATUS_CONFIG: Record<
 
 const POLLING_INTERVAL = 3000 // 3 seconds
 const MAX_POLLING_TIME = 300000 // 5 minutes
+const DOCUMENT_GENERATION_STEPS = [
+  'Initiating AI refinement',
+  'AI is refining your proposal',
+  'Processing refined document',
+  'Generating DOCX file',
+]
 
 // ============================================================================
 // SKELETON COMPONENT
@@ -433,7 +451,11 @@ function SectionFeedbackItem({
             }
           }}
         >
-          {isSelected && <Check size={14} color="white" />}
+          <div
+            className={`${styles.checkboxInner} ${isSelected ? styles.checkboxInnerChecked : ''}`}
+          >
+            {isSelected && <Check size={14} color="white" />}
+          </div>
         </div>
 
         <button type="button" className={styles.feedbackItemHeader} onClick={onToggle}>
@@ -755,6 +777,282 @@ function OverallAssessmentCard({ assessment }: OverallAssessmentCardProps) {
 }
 
 // ============================================================================
+// REFINED PROPOSAL DOCUMENT CARD
+// ============================================================================
+
+/**
+ * Refined Proposal Document Card Component
+ * Displays the generated refined proposal with download and regenerate options
+ */
+interface RefinedProposalDocumentCardProps {
+  documentContent: string
+  isDownloading: boolean
+  onDownload: () => void
+  onRegenerate: () => void
+  isRegenerating: boolean
+  hasChanges: boolean
+}
+
+function RefinedProposalDocumentCard({
+  documentContent,
+  isDownloading,
+  onDownload,
+  onRegenerate,
+  isRegenerating,
+  hasChanges,
+}: RefinedProposalDocumentCardProps) {
+  // Format inline markdown to HTML
+  const formatInlineMarkdown = (text: string): string => {
+    let formatted = text
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
+    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
+    return formatted
+  }
+
+  // Parse markdown to React elements
+  const parseMarkdownToReact = (markdown: string): JSX.Element[] => {
+    const lines = markdown.split('\n')
+    const elements: JSX.Element[] = []
+    let currentList: string[] = []
+    let currentParagraph: string[] = []
+    let currentTable: string[][] = []
+    let tableHeaders: string[] = []
+    let inTable = false
+
+    const flushList = () => {
+      if (currentList.length > 0) {
+        elements.push(
+          <ul key={`ul-${elements.length}`} className={styles.markdownList}>
+            {currentList.map((item, i) => (
+              <li key={i} dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(item) }} />
+            ))}
+          </ul>
+        )
+        currentList = []
+      }
+    }
+
+    const flushParagraph = () => {
+      if (currentParagraph.length > 0) {
+        const text = currentParagraph.join(' ')
+        if (text.trim()) {
+          elements.push(
+            <p
+              key={`p-${elements.length}`}
+              className={styles.markdownParagraph}
+              dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
+            />
+          )
+        }
+        currentParagraph = []
+      }
+    }
+
+    const flushTable = () => {
+      if (tableHeaders.length > 0 || currentTable.length > 0) {
+        elements.push(
+          <div key={`table-wrapper-${elements.length}`} className={styles.tableWrapper}>
+            <table className={styles.markdownTable}>
+              {tableHeaders.length > 0 && (
+                <thead>
+                  <tr>
+                    {tableHeaders.map((header, i) => (
+                      <th
+                        key={i}
+                        dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(header.trim()) }}
+                      />
+                    ))}
+                  </tr>
+                </thead>
+              )}
+              <tbody>
+                {currentTable.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {row.map((cell, cellIndex) => (
+                      <td
+                        key={cellIndex}
+                        dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(cell.trim()) }}
+                      />
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+        tableHeaders = []
+        currentTable = []
+        inTable = false
+      }
+    }
+
+    const isTableRow = (line: string): boolean => {
+      const trimmed = line.trim()
+      return trimmed.includes('|') && (trimmed.startsWith('|') || trimmed.split('|').length >= 2)
+    }
+
+    const isTableSeparator = (line: string): boolean => {
+      const trimmed = line.trim()
+      return /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(trimmed)
+    }
+
+    const parseTableRow = (line: string): string[] => {
+      return line
+        .split('|')
+        .map(cell => cell.trim())
+        .filter((_, index, arr) => {
+          if (index === 0 && arr[0] === '') {
+            return false
+          }
+          if (index === arr.length - 1 && arr[arr.length - 1] === '') {
+            return false
+          }
+          return true
+        })
+    }
+
+    lines.forEach((line, index) => {
+      if (isTableRow(line)) {
+        flushList()
+        flushParagraph()
+        if (isTableSeparator(line)) {
+          inTable = true
+          return
+        }
+        if (!inTable && tableHeaders.length === 0) {
+          tableHeaders = parseTableRow(line)
+        } else {
+          inTable = true
+          currentTable.push(parseTableRow(line))
+        }
+        return
+      }
+
+      if (inTable || tableHeaders.length > 0) {
+        flushTable()
+      }
+
+      if (line.startsWith('#### ')) {
+        flushList()
+        flushParagraph()
+        elements.push(
+          <h4 key={`h4-${index}`} className={styles.markdownH4}>
+            {line.substring(5)}
+          </h4>
+        )
+      } else if (line.startsWith('### ')) {
+        flushList()
+        flushParagraph()
+        elements.push(
+          <h3 key={`h3-${index}`} className={styles.markdownH3}>
+            {line.substring(4)}
+          </h3>
+        )
+      } else if (line.startsWith('## ')) {
+        flushList()
+        flushParagraph()
+        elements.push(
+          <h2 key={`h2-${index}`} className={styles.markdownH2}>
+            {line.substring(3)}
+          </h2>
+        )
+      } else if (line.startsWith('# ')) {
+        flushList()
+        flushParagraph()
+        elements.push(
+          <h1 key={`h1-${index}`} className={styles.markdownH1}>
+            {line.substring(2)}
+          </h1>
+        )
+      } else if (line.match(/^[*-]\s+/)) {
+        flushParagraph()
+        currentList.push(line.replace(/^[*-]\s+/, ''))
+      } else if (line.trim() === '') {
+        flushList()
+        flushParagraph()
+      } else {
+        flushList()
+        currentParagraph.push(line)
+      }
+    })
+
+    flushTable()
+    flushList()
+    flushParagraph()
+
+    return elements
+  }
+
+  return (
+    <div className={`${styles.documentCard} ${hasChanges ? styles.documentCardWithChanges : ''}`}>
+      <div className={styles.documentHeader}>
+        <div className={styles.documentHeaderLeft}>
+          <FileText size={20} color="#00A63E" />
+          <div>
+            <h3 className={styles.documentTitle}>Refined Proposal Document</h3>
+            <p className={styles.documentSubtitle}>
+              {hasChanges
+                ? 'You have unsaved changes - click Regenerate to apply them'
+                : 'Review your AI-refined proposal with integrated feedback'}
+            </p>
+          </div>
+        </div>
+        {hasChanges && (
+          <span className={styles.changesIndicator}>
+            <AlertCircle size={16} />
+            Changes pending
+          </span>
+        )}
+      </div>
+
+      <div className={styles.documentContent}>
+        <div className={styles.markdownContent}>{parseMarkdownToReact(documentContent)}</div>
+      </div>
+
+      <div className={styles.documentButtonGroup}>
+        <button className={styles.downloadButton} onClick={onDownload} disabled={isDownloading}>
+          {isDownloading ? (
+            <>
+              <RefreshCw size={16} className={styles.spinning} />
+              Downloading...
+            </>
+          ) : (
+            <>
+              <Download size={16} />
+              Download
+            </>
+          )}
+        </button>
+
+        <button
+          className={`${styles.regenerateButton} ${hasChanges ? styles.regenerateWithChanges : ''}`}
+          onClick={onRegenerate}
+          disabled={isRegenerating}
+        >
+          {isRegenerating ? (
+            <>
+              <RefreshCw size={16} className={styles.spinning} />
+              Regenerating...
+            </>
+          ) : hasChanges ? (
+            <>
+              <Sparkles size={16} />
+              Regenerate with changes
+            </>
+          ) : (
+            <>
+              <Sparkles size={16} />
+              Regenerate
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -767,9 +1065,15 @@ export function Step4ProposalReview({
   onFilesChanged,
   draftIsAiGenerated = false,
   generatedProposalContent,
+  initialSelectedSections,
+  initialUserComments,
+  initialRefinedDocument,
+  onSelectedSectionsChange,
+  onUserCommentsChange,
+  onRefinedDocumentChange,
 }: Step4Props) {
   // Toast notifications
-  const { showSuccess, showError, showWarning } = useToast()
+  const { showSuccess, showError } = useToast()
 
   // State - ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null)
@@ -800,14 +1104,46 @@ export function Step4ProposalReview({
     steps?: string[]
   } | null>(null)
 
-  // Custom steps for document generation progress modal
-  const DOCUMENT_GENERATION_STEPS = [
-    'Initiating AI refinement',
-    'AI is refining your proposal',
-    'Processing refined document',
-    'Generating DOCX file',
-  ]
+  // Refined proposal document state (after generation)
+  const [refinedProposalDocument, setRefinedProposalDocument] = useState<string | null>(null)
+  const [isDownloadingPreview, setIsDownloadingPreview] = useState(false)
 
+  // Track original selections/comments when document was generated (to detect changes)
+  const [originalSelectedSections, setOriginalSelectedSections] = useState<string[]>([])
+  const [originalUserComments, setOriginalUserComments] = useState<Record<string, string>>({})
+
+  // Detect if user has made changes after generating document
+  const hasChangesAfterGeneration = useMemo(() => {
+    if (!refinedProposalDocument) {
+      return false
+    }
+
+    // Check if selections changed
+    const selectionsChanged =
+      selectedSections.length !== originalSelectedSections.length ||
+      selectedSections.some(s => !originalSelectedSections.includes(s)) ||
+      originalSelectedSections.some(s => !selectedSections.includes(s))
+
+    // Check if comments changed
+    const currentCommentKeys = Object.keys(userComments).filter(k => userComments[k]?.trim())
+    const originalCommentKeys = Object.keys(originalUserComments).filter(k =>
+      originalUserComments[k]?.trim()
+    )
+
+    const commentsChanged =
+      currentCommentKeys.length !== originalCommentKeys.length ||
+      currentCommentKeys.some(k => userComments[k] !== originalUserComments[k])
+
+    return selectionsChanged || commentsChanged
+  }, [
+    refinedProposalDocument,
+    selectedSections,
+    originalSelectedSections,
+    userComments,
+    originalUserComments,
+  ])
+
+  // Custom steps for document generation progress modal
   // Custom steps for draft feedback analysis
   const DRAFT_FEEDBACK_STEPS = useMemo(
     () => ['Step 1: Extracting document content', 'Step 2: Analyzing proposal sections'],
@@ -820,6 +1156,12 @@ export function Step4ProposalReview({
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const pollingStartTimeRef = useRef<number>(0)
   const isPollingActiveRef = useRef<boolean>(false)
+
+  // Refs for tracking parent prop changes (for persistence sync)
+  const prevInitialSectionsRef = useRef<string[] | null>(null)
+  const prevInitialCommentsRef = useRef<Record<string, string> | null>(null)
+  const prevInitialDocumentRef = useRef<string | null>(null)
+  const hasAppliedInitialData = useRef<boolean>(false)
 
   // Initialize from props
   useEffect(() => {
@@ -848,16 +1190,95 @@ export function Step4ProposalReview({
     }
   }, [])
 
-  // Initialize selected sections when feedback data changes
-  // Pre-select all sections with "NEEDS_IMPROVEMENT" status
+  // Sync selected sections from parent props when they change
+  // This handles persistence when reopening proposals or navigating between steps
   useEffect(() => {
+    if (!initialSelectedSections || initialSelectedSections.length === 0) {
+      return
+    }
+
+    const prevSections = prevInitialSectionsRef.current
+    const isFirstLoad = prevSections === null
+    const parentChanged =
+      isFirstLoad ||
+      prevSections.length !== initialSelectedSections.length ||
+      !prevSections.every(s => initialSelectedSections.includes(s))
+
+    if (parentChanged) {
+      setSelectedSections(initialSelectedSections)
+      hasAppliedInitialData.current = true
+      prevInitialSectionsRef.current = [...initialSelectedSections]
+    }
+  }, [initialSelectedSections])
+
+  // Sync user comments from parent props when they change
+  useEffect(() => {
+    if (!initialUserComments || Object.keys(initialUserComments).length === 0) {
+      return
+    }
+
+    const prevComments = prevInitialCommentsRef.current
+    const isFirstLoad = prevComments === null
+    const parentChanged =
+      isFirstLoad || JSON.stringify(prevComments) !== JSON.stringify(initialUserComments)
+
+    if (parentChanged) {
+      setUserComments(initialUserComments)
+      prevInitialCommentsRef.current = { ...initialUserComments }
+    }
+  }, [initialUserComments])
+
+  // Sync refined document from parent props when they change
+  useEffect(() => {
+    if (!initialRefinedDocument) {
+      return
+    }
+
+    const prevDoc = prevInitialDocumentRef.current
+    const parentChanged = prevDoc !== initialRefinedDocument
+
+    if (parentChanged) {
+      setRefinedProposalDocument(initialRefinedDocument)
+      prevInitialDocumentRef.current = initialRefinedDocument
+    }
+  }, [initialRefinedDocument])
+
+  // Initialize selected sections when feedback data changes
+  // Only pre-select NEEDS_IMPROVEMENT sections if no saved selections were loaded from parent
+  useEffect(() => {
+    // Skip if we already have selections from parent (saved data)
+    if (hasAppliedInitialData.current) {
+      return
+    }
+
+    // Skip if we already have selections set
+    if (selectedSections.length > 0) {
+      return
+    }
+
+    // Pre-select NEEDS_IMPROVEMENT sections only on first load with no saved data
     if (feedbackData.length > 0) {
       const needsImprovement = feedbackData
         .filter(section => section.status === 'NEEDS_IMPROVEMENT')
         .map(section => section.title)
       setSelectedSections(needsImprovement)
     }
-  }, [feedbackData])
+  }, [feedbackData, selectedSections.length])
+
+  // Notify parent when selected sections change
+  useEffect(() => {
+    onSelectedSectionsChange?.(selectedSections)
+  }, [selectedSections, onSelectedSectionsChange])
+
+  // Notify parent when user comments change
+  useEffect(() => {
+    onUserCommentsChange?.(userComments)
+  }, [userComments, onUserCommentsChange])
+
+  // Notify parent when refined document changes
+  useEffect(() => {
+    onRefinedDocumentChange?.(refinedProposalDocument)
+  }, [refinedProposalDocument, onRefinedDocumentChange])
 
   // Check if there's an analysis in progress on mount (for page refresh resumption)
   useEffect(() => {
@@ -1641,84 +2062,12 @@ export function Step4ProposalReview({
     )
   }, [])
 
-  const handleReanalyze = useCallback(async () => {
-    if (!proposalId) {
-      showError('Error', 'No proposal ID available')
-      return
-    }
-
-    try {
-      // Stop any existing polling before starting new analysis
-      isPollingActiveRef.current = false
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current)
-        pollingRef.current = null
-      }
-
-      // Clear existing feedback data to show fresh analysis
-      setFeedbackData([])
-
-      // Start new analysis with force flag
-      setIsAnalyzing(true)
-      setAnalysisProgress({
-        step: 1,
-        total: 2,
-        message: 'Re-analyzing Your Draft Proposal',
-        description:
-          'Running a fresh AI analysis on your draft proposal. This will generate new feedback based on the current document.',
-        steps: DRAFT_FEEDBACK_STEPS,
-      })
-
-      // Call API with force=true to bypass cache
-      const result = await proposalService.analyzeDraftFeedback(proposalId, true)
-
-      if (result.status === 'processing' || result.status === 'already_running') {
-        // Start polling
-        isPollingActiveRef.current = true
-        pollingStartTimeRef.current = Date.now()
-        pollingRef.current = setInterval(pollAnalysisStatus, POLLING_INTERVAL)
-
-        // Initial poll
-        setTimeout(pollAnalysisStatus, 1000)
-      } else if (result.status === 'completed') {
-        setIsAnalyzing(false)
-        setAnalysisProgress(null)
-
-        // Fetch the new data
-        const status = await proposalService.getDraftFeedbackStatus(proposalId)
-        const analysis =
-          status.data?.draft_feedback_analysis ||
-          (status.data?.section_feedback ? status.data : null)
-        if (analysis) {
-          setFeedbackData(mapAnalysisToFeedback(analysis))
-          onFeedbackAnalyzed?.(analysis)
-        }
-        showSuccess('Re-analysis Complete', 'Fresh feedback has been generated!')
-      }
-    } catch (error: unknown) {
-      // Removed console.error
-      setIsAnalyzing(false)
-      setAnalysisProgress(null)
-      const err = error as { response?: { data?: { message?: string } } }
-      showError('Re-analysis Failed', err.response?.data?.message || 'Failed to re-analyze')
-    }
-  }, [
-    proposalId,
-    pollAnalysisStatus,
-    onFeedbackAnalyzed,
-    showError,
-    showSuccess,
-    DRAFT_FEEDBACK_STEPS,
-  ])
-
   /**
    * Toggle section selection for AI feedback refinement
    */
   const handleToggleSection = useCallback((sectionTitle: string) => {
     setSelectedSections(prev =>
-      prev.includes(sectionTitle)
-        ? prev.filter(s => s !== sectionTitle)
-        : [...prev, sectionTitle]
+      prev.includes(sectionTitle) ? prev.filter(s => s !== sectionTitle) : [...prev, sectionTitle]
     )
   }, [])
 
@@ -1731,6 +2080,7 @@ export function Step4ProposalReview({
 
   /**
    * Generate DOCX document from markdown content and trigger download
+   * Format matches Step2ConceptReview for consistency
    */
   const generateAndDownloadDocx = useCallback(
     async (markdownContent: string, filename: string) => {
@@ -1754,38 +2104,61 @@ export function Step4ProposalReview({
               color: '166534',
             }),
           ],
-          alignment: AlignmentType.CENTER,
           spacing: { after: 200 },
+          alignment: AlignmentType.CENTER,
         })
       )
 
-      // Add generation date
+      // Add metadata - date
       documentParagraphs.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: `Generated on ${currentDate}`,
-              italics: true,
+              text: `Generated: ${currentDate}`,
               size: 20,
               color: '6B7280',
             }),
           ],
+          spacing: { after: 100 },
           alignment: AlignmentType.CENTER,
-          spacing: { after: 400 },
         })
       )
 
-      // Add divider
+      // Add metadata - proposal ID
+      if (proposalId) {
+        documentParagraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Proposal ID: ${proposalId}`,
+                size: 20,
+                color: '6B7280',
+              }),
+            ],
+            spacing: { after: 400 },
+            alignment: AlignmentType.CENTER,
+          })
+        )
+      } else {
+        documentParagraphs.push(
+          new Paragraph({
+            text: '',
+            spacing: { after: 200 },
+          })
+        )
+      }
+
+      // Add horizontal line separator
       documentParagraphs.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: '─'.repeat(50),
-              color: 'E5E7EB',
+              text: '═══════════════════════════════════════════════════',
+              color: 'CCCCCC',
             }),
           ],
-          alignment: AlignmentType.CENTER,
           spacing: { after: 400 },
+          alignment: AlignmentType.CENTER,
         })
       )
 
@@ -1793,10 +2166,47 @@ export function Step4ProposalReview({
       const contentParagraphs = markdownToParagraphs(markdownContent)
       documentParagraphs.push(...contentParagraphs)
 
+      // Add footer separator
+      documentParagraphs.push(
+        new Paragraph({
+          text: '',
+          spacing: { before: 400, after: 200 },
+        })
+      )
+
+      documentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '═══════════════════════════════════════════════════',
+              color: 'CCCCCC',
+            }),
+          ],
+          spacing: { after: 200 },
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
+      // Add footer
+      documentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'Generated by IGAD Proposal Writer',
+              size: 18,
+              color: '9CA3AF',
+              italics: true,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+        })
+      )
+
       // Create document
       const doc = new Document({
         sections: [
           {
+            children: documentParagraphs,
             properties: {
               page: {
                 margin: {
@@ -1807,7 +2217,6 @@ export function Step4ProposalReview({
                 },
               },
             },
-            children: documentParagraphs,
           },
         ],
       })
@@ -1823,7 +2232,7 @@ export function Step4ProposalReview({
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
     },
-    [markdownToParagraphs]
+    [markdownToParagraphs, proposalId]
   )
 
   /**
@@ -1860,11 +2269,7 @@ export function Step4ProposalReview({
         steps: DOCUMENT_GENERATION_STEPS,
       })
 
-      await proposalService.generateProposalDocument(
-        proposalId,
-        selectedSections,
-        userComments
-      )
+      await proposalService.generateProposalDocument(proposalId, selectedSections, userComments)
 
       // Step 2: Poll for completion
       setGenerationProgress({
@@ -1901,6 +2306,13 @@ export function Step4ProposalReview({
           if (!refinedProposal) {
             throw new Error('No refined proposal content received')
           }
+
+          // Save the refined proposal for preview
+          setRefinedProposalDocument(refinedProposal)
+
+          // Save original selections/comments to detect future changes
+          setOriginalSelectedSections([...selectedSections])
+          setOriginalUserComments({ ...userComments })
 
           // Step 4: Generate and download DOCX
           setGenerationProgress({
@@ -1939,7 +2351,6 @@ export function Step4ProposalReview({
         throw new Error('Document generation timed out. Please try again.')
       }
     } catch (error) {
-      console.error('Error generating document:', error)
       showError(
         'Generation Failed',
         error instanceof Error
@@ -1950,14 +2361,27 @@ export function Step4ProposalReview({
       setIsGeneratingDocument(false)
       setGenerationProgress(null)
     }
-  }, [
-    selectedSections,
-    userComments,
-    proposalId,
-    generateAndDownloadDocx,
-    showError,
-    showSuccess,
-  ])
+  }, [selectedSections, userComments, proposalId, generateAndDownloadDocx, showError, showSuccess])
+
+  /**
+   * Handle download from the document preview card
+   */
+  const handleDownloadFromPreview = useCallback(async () => {
+    if (!refinedProposalDocument) {
+      return
+    }
+
+    setIsDownloadingPreview(true)
+    try {
+      const filename = `Refined_Proposal_${proposalId}_${new Date().toISOString().slice(0, 10)}.docx`
+      await generateAndDownloadDocx(refinedProposalDocument, filename)
+      showSuccess('Success', 'Document downloaded successfully!')
+    } catch (error) {
+      showError('Download Failed', 'Failed to download document. Please try again.')
+    } finally {
+      setIsDownloadingPreview(false)
+    }
+  }, [refinedProposalDocument, proposalId, generateAndDownloadDocx, showSuccess, showError])
 
   // Show skeleton while loading - AFTER all hooks
   if (isLoading) {
@@ -2077,36 +2501,6 @@ export function Step4ProposalReview({
           </div>
         )}
 
-        {/* Action Bar - Show when we have uploaded file and feedback data */}
-        {uploadedFile && feedbackData.length > 0 && (
-          <div className={styles.actionBar}>
-            <div className={styles.actionBarLeft}>
-              <Sparkles size={20} className={styles.actionBarIcon} />
-              <span className={styles.actionBarText}>AI Analysis Complete</span>
-            </div>
-            <div className={styles.actionBarRight}>
-              <button
-                type="button"
-                className={styles.downloadFeedbackButton}
-                onClick={handleDownloadWithFeedback}
-                disabled={selectedSections.length === 0 || isGeneratingDocument}
-              >
-                {isGeneratingDocument ? (
-                  <>
-                    <RefreshCw size={16} className={styles.spinning} />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Download size={16} />
-                    Download with AI feedback
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Overall Assessment Card - Show when we have analysis data */}
         {uploadedFile && draftFeedbackAnalysis?.overall_assessment && feedbackData.length > 0 && (
           <OverallAssessmentCard assessment={draftFeedbackAnalysis.overall_assessment} />
@@ -2142,40 +2536,62 @@ export function Step4ProposalReview({
               ))}
             </div>
 
-            {/* Bottom action bar after reviewing all sections */}
-            <div className={styles.bottomActionBar}>
-              <div className={styles.bottomActionBarText}>
-                <CheckCircle2 size={20} className={styles.bottomActionBarIcon} />
-                <span>Reviewed all {feedbackData.length} sections</span>
+            {/* Bottom action bar - show only if no document generated OR if there are changes */}
+            {(!refinedProposalDocument || hasChangesAfterGeneration) && (
+              <div className={styles.bottomActionBar}>
+                <div className={styles.bottomActionBarText}>
+                  <CheckCircle2 size={20} className={styles.bottomActionBarIcon} />
+                  <span>
+                    {hasChangesAfterGeneration
+                      ? `${selectedSections.length} sections selected with changes`
+                      : `Reviewed all ${feedbackData.length} sections`}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className={`${styles.downloadFeedbackButton} ${
+                    hasChangesAfterGeneration ? styles.regenerateHighlight : ''
+                  }`}
+                  onClick={handleDownloadWithFeedback}
+                  disabled={selectedSections.length === 0 || isGeneratingDocument}
+                >
+                  {isGeneratingDocument ? (
+                    <>
+                      <RefreshCw size={16} className={styles.spinning} />
+                      Generating...
+                    </>
+                  ) : hasChangesAfterGeneration ? (
+                    <>
+                      <Sparkles size={16} />
+                      Regenerate with changes
+                    </>
+                  ) : (
+                    <>
+                      <Download size={16} />
+                      Download with AI feedback
+                    </>
+                  )}
+                </button>
               </div>
-              <button
-                type="button"
-                className={styles.downloadFeedbackButton}
-                onClick={handleDownloadWithFeedback}
-                disabled={selectedSections.length === 0 || isGeneratingDocument}
-              >
-                {isGeneratingDocument ? (
-                  <>
-                    <RefreshCw size={16} className={styles.spinning} />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Download size={16} />
-                    Download with AI feedback
-                  </>
-                )}
-              </button>
-            </div>
+            )}
           </div>
+        )}
+
+        {/* Refined Proposal Document Preview (if generated) */}
+        {refinedProposalDocument && (
+          <RefinedProposalDocumentCard
+            documentContent={refinedProposalDocument}
+            isDownloading={isDownloadingPreview}
+            onDownload={handleDownloadFromPreview}
+            onRegenerate={handleDownloadWithFeedback}
+            isRegenerating={isGeneratingDocument}
+            hasChanges={hasChangesAfterGeneration}
+          />
         )}
 
         {/* Document Generation Progress Modal */}
         {isGeneratingDocument && generationProgress && (
-          <AnalysisProgressModal
-            isOpen={isGeneratingDocument}
-            progress={generationProgress}
-          />
+          <AnalysisProgressModal isOpen={isGeneratingDocument} progress={generationProgress} />
         )}
       </div>
     </div>

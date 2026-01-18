@@ -16,13 +16,10 @@ import os
 import re
 import traceback
 from datetime import datetime
-from io import BytesIO
 from typing import Any, Dict, List, Optional
 
 import boto3
 from boto3.dynamodb.conditions import Attr
-from docx import Document
-from PyPDF2 import PdfReader
 
 from app.shared.ai.bedrock_service import BedrockService
 from app.tools.proposal_writer.proposal_document_generation.config import (
@@ -130,12 +127,16 @@ class ProposalDocumentGenerator:
             logger.info("📊 Parsing response...")
             document = self._parse_response(ai_response)
 
-            # Add metadata
+            # Add metadata (includes selected_sections and user_comments for persistence)
             document["metadata"] = {
                 "proposal_code": proposal_code,
                 "sections_refined": len(selected_sections),
-                "generation_time_seconds": elapsed,
+                "generation_time_seconds": int(
+                    elapsed
+                ),  # DynamoDB requires int, not float
                 "generated_at": datetime.utcnow().isoformat(),
+                "selected_sections": selected_sections,  # For persistence/reload
+                "user_comments": user_comments,  # For persistence/reload
             }
 
             logger.info("✅ Refined proposal generated successfully")

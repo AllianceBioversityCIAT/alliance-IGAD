@@ -1172,6 +1172,28 @@
   cursor: not-allowed;
 }
 
+/* Highlight style when there are changes to regenerate */
+.regenerateHighlight {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  border-color: #F59E0B;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  animation: pulseHighlight 2s ease-in-out infinite;
+}
+
+.regenerateHighlight:hover:not(:disabled) {
+  background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+@keyframes pulseHighlight {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 16px rgba(245, 158, 11, 0.5);
+  }
+}
+
 /* ============================================
    FINISH PROCESS SECTION
    ============================================ */
@@ -1725,29 +1747,49 @@
 /* Feedback item header row with checkbox */
 .feedbackItemHeaderRow {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: stretch;
 }
 
-/* Checkbox styles */
+/* Checkbox container - takes full height of the row */
 .checkbox {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #d1d5db;
-  border-radius: 4px;
+  width: 56px;
+  min-width: 56px;
+  border-right: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  background: #fafbfc;
 }
 
 .checkbox:hover {
-  border-color: #16a34a;
+  background: #f0fdf4;
 }
 
 .checkboxChecked {
+  background: #f0fdf4;
+}
+
+/* Inner checkbox box - the actual visual checkbox */
+.checkboxInner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #d1d5db;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.checkbox:hover .checkboxInner {
+  border-color: #16a34a;
+}
+
+.checkboxInnerChecked {
   background-color: #16a34a;
   border-color: #16a34a;
 }
@@ -1793,4 +1835,233 @@
   color: #6b7280;
   flex-shrink: 0;
   margin-top: 4px;
+}
+
+/* ==================== Refined Document Preview Card ==================== */
+
+.documentCard {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  margin-top: 24px;
+}
+
+.documentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.documentHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.documentTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.documentSubtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 4px 0 0 0;
+}
+
+.documentContent {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 24px;
+  background: white;
+}
+
+.markdownContent {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #374151;
+}
+
+.markdownH1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 24px 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.markdownH2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 20px 0 12px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.markdownH3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 16px 0 8px 0;
+}
+
+.markdownH4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 12px 0 6px 0;
+}
+
+.markdownParagraph {
+  margin: 0 0 12px 0;
+  text-align: justify;
+}
+
+.markdownList {
+  margin: 0 0 12px 0;
+  padding-left: 24px;
+}
+
+.markdownList li {
+  margin-bottom: 6px;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+.markdownTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.markdownTable th,
+.markdownTable td {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.markdownTable th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.markdownTable td {
+  color: #4b5563;
+}
+
+.documentButtonGroup {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.downloadButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.downloadButton:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.downloadButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.regenerateButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #16a34a;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #16a34a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.regenerateButton:hover:not(:disabled) {
+  background: #f0fdf4;
+}
+
+.regenerateButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Regenerate button with changes - highlight style */
+.regenerateWithChanges {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  border-color: #F59E0B;
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  animation: pulseHighlight 2s ease-in-out infinite;
+}
+
+.regenerateWithChanges:hover:not(:disabled) {
+  background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+/* Document card with pending changes */
+.documentCardWithChanges {
+  border-color: #F59E0B;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
+}
+
+/* Changes indicator badge */
+.changesIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #B45309;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

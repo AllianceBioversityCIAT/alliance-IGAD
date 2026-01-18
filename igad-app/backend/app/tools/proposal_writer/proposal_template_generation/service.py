@@ -141,25 +141,39 @@ class ProposalTemplateGenerator:
             structure_start = user_prompt.find("<PROPOSAL_STRUCTURE>")
             structure_end = user_prompt.find("</PROPOSAL_STRUCTURE>")
             if structure_start != -1 and structure_end != -1:
-                structure_content = user_prompt[structure_start:structure_end + 22]
+                structure_content = user_prompt[structure_start : structure_end + 22]
                 # Count section_title occurrences in the injected structure
                 section_count_in_prompt = structure_content.count('"section_title"')
-                logger.info(f"🔍 DEBUG: PROPOSAL_STRUCTURE found in prompt")
-                logger.info(f"🔍 DEBUG: section_title count in injected structure: {section_count_in_prompt}")
+                logger.info("🔍 DEBUG: PROPOSAL_STRUCTURE found in prompt")
+                logger.info(
+                    f"🔍 DEBUG: section_title count in injected structure: {section_count_in_prompt}"
+                )
                 # Log first 1500 chars of the structure for inspection
-                logger.info(f"🔍 DEBUG: Injected PROPOSAL_STRUCTURE (first 1500 chars):\n{structure_content[:1500]}")
+                logger.info(
+                    f"🔍 DEBUG: Injected PROPOSAL_STRUCTURE (first 1500 chars):\n{structure_content[:1500]}"
+                )
             else:
-                logger.error("❌ DEBUG: PROPOSAL_STRUCTURE tags NOT FOUND in injected prompt!")
-                logger.error(f"🔍 DEBUG: Checking for placeholder - found: {'{[PROPOSAL STRUCTURE]}' in user_prompt}")
+                logger.error(
+                    "❌ DEBUG: PROPOSAL_STRUCTURE tags NOT FOUND in injected prompt!"
+                )
+                logger.error(
+                    f"🔍 DEBUG: Checking for placeholder - found: {'{[PROPOSAL STRUCTURE]}' in user_prompt}"
+                )
 
             # DEBUG: Log prompt lengths and section count
-            logger.info(f"🔍 DEBUG: System prompt length: {len(prompt_parts['system_prompt'])} chars")
+            logger.info(
+                f"🔍 DEBUG: System prompt length: {len(prompt_parts['system_prompt'])} chars"
+            )
             logger.info(f"🔍 DEBUG: User prompt length: {len(user_prompt)} chars")
             logger.info(f"🔍 DEBUG: Final prompt length: {len(final_prompt)} chars")
 
             # Count total section_title occurrences in the entire prompt
-            total_section_titles = len(re.findall(r'"section_title":\s*"([^"]+)"', final_prompt))
-            logger.info(f"🔍 DEBUG: Total section_title entries in final prompt: {total_section_titles}")
+            total_section_titles = len(
+                re.findall(r'"section_title":\s*"([^"]+)"', final_prompt)
+            )
+            logger.info(
+                f"🔍 DEBUG: Total section_title entries in final prompt: {total_section_titles}"
+            )
 
             # Step 6: Call Bedrock
             logger.info("📡 Calling Bedrock (this may take 5-10 minutes)...")
@@ -182,7 +196,9 @@ class ProposalTemplateGenerator:
 
             # Step 7: Parse response and validate sections
             logger.info("📊 Parsing response...")
-            document = self._parse_response(ai_response, expected_sections=selected_sections)
+            document = self._parse_response(
+                ai_response, expected_sections=selected_sections
+            )
 
             # Add metadata (using Decimal for float to avoid DynamoDB Float error)
             document["metadata"] = {
@@ -294,8 +310,12 @@ class ProposalTemplateGenerator:
             # DEBUG: Log all available section titles
             mandatory_titles = [s.get("section_title") for s in mandatory_sections]
             outline_titles = [s.get("section_title") for s in outline_sections]
-            logger.info(f"🔍 DEBUG: Available mandatory titles ({len(mandatory_titles)}): {mandatory_titles}")
-            logger.info(f"🔍 DEBUG: Available outline titles ({len(outline_titles)}): {outline_titles}")
+            logger.info(
+                f"🔍 DEBUG: Available mandatory titles ({len(mandatory_titles)}): {mandatory_titles}"
+            )
+            logger.info(
+                f"🔍 DEBUG: Available outline titles ({len(outline_titles)}): {outline_titles}"
+            )
 
             logger.info(
                 f"📊 Total sections: {len(mandatory_sections)} mandatory + "
@@ -323,9 +343,13 @@ class ProposalTemplateGenerator:
             ]
 
             # DEBUG: Log filtered section titles
-            filtered_mandatory_titles = [s.get("section_title") for s in filtered_mandatory]
+            filtered_mandatory_titles = [
+                s.get("section_title") for s in filtered_mandatory
+            ]
             filtered_outline_titles = [s.get("section_title") for s in filtered_outline]
-            logger.info(f"🔍 DEBUG: Filtered mandatory titles: {filtered_mandatory_titles}")
+            logger.info(
+                f"🔍 DEBUG: Filtered mandatory titles: {filtered_mandatory_titles}"
+            )
             logger.info(f"🔍 DEBUG: Filtered outline titles: {filtered_outline_titles}")
 
             # Add user comments if provided
@@ -504,12 +528,16 @@ class ProposalTemplateGenerator:
         logger.info(f"🔄 Total placeholders replaced: {replacements_made}")
 
         # DEBUG: Check for any remaining unreplaced placeholders
-        remaining_brackets = re.findall(r'\{\[[^\]]+\]\}', prompt)
-        remaining_braces = re.findall(r'\{\{[^}]+\}\}', prompt)
+        remaining_brackets = re.findall(r"\{\[[^\]]+\]\}", prompt)
+        remaining_braces = re.findall(r"\{\{[^}]+\}\}", prompt)
         if remaining_brackets:
-            logger.warning(f"⚠️ Unreplaced {'{[...]}' } placeholders: {remaining_brackets[:5]}")
+            logger.warning(
+                f"⚠️ Unreplaced {'{[...]}' } placeholders: {remaining_brackets[:5]}"
+            )
         if remaining_braces:
-            logger.warning(f"⚠️ Unreplaced {'{{...}}'} placeholders: {remaining_braces[:5]}")
+            logger.warning(
+                f"⚠️ Unreplaced {'{{...}}'} placeholders: {remaining_braces[:5]}"
+            )
 
         return prompt
 
@@ -548,9 +576,13 @@ class ProposalTemplateGenerator:
                 extra_sections = generated_titles - expected_titles
                 missing_sections = expected_titles - generated_titles
 
-                logger.info(f"🔍 DEBUG: Section validation:")
-                logger.info(f"   Expected sections ({len(expected_titles)}): {sorted(expected_titles)}")
-                logger.info(f"   Generated sections ({len(generated_titles)}): {sorted(generated_titles)}")
+                logger.info("🔍 DEBUG: Section validation:")
+                logger.info(
+                    f"   Expected sections ({len(expected_titles)}): {sorted(expected_titles)}"
+                )
+                logger.info(
+                    f"   Generated sections ({len(generated_titles)}): {sorted(generated_titles)}"
+                )
 
                 if extra_sections:
                     logger.warning(

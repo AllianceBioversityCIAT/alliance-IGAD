@@ -352,6 +352,9 @@ export function Step3StructureWorkplan({
   // Track if we've applied initial sections from parent
   const hasAppliedInitialSections = useRef(false)
 
+  // Track previous value of initialSelectedSections to detect changes from parent
+  const prevInitialSectionsRef = useRef<string[] | null>(null)
+
   // Initialize selected sections when data becomes available
   // Priority: initialSelectedSections (from parent/DynamoDB) > mandatory sections (fallback)
   // This effect runs ONCE when initial data is available, not on every selection change
@@ -392,6 +395,30 @@ export function Step3StructureWorkplan({
       setGenerationStatus('completed')
     }
   }, [initialGeneratedContent, generatedProposal])
+
+  // Sync selected sections from parent when they change (e.g., after navigation or reload)
+  useEffect(() => {
+    if (!initialSelectedSections || initialSelectedSections.length === 0) {
+      return
+    }
+
+    // Only act if initialSelectedSections actually changed from parent
+    const prevSections = prevInitialSectionsRef.current
+    const isFirstLoad = prevSections === null
+    const prevSectionsList = prevSections ?? []
+    const parentChanged =
+      isFirstLoad ||
+      prevSectionsList.length !== initialSelectedSections.length ||
+      !prevSectionsList.every((section: string) => initialSelectedSections.includes(section))
+
+    if (parentChanged) {
+      setSelectedSections(initialSelectedSections)
+      setLastGeneratedSections(initialSelectedSections)
+      hasAppliedInitialSections.current = true
+      setHasInitialized(true)
+      prevInitialSectionsRef.current = [...initialSelectedSections]
+    }
+  }, [initialSelectedSections])
 
   // Notify parent when selected sections change
   useEffect(() => {

@@ -34,7 +34,6 @@ export function ProposalWriterPage() {
   const [proposalId, setProposalId] = useState<string>()
   const [proposalCode, setProposalCode] = useState<string>()
   const [showExitModal, setShowExitModal] = useState(false)
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
   const [isSavingDraft, setIsSavingDraft] = useState(false)
   const [isAnalyzingRFP, setIsAnalyzingRFP] = useState(false)
   const [rfpAnalysis, setRfpAnalysis] = useState<RFPAnalysis | null>(null)
@@ -86,6 +85,10 @@ export function ProposalWriterPage() {
   const [draftIsAiGenerated, setDraftIsAiGenerated] = useState(false)
   // State for preparing draft transition (Step 3 → Step 4)
   const [isPreparingDraft, setIsPreparingDraft] = useState(false)
+  // Step 4 state - selected sections, user comments, and refined document
+  const [step4SelectedSections, setStep4SelectedSections] = useState<string[] | null>(null)
+  const [step4UserComments, setStep4UserComments] = useState<Record<string, string> | null>(null)
+  const [step4RefinedDocument, setStep4RefinedDocument] = useState<string | null>(null)
 
   // ========================================
   // INVALIDATION CASCADE STATE
@@ -106,6 +109,7 @@ export function ProposalWriterPage() {
     }
     step2: { selectedSections: string[]; userComments: Record<string, string> }
     step3: { selectedSections: string[] }
+    step4: { selectedSections: string[]; userComments: Record<string, string> }
   }>({
     step1: {
       rfpFiles: [],
@@ -116,6 +120,7 @@ export function ProposalWriterPage() {
     },
     step2: { selectedSections: [], userComments: {} },
     step3: { selectedSections: [] },
+    step4: { selectedSections: [], userComments: {} },
   })
 
   const allowNavigation = useRef(false)
@@ -201,6 +206,8 @@ export function ProposalWriterPage() {
       // Step 4 localStorage keys
       if (fromStep <= 4) {
         localStorage.removeItem(`proposal_draft_feedback_${proposalId}`)
+        localStorage.removeItem(`proposal_step4_sections_${proposalId}`)
+        localStorage.removeItem(`proposal_step4_comments_${proposalId}`)
       }
     },
     [proposalId]
@@ -233,6 +240,10 @@ export function ProposalWriterPage() {
         setSelectedSections(null)
         setDraftFeedbackAnalysis(null)
         setDraftIsAiGenerated(false)
+        // Clear Step 4 state
+        setStep4SelectedSections(null)
+        setStep4UserComments(null)
+        setStep4RefinedDocument(null)
       }
       // Step 2 changes → invalidate Step 2, 3, 4
       else if (fromStep <= 2) {
@@ -243,6 +254,10 @@ export function ProposalWriterPage() {
         setSelectedSections(null)
         setDraftFeedbackAnalysis(null)
         setDraftIsAiGenerated(false)
+        // Clear Step 4 state
+        setStep4SelectedSections(null)
+        setStep4UserComments(null)
+        setStep4RefinedDocument(null)
       }
       // Step 3 changes → invalidate Step 3, 4
       else if (fromStep <= 3) {
@@ -250,10 +265,18 @@ export function ProposalWriterPage() {
         setGeneratedProposalContent(null)
         setDraftFeedbackAnalysis(null)
         setDraftIsAiGenerated(false)
+        // Clear Step 4 state
+        setStep4SelectedSections(null)
+        setStep4UserComments(null)
+        setStep4RefinedDocument(null)
       }
       // Step 4 changes → invalidate only Step 4
       else {
         setDraftFeedbackAnalysis(null)
+        // Clear Step 4 state
+        setStep4SelectedSections(null)
+        setStep4UserComments(null)
+        setStep4RefinedDocument(null)
       }
 
       // Clear localStorage for the affected steps
@@ -916,64 +939,137 @@ export function ProposalWriterPage() {
   }, [proposalId, currentStep, proposalTemplate])
 
   // Load generated proposal content and selected sections when entering Step 3
+  // Always try DynamoDB first (source of truth), then fallback to localStorage
   useEffect(() => {
     const loadStep3Data = async () => {
-      if (proposalId && currentStep === 3) {
-        // Load generated content and sections if template was previously generated
-        // DynamoDB is the source of truth for sections used in generation
-        if (proposalTemplate) {
-          try {
-            const status = await proposalService.getProposalTemplateStatus(proposalId)
-            if (status.status === 'completed' && status.data?.generated_proposal) {
-              // Load the generated content
-              if (!generatedProposalContent) {
-                setGeneratedProposalContent(status.data.generated_proposal)
-              }
+      if (!proposalId || currentStep !== 3) {
+        return
+      }
 
-              // Load selected sections from DynamoDB metadata (source of truth)
-              const savedSections = status.data.metadata?.selected_sections
-              if (savedSections && Array.isArray(savedSections) && savedSections.length > 0) {
-                setSelectedSections(savedSections)
-                // Update localStorage cache
-                localStorage.setItem(
-                  `proposal_selected_sections_${proposalId}`,
-                  JSON.stringify(savedSections)
-                )
-              }
-            }
-          } catch {
-            // No generated content found, try localStorage as fallback
-            const cachedSections = localStorage.getItem(`proposal_selected_sections_${proposalId}`)
-            if (cachedSections) {
-              try {
-                const parsed = JSON.parse(cachedSections)
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                  setSelectedSections(parsed)
-                }
-              } catch {
-                // Invalid cache, ignore
-              }
-            }
+      // Skip if we already have generated content (avoid overwriting)
+      if (generatedProposalContent) {
+        return
+      }
+
+      try {
+        // Always try DynamoDB first - it's the source of truth
+        const status = await proposalService.getProposalTemplateStatus(proposalId)
+        if (status.status === 'completed' && status.data?.generated_proposal) {
+          // Load the generated content
+          setGeneratedProposalContent(status.data.generated_proposal)
+
+          // Load selected sections from DynamoDB metadata (source of truth)
+          const savedSections = status.data.metadata?.selected_sections
+          if (savedSections && Array.isArray(savedSections) && savedSections.length > 0) {
+            setSelectedSections(savedSections)
+            // Update localStorage cache
+            localStorage.setItem(
+              `proposal_selected_sections_${proposalId}`,
+              JSON.stringify(savedSections)
+            )
           }
-        } else {
-          // No template generated yet, load from localStorage if available
-          const cachedSections = localStorage.getItem(`proposal_selected_sections_${proposalId}`)
-          if (cachedSections) {
-            try {
-              const parsed = JSON.parse(cachedSections)
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setSelectedSections(parsed)
-              }
-            } catch {
-              // Invalid cache, ignore
-            }
+          return // Successfully loaded from DynamoDB
+        }
+      } catch {
+        // API failed, fall through to localStorage fallback
+      }
+
+      // Fallback to localStorage if DynamoDB didn't have data
+      const cachedSections = localStorage.getItem(`proposal_selected_sections_${proposalId}`)
+      if (cachedSections) {
+        try {
+          const parsed = JSON.parse(cachedSections)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSelectedSections(parsed)
           }
+        } catch {
+          // Invalid cache, ignore
         }
       }
     }
 
     loadStep3Data()
-  }, [proposalId, currentStep, proposalTemplate, generatedProposalContent])
+  }, [proposalId, currentStep, generatedProposalContent])
+
+  // Load Step 4 data (selected sections, user comments, refined document) when entering Step 4
+  // Always try DynamoDB first (source of truth), then fallback to localStorage
+  useEffect(() => {
+    const loadStep4Data = async () => {
+      if (!proposalId || currentStep !== 4) {
+        return
+      }
+
+      // Skip if we already have data loaded (avoid overwriting user changes)
+      if (step4SelectedSections !== null && step4SelectedSections.length > 0) {
+        return
+      }
+
+      try {
+        // Always try DynamoDB first - it's the source of truth
+        const status = await proposalService.getProposalDocumentStatus(proposalId)
+        if (status.status === 'completed' && status.data) {
+          // Load refined document if available
+          if (status.data.generated_proposal) {
+            setStep4RefinedDocument(status.data.generated_proposal)
+          }
+
+          // Load selected sections from DynamoDB metadata
+          // Use type assertion since metadata can have additional fields
+          const metadata = status.data.metadata as Record<string, unknown> | undefined
+          const savedSections = metadata?.selected_sections as string[] | undefined
+          if (savedSections && Array.isArray(savedSections) && savedSections.length > 0) {
+            setStep4SelectedSections(savedSections)
+            // Update localStorage cache
+            localStorage.setItem(
+              `proposal_step4_sections_${proposalId}`,
+              JSON.stringify(savedSections)
+            )
+          }
+
+          // Load user comments from DynamoDB metadata
+          const savedComments = metadata?.user_comments as Record<string, string> | undefined
+          if (savedComments && typeof savedComments === 'object') {
+            setStep4UserComments(savedComments)
+            localStorage.setItem(
+              `proposal_step4_comments_${proposalId}`,
+              JSON.stringify(savedComments)
+            )
+          }
+
+          return // Successfully loaded from DynamoDB
+        }
+      } catch {
+        // API failed, fall through to localStorage fallback
+      }
+
+      // Fallback to localStorage if DynamoDB didn't have data
+      const cachedSections = localStorage.getItem(`proposal_step4_sections_${proposalId}`)
+      if (cachedSections) {
+        try {
+          const parsed = JSON.parse(cachedSections)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setStep4SelectedSections(parsed)
+          }
+        } catch {
+          // Invalid cache, ignore
+        }
+      }
+
+      const cachedComments = localStorage.getItem(`proposal_step4_comments_${proposalId}`)
+      if (cachedComments) {
+        try {
+          const parsed = JSON.parse(cachedComments)
+          if (parsed && typeof parsed === 'object') {
+            setStep4UserComments(parsed)
+          }
+        } catch {
+          // Invalid cache, ignore
+        }
+      }
+    }
+
+    loadStep4Data()
+  }, [proposalId, currentStep, step4SelectedSections])
 
   // Save selected sections to localStorage when they change
   const handleSelectedSectionsChange = useCallback(
@@ -984,6 +1080,36 @@ export function ProposalWriterPage() {
       }
     },
     [proposalId]
+  )
+
+  // Handle Step 4 selected sections change
+  const handleStep4SelectedSectionsChange = useCallback(
+    (sections: string[]) => {
+      setStep4SelectedSections(sections)
+      if (proposalId) {
+        localStorage.setItem(`proposal_step4_sections_${proposalId}`, JSON.stringify(sections))
+      }
+    },
+    [proposalId]
+  )
+
+  // Handle Step 4 user comments change
+  const handleStep4UserCommentsChange = useCallback(
+    (comments: Record<string, string>) => {
+      setStep4UserComments(comments)
+      if (proposalId) {
+        localStorage.setItem(`proposal_step4_comments_${proposalId}`, JSON.stringify(comments))
+      }
+    },
+    [proposalId]
+  )
+
+  // Handle Step 4 refined document change (after generation)
+  const handleStep4RefinedDocumentChange = useCallback(
+    (document: string | null) => {
+      setStep4RefinedDocument(document)
+    },
+    []
   )
 
   // Load concept evaluation from DynamoDB when entering Step 2
@@ -1133,7 +1259,6 @@ export function ProposalWriterPage() {
 
       // Show confirmation modal
       setShowExitModal(true)
-      setPendingNavigation('-1') // Special marker for back button
     }
 
     window.addEventListener('popstate', handlePopState)
@@ -1162,17 +1287,8 @@ export function ProposalWriterPage() {
   }, [proposalId])
 
   const handleKeepDraft = () => {
+    // Simply close the modal and stay on the current page
     setShowExitModal(false)
-
-    if (pendingNavigation === '-1' || pendingNavigation === null) {
-      // User clicked back button - go back
-      window.history.back()
-    } else if (pendingNavigation) {
-      // User clicked a link - navigate there
-      navigate(pendingNavigation)
-    }
-
-    setPendingNavigation(null)
   }
 
   const handleDeleteDraft = async () => {
@@ -1184,7 +1300,6 @@ export function ProposalWriterPage() {
 
           // Always redirect to home after deleting draft
           setShowExitModal(false)
-          setPendingNavigation(null)
 
           // Navigate to home page
           navigate('/', { replace: true })
@@ -1213,7 +1328,6 @@ export function ProposalWriterPage() {
 
       // Close modal and navigate to dashboard
       setShowExitModal(false)
-      setPendingNavigation(null)
 
       setTimeout(() => {
         navigate('/dashboard')
@@ -2127,9 +2241,17 @@ export function ProposalWriterPage() {
             onGeneratedContentChange={content => {
               setGeneratedProposalContent(content)
               // When AI draft is regenerated, invalidate the draft feedback analysis
-              // so Step 4 shows the "Ready to Analyze" option
+              // and Step 4 state so user starts fresh
               if (content) {
                 setDraftFeedbackAnalysis(null)
+                setStep4SelectedSections(null)
+                setStep4UserComments(null)
+                setStep4RefinedDocument(null)
+                // Clear Step 4 localStorage
+                if (proposalId) {
+                  localStorage.removeItem(`proposal_step4_sections_${proposalId}`)
+                  localStorage.removeItem(`proposal_step4_comments_${proposalId}`)
+                }
               }
             }}
             initialSelectedSections={selectedSections}
@@ -2165,6 +2287,12 @@ export function ProposalWriterPage() {
             }
             draftIsAiGenerated={draftIsAiGenerated}
             generatedProposalContent={generatedProposalContent}
+            initialSelectedSections={step4SelectedSections}
+            initialUserComments={step4UserComments}
+            initialRefinedDocument={step4RefinedDocument}
+            onSelectedSectionsChange={handleStep4SelectedSectionsChange}
+            onUserCommentsChange={handleStep4UserCommentsChange}
+            onRefinedDocumentChange={handleStep4RefinedDocumentChange}
             onFeedbackAnalyzed={analysis => {
               // Removed console.log'✅ Draft feedback analysis received:', analysis)
               setDraftFeedbackAnalysis(analysis)

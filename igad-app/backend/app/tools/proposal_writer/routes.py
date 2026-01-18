@@ -2247,7 +2247,7 @@ async def generate_proposal_document(
             pk=pk,
             sk="METADATA",
             update_expression="""
-                SET proposal_document_status = :status, 
+                SET proposal_document_status = :status,
                     proposal_document_started_at = :started,
                     proposal_document_selected_sections = :sections,
                     proposal_document_user_comments = :comments

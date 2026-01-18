@@ -778,12 +778,16 @@ class ConceptDocumentGenerator:
         logger.info(f"🔄 Total placeholders replaced: {replacements_made}")
 
         # DEBUG: Check for any remaining unreplaced placeholders
-        remaining_brackets = re.findall(r'\{\[[^\]]+\]\}', prompt)
-        remaining_braces = re.findall(r'\{\{[^}]+\}\}', prompt)
+        remaining_brackets = re.findall(r"\{\[[^\]]+\]\}", prompt)
+        remaining_braces = re.findall(r"\{\{[^}]+\}\}", prompt)
         if remaining_brackets:
-            logger.warning(f"⚠️ Unreplaced {{[...]}} placeholders: {remaining_brackets[:5]}")
+            logger.warning(
+                f"⚠️ Unreplaced {{[...]}} placeholders: {remaining_brackets[:5]}"
+            )
         if remaining_braces:
-            logger.warning(f"⚠️ Unreplaced {{{{...}}}} placeholders: {remaining_braces[:5]}")
+            logger.warning(
+                f"⚠️ Unreplaced {{{{...}}}} placeholders: {remaining_braces[:5]}"
+            )
 
         return prompt
 

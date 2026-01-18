@@ -19,6 +19,7 @@
     "generate-favicon": "node scripts/generate-favicon.js"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.0.0",
     "axios": "^1.5.0",
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.0.0",
@@ -28,8 +29,8 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.47.0",
     "react-markdown": "^10.1.0",
-    "@tanstack/react-query": "^5.0.0",
     "react-router-dom": "^6.16.0",
+    "recharts": "^3.6.0",
     "zustand": "^4.4.3"
   },
   "devDependencies": {

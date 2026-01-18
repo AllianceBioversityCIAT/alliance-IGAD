@@ -111,9 +111,7 @@ class DraftFeedbackService:
                     "Could not extract text from draft proposal document or document is too short."
                 )
 
-            logger.info(
-                f"✅ Extracted {len(draft_text)} characters from draft proposal"
-            )
+            logger.info(f"✅ Extracted {len(draft_text)} characters from draft proposal")
 
             # Step 4: Get RFP analysis (required context)
             rfp_analysis = proposal.get("rfp_analysis", {})
