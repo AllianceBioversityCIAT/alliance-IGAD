@@ -797,7 +797,16 @@ export function Step4ProposalReview({
     total: number
     message: string
     description: string
+    steps?: string[]
   } | null>(null)
+
+  // Custom steps for document generation progress modal
+  const DOCUMENT_GENERATION_STEPS = [
+    'Initiating AI refinement',
+    'AI is refining your proposal',
+    'Processing refined document',
+    'Generating DOCX file',
+  ]
 
   // Custom steps for draft feedback analysis
   const DRAFT_FEEDBACK_STEPS = useMemo(
@@ -1838,6 +1847,7 @@ export function Step4ProposalReview({
       total: 4,
       message: 'Starting document generation...',
       description: 'Preparing your refined proposal',
+      steps: DOCUMENT_GENERATION_STEPS,
     })
 
     try {
@@ -1847,6 +1857,7 @@ export function Step4ProposalReview({
         total: 4,
         message: 'Initiating AI refinement...',
         description: 'Sending selected sections and comments to AI',
+        steps: DOCUMENT_GENERATION_STEPS,
       })
 
       await proposalService.generateProposalDocument(
@@ -1861,6 +1872,7 @@ export function Step4ProposalReview({
         total: 4,
         message: 'AI is refining your proposal...',
         description: 'This may take 2-3 minutes for large proposals',
+        steps: DOCUMENT_GENERATION_STEPS,
       })
 
       const maxAttempts = 60 // 3 minutes with 3-second intervals
@@ -1881,6 +1893,7 @@ export function Step4ProposalReview({
             total: 4,
             message: 'Processing refined document...',
             description: 'Preparing document for download',
+            steps: DOCUMENT_GENERATION_STEPS,
           })
 
           const refinedProposal = statusResponse.data?.generated_proposal
@@ -1895,6 +1908,7 @@ export function Step4ProposalReview({
             total: 4,
             message: 'Generating DOCX file...',
             description: 'Your download will begin shortly',
+            steps: DOCUMENT_GENERATION_STEPS,
           })
 
           const filename = `Refined_Proposal_${proposalId}_${new Date().toISOString().slice(0, 10)}.docx`
@@ -1914,6 +1928,7 @@ export function Step4ProposalReview({
             total: 4,
             message: 'AI is refining your proposal...',
             description: `Elapsed: ${elapsedMinutes}m ${remainingSeconds}s`,
+            steps: DOCUMENT_GENERATION_STEPS,
           })
         }
 
