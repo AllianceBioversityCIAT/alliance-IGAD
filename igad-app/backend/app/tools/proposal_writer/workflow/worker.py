@@ -378,6 +378,7 @@ def _set_completed_status(
                     proposal_document_status = :status,
                     proposal_document_completed_at = :completed,
                     updated_at = :updated
+                REMOVE proposal_document_error
             """,
             expression_attribute_values={
                 ":document": {

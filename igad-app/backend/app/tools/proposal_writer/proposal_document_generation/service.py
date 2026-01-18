@@ -223,14 +223,26 @@ class ProposalDocumentGenerator:
         Returns:
             Dict with 'draft_proposal', 'section_feedback', 'user_comments'
         """
+        # Log available section titles in feedback for debugging
+        available_titles = [f.get("section_title") for f in section_feedback]
+        logger.info(f"📋 Available section titles in feedback: {available_titles}")
+        logger.info(f"📋 Selected sections requested: {selected_sections}")
+
         # Filter feedback to selected sections only
         filtered_feedback = [
             f for f in section_feedback if f.get("section_title") in selected_sections
         ]
 
+        # Log which sections matched and which didn't
+        matched_titles = [f.get("section_title") for f in filtered_feedback]
+        unmatched_selections = [s for s in selected_sections if s not in available_titles]
+        if unmatched_selections:
+            logger.warning(f"⚠️ Selected sections NOT found in feedback: {unmatched_selections}")
+
         logger.info(
             f"📊 Filtered to {len(filtered_feedback)} sections from {len(section_feedback)} total"
         )
+        logger.info(f"✅ Matched sections: {matched_titles}")
 
         # Filter user comments to selected sections only
         filtered_comments = {
@@ -245,6 +257,7 @@ class ProposalDocumentGenerator:
             "draft_proposal": draft_proposal,
             "section_feedback": json.dumps(filtered_feedback, indent=2),
             "user_comments": json.dumps(filtered_comments, indent=2),
+            "selected_sections": json.dumps(selected_sections, indent=2),
         }
 
     def _inject_context(self, template: str, context: Dict[str, Any]) -> str:
@@ -284,19 +297,32 @@ class ProposalDocumentGenerator:
                 replacements_made += 1
                 logger.info(f"✅ Replaced placeholder: {placeholder_bracket_original}")
 
-            # Format 3: {{key}} (double brace format)
+            # Format 3: {{key}} (double brace format - original key)
             placeholder_double_brace = f"{{{{{key}}}}}"
             if placeholder_double_brace in prompt:
                 prompt = prompt.replace(placeholder_double_brace, value_str)
                 replacements_made += 1
                 logger.info(f"✅ Replaced placeholder: {placeholder_double_brace}")
 
+            # Format 4: {{KEY}} (double brace format - uppercase with underscores)
+            placeholder_double_brace_upper = "{{" + key.upper() + "}}"
+            if placeholder_double_brace_upper in prompt:
+                prompt = prompt.replace(placeholder_double_brace_upper, value_str)
+                replacements_made += 1
+                logger.info(f"✅ Replaced placeholder: {placeholder_double_brace_upper}")
+
         logger.info(f"🔄 Total placeholders replaced: {replacements_made}")
 
         # DEBUG: Check for any remaining unreplaced placeholders
+        # Format 1: {[...]}
         remaining_brackets = re.findall(r"\{\[[^\]]+\]\}", prompt)
         if remaining_brackets:
-            logger.warning(f"⚠️ Unreplaced placeholders: {remaining_brackets[:5]}")
+            logger.warning(f"⚠️ Unreplaced {[...]} placeholders: {remaining_brackets[:5]}")
+
+        # Format 2: {{...}}
+        remaining_double_braces = re.findall(r"\{\{[^}]+\}\}", prompt)
+        if remaining_double_braces:
+            logger.warning(f"⚠️ Unreplaced {{{{...}}}} placeholders: {remaining_double_braces[:5]}")
 
         return prompt
 

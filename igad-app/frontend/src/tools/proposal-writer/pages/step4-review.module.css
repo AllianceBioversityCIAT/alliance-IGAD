@@ -508,52 +508,73 @@
   flex-shrink: 0;
 }
 
-.scoreCircle {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.radialChartContainer {
+  width: 120px;
+  height: 120px;
   position: relative;
 }
 
-.scoreInner {
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  background: #FFFFFF;
+.chartCenterLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
+  background: #FFFFFF;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
 }
 
 .scoreNumber {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: #0A0A0A;
   line-height: 1;
 }
 
 .scoreLabel {
-  font-size: 11px;
+  font-size: 8px;
   color: #717182;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 4px;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+
+/* Tooltip styles */
+.chartTooltip {
+  background: #1F2937;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tooltipLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 4px 0;
+}
+
+.tooltipValue {
+  font-size: 11px;
+  color: #D1D5DB;
+  margin: 0;
 }
 
 .statsBreakdown {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .statRow {
-  display: grid;
-  grid-template-columns: 140px 1fr auto;
+  display: flex;
   align-items: center;
   gap: 12px;
 }
@@ -565,6 +586,7 @@
   font-size: 14px;
   font-weight: 500;
   color: #364153;
+  min-width: 150px;
 }
 
 .statDot {
@@ -574,18 +596,19 @@
   flex-shrink: 0;
 }
 
-.statBar {
-  height: 20px;
+.statProgressBar {
+  flex: 1;
+  height: 8px;
   background: #F3F4F6;
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
-  position: relative;
+  min-width: 80px;
 }
 
-.statBarFill {
+.statProgressFill {
   height: 100%;
-  border-radius: 10px;
-  transition: width 0.6s ease-out;
+  border-radius: 4px;
+  transition: width 0.8s ease-out;
 }
 
 .statCount {

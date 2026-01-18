@@ -20,6 +20,7 @@ import {
   Check,
   Clock,
 } from 'lucide-react'
+import { RadialBarChart, RadialBar, ResponsiveContainer, Tooltip } from 'recharts'
 import {
   Document,
   Packer,
@@ -539,99 +540,134 @@ interface SummaryStatsProps {
 
 function SummaryStats({ stats }: SummaryStatsProps) {
   const total = stats.excellent_count + stats.good_count + stats.needs_improvement_count
-  const excellentPercent = total > 0 ? (stats.excellent_count / total) * 100 : 0
-  const goodPercent = total > 0 ? (stats.good_count / total) * 100 : 0
-  const needsImprovementPercent = total > 0 ? (stats.needs_improvement_count / total) * 100 : 0
+
+  // Prepare data for Radial Bar Chart - each bar represents a category
+  // Value is percentage of total for proper scaling
+  const chartData = [
+    {
+      name: 'Needs Improvement',
+      value: total > 0 ? (stats.needs_improvement_count / total) * 100 : 0,
+      count: stats.needs_improvement_count,
+      fill: STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor,
+    },
+    {
+      name: 'Good',
+      value: total > 0 ? (stats.good_count / total) * 100 : 0,
+      count: stats.good_count,
+      fill: STATUS_CONFIG.GOOD.textColor,
+    },
+    {
+      name: 'Excellent',
+      value: total > 0 ? (stats.excellent_count / total) * 100 : 0,
+      count: stats.excellent_count,
+      fill: STATUS_CONFIG.EXCELLENT.textColor,
+    },
+  ]
+
+  // Custom tooltip component
+  const CustomTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean
+    payload?: Array<{ payload: { name: string; count: number; value: number } }>
+  }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload
+      return (
+        <div className={styles.chartTooltip}>
+          <p className={styles.tooltipLabel}>{data.name}</p>
+          <p className={styles.tooltipValue}>
+            {data.count} sections ({Math.round(data.value)}%)
+          </p>
+        </div>
+      )
+    }
+    return null
+  }
 
   return (
     <div className={styles.summaryStatsEnhanced}>
-      {/* Circular Score */}
+      {/* Radial Bar Chart */}
       <div className={styles.overallScore}>
-        <div
-          className={styles.scoreCircle}
-          style={{
-            background: `conic-gradient(
-              ${STATUS_CONFIG.EXCELLENT.textColor} 0deg ${excellentPercent * 3.6}deg,
-              ${STATUS_CONFIG.GOOD.textColor} ${excellentPercent * 3.6}deg ${(excellentPercent + goodPercent) * 3.6}deg,
-              ${STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor} ${(excellentPercent + goodPercent) * 3.6}deg 360deg
-            )`,
-          }}
-        >
-          <div className={styles.scoreInner}>
+        <div className={styles.radialChartContainer}>
+          <ResponsiveContainer width="100%" height="100%">
+            <RadialBarChart
+              cx="50%"
+              cy="50%"
+              innerRadius="30%"
+              outerRadius="100%"
+              barSize={12}
+              data={chartData}
+              startAngle={90}
+              endAngle={-270}
+            >
+              <RadialBar
+                background={{ fill: '#F3F4F6' }}
+                dataKey="value"
+                cornerRadius={6}
+                animationBegin={0}
+                animationDuration={1000}
+                animationEasing="ease-out"
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: 'transparent' }}
+                position={{ x: 10, y: -10 }}
+                wrapperStyle={{ zIndex: 100 }}
+              />
+            </RadialBarChart>
+          </ResponsiveContainer>
+          {/* Center label */}
+          <div className={styles.chartCenterLabel}>
             <span className={styles.scoreNumber}>{total}</span>
-            <span className={styles.scoreLabel}>Sections</span>
+            <span className={styles.scoreLabel}>SECTIONS</span>
           </div>
         </div>
       </div>
 
-      {/* Stats Breakdown */}
+      {/* Stats Breakdown with progress bars */}
       <div className={styles.statsBreakdown}>
-        <div className={styles.statRow}>
-          <div className={styles.statLabel}>
-            <div
-              className={styles.statDot}
-              style={{ background: STATUS_CONFIG.EXCELLENT.textColor }}
-            />
-            <span>Excellent</span>
+        {[
+          {
+            key: 'excellent',
+            label: 'Excellent',
+            count: stats.excellent_count,
+            percent: total > 0 ? (stats.excellent_count / total) * 100 : 0,
+            config: STATUS_CONFIG.EXCELLENT,
+          },
+          {
+            key: 'good',
+            label: 'Good',
+            count: stats.good_count,
+            percent: total > 0 ? (stats.good_count / total) * 100 : 0,
+            config: STATUS_CONFIG.GOOD,
+          },
+          {
+            key: 'needs',
+            label: 'Needs Improvement',
+            count: stats.needs_improvement_count,
+            percent: total > 0 ? (stats.needs_improvement_count / total) * 100 : 0,
+            config: STATUS_CONFIG.NEEDS_IMPROVEMENT,
+          },
+        ].map((item) => (
+          <div key={item.key} className={styles.statRow}>
+            <div className={styles.statLabel}>
+              <div className={styles.statDot} style={{ background: item.config.textColor }} />
+              <span>{item.label}</span>
+            </div>
+            <div className={styles.statProgressBar}>
+              <div
+                className={styles.statProgressFill}
+                style={{
+                  width: `${item.percent}%`,
+                  background: item.config.textColor,
+                }}
+              />
+            </div>
+            <span className={styles.statCount}>{item.count}</span>
           </div>
-          <div className={styles.statBar}>
-            <div
-              className={styles.statBarFill}
-              style={{
-                width: `${excellentPercent}%`,
-                background: STATUS_CONFIG.EXCELLENT.bgColor,
-                borderLeft:
-                  stats.excellent_count > 0
-                    ? `3px solid ${STATUS_CONFIG.EXCELLENT.textColor}`
-                    : 'none',
-              }}
-            />
-          </div>
-          <span className={styles.statCount}>{stats.excellent_count}</span>
-        </div>
-
-        <div className={styles.statRow}>
-          <div className={styles.statLabel}>
-            <div className={styles.statDot} style={{ background: STATUS_CONFIG.GOOD.textColor }} />
-            <span>Good</span>
-          </div>
-          <div className={styles.statBar}>
-            <div
-              className={styles.statBarFill}
-              style={{
-                width: `${goodPercent}%`,
-                background: STATUS_CONFIG.GOOD.bgColor,
-                borderLeft:
-                  stats.good_count > 0 ? `3px solid ${STATUS_CONFIG.GOOD.textColor}` : 'none',
-              }}
-            />
-          </div>
-          <span className={styles.statCount}>{stats.good_count}</span>
-        </div>
-
-        <div className={styles.statRow}>
-          <div className={styles.statLabel}>
-            <div
-              className={styles.statDot}
-              style={{ background: STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor }}
-            />
-            <span>Needs Improvement</span>
-          </div>
-          <div className={styles.statBar}>
-            <div
-              className={styles.statBarFill}
-              style={{
-                width: `${needsImprovementPercent}%`,
-                background: STATUS_CONFIG.NEEDS_IMPROVEMENT.bgColor,
-                borderLeft:
-                  stats.needs_improvement_count > 0
-                    ? `3px solid ${STATUS_CONFIG.NEEDS_IMPROVEMENT.textColor}`
-                    : 'none',
-              }}
-            />
-          </div>
-          <span className={styles.statCount}>{stats.needs_improvement_count}</span>
-        </div>
+        ))}
       </div>
     </div>
   )
