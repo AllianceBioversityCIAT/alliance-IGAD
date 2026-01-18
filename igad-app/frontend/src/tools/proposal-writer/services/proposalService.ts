@@ -851,6 +851,98 @@ class ProposalService {
     return response.data
   }
 
+  // ==================== Proposal Document Generation (Step 4) ====================
+
+  /**
+   * Start proposal document generation (Step 4 - Download with AI feedback)
+   *
+   * Generates a refined proposal document based on:
+   * - AI-generated section feedback from draft analysis
+   * - User comments and guidance per section
+   * - Selected sections to refine
+   *
+   * Prerequisites:
+   * - RFP analysis must be completed (Step 1)
+   * - Draft feedback analysis must be completed (Step 4)
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @param selectedSections - Array of section titles to include in refinement
+   * @param userComments - Optional dict of user comments per section
+   * @returns Status response (processing or error)
+   * @throws Error if prerequisites not met or generation fails to start
+   *
+   * @example
+   * ```typescript
+   * const result = await proposalService.generateProposalDocument(
+   *   'abc-123',
+   *   ['Executive Summary', 'Methodology'],
+   *   { 'Executive Summary': 'Focus on climate resilience' }
+   * )
+   * if (result.status === 'processing') {
+   *   // Poll for completion using getProposalDocumentStatus()
+   * }
+   * ```
+   */
+  async generateProposalDocument(
+    proposalId: string,
+    selectedSections: string[],
+    userComments?: Record<string, string>
+  ): Promise<{
+    status: string
+    message: string
+    started_at?: string
+  }> {
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/generate-proposal-document`,
+      {
+        selected_sections: selectedSections,
+        user_comments: userComments || null,
+      }
+    )
+    return response.data
+  }
+
+  /**
+   * Poll proposal document generation status
+   *
+   * Check the completion status of an ongoing proposal document generation.
+   * Call this repeatedly (with polling) until status is 'completed' or 'failed'.
+   *
+   * @param proposalId - Proposal UUID or code (PROP-YYYYMMDD-XXXX)
+   * @returns Current status, data (if completed), or error (if failed)
+   * @throws Error if unable to check status
+   *
+   * @example
+   * ```typescript
+   * const status = await proposalService.getProposalDocumentStatus('abc-123')
+   * if (status.status === 'completed') {
+   *   const refinedProposal = status.data?.generated_proposal
+   *   // Generate DOCX and trigger download
+   * }
+   * ```
+   */
+  async getProposalDocumentStatus(proposalId: string): Promise<{
+    status: string
+    data?: {
+      generated_proposal: string
+      sections: Record<string, string>
+      metadata: {
+        proposal_code: string
+        sections_refined: number
+        generation_time_seconds: number
+        generated_at: string
+      }
+    }
+    error?: string
+    started_at?: string
+    completed_at?: string
+  }> {
+    const response = await apiClient.get(
+      `/api/proposals/${proposalId}/proposal-document-status`
+    )
+    return response.data
+  }
+
   // Vectorization status operations
   async getVectorizationStatus(proposalId: string): Promise<{
     success: boolean

@@ -37,6 +37,15 @@ from app.tools.proposal_writer.structure_workplan.service import (
     StructureWorkplanService,
 )
 
+# For proposal document generation (Step 4)
+from io import BytesIO
+from docx import Document
+from PyPDF2 import PdfReader
+
+from app.tools.proposal_writer.proposal_document_generation.service import (
+    proposal_document_generator,
+)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -141,6 +150,16 @@ def _set_processing_status(
     elif analysis_type == "vectorize_document":
         # Vectorization status is tracked per-file in vectorization_status map
         pass  # Status is handled in _handle_document_vectorization
+    elif analysis_type == "proposal_document":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="SET proposal_document_status = :status, proposal_document_started_at = :started",
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 def _set_completed_status(
@@ -347,6 +366,32 @@ def _set_completed_status(
                 ":updated": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "proposal_document":
+        # Extract the generated proposal content
+        proposal_content = result.get("generated_proposal", "")
+        sections = result.get("sections", {})
+        metadata = result.get("metadata", {})
+
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET refined_proposal_document = :document,
+                    proposal_document_status = :status,
+                    proposal_document_completed_at = :completed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":document": {
+                    "generated_proposal": proposal_content,
+                    "sections": sections,
+                    "metadata": metadata,
+                },
+                ":status": "completed",
+                ":completed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
 
 
 def _set_failed_status(
@@ -492,6 +537,23 @@ def _set_failed_status(
                 SET proposal_template_status = :status,
                     proposal_template_error = :error,
                     proposal_template_failed_at = :failed,
+                    updated_at = :updated
+            """,
+            expression_attribute_values={
+                ":status": "failed",
+                ":error": error_msg,
+                ":failed": datetime.utcnow().isoformat(),
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
+    elif analysis_type == "proposal_document":
+        db_client.update_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+            update_expression="""
+                SET proposal_document_status = :status,
+                    proposal_document_error = :error,
+                    proposal_document_failed_at = :failed,
                     updated_at = :updated
             """,
             expression_attribute_values={
@@ -905,6 +967,191 @@ def _handle_draft_feedback_analysis(proposal_id: str) -> Dict[str, Any]:
     return result
 
 
+# ==================== PROPOSAL DOCUMENT GENERATION ====================
+
+
+def _handle_proposal_document_generation(
+    proposal_id: str, event: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Execute proposal document generation with AI refinement.
+
+    Generates a refined proposal based on:
+    - Draft proposal content
+    - AI-generated section feedback
+    - User comments and guidance
+    - Selected sections for refinement
+
+    Args:
+        proposal_id: Proposal identifier
+        event: Lambda event containing:
+            - selected_sections: List of section titles to refine
+            - user_comments: Dict of {section_title: comment}
+
+    Returns:
+        Generated refined proposal result
+
+    Raises:
+        Exception: If prerequisites not met or generation fails
+    """
+    logger.info(f"📋 Processing proposal document generation for: {proposal_id}")
+
+    # Retrieve proposal and validate dependencies
+    proposal = db_client.get_item_sync(pk=f"PROPOSAL#{proposal_id}", sk="METADATA")
+
+    if not proposal:
+        raise Exception(f"Proposal {proposal_id} not found")
+
+    # Validate prerequisites
+    rfp_analysis = proposal.get("rfp_analysis")
+    if not rfp_analysis:
+        raise Exception("RFP analysis must be completed first")
+
+    draft_feedback = proposal.get("draft_feedback_analysis")
+    if not draft_feedback:
+        raise Exception("Draft feedback analysis must be completed first")
+
+    # Get section feedback from draft_feedback_analysis
+    section_feedback = draft_feedback.get("section_feedback", [])
+    if not section_feedback:
+        raise Exception("No section feedback found in draft_feedback_analysis")
+
+    # Get selected sections and user comments from event
+    selected_sections = event.get("selected_sections", [])
+    user_comments = event.get("user_comments", {})
+
+    if not selected_sections:
+        raise Exception("At least one section must be selected")
+
+    logger.info("✅ Prerequisites validated")
+    logger.info(f"   Selected sections: {len(selected_sections)}")
+    logger.info(f"   User comments: {len(user_comments)}")
+
+    # Load draft proposal from S3
+    logger.info("📥 Loading draft proposal from S3...")
+    draft_proposal = _load_draft_proposal_from_s3(proposal_id, proposal)
+
+    if not draft_proposal:
+        raise Exception("Failed to load draft proposal from S3")
+
+    logger.info(f"   Draft proposal: {len(draft_proposal)} characters")
+
+    _set_processing_status(proposal_id, "proposal_document")
+
+    logger.info("🔍 Starting proposal document generation...")
+    result = proposal_document_generator.generate_document(
+        proposal_code=proposal_id,
+        draft_proposal=draft_proposal,
+        section_feedback=section_feedback,
+        user_comments=user_comments,
+        selected_sections=selected_sections,
+    )
+
+    logger.info("✅ Proposal document generation completed successfully")
+    logger.info(f"📊 Result keys: {list(result.keys())}")
+
+    _set_completed_status(proposal_id, "proposal_document", result)
+    logger.info("💾 Proposal document result saved to DynamoDB")
+
+    return result
+
+
+def _load_draft_proposal_from_s3(
+    proposal_id: str, proposal: Dict[str, Any]
+) -> Optional[str]:
+    """
+    Load draft proposal content from S3.
+
+    Tries to load from draft_proposal folder in S3.
+    Supports PDF and DOCX files.
+
+    Args:
+        proposal_id: Proposal code
+        proposal: Proposal metadata from DynamoDB
+
+    Returns:
+        Extracted text content or None if not found
+
+    Note:
+        Uses imports from module level:
+        - os, boto3 (already imported in worker.py)
+        - BytesIO from io
+        - Document from docx
+        - PdfReader from PyPDF2
+    """
+    import os
+
+    import boto3
+
+    bucket = os.environ.get("PROPOSALS_BUCKET")
+    if not bucket:
+        logger.error("PROPOSALS_BUCKET not set")
+        return None
+
+    s3_client = boto3.client("s3")
+    draft_folder = f"{proposal_id}/documents/draft_proposal/"
+
+    try:
+        # List files in draft_proposal folder
+        response = s3_client.list_objects_v2(Bucket=bucket, Prefix=draft_folder)
+
+        if "Contents" not in response or len(response["Contents"]) == 0:
+            logger.warning(f"⚠️  No files found in {draft_folder}")
+            return None
+
+        # Find the draft file (PDF, DOCX, or TXT)
+        draft_file = None
+        for obj in response["Contents"]:
+            key = obj["Key"]
+            if key.lower().endswith((".pdf", ".docx", ".doc", ".txt")):
+                draft_file = key
+                break
+
+        if not draft_file:
+            logger.warning("⚠️  No supported document files found in draft_proposal/")
+            return None
+
+        logger.info(f"📄 Found draft file: {draft_file}")
+
+        # Download and extract text
+        obj = s3_client.get_object(Bucket=bucket, Key=draft_file)
+        file_bytes = obj["Body"].read()
+
+        if draft_file.lower().endswith(".pdf"):
+            pdf_file = BytesIO(file_bytes)
+            reader = PdfReader(pdf_file)
+            text = ""
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+            return text.strip()
+
+        elif draft_file.lower().endswith(".docx"):
+            docx_file = BytesIO(file_bytes)
+            document = Document(docx_file)
+            text = ""
+            for paragraph in document.paragraphs:
+                if paragraph.text.strip():
+                    text += paragraph.text + "\n"
+            for table in document.tables:
+                for row in table.rows:
+                    row_text = [cell.text.strip() for cell in row.cells]
+                    text += " | ".join(row_text) + "\n"
+            return text.strip()
+
+        elif draft_file.lower().endswith(".txt"):
+            return file_bytes.decode("utf-8")
+
+        else:
+            logger.error(f"❌ Unsupported file type: {draft_file}")
+            return None
+
+    except Exception as e:
+        logger.error(f"❌ Error loading draft proposal: {str(e)}")
+        return None
+
+
 # ==================== DOCUMENT VECTORIZATION ====================
 
 
@@ -1070,7 +1317,7 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
             if not result:
                 raise Exception(f"Vector storage failed for chunk {idx}")
 
-            logger.info(f"   ✅ Chunk {idx+1}/{total_chunks} vectorized")
+            logger.info(f"   ✅ Chunk {idx + 1}/{total_chunks} vectorized")
 
             # Update progress every 5 chunks or on last chunk
             if (idx + 1) % 5 == 0 or idx == total_chunks - 1:
@@ -1169,6 +1416,7 @@ def _generate_document_with_retry(
             else:
                 logger.error(f"❌ All {max_retries} attempts failed")
                 raise
+
 
 def _handle_concept_document_generation(
     proposal_id: str, event: Dict[str, Any]
@@ -1293,6 +1541,8 @@ def handler(event, context):
             _handle_concept_document_generation(proposal_id, event)
         elif analysis_type == "proposal_template":
             _handle_proposal_template_generation(proposal_id, event)
+        elif analysis_type == "proposal_document":
+            _handle_proposal_document_generation(proposal_id, event)
         elif analysis_type == "vectorize_document":
             _handle_document_vectorization(event)
         else:

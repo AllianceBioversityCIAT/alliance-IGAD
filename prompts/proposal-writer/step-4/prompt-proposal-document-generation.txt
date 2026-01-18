@@ -1,0 +1,48 @@
+Context:
+Modifications are required in step 4 of the proposal writer, affecting both the frontend (path: igad-app/frontend/src/tools/proposal-writer/pages/Step4ProposalReview.tsx) 
+and the backend (path: igad-app/backend/app/tools/proposal_writer). The goal is to add functionality to generate the proposal document, 
+following the same approach used for concept document generation in step 2 (see Frontend: igad-app/frontend/src/tools/proposal-writer/pages/Step2ConceptReview.tsx 
+and Backend: igad-app/backend/app/tools/proposal_writer/concept_document_generation).
+
+Role:
+Please act as an expert in specs-driven development.
+
+Specifications:
+
+1. The generated specification document must be located at: specs/tools/proposal-writer/step-4 in .md format.
+   Write the document with clarity and precision, using language appropriate for Claude Opus 4.5 to interpret it correctly.
+3. In the backend, implement the new component proposal-document-generator in igad-app/backend/app/tools/proposal_writer, using the concept_document_generation implementation as a reference.
+4. The corresponding prompt has the following metadata:
+   - "section": "proposal_writer" (main section)
+   - "sub_section": "step-4" (step identifier)
+   - "category": "Proposal Regeneration"
+   See prompt at: specs/tools/proposal-writer/step-4/prompt-prosal-document.txt
+5. The prompt uses the following required variables, which must be properly integrated into the flow:
+   - {draft_proposal}
+   - {section_feedback}
+   - {user_comments}
+6. It is a priority that only the sections selected by the user in the frontend are considered for document generation. Review the referenced prompt for further details on this point.
+7. Review the worker (igad-app/backend/app/tools/proposal_writer/workflow/worker.py) and determine if its functionality needs to be extended to support the new logic.
+8. In the frontend, implement the new functionality in igad-app/frontend/src/tools/proposal-writer/pages/Step4ProposalReview.tsx, specifically for the “Download with AI feedback” button.
+9. The “Re-analyze” button must be completely removed from the action bar:
+   ```
+   <div class="_actionBar_1fogc_962">
+       <div class="_actionBarLeft_1fogc_973">
+           ...
+           <span class="_actionBarText_1fogc_984">AI Analysis Complete</span>
+       </div>
+       <div class="_actionBarRight_1fogc_990">
+           <button ... class="_reanalyzeButton_1fogc_481">Re-analyze</button>
+           <button ... class="_downloadFeedbackButton_1fogc_285">Download with AI feedback</button>
+       </div>
+   </div>
+   ```
+   Ensure that only the "Download with AI feedback" button remains available.
+10. In the lower part of the interface, where the “Download with AI feedback” button appears again, replicate the behavior of the “Generate Update Concept” functionality from step 2 (see: igad-app/frontend/src/tools/proposal-writer/pages/Step2ConceptReview.tsx). Analyze and adjust the experience to match as closely as possible the experience in step 2.
+
+Required Actions:
+
+- Create the new proposal-document-generator component in the backend and update the worker as well as any other component affected by the change.
+- Make all necessary modifications in the frontend following the guidelines and considerations mentioned above, ensuring that user interaction and experience are aligned with what is implemented in step 2.
+
+If you have any doubt or find any inconsistency, validate it against the base prompt and the step 2 components to ensure functional and user experience coherence.

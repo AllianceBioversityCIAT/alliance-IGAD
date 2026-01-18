@@ -70,6 +70,11 @@ class TemplateGenerationRequest(BaseModel):
     user_comments: Optional[Dict[str, str]] = None  # Dict of {section_title: comment}
 
 
+class ProposalDocumentRequest(BaseModel):
+    selected_sections: List[str]  # List of section titles to include in refinement
+    user_comments: Optional[Dict[str, str]] = None  # Dict of {section_title: comment}
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
@@ -2170,6 +2175,171 @@ async def get_proposal_template_status(
         raise
     except Exception as e:
         print(f"❌ Error getting proposal template status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to check status: {str(e)}")
+
+
+@router.post("/{proposal_id}/generate-proposal-document")
+async def generate_proposal_document(
+    proposal_id: str, request: ProposalDocumentRequest, user=Depends(get_current_user)
+):
+    """
+    Generate refined proposal document based on AI feedback and user comments.
+
+    This endpoint:
+    1. Validates prerequisites (draft_feedback_analysis exists)
+    2. Saves selected_sections and user_comments to DynamoDB
+    3. Sets proposal_document_status to "processing"
+    4. Invokes Worker Lambda asynchronously
+    5. Returns immediately with status
+
+    Frontend should poll /proposal-document-status for completion
+
+    Prerequisites:
+    - RFP analysis must be completed
+    - Draft feedback analysis must be completed
+    - At least one section must be selected
+
+    Request body:
+    - selected_sections: List of section titles to refine
+    - user_comments: Optional dict of user comments per section
+    """
+    try:
+        user_id = user.get("user_id")
+        print(f"🟢 Generate proposal document request for proposal: {proposal_id}")
+
+        # Verify proposal ownership using helper
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        # Validate prerequisites
+        if not proposal.get("rfp_analysis"):
+            raise HTTPException(
+                status_code=400, detail="RFP analysis must be completed first (Step 1)"
+            )
+
+        if not proposal.get("draft_feedback_analysis"):
+            raise HTTPException(
+                status_code=400,
+                detail="Draft feedback analysis must be completed first (Step 4)",
+            )
+
+        # Validate selected sections
+        selected_sections = request.selected_sections
+        if not selected_sections or len(selected_sections) == 0:
+            raise HTTPException(
+                status_code=400, detail="At least one section must be selected"
+            )
+
+        # Security: Validate comment length (max 2000 chars per section)
+        if request.user_comments:
+            for section_title, comment in request.user_comments.items():
+                if len(comment) > 2000:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Comment for '{section_title}' exceeds maximum length of 2000 characters",
+                    )
+
+        print(f"   Selected sections: {len(selected_sections)}")
+        if request.user_comments:
+            print(f"   User comments: {len(request.user_comments)}")
+
+        # Save selection data to DynamoDB for reference
+        await db_client.update_item(
+            pk=pk,
+            sk="METADATA",
+            update_expression="""
+                SET proposal_document_status = :status, 
+                    proposal_document_started_at = :started,
+                    proposal_document_selected_sections = :sections,
+                    proposal_document_user_comments = :comments
+            """,
+            expression_attribute_values={
+                ":status": "processing",
+                ":started": datetime.utcnow().isoformat(),
+                ":sections": selected_sections,
+                ":comments": request.user_comments or {},
+            },
+        )
+
+        # Invoke Worker Lambda asynchronously
+        worker_function = os.getenv("WORKER_FUNCTION_NAME")
+
+        payload = {
+            "analysis_type": "proposal_document",
+            "proposal_id": proposal_code,
+            "user_id": user_id,
+            "selected_sections": selected_sections,
+            "user_comments": request.user_comments or {},
+        }
+
+        print(
+            f"📡 Invoking worker lambda for proposal document generation: {proposal_code}"
+        )
+
+        lambda_client.invoke(
+            FunctionName=worker_function,
+            InvocationType="Event",  # Asynchronous
+            Payload=json.dumps(payload),
+        )
+
+        print(f"✅ Worker lambda invoked successfully for {proposal_code}")
+
+        return {
+            "status": "processing",
+            "message": "Proposal document generation started. Poll /proposal-document-status for updates.",
+            "started_at": datetime.utcnow().isoformat(),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error starting proposal document generation: {str(e)}")
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{proposal_id}/proposal-document-status")
+async def get_proposal_document_status(
+    proposal_id: str, user=Depends(get_current_user)
+):
+    """
+    Poll for proposal document generation completion status.
+
+    Returns:
+    - status: "not_started" | "processing" | "completed" | "failed"
+    - started_at: ISO timestamp when generation started
+    - completed_at: ISO timestamp when generation completed
+    - error: Error message (if failed)
+    - data: Generated proposal document content (if completed)
+    """
+    try:
+        # Verify proposal ownership using helper
+        pk, proposal_code, proposal = await _verify_proposal_access(proposal_id, user)
+
+        status = proposal.get("proposal_document_status", "not_started")
+
+        response = {
+            "status": status,
+            "started_at": proposal.get("proposal_document_started_at"),
+            "completed_at": proposal.get("proposal_document_completed_at"),
+            "error": proposal.get("proposal_document_error"),
+        }
+
+        if status == "completed":
+            refined_doc = proposal.get("refined_proposal_document", {})
+            response["data"] = {
+                "generated_proposal": refined_doc.get("generated_proposal", ""),
+                "sections": refined_doc.get("sections", {}),
+                "metadata": refined_doc.get("metadata", {}),
+            }
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error getting proposal document status: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to check status: {str(e)}")
 
 

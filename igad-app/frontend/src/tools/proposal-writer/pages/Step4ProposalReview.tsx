@@ -389,41 +389,75 @@ function UploadedFileCard({
 }
 
 /**
- * Section Feedback Item - Expandable section showing AI feedback
+ * Section Feedback Item - Expandable section showing AI feedback with selection checkbox
  */
 interface SectionFeedbackItemProps {
   section: SectionFeedback
   isExpanded: boolean
   onToggle: () => void
+  isSelected: boolean
+  onToggleSelection: () => void
+  userComment?: string
+  onCommentChange: (comment: string) => void
 }
 
-function SectionFeedbackItem({ section, isExpanded, onToggle }: SectionFeedbackItemProps) {
+function SectionFeedbackItem({
+  section,
+  isExpanded,
+  onToggle,
+  isSelected,
+  onToggleSelection,
+  userComment,
+  onCommentChange,
+}: SectionFeedbackItemProps) {
   const statusConfig = STATUS_CONFIG[section.status]
   const StatusIcon = statusConfig.icon
 
   return (
     <div className={`${styles.feedbackItem} ${isExpanded ? styles.feedbackItemExpanded : ''}`}>
-      <button type="button" className={styles.feedbackItemHeader} onClick={onToggle}>
-        <div className={styles.feedbackItemLeft}>
-          <StatusIcon
-            size={20}
-            className={styles.statusIcon}
-            style={{ color: statusConfig.textColor }}
-          />
-          <span className={styles.feedbackItemTitle}>{section.title}</span>
-          <span
-            className={styles.statusBadge}
-            style={{
-              backgroundColor: statusConfig.bgColor,
-              borderColor: statusConfig.borderColor,
-              color: statusConfig.textColor,
-            }}
-          >
-            {statusConfig.label}
-          </span>
+      <div className={styles.feedbackItemHeaderRow}>
+        {/* Checkbox for selection */}
+        <div
+          className={`${styles.checkbox} ${isSelected ? styles.checkboxChecked : ''}`}
+          onClick={e => {
+            e.stopPropagation()
+            onToggleSelection()
+          }}
+          role="checkbox"
+          aria-checked={isSelected}
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              onToggleSelection()
+            }
+          }}
+        >
+          {isSelected && <Check size={14} color="white" />}
         </div>
-        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-      </button>
+
+        <button type="button" className={styles.feedbackItemHeader} onClick={onToggle}>
+          <div className={styles.feedbackItemLeft}>
+            <StatusIcon
+              size={20}
+              className={styles.statusIcon}
+              style={{ color: statusConfig.textColor }}
+            />
+            <span className={styles.feedbackItemTitle}>{section.title}</span>
+            <span
+              className={styles.statusBadge}
+              style={{
+                backgroundColor: statusConfig.bgColor,
+                borderColor: statusConfig.borderColor,
+                color: statusConfig.textColor,
+              }}
+            >
+              {statusConfig.label}
+            </span>
+          </div>
+          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </button>
+      </div>
 
       {isExpanded && (
         <div className={styles.feedbackItemContent}>
@@ -446,6 +480,22 @@ function SectionFeedbackItem({ section, isExpanded, onToggle }: SectionFeedbackI
                   <li key={idx}>{suggestion}</li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {/* User Comments Section */}
+          {isSelected && (
+            <div className={styles.commentsSection}>
+              <div className={styles.subsectionIcon}>
+                <Lightbulb size={16} />
+              </div>
+              <textarea
+                className={styles.commentTextarea}
+                placeholder="Add your comments or specific instructions for this section (optional)..."
+                value={userComment || ''}
+                onChange={e => onCommentChange(e.target.value)}
+                maxLength={2000}
+              />
             </div>
           )}
         </div>
@@ -738,6 +788,17 @@ export function Step4ProposalReview({
     steps?: string[]
   } | null>(null)
 
+  // Section selection state for "Download with AI feedback"
+  const [selectedSections, setSelectedSections] = useState<string[]>([])
+  const [userComments, setUserComments] = useState<Record<string, string>>({})
+  const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
+  const [generationProgress, setGenerationProgress] = useState<{
+    step: number
+    total: number
+    message: string
+    description: string
+  } | null>(null)
+
   // Custom steps for draft feedback analysis
   const DRAFT_FEEDBACK_STEPS = useMemo(
     () => ['Step 1: Extracting document content', 'Step 2: Analyzing proposal sections'],
@@ -777,6 +838,17 @@ export function Step4ProposalReview({
       }
     }
   }, [])
+
+  // Initialize selected sections when feedback data changes
+  // Pre-select all sections with "NEEDS_IMPROVEMENT" status
+  useEffect(() => {
+    if (feedbackData.length > 0) {
+      const needsImprovement = feedbackData
+        .filter(section => section.status === 'NEEDS_IMPROVEMENT')
+        .map(section => section.title)
+      setSelectedSections(needsImprovement)
+    }
+  }, [feedbackData])
 
   // Check if there's an analysis in progress on mount (for page refresh resumption)
   useEffect(() => {
@@ -1630,10 +1702,247 @@ export function Step4ProposalReview({
     DRAFT_FEEDBACK_STEPS,
   ])
 
-  const handleDownloadWithFeedback = useCallback(() => {
-    // TODO: Implement download with AI feedback
-    showWarning('Coming Soon', 'Download with AI feedback - Coming soon!')
-  }, [showWarning])
+  /**
+   * Toggle section selection for AI feedback refinement
+   */
+  const handleToggleSection = useCallback((sectionTitle: string) => {
+    setSelectedSections(prev =>
+      prev.includes(sectionTitle)
+        ? prev.filter(s => s !== sectionTitle)
+        : [...prev, sectionTitle]
+    )
+  }, [])
+
+  /**
+   * Handle user comment change for a specific section
+   */
+  const handleCommentChange = useCallback((sectionTitle: string, comment: string) => {
+    setUserComments(prev => ({ ...prev, [sectionTitle]: comment }))
+  }, [])
+
+  /**
+   * Generate DOCX document from markdown content and trigger download
+   */
+  const generateAndDownloadDocx = useCallback(
+    async (markdownContent: string, filename: string) => {
+      const currentDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+
+      // Build document with header and formatted content
+      const documentParagraphs: (Paragraph | Table)[] = []
+
+      // Add title
+      documentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'Refined Proposal Document',
+              bold: true,
+              size: 32,
+              color: '166534',
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        })
+      )
+
+      // Add generation date
+      documentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Generated on ${currentDate}`,
+              italics: true,
+              size: 20,
+              color: '6B7280',
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+        })
+      )
+
+      // Add divider
+      documentParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '─'.repeat(50),
+              color: 'E5E7EB',
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+        })
+      )
+
+      // Add main content
+      const contentParagraphs = markdownToParagraphs(markdownContent)
+      documentParagraphs.push(...contentParagraphs)
+
+      // Create document
+      const doc = new Document({
+        sections: [
+          {
+            properties: {
+              page: {
+                margin: {
+                  top: 1440, // 1 inch
+                  right: 1440,
+                  bottom: 1440,
+                  left: 1440,
+                },
+              },
+            },
+            children: documentParagraphs,
+          },
+        ],
+      })
+
+      // Generate and download
+      const blob = await Packer.toBlob(doc)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    },
+    [markdownToParagraphs]
+  )
+
+  /**
+   * Handle "Download with AI feedback" button click
+   * Triggers proposal document generation with selected sections and user comments
+   */
+  const handleDownloadWithFeedback = useCallback(async () => {
+    if (selectedSections.length === 0) {
+      showError('No Sections Selected', 'Please select at least one section to refine')
+      return
+    }
+
+    if (!proposalId) {
+      showError('Error', 'Proposal ID not available')
+      return
+    }
+
+    setIsGeneratingDocument(true)
+    setGenerationProgress({
+      step: 1,
+      total: 4,
+      message: 'Starting document generation...',
+      description: 'Preparing your refined proposal',
+    })
+
+    try {
+      // Step 1: Start generation
+      setGenerationProgress({
+        step: 1,
+        total: 4,
+        message: 'Initiating AI refinement...',
+        description: 'Sending selected sections and comments to AI',
+      })
+
+      await proposalService.generateProposalDocument(
+        proposalId,
+        selectedSections,
+        userComments
+      )
+
+      // Step 2: Poll for completion
+      setGenerationProgress({
+        step: 2,
+        total: 4,
+        message: 'AI is refining your proposal...',
+        description: 'This may take 2-3 minutes for large proposals',
+      })
+
+      const maxAttempts = 60 // 3 minutes with 3-second intervals
+      let attempts = 0
+      let completed = false
+
+      while (attempts < maxAttempts && !completed) {
+        await new Promise(resolve => setTimeout(resolve, 3000)) // Wait 3 seconds
+
+        const statusResponse = await proposalService.getProposalDocumentStatus(proposalId)
+
+        if (statusResponse.status === 'completed') {
+          completed = true
+
+          // Step 3: Process result
+          setGenerationProgress({
+            step: 3,
+            total: 4,
+            message: 'Processing refined document...',
+            description: 'Preparing document for download',
+          })
+
+          const refinedProposal = statusResponse.data?.generated_proposal
+
+          if (!refinedProposal) {
+            throw new Error('No refined proposal content received')
+          }
+
+          // Step 4: Generate and download DOCX
+          setGenerationProgress({
+            step: 4,
+            total: 4,
+            message: 'Generating DOCX file...',
+            description: 'Your download will begin shortly',
+          })
+
+          const filename = `Refined_Proposal_${proposalId}_${new Date().toISOString().slice(0, 10)}.docx`
+          await generateAndDownloadDocx(refinedProposal, filename)
+
+          showSuccess('Success', 'Refined proposal downloaded successfully!')
+        } else if (statusResponse.status === 'failed') {
+          throw new Error(statusResponse.error || 'Document generation failed')
+        } else {
+          // Still processing, update progress message
+          const elapsedSeconds = attempts * 3
+          const elapsedMinutes = Math.floor(elapsedSeconds / 60)
+          const remainingSeconds = elapsedSeconds % 60
+
+          setGenerationProgress({
+            step: 2,
+            total: 4,
+            message: 'AI is refining your proposal...',
+            description: `Elapsed: ${elapsedMinutes}m ${remainingSeconds}s`,
+          })
+        }
+
+        attempts++
+      }
+
+      if (!completed) {
+        throw new Error('Document generation timed out. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error generating document:', error)
+      showError(
+        'Generation Failed',
+        error instanceof Error
+          ? error.message
+          : 'Failed to generate refined proposal. Please try again.'
+      )
+    } finally {
+      setIsGeneratingDocument(false)
+      setGenerationProgress(null)
+    }
+  }, [
+    selectedSections,
+    userComments,
+    proposalId,
+    generateAndDownloadDocx,
+    showError,
+    showSuccess,
+  ])
 
   // Show skeleton while loading - AFTER all hooks
   if (isLoading) {
@@ -1763,20 +2072,21 @@ export function Step4ProposalReview({
             <div className={styles.actionBarRight}>
               <button
                 type="button"
-                className={styles.reanalyzeButton}
-                onClick={handleReanalyze}
-                disabled={isAnalyzing}
-              >
-                <RefreshCw size={16} className={isAnalyzing ? styles.spinning : ''} />
-                Re-analyze
-              </button>
-              <button
-                type="button"
                 className={styles.downloadFeedbackButton}
                 onClick={handleDownloadWithFeedback}
+                disabled={selectedSections.length === 0 || isGeneratingDocument}
               >
-                <Download size={16} />
-                Download with AI feedback
+                {isGeneratingDocument ? (
+                  <>
+                    <RefreshCw size={16} className={styles.spinning} />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} />
+                    Download with AI feedback
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1797,6 +2107,11 @@ export function Step4ProposalReview({
               )}
             </div>
 
+            {/* Selection counter */}
+            <div className={styles.selectionCount}>
+              <strong>{selectedSections.length}</strong> sections selected for refinement
+            </div>
+
             <div className={styles.feedbackList}>
               {feedbackData.map(section => (
                 <SectionFeedbackItem
@@ -1804,6 +2119,10 @@ export function Step4ProposalReview({
                   section={section}
                   isExpanded={expandedSections.includes(section.id)}
                   onToggle={() => toggleSection(section.id)}
+                  isSelected={selectedSections.includes(section.title)}
+                  onToggleSelection={() => handleToggleSection(section.title)}
+                  userComment={userComments[section.title]}
+                  onCommentChange={comment => handleCommentChange(section.title, comment)}
                 />
               ))}
             </div>
@@ -1818,12 +2137,30 @@ export function Step4ProposalReview({
                 type="button"
                 className={styles.downloadFeedbackButton}
                 onClick={handleDownloadWithFeedback}
+                disabled={selectedSections.length === 0 || isGeneratingDocument}
               >
-                <Download size={16} />
-                Download with AI feedback
+                {isGeneratingDocument ? (
+                  <>
+                    <RefreshCw size={16} className={styles.spinning} />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} />
+                    Download with AI feedback
+                  </>
+                )}
               </button>
             </div>
           </div>
+        )}
+
+        {/* Document Generation Progress Modal */}
+        {isGeneratingDocument && generationProgress && (
+          <AnalysisProgressModal
+            isOpen={isGeneratingDocument}
+            progress={generationProgress}
+          />
         )}
       </div>
     </div>
