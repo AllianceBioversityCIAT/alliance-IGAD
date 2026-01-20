@@ -22,12 +22,16 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal {
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   max-width: 480px;
@@ -55,7 +59,7 @@
   right: 16px;
   background: transparent;
   border: none;
-  color: #6B7280;
+  color: #6b7280;
   cursor: pointer;
   padding: 8px;
   border-radius: 8px;
@@ -67,7 +71,7 @@
 }
 
 .closeButton:hover {
-  background: #F3F4F6;
+  background: #f3f4f6;
   color: #111827;
 }
 
@@ -86,9 +90,9 @@
   justify-content: center;
   width: 56px;
   height: 56px;
-  background: #FEF3C7;
+  background: #fef3c7;
   border-radius: 50%;
-  color: #D97706;
+  color: #d97706;
   margin-bottom: 16px;
 }
 
@@ -98,9 +102,9 @@
   justify-content: center;
   width: 56px;
   height: 56px;
-  background: #EFF6FF;
+  background: #eff6ff;
   border-radius: 50%;
-  color: #2563EB;
+  color: #2563eb;
   margin-bottom: 16px;
 }
 
@@ -110,9 +114,9 @@
   justify-content: center;
   width: 72px;
   height: 72px;
-  background: #DCFCE7;
+  background: #dcfce7;
   border-radius: 50%;
-  color: #16A34A;
+  color: #16a34a;
   margin-bottom: 16px;
 }
 
@@ -122,9 +126,9 @@
   justify-content: center;
   width: 72px;
   height: 72px;
-  background: #FEE2E2;
+  background: #fee2e2;
   border-radius: 50%;
-  color: #DC2626;
+  color: #dc2626;
   margin-bottom: 16px;
 }
 
@@ -134,9 +138,9 @@
   justify-content: center;
   width: 72px;
   height: 72px;
-  background: #EFF6FF;
+  background: #eff6ff;
   border-radius: 50%;
-  color: #2563EB;
+  color: #2563eb;
   margin-bottom: 16px;
 }
 
@@ -149,7 +153,7 @@
 
 .modalSubtitle {
   font-size: 14px;
-  color: #6B7280;
+  color: #6b7280;
   margin: 0;
   line-height: 1.5;
 }
@@ -174,8 +178,8 @@
 }
 
 .warningBox {
-  background: #FEF3C7;
-  border: 1px solid #FDE68A;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 16px;
@@ -184,7 +188,7 @@
 .warningBox h4 {
   font-size: 14px;
   font-weight: 600;
-  color: #92400E;
+  color: #92400e;
   margin: 0 0 12px 0;
 }
 
@@ -196,7 +200,7 @@
 
 .warningBox li {
   font-size: 13px;
-  color: #92400E;
+  color: #92400e;
   line-height: 1.6;
   margin-bottom: 6px;
 }
@@ -207,7 +211,7 @@
 
 .noteText {
   font-size: 13px;
-  color: #6B7280;
+  color: #6b7280;
   line-height: 1.5;
   margin: 0;
   font-style: italic;
@@ -222,7 +226,7 @@
 }
 
 .dropZone {
-  border: 2px dashed #D1D5DB;
+  border: 2px dashed #d1d5db;
   border-radius: 12px;
   padding: 40px 24px;
   display: flex;
@@ -232,22 +236,22 @@
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #FAFAFA;
+  background: #fafafa;
 }
 
 .dropZone:hover {
-  border-color: #2563EB;
-  background: #EFF6FF;
+  border-color: #2563eb;
+  background: #eff6ff;
 }
 
 .dropZoneDragging {
-  border-color: #2563EB;
-  background: #DBEAFE;
+  border-color: #2563eb;
+  background: #dbeafe;
   border-style: solid;
 }
 
 .dropZoneIcon {
-  color: #9CA3AF;
+  color: #9ca3af;
   margin-bottom: 16px;
 }
 
@@ -260,7 +264,7 @@
 
 .dropZoneSubtext {
   font-size: 14px;
-  color: #6B7280;
+  color: #6b7280;
   margin: 0 0 16px 0;
 }
 
@@ -268,7 +272,7 @@
   display: flex;
   gap: 16px;
   font-size: 12px;
-  color: #9CA3AF;
+  color: #9ca3af;
 }
 
 /* ============================================
@@ -280,8 +284,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: #EFF6FF;
-  border: 1px solid #BFDBFE;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   border-radius: 10px;
 }
 
@@ -294,7 +298,7 @@
 }
 
 .fileIcon {
-  color: #2563EB;
+  color: #2563eb;
   flex-shrink: 0;
 }
 
@@ -315,7 +319,7 @@
 
 .fileSize {
   font-size: 12px;
-  color: #6B7280;
+  color: #6b7280;
   margin: 0;
 }
 
@@ -327,7 +331,7 @@
   height: 32px;
   background: transparent;
   border: none;
-  color: #6B7280;
+  color: #6b7280;
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.2s;
@@ -335,8 +339,8 @@
 }
 
 .removeFileButton:hover {
-  background: #DBEAFE;
-  color: #1D4ED8;
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 /* ============================================
@@ -348,27 +352,27 @@
   align-items: flex-start;
   gap: 8px;
   padding: 12px 14px;
-  background: #FEE2E2;
-  border: 1px solid #FECACA;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
   border-radius: 8px;
   margin-top: 16px;
 }
 
 .errorMessage svg {
-  color: #DC2626;
+  color: #dc2626;
   flex-shrink: 0;
   margin-top: 1px;
 }
 
 .errorMessage span {
   font-size: 13px;
-  color: #991B1B;
+  color: #991b1b;
   line-height: 1.4;
 }
 
 .errorDetails {
-  background: #FEE2E2;
-  border: 1px solid #FECACA;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
   border-radius: 8px;
   padding: 14px;
   margin-top: 16px;
@@ -376,7 +380,7 @@
 
 .errorDetails p {
   font-size: 13px;
-  color: #991B1B;
+  color: #991b1b;
   margin: 0;
   line-height: 1.5;
 }
@@ -396,20 +400,20 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: #F9FAFB;
-  border: 1px solid #E5E7EB;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
   transition: all 0.3s ease;
 }
 
 .progressStageActive {
-  background: #EFF6FF;
-  border-color: #BFDBFE;
+  background: #eff6ff;
+  border-color: #bfdbfe;
 }
 
 .progressStageError {
-  background: #FEE2E2;
-  border-color: #FECACA;
+  background: #fee2e2;
+  border-color: #fecaca;
 }
 
 .stageIconWrapper {
@@ -424,20 +428,20 @@
 .stageIconPending {
   width: 12px;
   height: 12px;
-  background: #D1D5DB;
+  background: #d1d5db;
   border-radius: 50%;
 }
 
 .stageIconActive {
-  color: #2563EB;
+  color: #2563eb;
 }
 
 .stageIconComplete {
-  color: #16A34A;
+  color: #16a34a;
 }
 
 .stageIconError {
-  color: #DC2626;
+  color: #dc2626;
 }
 
 .stageLabel {
@@ -447,12 +451,12 @@
 }
 
 .progressStageActive .stageLabel {
-  color: #1E40AF;
+  color: #1e40af;
   font-weight: 500;
 }
 
 .progressStageError .stageLabel {
-  color: #991B1B;
+  color: #991b1b;
 }
 
 /* Spinning animation */
@@ -461,8 +465,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ============================================
@@ -474,7 +482,7 @@
   gap: 12px;
   justify-content: flex-end;
   padding: 16px 32px 32px 32px;
-  border-top: 1px solid #E5E7EB;
+  border-top: 1px solid #e5e7eb;
 }
 
 .cancelButton {
@@ -483,8 +491,8 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #FFFFFF;
-  border: 1px solid #D1D5DB;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -494,8 +502,8 @@
 }
 
 .cancelButton:hover {
-  background: #F9FAFB;
-  border-color: #9CA3AF;
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
 .confirmButton {
@@ -504,18 +512,18 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #DC2626;
+  background: #dc2626;
   border: none;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #FFFFFF;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .confirmButton:hover {
-  background: #B91C1C;
+  background: #b91c1c;
 }
 
 .uploadButton {
@@ -524,22 +532,22 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #2563EB;
+  background: #2563eb;
   border: none;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #FFFFFF;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .uploadButton:hover:not(:disabled) {
-  background: #1D4ED8;
+  background: #1d4ed8;
 }
 
 .uploadButton:disabled {
-  background: #93C5FD;
+  background: #93c5fd;
   cursor: not-allowed;
 }
 
@@ -549,8 +557,8 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #FFFFFF;
-  border: 1px solid #D1D5DB;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -560,8 +568,8 @@
 }
 
 .retryButton:hover {
-  background: #F9FAFB;
-  border-color: #9CA3AF;
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
 /* ============================================

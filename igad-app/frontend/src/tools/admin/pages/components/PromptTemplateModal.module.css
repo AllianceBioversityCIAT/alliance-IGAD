@@ -111,7 +111,7 @@
 }
 
 .copyButton:hover {
-  background: #00A63E;
+  background: #00a63e;
 }
 
 .markdownContent {
@@ -133,9 +133,15 @@
   font-weight: 600;
 }
 
-.markdownContent h1 { font-size: 18px; }
-.markdownContent h2 { font-size: 16px; }
-.markdownContent h3 { font-size: 14px; }
+.markdownContent h1 {
+  font-size: 18px;
+}
+.markdownContent h2 {
+  font-size: 16px;
+}
+.markdownContent h3 {
+  font-size: 14px;
+}
 
 .markdownContent p {
   margin: 8px 0;
@@ -233,19 +239,19 @@
   .overlay {
     padding: 10px;
   }
-  
+
   .modal {
     max-height: 95vh;
   }
-  
+
   .header {
     padding: 16px;
   }
-  
+
   .content {
     padding: 16px;
   }
-  
+
   .promptText {
     font-size: 12px;
     padding: 12px;

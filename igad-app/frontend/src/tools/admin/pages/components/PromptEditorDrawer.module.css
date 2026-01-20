@@ -19,7 +19,9 @@
   width: 600px;
   height: 100vh;
   background: white;
-  box-shadow: -10px 0 25px -5px rgba(0, 0, 0, 0.1), -4px 0 10px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    -10px 0 25px -5px rgba(0, 0, 0, 0.1),
+    -4px 0 10px -2px rgba(0, 0, 0, 0.05);
   z-index: 1001;
   display: flex;
   flex-direction: column;
@@ -50,7 +52,7 @@
 }
 
 .title::before {
-  content: "✨";
+  content: '✨';
   font-size: 18px;
 }
 
@@ -104,14 +106,16 @@
 }
 
 .label::after {
-  content: "*";
+  content: '*';
   color: #ef4444;
   margin-left: 4px;
   font-weight: 500;
 }
 
 /* Modern inputs */
-.input, .select, .textarea {
+.input,
+.select,
+.textarea {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid #e5e7eb;
@@ -123,14 +127,17 @@
   font-family: inherit;
 }
 
-.input:focus, .select:focus, .textarea:focus {
+.input:focus,
+.select:focus,
+.textarea:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   background: #fefefe;
 }
 
-.input::placeholder, .textarea::placeholder {
+.input::placeholder,
+.textarea::placeholder {
   color: #9ca3af;
   font-style: italic;
 }
@@ -278,8 +285,12 @@
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideIn {
@@ -299,8 +310,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive design */
@@ -308,16 +323,17 @@
   .drawer {
     width: 100vw;
   }
-  
+
   .formRow {
     grid-template-columns: 1fr;
   }
-  
+
   .form {
     padding: 24px 20px;
   }
-  
-  .header, .actions {
+
+  .header,
+  .actions {
     padding: 20px;
   }
 }

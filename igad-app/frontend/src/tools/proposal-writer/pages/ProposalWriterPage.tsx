@@ -1105,12 +1105,25 @@ export function ProposalWriterPage() {
   )
 
   // Handle Step 4 refined document change (after generation)
-  const handleStep4RefinedDocumentChange = useCallback(
-    (document: string | null) => {
-      setStep4RefinedDocument(document)
-    },
-    []
-  )
+  const handleStep4RefinedDocumentChange = useCallback((document: string | null) => {
+    setStep4RefinedDocument(document)
+  }, [])
+
+  // Handler for when a new version is uploaded in Step 4
+  const handleStep4NewVersionUploaded = useCallback(() => {
+    // Clear all Step 4 related state
+    setDraftFeedbackAnalysis(null)
+    setStep4SelectedSections(null)
+    setStep4UserComments(null)
+    setStep4RefinedDocument(null)
+
+    // Clear localStorage caches
+    if (proposalId) {
+      localStorage.removeItem(`proposal_draft_feedback_${proposalId}`)
+      localStorage.removeItem(`proposal_step4_sections_${proposalId}`)
+      localStorage.removeItem(`proposal_step4_comments_${proposalId}`)
+    }
+  }, [proposalId])
 
   // Load concept evaluation from DynamoDB when entering Step 2
   useEffect(() => {
@@ -2293,6 +2306,7 @@ export function ProposalWriterPage() {
             onSelectedSectionsChange={handleStep4SelectedSectionsChange}
             onUserCommentsChange={handleStep4UserCommentsChange}
             onRefinedDocumentChange={handleStep4RefinedDocumentChange}
+            onNewVersionUploaded={handleStep4NewVersionUploaded}
             onFeedbackAnalyzed={analysis => {
               // Removed console.log'✅ Draft feedback analysis received:', analysis)
               setDraftFeedbackAnalysis(analysis)

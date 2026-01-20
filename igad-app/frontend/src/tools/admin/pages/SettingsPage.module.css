@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #F0FDF4 0%, #F9FAFB 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #f9fafb 100%);
   padding: 40px;
 }
 
@@ -123,12 +123,12 @@
 }
 
 .navItem:hover {
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   transform: translateX(4px);
 }
 
 .navItem.active {
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
   box-shadow: 0 4px 16px rgba(1, 102, 48, 0.15);
   transform: translateX(8px);
 }
@@ -159,7 +159,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6B7280;
+  color: #6b7280;
   transition: color 0.3s ease;
 }
 
@@ -183,7 +183,7 @@
 .navItemDescription {
   display: block;
   font-size: 14px;
-  color: #6B7280;
+  color: #6b7280;
   line-height: 1.4;
   transition: color 0.3s ease;
 }
@@ -217,7 +217,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #016630 0%, #00A63E 50%, #008236 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 50%, #008236 100%);
 }
 
 .tabContent h3 {
@@ -235,13 +235,13 @@
   left: 0;
   width: 60px;
   height: 3px;
-  background: linear-gradient(90deg, #016630 0%, #00A63E 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 100%);
   border-radius: 2px;
 }
 
 .tabContent p {
   margin: 0;
-  color: #6B7280;
+  color: #6b7280;
   line-height: 1.7;
   font-size: 16px;
 }
@@ -261,7 +261,7 @@
 .settingsCard:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-  border-color: #B9F8CF;
+  border-color: #b9f8cf;
 }
 
 .settingsCard::before {
@@ -271,7 +271,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #016630 0%, #00A63E 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 100%);
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
@@ -290,7 +290,7 @@
 .cardIcon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -306,7 +306,7 @@
 }
 
 .cardDescription {
-  color: #6B7280;
+  color: #6b7280;
   font-size: 14px;
   line-height: 1.5;
   margin: 0;
@@ -324,23 +324,23 @@
 }
 
 .statusIndicator.success {
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
   color: #016630;
 }
 
 .statusIndicator.warning {
-  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
-  color: #92400E;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
 }
 
 .statusIndicator.error {
-  background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
-  color: #DC2626;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #dc2626;
 }
 
 /* Action Buttons */
 .actionButton {
-  background: linear-gradient(135deg, #00A63E 0%, #008236 100%);
+  background: linear-gradient(135deg, #00a63e 0%, #008236 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -363,12 +363,12 @@
 .actionButton.secondary {
   background: white;
   color: #374151;
-  border: 2px solid #E5E7EB;
+  border: 2px solid #e5e7eb;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .actionButton.secondary:hover {
-  border-color: #B9F8CF;
+  border-color: #b9f8cf;
   color: #016630;
   box-shadow: 0 4px 16px rgba(1, 102, 48, 0.1);
 }
@@ -378,11 +378,11 @@
   .container {
     padding: 32px 24px;
   }
-  
+
   .header {
     padding: 28px 32px;
   }
-  
+
   .sidebar {
     width: 280px;
   }
@@ -392,28 +392,28 @@
   .container {
     padding: 24px 16px;
   }
-  
+
   .header {
     padding: 24px;
     border-radius: 16px;
   }
-  
+
   .content {
     flex-direction: column;
     padding: 0;
   }
-  
+
   .sidebar {
     width: 100%;
     position: static;
   }
-  
+
   .nav {
     flex-direction: row;
     overflow-x: auto;
     padding: 8px 16px;
   }
-  
+
   .navItem {
     min-width: 200px;
     flex-shrink: 0;
@@ -424,31 +424,31 @@
   .container {
     padding: 16px 12px;
   }
-  
+
   .header {
     padding: 20px;
     border-radius: 12px;
   }
-  
+
   .titleSection {
     flex-direction: column;
     text-align: center;
     gap: 16px;
   }
-  
+
   .title {
     font-size: 24px;
   }
-  
+
   .subtitle {
     font-size: 16px;
   }
-  
+
   .tabContent {
     padding: 24px;
     border-radius: 16px;
   }
-  
+
   .settingsCard {
     padding: 20px;
     border-radius: 16px;

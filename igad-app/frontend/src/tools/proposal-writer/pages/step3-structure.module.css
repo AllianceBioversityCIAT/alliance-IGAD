@@ -8,7 +8,7 @@
   flex: 1;
   padding: 32px 40px;
   overflow-y: auto;
-  background: #FFFFFF;
+  background: #ffffff;
 }
 
 .stepHeader {
@@ -48,15 +48,15 @@
 }
 
 .stepPhaseBadgeConcept {
-  background: #EFF6FF;
-  color: #1E40AF;
-  border: 1px solid #DBEAFE;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
 }
 
 .stepPhaseBadgeProposal {
-  background: #F0FDF4;
-  color: #15803D;
-  border: 1px solid #D1FAE5;
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #d1fae5;
 }
 
 /* ========================================
@@ -72,8 +72,8 @@
 }
 
 .card {
-  background: #FFFFFF;
-  border: 1px solid #E6E6E6;
+  background: #ffffff;
+  border: 1px solid #e6e6e6;
   border-radius: 14px;
   padding: 24px;
   display: flex;
@@ -89,8 +89,8 @@
 }
 
 .sectionsCard {
-  background: #FFFFFF;
-  border: 1px solid #E6E6E6;
+  background: #ffffff;
+  border: 1px solid #e6e6e6;
   border-radius: 14px;
   padding: 24px 0px 24px 24px;
   overflow: hidden;
@@ -124,7 +124,7 @@
   font-size: 18px;
   font-weight: 600;
   line-height: 28px;
-  color: #0A0A0A;
+  color: #0a0a0a;
   margin: 0 0 4px 0;
 }
 
@@ -172,8 +172,8 @@
    ======================================== */
 
 .sectionItem {
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 14px;
   overflow: hidden;
   transition: box-shadow 0.2s;
@@ -188,7 +188,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: #FAFEFC;
+  background: #fafefc;
   gap: 16px;
   flex-wrap: nowrap;
 }
@@ -214,7 +214,7 @@
   font-size: 16px;
   font-weight: 600;
   line-height: 24px;
-  color: #0A0A0A;
+  color: #0a0a0a;
   margin: 0;
   flex-shrink: 0;
 }
@@ -226,7 +226,7 @@
 .checkbox {
   width: 21px;
   height: 21px;
-  border: 1.91px solid #B5B5B5;
+  border: 1.91px solid #b5b5b5;
   border-radius: 5.73px;
   display: flex;
   align-items: center;
@@ -237,12 +237,12 @@
 }
 
 .checkbox:hover {
-  border-color: #22C55E;
+  border-color: #22c55e;
 }
 
 .checkboxChecked {
-  background: #22C55E;
-  border-color: #BFFEC5;
+  background: #22c55e;
+  border-color: #bffec5;
 }
 
 /* ========================================
@@ -266,8 +266,8 @@
 }
 
 .expandButton:hover {
-  background: #F3F4F6;
-  color: #0A0A0A;
+  background: #f3f4f6;
+  color: #0a0a0a;
 }
 
 /* ========================================
@@ -276,7 +276,7 @@
 
 .sectionItemContent {
   padding: 21px 20px;
-  background: #F9FAFB;
+  background: #f9fafb;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
@@ -294,7 +294,7 @@
 }
 
 .subsectionIcon {
-  color: #6B7280;
+  color: #6b7280;
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -365,8 +365,8 @@
   gap: 8px;
   width: 100%;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #9810FA 0%, #7C0DD1 100%);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #9810fa 0%, #7c0dd1 100%);
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -377,7 +377,7 @@
 }
 
 .generateButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #7C0DD1 0%, #6609B0 100%);
+  background: linear-gradient(135deg, #7c0dd1 0%, #6609b0 100%);
   box-shadow: 0 4px 12px rgba(152, 16, 250, 0.4);
   transform: translateY(-1px);
 }
@@ -388,8 +388,8 @@
 }
 
 .generateButton:disabled {
-  background: #E5E7EB;
-  color: #9CA3AF;
+  background: #e5e7eb;
+  color: #9ca3af;
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -399,7 +399,7 @@
    ======================================== */
 
 .narrativeContent {
-  background: #F9FAFB;
+  background: #f9fafb;
   border-radius: 10px;
   padding: 20px 24px;
   display: flex;
@@ -427,10 +427,10 @@
 .narrativeSubheading {
   font-size: 16px;
   font-weight: 600;
-  color: #1F2937;
+  color: #1f2937;
   margin: 16px 0 8px 0;
   padding-bottom: 4px;
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .narrativeSubheading:first-child {
@@ -455,11 +455,11 @@
 .narrativeParagraph em,
 .narrativeBullet em {
   font-style: italic;
-  color: #4B5563;
+  color: #4b5563;
 }
 
 .narrativePreview {
-  background: #F9FAFB;
+  background: #f9fafb;
   border-radius: 10px;
   padding: 20px 24px;
   position: relative;
@@ -473,7 +473,7 @@
   left: 0;
   right: 0;
   height: 60px;
-  background: linear-gradient(to bottom, transparent, #F9FAFB);
+  background: linear-gradient(to bottom, transparent, #f9fafb);
   border-radius: 0 0 10px 10px;
   pointer-events: none;
 }
@@ -487,17 +487,17 @@
 }
 
 .sectionsList::-webkit-scrollbar-track {
-  background: #F3F4F6;
+  background: #f3f4f6;
   border-radius: 4px;
 }
 
 .sectionsList::-webkit-scrollbar-thumb {
-  background: #D1D5DB;
+  background: #d1d5db;
   border-radius: 4px;
 }
 
 .sectionsList::-webkit-scrollbar-thumb:hover {
-  background: #9CA3AF;
+  background: #9ca3af;
 }
 
 /* ========================================
@@ -598,8 +598,8 @@
   display: flex;
   gap: 20px;
   padding: 24px;
-  background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
-  border: 1px solid #DDD6FE;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border: 1px solid #ddd6fe;
   border-radius: 12px;
   animation: fadeIn 0.3s ease-in-out;
 }
@@ -611,12 +611,12 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #9810FA 0%, #7C0DD1 100%);
+  background: linear-gradient(135deg, #9810fa 0%, #7c0dd1 100%);
   border-radius: 12px;
 }
 
 .spinnerIcon {
-  color: #FFFFFF;
+  color: #ffffff;
   animation: spin 1s linear infinite;
 }
 
@@ -636,14 +636,14 @@
 .generatingTitle {
   font-size: 16px;
   font-weight: 600;
-  color: #5B21B6;
+  color: #5b21b6;
   margin: 0 0 8px 0;
 }
 
 .generatingText {
   font-size: 14px;
   line-height: 1.6;
-  color: #6D28D9;
+  color: #6d28d9;
   margin: 0 0 16px 0;
 }
 
@@ -658,13 +658,13 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #7C3AED;
+  color: #7c3aed;
 }
 
 .stepDot {
   width: 6px;
   height: 6px;
-  background: #7C3AED;
+  background: #7c3aed;
   border-radius: 50%;
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -678,7 +678,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.4;
     transform: scale(1);
   }
@@ -694,15 +695,15 @@
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-  background: #FEF2F2;
-  border: 1px solid #FECACA;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
   border-radius: 12px;
   animation: fadeIn 0.3s ease-in-out;
 }
 
 .errorText {
   font-size: 14px;
-  color: #DC2626;
+  color: #dc2626;
   margin: 0;
 }
 
@@ -712,8 +713,8 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #DC2626;
-  color: #FFFFFF;
+  background: #dc2626;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -724,7 +725,7 @@
 }
 
 .retryButton:hover {
-  background: #B91C1C;
+  background: #b91c1c;
 }
 
 /* Success State */
@@ -733,8 +734,8 @@
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-  background: #F0FDF4;
-  border: 1px solid #BBF7D0;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
   border-radius: 12px;
   animation: fadeIn 0.3s ease-in-out;
 }
@@ -749,12 +750,12 @@
 }
 
 .successIcon {
-  color: #22C55E;
+  color: #22c55e;
 }
 
 .generatedPreview {
-  background: #FFFFFF;
-  border: 1px solid #D1FAE5;
+  background: #ffffff;
+  border: 1px solid #d1fae5;
   border-radius: 8px;
   max-height: 200px;
   overflow: hidden;
@@ -768,7 +769,7 @@
   left: 0;
   right: 0;
   height: 60px;
-  background: linear-gradient(to bottom, transparent, #FFFFFF);
+  background: linear-gradient(to bottom, transparent, #ffffff);
   pointer-events: none;
 }
 
@@ -793,7 +794,7 @@
   gap: 8px;
   padding: 10px 20px;
   background: #166534;
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -803,7 +804,7 @@
 }
 
 .downloadButton:hover {
-  background: #15803D;
+  background: #15803d;
 }
 
 .regenerateButton {
@@ -812,8 +813,8 @@
   gap: 8px;
   padding: 10px 20px;
   background: transparent;
-  color: #6D28D9;
-  border: 1px solid #DDD6FE;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -822,8 +823,8 @@
 }
 
 .regenerateButton:hover {
-  background: #F5F3FF;
-  border-color: #C4B5FD;
+  background: #f5f3ff;
+  border-color: #c4b5fd;
 }
 
 /* Sections Changed State */
@@ -832,8 +833,8 @@
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-  background: #FFFBEB;
-  border: 1px solid #FDE68A;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
   border-radius: 12px;
   animation: fadeIn 0.3s ease-in-out;
 }
@@ -844,17 +845,17 @@
   gap: 8px;
   font-size: 15px;
   font-weight: 600;
-  color: #92400E;
+  color: #92400e;
 }
 
 .warningIcon {
-  color: #F59E0B;
+  color: #f59e0b;
 }
 
 .warningText {
   font-size: 14px;
   line-height: 1.6;
-  color: #78350F;
+  color: #78350f;
   margin: 0;
 }
 
@@ -863,15 +864,15 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #92400E;
+  color: #92400e;
   padding-top: 8px;
-  border-top: 1px solid #FDE68A;
+  border-top: 1px solid #fde68a;
 }
 
 .linkButton {
   background: none;
   border: none;
-  color: #D97706;
+  color: #d97706;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -880,7 +881,7 @@
 }
 
 .linkButton:hover {
-  color: #B45309;
+  color: #b45309;
 }
 
 /* Responsive for generation states */

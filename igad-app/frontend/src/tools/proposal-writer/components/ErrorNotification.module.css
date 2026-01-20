@@ -15,7 +15,7 @@
 }
 
 .notification {
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 16px;
   padding: 32px;
   max-width: 450px;
@@ -44,7 +44,7 @@
 
 .closeButton:hover {
   background: #f3f4f6;
-  color: #0A0A0A;
+  color: #0a0a0a;
 }
 
 .iconWrapper {
@@ -54,14 +54,14 @@
 }
 
 .icon {
-  color: #DC2626;
+  color: #dc2626;
   animation: shake 0.5s ease-out;
 }
 
 .title {
   font-size: 20px;
   font-weight: 600;
-  color: #0A0A0A;
+  color: #0a0a0a;
   margin: 0 0 8px 0;
   line-height: 28px;
 }
@@ -74,8 +74,8 @@
 }
 
 .errorBox {
-  background: #FEF2F2;
-  border: 1px solid #FEE2E2;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
   border-radius: 8px;
   padding: 12px 16px;
   margin: 0 0 24px 0;
@@ -85,7 +85,7 @@
 .errorLabel {
   font-size: 12px;
   font-weight: 600;
-  color: #991B1B;
+  color: #991b1b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0 0 6px 0;
@@ -93,7 +93,7 @@
 
 .errorText {
   font-size: 13px;
-  color: #DC2626;
+  color: #dc2626;
   margin: 0;
   line-height: 18px;
   font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
@@ -101,8 +101,8 @@
 }
 
 .button {
-  background: #DC2626;
-  color: #FFFFFF;
+  background: #dc2626;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   padding: 12px 24px;
@@ -114,7 +114,7 @@
 }
 
 .button:hover {
-  background: #B91C1C;
+  background: #b91c1c;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
 }
@@ -145,13 +145,21 @@
 }
 
 @keyframes shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-5px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(5px);
   }
 }

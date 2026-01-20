@@ -8,16 +8,16 @@
   /* IGAD Brand Colors - Exact Figma specifications */
   --igad-primary: #016630;
   --igad-secondary: #008236;
-  --igad-button-green: #00A63E;
-  --igad-light-green: #DCFCE7;
-  --igad-border-green: #B9F8CF;
-  
+  --igad-button-green: #00a63e;
+  --igad-light-green: #dcfce7;
+  --igad-border-green: #b9f8cf;
+
   /* Exact colors from mockups */
   --primary-blue: #2563eb;
   --primary-blue-hover: #1d4ed8;
   --primary-blue-light: #eff6ff;
   --primary-blue-50: #dbeafe;
-  
+
   --primary-green: #10b981;
   --primary-amber: #f59e0b;
   --error: #ef4444;
@@ -43,10 +43,11 @@
   --text-primary: #111827;
   --text-secondary: #6b7280;
   --text-tertiary: #374151;
-  
+
   /* Typography - Standardized fonts */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   --font-mono: 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
 }
 
@@ -54,9 +55,19 @@
 body {
   margin: 0;
   padding: 0;
-  background: #FFFFFF;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  background: #ffffff;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -64,11 +75,11 @@ body {
 
 .app-layout {
   min-height: 100vh;
-  background: #FFFFFF;
+  background: #ffffff;
 }
 
 .main-content {
-  background: #FFFFFF;
+  background: #ffffff;
   min-height: calc(100vh - 64px);
 }
 
@@ -121,7 +132,7 @@ body {
 
 .login-subtitle {
   font-size: 1rem;
-  color: #4A5565;
+  color: #4a5565;
   line-height: 1.5;
 }
 
@@ -194,7 +205,7 @@ body {
   margin-right: 8px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 3px;
-  background: #F3F3F5;
+  background: #f3f3f5;
 }
 
 .checkbox-label {
@@ -264,7 +275,7 @@ body {
 /* Support Text */
 .support-text {
   font-size: 0.875rem;
-  color: #4A5565;
+  color: #4a5565;
   text-align: center;
 }
 
@@ -287,7 +298,12 @@ body {
 .login-background-image {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(220, 252, 231, 0.22) 0%, rgba(0, 255, 135, 0.19) 50%, rgba(0, 166, 62, 0.4) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(220, 252, 231, 0.22) 0%,
+    rgba(0, 255, 135, 0.19) 50%,
+    rgba(0, 166, 62, 0.4) 100%
+  );
   background-size: cover;
   background-position: center;
   position: relative;
@@ -314,8 +330,8 @@ body {
 /* Left Sidebar - Exact Figma Specifications */
 .proposal-sidebar {
   width: 280px;
-  background: #EDFDF5; /* Light green background from Figma */
-  border-right: 1px solid #E8EBED;
+  background: #edfdf5; /* Light green background from Figma */
+  border-right: 1px solid #e8ebed;
   padding: 2rem 1.5rem;
   flex-shrink: 0;
 }
@@ -327,7 +343,7 @@ body {
 .proposal-title {
   font-size: 20.76px; /* Exact from Figma */
   font-weight: 400;
-  color: #0A0A0A;
+  color: #0a0a0a;
   margin: 0;
   line-height: 25px;
 }
@@ -341,7 +357,7 @@ body {
 
 .progress-label {
   font-size: 16px;
-  color: #0A0A0A;
+  color: #0a0a0a;
   margin-bottom: 0.5rem;
   font-weight: 400;
 }
@@ -400,15 +416,15 @@ body {
   top: 40px;
   width: 2px;
   height: 64px;
-  background: #D1D5DC;
+  background: #d1d5dc;
 }
 
 .step-number {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #E5E7EB;
-  color: #6A7282;
+  background: #e5e7eb;
+  color: #6a7282;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -419,13 +435,13 @@ body {
 
 .step-item.active .step-number {
   background: #166534;
-  color: #FFFFFF;
-  box-shadow: 0px 0px 0px 4px #DCFCE7;
+  color: #ffffff;
+  box-shadow: 0px 0px 0px 4px #dcfce7;
 }
 
 .step-title {
   font-size: 14px; /* Smaller size for step titles */
-  color: #6A7282;
+  color: #6a7282;
   font-weight: 400;
   line-height: 20px;
   margin-top: 8px;
@@ -452,7 +468,7 @@ body {
   align-items: center;
   margin-bottom: 2rem;
   padding: 1rem 0;
-  border-bottom: 1px solid #E8EBED;
+  border-bottom: 1px solid #e8ebed;
 }
 
 .breadcrumb {
@@ -460,7 +476,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   font-size: 20.76px; /* Match Figma */
-  color: #0A0A0A;
+  color: #0a0a0a;
   font-weight: 400;
 }
 
@@ -474,7 +490,7 @@ body {
 }
 
 .prompt-manager-btn {
-  background: #00A63E;
+  background: #00a63e;
   color: white;
   border: none;
   border-radius: 7.33px; /* Exact from Figma */
@@ -497,7 +513,7 @@ body {
 .step-title {
   font-size: 24px; /* Exact from Figma */
   font-weight: 400;
-  color: #0A0A0A;
+  color: #0a0a0a;
   margin-bottom: 0.5rem;
   line-height: 32px;
 }
@@ -522,8 +538,8 @@ body {
 
 /* Information Progress */
 .information-progress {
-  background: #EFF6FF; /* Exact from Figma */
-  border: 1px solid #BEDBFF; /* Exact from Figma */
+  background: #eff6ff; /* Exact from Figma */
+  border: 1px solid #bedbff; /* Exact from Figma */
   border-radius: 14px; /* Exact from Figma */
   padding: 24px; /* Exact from Figma */
   margin-bottom: 2rem;
@@ -539,14 +555,14 @@ body {
 .progress-title {
   font-size: 18px; /* Exact from Figma */
   font-weight: 400;
-  color: #193CB8; /* Exact from Figma */
+  color: #193cb8; /* Exact from Figma */
   margin: 0;
   line-height: 28px;
 }
 
 .progress-counter {
   font-size: 24px; /* Exact from Figma */
-  color: #193CB8; /* Exact from Figma */
+  color: #193cb8; /* Exact from Figma */
   font-weight: 400;
   line-height: 32px;
 }
@@ -554,14 +570,14 @@ body {
 .progress-bar-main {
   width: 100%;
   height: 8px; /* Exact from Figma */
-  background: #BEDBFF; /* Exact from Figma */
+  background: #bedbff; /* Exact from Figma */
   border-radius: 50px;
   overflow: hidden;
 }
 
 .progress-fill-main {
   height: 100%;
-  background: #155DFC; /* Exact from Figma */
+  background: #155dfc; /* Exact from Figma */
   transition: width 0.3s ease;
   width: 0%; /* Start at 0 */
 }
@@ -578,7 +594,7 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.1); /* Exact from Figma */
   border-radius: 14px; /* Exact from Figma */
   padding: 24px 0px 24px 24px; /* Exact from Figma */
-  background: #FFFFFF;
+  background: #ffffff;
 }
 
 .section-header {
@@ -604,7 +620,7 @@ body {
 .section-title {
   font-size: 18px; /* Exact from Figma */
   font-weight: 400;
-  color: #0A0A0A;
+  color: #0a0a0a;
   margin: 0 0 8px 0; /* Exact from Figma */
   line-height: 28px;
 }
@@ -618,11 +634,11 @@ body {
 
 /* Upload Areas */
 .upload-area {
-  border: 2px solid #D1D5DC; /* Exact from Figma */
+  border: 2px solid #d1d5dc; /* Exact from Figma */
   border-radius: 10px; /* Exact from Figma */
   padding: 34px; /* Exact from Figma */
   text-align: center;
-  background: #FFFFFF;
+  background: #ffffff;
   margin-bottom: 1rem;
   height: 240px; /* Exact from Figma */
   display: flex;
@@ -637,7 +653,7 @@ body {
   border-radius: 10px;
   padding: 17px; /* Exact from Figma */
   text-align: center;
-  background: #FFFFFF;
+  background: #ffffff;
   height: 126px; /* Exact from Figma */
   display: flex;
   flex-direction: column;
@@ -649,7 +665,7 @@ body {
 .upload-icon {
   font-size: 48px; /* Larger for main upload areas */
   margin-bottom: 0.5rem;
-  color: #99A1AF; /* Exact from Figma */
+  color: #99a1af; /* Exact from Figma */
 }
 
 .upload-area-small .upload-icon {
@@ -658,7 +674,7 @@ body {
 
 .upload-text {
   font-size: 18px; /* Exact from Figma for main areas */
-  color: #0A0A0A;
+  color: #0a0a0a;
   margin: 0;
   line-height: 28px;
 }
@@ -691,14 +707,14 @@ body {
 }
 
 .choose-files-btn {
-  background: #FFFFFF; /* White for "Choose Files" */
-  color: #0A0A0A;
+  background: #ffffff; /* White for "Choose Files" */
+  color: #0a0a0a;
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .add-files-btn {
-  background: #FFFFFF; /* White for "Add Files" */
-  color: #0A0A0A;
+  background: #ffffff; /* White for "Add Files" */
+  color: #0a0a0a;
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
@@ -799,8 +815,8 @@ body {
 
 /* Next Steps */
 .next-steps {
-  background: #F0FDF4; /* Exact from Figma */
-  border: 1px solid #B9F8CF; /* Exact from Figma */
+  background: #f0fdf4; /* Exact from Figma */
+  border: 1px solid #b9f8cf; /* Exact from Figma */
   border-radius: 14px; /* Exact from Figma */
   padding: 24px; /* Exact from Figma */
   margin-bottom: 2rem;
@@ -851,7 +867,7 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 24px; /* Exact from Figma */
-  background: #FFFFFF;
+  background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.1); /* Exact from Figma */
   border-radius: 14px; /* Exact from Figma */
 }
@@ -872,8 +888,8 @@ body {
 }
 
 .btn-previous {
-  background: #FFFFFF;
-  color: #0A0A0A;
+  background: #ffffff;
+  color: #0a0a0a;
   border: 1px solid rgba(0, 0, 0, 0.1); /* Exact from Figma */
   padding: 0 13px; /* Exact from Figma */
   opacity: 0.5; /* Exact from Figma for disabled state */
@@ -889,8 +905,8 @@ body {
 }
 
 .btn-next {
-  background: #155DFC; /* Exact from Figma */
-  color: #FFFFFF;
+  background: #155dfc; /* Exact from Figma */
+  color: #ffffff;
   border: none;
   padding: 0 12px; /* Exact from Figma */
 }
@@ -904,17 +920,17 @@ body {
   .proposal-writer-page {
     flex-direction: column;
   }
-  
+
   .proposal-sidebar {
     width: 100%;
     padding: 1rem;
   }
-  
+
   .steps-navigation {
     flex-direction: row;
     overflow-x: auto;
   }
-  
+
   .step-item {
     flex-shrink: 0;
   }
@@ -936,19 +952,19 @@ body {
   align-items: flex-start;
   padding: 48px 80px;
   border-bottom: 1px solid var(--igad-light-green);
-  background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
 }
 
 .tool-card {
   position: relative;
   padding: 32px;
   border-radius: 16px;
-  background: #FFFFFF;
+  background: #ffffff;
   border: 2px solid var(--igad-border-green);
 }
 
 .tool-card.coming-soon {
-  border: 2px solid #E5E7EB;
+  border: 2px solid #e5e7eb;
   opacity: 0.75;
 }
 
@@ -1117,7 +1133,7 @@ body {
   .dashboard-container {
     padding: 24px 16px;
   }
-  
+
   .hero-section {
     padding: 24px 40px;
     height: auto;
@@ -1130,7 +1146,7 @@ body {
     margin: 16px;
     padding: 32px 24px;
   }
-  
+
   .hero-section {
     padding: 24px 20px;
   }

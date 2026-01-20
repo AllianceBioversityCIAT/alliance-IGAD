@@ -118,7 +118,8 @@
   justify-content: flex-end;
 }
 
-.confirmButton, .cancelButton {
+.confirmButton,
+.cancelButton {
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 500;
@@ -184,12 +185,13 @@
   .modal {
     margin: 10px;
   }
-  
+
   .actions {
     flex-direction: column;
   }
-  
-  .confirmButton, .cancelButton {
+
+  .confirmButton,
+  .cancelButton {
     width: 100%;
   }
 }

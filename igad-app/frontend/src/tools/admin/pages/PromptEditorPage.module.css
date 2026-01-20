@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #F0FDF4 0%, #F9FAFB 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #f9fafb 100%);
   padding: 40px;
 }
 
@@ -168,7 +168,7 @@
 }
 
 .saveButton:hover:not(:disabled) {
-  background: #F9FAFB;
+  background: #f9fafb;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -192,14 +192,14 @@
 
 .editorWrapper {
   gap: 20px;
-  background: #F9FAFB;
+  background: #f9fafb;
   padding: 20px 40px;
   width: 100%;
 }
 
 .editorSection {
   flex: 1;
-  background: #FFFFFF;
+  background: #ffffff;
   padding: 32px;
   overflow-y: auto;
   border-radius: 12px;
@@ -209,7 +209,7 @@
 .previewSection {
   width: 420px;
   max-width: 420px;
-  background: #FFFFFF;
+  background: #ffffff;
   padding: 32px;
   overflow-y: auto;
   border-radius: 12px;
@@ -227,10 +227,10 @@
   gap: 10px;
   font-size: 18px;
   font-weight: 700;
-  color: #1F2937;
+  color: #1f2937;
   margin: 0;
   padding-bottom: 8px;
-  border-bottom: 2px solid #DCFCE7;
+  border-bottom: 2px solid #dcfce7;
   position: relative;
 }
 
@@ -260,25 +260,27 @@
   margin-bottom: 8px;
 }
 
-.input, .select {
+.input,
+.select {
   padding: 12px 16px;
-  border: 1px solid #D1D5DB;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 14px;
   color: #111827;
-  background: #FFFFFF;
+  background: #ffffff;
   transition: all 0.2s ease;
 }
 
-.input:focus, .select:focus {
+.input:focus,
+.select:focus {
   outline: none;
-  border-color: #2563EB;
+  border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .textarea {
   padding: 16px;
-  border: 1px solid #D1D5DB;
+  border: 1px solid #d1d5db;
   border-radius: 12px;
   font-size: 14px;
   font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
@@ -286,23 +288,23 @@
   resize: vertical;
   min-height: 140px;
   color: #111827;
-  background: #FFFFFF;
+  background: #ffffff;
   transition: all 0.2s ease;
 }
 
 .textarea:focus {
   outline: none;
-  border-color: #2563EB;
+  border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .textarea::placeholder {
-  color: #9CA3AF;
+  color: #9ca3af;
 }
 
 .textareaLarge {
   padding: 20px;
-  border: 1px solid #D1D5DB;
+  border: 1px solid #d1d5db;
   border-radius: 12px;
   font-size: 14px;
   font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
@@ -311,18 +313,18 @@
   min-height: 200px;
   width: 100%;
   color: #111827;
-  background: #FFFFFF;
+  background: #ffffff;
   transition: all 0.2s ease;
 }
 
 .textareaLarge:focus {
   outline: none;
-  border-color: #2563EB;
+  border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .textareaLarge::placeholder {
-  color: #9CA3AF;
+  color: #9ca3af;
   line-height: 1.5;
 }
 
@@ -332,14 +334,14 @@
   flex-wrap: wrap;
   gap: 8px;
   padding: 16px;
-  background: #F0FDF4;
-  border: 1px solid #B9F8CF;
+  background: #f0fdf4;
+  border: 1px solid #b9f8cf;
   border-radius: 12px;
 }
 
 .variable {
   background: #016630;
-  color: #FFFFFF;
+  color: #ffffff;
   padding: 6px 12px;
   border-radius: 6px;
   font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
@@ -356,8 +358,8 @@
 }
 
 .previewBlock {
-  background: #F9FAFB;
-  border: 1px solid #E5E7EB;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -374,8 +376,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px 12px 20px;
-  background: #F0FDF4;
-  border-bottom: 1px solid #DCFCE7;
+  background: #f0fdf4;
+  border-bottom: 1px solid #dcfce7;
 }
 
 .copyButton {
@@ -392,11 +394,11 @@
 }
 
 .copyButton:hover {
-  background: #00A63E;
+  background: #00a63e;
 }
 
 .markdownContent {
-  background: #FFFFFF;
+  background: #ffffff;
   padding: 20px;
   font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 13px;
@@ -417,9 +419,15 @@
   font-weight: 600;
 }
 
-.markdownContent h1 { font-size: 18px; }
-.markdownContent h2 { font-size: 16px; }
-.markdownContent h3 { font-size: 14px; }
+.markdownContent h1 {
+  font-size: 18px;
+}
+.markdownContent h2 {
+  font-size: 16px;
+}
+.markdownContent h3 {
+  font-size: 14px;
+}
 
 .markdownContent p {
   margin: 8px 0;
@@ -497,7 +505,7 @@
 }
 
 .copyAllButton:hover {
-  background: #00A63E;
+  background: #00a63e;
 }
 
 /* History Modal */
@@ -531,7 +539,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .historyHeader h3 {
@@ -563,7 +571,7 @@
 }
 
 .historyItem {
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 12px;
@@ -583,7 +591,7 @@
 }
 
 .historyStatus {
-  background: #DCFCE7;
+  background: #dcfce7;
   color: #016630;
   padding: 4px 8px;
   border-radius: 4px;
@@ -600,13 +608,13 @@
 .historyPlaceholder {
   text-align: center;
   padding: 40px 20px;
-  color: #9CA3AF;
+  color: #9ca3af;
   font-style: italic;
 }
 
 /* Template Selector */
 .templateDescription {
-  color: #6B7280;
+  color: #6b7280;
   font-size: 14px;
   margin-bottom: 16px;
   line-height: 1.5;
@@ -619,8 +627,8 @@
 }
 
 .templateCard {
-  background: #FFFFFF;
-  border: 2px solid #E5E7EB;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
@@ -642,13 +650,13 @@
 
 .templateCard p {
   font-size: 14px;
-  color: #6B7280;
+  color: #6b7280;
   margin: 0;
   line-height: 1.4;
 }
 
 .previewText {
-  background: #FFFFFF;
+  background: #ffffff;
   padding: 20px;
   font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
   font-size: 13px;
@@ -666,11 +674,11 @@
   .content {
     padding: 0 10px;
   }
-  
+
   .editorSection {
     max-width: 700px;
   }
-  
+
   .previewSection {
     width: 380px;
     max-width: 380px;
@@ -682,12 +690,12 @@
     flex-direction: column;
     padding: 0 20px;
   }
-  
+
   .editorSection {
     max-width: 900px;
     margin: 20px auto 10px auto;
   }
-  
+
   .previewSection {
     width: 100%;
     max-width: 900px;
@@ -703,38 +711,38 @@
     align-items: stretch;
     padding: 16px 20px;
   }
-  
+
   .headerLeft {
     justify-content: flex-start;
   }
-  
+
   .headerActions {
     justify-content: flex-end;
     flex-wrap: wrap;
   }
-  
+
   .title {
     font-size: 24px;
   }
-  
+
   .formGrid {
     grid-template-columns: 1fr;
   }
-  
+
   .content {
     padding: 0 10px;
   }
-  
+
   .editorSection {
     padding: 20px;
     margin: 10px 0;
   }
-  
+
   .previewSection {
     padding: 20px;
     margin: 10px 0;
   }
-  
+
   .textarea {
     min-height: 120px;
   }
@@ -748,13 +756,13 @@
 .cancelButton:focus-visible,
 .saveButton:focus-visible,
 .backButton:focus-visible {
-  outline: 2px solid #2563EB;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
 /* Loading States */
 .saveButton:disabled {
-  background: #9CA3AF;
+  background: #9ca3af;
   cursor: not-allowed;
 }
 
@@ -769,7 +777,10 @@
 
 /* Smooth Animations */
 * {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
 /* Categories Styles */
@@ -828,7 +839,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -837,10 +848,10 @@
 
 .categoryCheckbox:hover {
   border-color: #016630;
-  background: #F0FDF4;
+  background: #f0fdf4;
 }
 
-.categoryCheckbox input[type="checkbox"] {
+.categoryCheckbox input[type='checkbox'] {
   margin: 0;
   cursor: pointer;
 }
@@ -870,12 +881,12 @@
 }
 
 .addCategoryButton:disabled {
-  background: #9CA3AF;
+  background: #9ca3af;
   cursor: not-allowed;
 }
 
 .cancelCategoryButton {
-  background: #EF4444;
+  background: #ef4444;
   color: white;
   border: none;
   padding: 8px;
@@ -888,13 +899,13 @@
 }
 
 .cancelCategoryButton:hover {
-  background: #DC2626;
+  background: #dc2626;
 }
 
 .addCustomCategoryButton {
-  background: #F3F4F6;
+  background: #f3f4f6;
   color: #374151;
-  border: 1px dashed #9CA3AF;
+  border: 1px dashed #9ca3af;
   padding: 12px 16px;
   border-radius: 8px;
   cursor: pointer;
@@ -908,8 +919,8 @@
 }
 
 .addCustomCategoryButton:hover {
-  background: #E5E7EB;
-  border-color: #6B7280;
+  background: #e5e7eb;
+  border-color: #6b7280;
 }
 
 /* Category Injection Buttons */
@@ -931,16 +942,16 @@
 
 .injectorLabel {
   font-size: 13px;
-  color: #6B7280;
+  color: #6b7280;
   font-weight: 600;
   white-space: nowrap;
   margin-right: 4px;
 }
 
 .injectorButton {
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   color: #166534;
-  border: 1px solid #BBF7D0;
+  border: 1px solid #bbf7d0;
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 12px;
@@ -965,8 +976,8 @@
 }
 
 .injectorButton:hover {
-  background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
-  border-color: #16A34A;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border-color: #16a34a;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
 }
@@ -982,14 +993,14 @@
 
 /* Special styling for "All Categories" button */
 .injectorButton:last-child {
-  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-  color: #1E40AF;
-  border-color: #93C5FD;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1e40af;
+  border-color: #93c5fd;
 }
 
 .injectorButton:last-child:hover {
-  background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
-  border-color: #3B82F6;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #3b82f6;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
@@ -1000,31 +1011,31 @@
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .categoryInjectors {
     max-width: 100%;
     justify-content: flex-start;
   }
-  
+
   .injectorButton {
     font-size: 11px;
     padding: 5px 10px;
   }
-  
+
   .injectorLabel {
     font-size: 12px;
     margin-bottom: 4px;
   }
 }
 
-.categoryCheckbox input[type="checkbox"]:checked + span {
+.categoryCheckbox input[type='checkbox']:checked + span {
   color: #016630;
   font-weight: 500;
 }
 
 .fieldHint {
   display: block;
-  color: #6B7280;
+  color: #6b7280;
   font-size: 12px;
   margin-top: 4px;
   line-height: 1.4;

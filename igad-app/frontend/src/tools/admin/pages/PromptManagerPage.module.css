@@ -1,7 +1,7 @@
 /* Container */
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #F0FDF4 0%, #F9FAFB 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #f9fafb 100%);
   padding: 40px;
 }
 
@@ -172,7 +172,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #016630 0%, #00A63E 50%, #008236 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 50%, #008236 100%);
 }
 
 .filtersBar {
@@ -201,7 +201,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #016630 0%, #00A63E 50%, #008236 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 50%, #008236 100%);
 }
 
 .resultsInfo {
@@ -213,13 +213,13 @@
 
 .resultsCount {
   font-size: 14px;
-  color: #6B7280;
+  color: #6b7280;
   font-weight: 500;
   white-space: nowrap;
 }
 
 .clearFilters {
-  background: linear-gradient(135deg, #00A63E 0%, #008236 100%);
+  background: linear-gradient(135deg, #00a63e 0%, #008236 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -247,10 +247,10 @@
   width: 100%;
   height: 48px;
   padding: 0 20px 0 52px;
-  border: 2px solid #E5E7EB;
+  border: 2px solid #e5e7eb;
   border-radius: 16px;
   font-size: 16px;
-  background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
@@ -258,7 +258,9 @@
 .searchInput:focus {
   outline: none;
   border-color: #016630;
-  box-shadow: 0 0 0 4px rgba(1, 102, 48, 0.1), 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 0 0 4px rgba(1, 102, 48, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.08);
   background: white;
 }
 
@@ -267,7 +269,7 @@
   left: 18px;
   top: 50%;
   transform: translateY(-50%);
-  color: #6B7280;
+  color: #6b7280;
   transition: color 0.3s ease;
 }
 
@@ -276,8 +278,8 @@
 }
 
 .filterButton {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
-  border: 2px solid #E5E7EB;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
   color: #374151;
   border-radius: 12px;
   padding: 12px 20px;
@@ -292,15 +294,15 @@
 }
 
 .filterButton:hover {
-  border-color: #B9F8CF;
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #b9f8cf;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   color: #016630;
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(1, 102, 48, 0.1);
 }
 
 .filterButtonActive {
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
   border-color: #016630;
   color: #016630;
   box-shadow: 0 4px 16px rgba(1, 102, 48, 0.2);
@@ -308,9 +310,9 @@
 
 /* Enhanced Filters Panel */
 .filtersPanel {
-  border-top: 2px solid #F1F5F9;
+  border-top: 2px solid #f1f5f9;
   padding: 24px 32px;
-  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 /* Enhanced Results Info */
@@ -334,7 +336,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #016630 0%, #00A63E 50%, #008236 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 50%, #008236 100%);
   z-index: 1;
 }
 
@@ -345,13 +347,13 @@
   align-items: center;
   gap: 16px;
   padding: 32px;
-  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
-  border-top: 2px solid #F1F5F9;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-top: 2px solid #f1f5f9;
 }
 
 .paginationButton {
   background: white;
-  border: 2px solid #E5E7EB;
+  border: 2px solid #e5e7eb;
   color: #374151;
   border-radius: 12px;
   padding: 12px 20px;
@@ -363,9 +365,9 @@
 }
 
 .paginationButton:hover:not(:disabled) {
-  border-color: #B9F8CF;
+  border-color: #b9f8cf;
   color: #016630;
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(1, 102, 48, 0.1);
 }
@@ -385,8 +387,8 @@
 
 /* Enhanced Context Banner */
 .contextBanner {
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
-  border: 2px solid #B9F8CF;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 2px solid #b9f8cf;
   border-radius: 20px;
   padding: 24px 32px;
   display: flex;
@@ -404,7 +406,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #016630 0%, #00A63E 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 100%);
 }
 
 .contextContent {
@@ -459,7 +461,7 @@
 }
 
 .backButton {
-  background: linear-gradient(135deg, #00A63E 0%, #008236 100%);
+  background: linear-gradient(135deg, #00a63e 0%, #008236 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -482,7 +484,7 @@
 /* Enhanced View Toggle */
 .viewToggle {
   display: flex;
-  background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
   border-radius: 12px;
   padding: 4px;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
@@ -497,7 +499,7 @@
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: #6B7280;
+  color: #6b7280;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -508,7 +510,7 @@
 }
 
 .viewButton.active {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   color: #016630;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
@@ -519,15 +521,15 @@
   .container {
     padding: 32px 24px;
   }
-  
+
   .content {
     padding: 0 24px;
   }
-  
+
   .filtersBarWrapper {
     padding: 0 24px;
   }
-  
+
   .tableContainer {
     border-radius: 20px;
   }
@@ -537,21 +539,21 @@
   .header {
     padding: 28px 32px;
   }
-  
+
   .titleIcon {
     width: 56px;
     height: 56px;
   }
-  
+
   .title {
     font-size: 32px;
   }
-  
+
   .filtersBar {
     flex-wrap: wrap;
     gap: 16px;
   }
-  
+
   .searchContainer {
     min-width: 280px;
   }
@@ -561,52 +563,52 @@
   .container {
     padding: 24px 16px;
   }
-  
+
   .header {
     padding: 24px;
     border-radius: 16px;
   }
-  
+
   .content {
     padding: 0 16px;
   }
-  
+
   .filtersBarWrapper {
     padding: 0 16px;
   }
-  
+
   .filtersBar {
     flex-direction: column;
     align-items: stretch;
     gap: 20px;
     padding: 20px 24px;
   }
-  
+
   .resultsInfo {
     justify-content: center;
     order: -1; /* Move results to top on mobile */
   }
-  
+
   .searchContainer {
     max-width: none;
     min-width: auto;
   }
-  
+
   .filterButton {
     justify-content: center;
     min-height: 48px;
   }
-  
+
   .contextBanner {
     padding: 20px 24px;
   }
-  
+
   .contextContent {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .contextText {
     flex-direction: column;
     align-items: flex-start;
@@ -618,83 +620,83 @@
   .container {
     padding: 16px 12px;
   }
-  
+
   .header {
     padding: 24px 16px;
     border-radius: 16px;
   }
-  
+
   .headerContent {
     flex-direction: column;
     gap: 24px;
     align-items: stretch;
   }
-  
+
   .content {
     padding: 0 12px;
   }
-  
+
   .contentWrapper {
     width: 100%;
     overflow-x: visible;
   }
-  
+
   .filtersBarWrapper {
     padding: 0 12px;
   }
-  
+
   .tableContainer {
     border-radius: 16px;
     margin: 0;
     width: 100%;
   }
-  
+
   .titleSection {
     flex-direction: column;
     text-align: center;
     gap: 16px;
   }
-  
+
   .titleIcon {
     width: 48px;
     height: 48px;
     align-self: center;
   }
-  
+
   .title {
     font-size: 28px;
   }
-  
+
   .subtitle {
     font-size: 16px;
   }
-  
+
   .headerActions {
     justify-content: center;
   }
-  
+
   .createButton {
     width: 100%;
     justify-content: center;
     max-width: 300px;
     align-self: center;
   }
-  
+
   .content {
     padding: 16px;
     gap: 24px;
   }
-  
+
   .filtersBar {
     padding: 20px 16px;
     border-radius: 16px;
   }
-  
+
   .searchInput {
     height: 52px;
     font-size: 16px; /* Prevents zoom on iOS */
   }
-  
+
   .contextBanner {
     flex-direction: column;
     gap: 20px;
@@ -703,28 +705,28 @@
     padding: 20px 16px;
     border-radius: 16px;
   }
-  
+
   .contextContent {
     justify-content: center;
     align-items: center;
   }
-  
+
   .backButton {
     align-self: center;
     min-width: 120px;
   }
-  
+
   .pagination {
     flex-direction: column;
     gap: 16px;
     padding: 24px 16px;
   }
-  
+
   .paginationButton {
     min-height: 44px;
     min-width: 80px;
   }
-  
+
   .viewToggle {
     align-self: center;
   }
@@ -735,83 +737,83 @@
   .header::after {
     display: none; /* Remove decorative elements on small screens */
   }
-  
+
   .titleSection {
     gap: 12px;
   }
-  
+
   .titleIcon {
     width: 40px;
     height: 40px;
   }
-  
+
   .title {
     font-size: 24px;
   }
-  
+
   .subtitle {
     font-size: 14px;
   }
-  
+
   .createButton {
     padding: 12px 20px;
     font-size: 14px;
   }
-  
+
   .filtersBar {
     padding: 16px;
     gap: 16px;
   }
-  
+
   .searchInput {
     padding: 0 16px 0 44px;
   }
-  
+
   .searchIcon {
     left: 14px;
   }
-  
+
   .filterButton {
     padding: 10px 16px;
     font-size: 13px;
   }
-  
+
   .contextBanner {
     padding: 16px;
   }
-  
+
   .contextIcon {
     width: 40px;
     height: 40px;
   }
-  
+
   .contextTitle {
     font-size: 14px;
   }
-  
+
   .contextRoute {
     font-size: 12px;
     padding: 4px 12px;
   }
-  
+
   .contextSection {
     font-size: 12px;
   }
-  
+
   .backButton {
     padding: 10px 20px;
     font-size: 13px;
   }
-  
+
   .filtersPanel {
     padding: 20px 16px;
     border-radius: 16px;
   }
-  
+
   .tableContainer {
     border-radius: 12px;
   }
-  
+
   /* Results info is now in filtersBar - no separate styles needed */
 }
 
@@ -819,52 +821,52 @@
   .header {
     padding: 20px 12px;
   }
-  
+
   .title {
     font-size: 22px;
   }
-  
+
   .content {
     padding: 12px;
   }
-  
+
   .filtersBar {
     padding: 12px;
   }
-  
+
   .searchInput {
     height: 48px;
     padding: 0 12px 0 40px;
   }
-  
+
   .searchIcon {
     left: 12px;
   }
-  
+
   .filterButton {
     padding: 8px 12px;
     font-size: 12px;
   }
-  
+
   .contextBanner {
     padding: 12px;
   }
-  
+
   .contextIcon {
     width: 36px;
     height: 36px;
   }
-  
+
   .pagination {
     padding: 20px 12px;
   }
-  
+
   .paginationButton {
     padding: 8px 12px;
     font-size: 12px;
     min-width: 60px;
   }
-  
+
   .paginationInfo {
     font-size: 14px;
   }
@@ -875,26 +877,26 @@
   .header {
     padding: 16px;
   }
-  
+
   .titleSection {
     flex-direction: row;
     text-align: left;
   }
-  
+
   .titleIcon {
     align-self: flex-start;
   }
-  
+
   .createButton {
     width: auto;
     max-width: none;
   }
-  
+
   .contextBanner {
     flex-direction: row;
     text-align: left;
   }
-  
+
   .contextContent {
     flex-direction: row;
     align-items: center;
@@ -910,11 +912,11 @@
   .clearFilters {
     min-height: 44px; /* iOS recommended touch target */
   }
-  
+
   .searchInput {
     min-height: 44px;
   }
-  
+
   .viewButton {
     min-width: 44px;
     min-height: 44px;

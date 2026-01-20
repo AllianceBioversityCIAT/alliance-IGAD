@@ -15,7 +15,7 @@
 }
 
 .modal {
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 16px;
   padding: 32px;
   max-width: 700px;
@@ -45,7 +45,7 @@
 
 .closeButton:hover {
   background: #f3f4f6;
-  color: #0A0A0A;
+  color: #0a0a0a;
 }
 
 .header {
@@ -54,14 +54,14 @@
 }
 
 .icon {
-  color: #00A63E;
+  color: #00a63e;
   margin-bottom: 12px;
 }
 
 .title {
   font-size: 24px;
   font-weight: 600;
-  color: #0A0A0A;
+  color: #0a0a0a;
   margin: 0 0 8px 0;
 }
 
@@ -84,7 +84,7 @@
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #0A0A0A;
+  color: #0a0a0a;
   margin-bottom: 8px;
 }
 
@@ -92,19 +92,19 @@
   width: 100%;
   min-height: 300px;
   padding: 12px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 14px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
-  color: #0A0A0A;
+  color: #0a0a0a;
   resize: vertical;
   transition: all 0.2s ease;
 }
 
 .textarea:focus {
   outline: none;
-  border-color: #00A63E;
+  border-color: #00a63e;
   box-shadow: 0 0 0 3px rgba(0, 166, 62, 0.1);
 }
 
@@ -114,7 +114,7 @@
 }
 
 .textarea::placeholder {
-  color: #9CA3AF;
+  color: #9ca3af;
 }
 
 .charCount {
@@ -153,8 +153,8 @@
 }
 
 .buttonPrimary {
-  background: #00A63E;
-  color: #FFFFFF;
+  background: #00a63e;
+  color: #ffffff;
 }
 
 .buttonPrimary:hover:not(:disabled) {
@@ -164,18 +164,18 @@
 }
 
 .buttonPrimary:disabled {
-  background: #9CA3AF;
+  background: #9ca3af;
   cursor: not-allowed;
 }
 
 .buttonSecondary {
-  background: #EFF6FF;
-  color: #00A63E;
-  border: 1px solid #BEDBFF;
+  background: #eff6ff;
+  color: #00a63e;
+  border: 1px solid #bedbff;
 }
 
 .buttonSecondary:hover:not(:disabled) {
-  background: #DBEAFE;
+  background: #dbeafe;
 }
 
 .buttonSecondary:disabled {
@@ -186,17 +186,17 @@
 .buttonCancel {
   background: transparent;
   color: #717182;
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e5e7eb;
 }
 
 .buttonCancel:hover:not(:disabled) {
   background: #f9fafb;
-  color: #0A0A0A;
+  color: #0a0a0a;
 }
 
 .helpSection {
-  background: #FFFBEB;
-  border: 1px solid #FDE68A;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
   border-radius: 8px;
   padding: 16px;
 }
@@ -204,7 +204,7 @@
 .helpTitle {
   font-size: 13px;
   font-weight: 600;
-  color: #92400E;
+  color: #92400e;
   margin: 0 0 8px 0;
 }
 
@@ -212,7 +212,7 @@
   margin: 0;
   padding-left: 20px;
   font-size: 13px;
-  color: #92400E;
+  color: #92400e;
   line-height: 1.8;
 }
 

@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useToast } from '@/shared/hooks/useToast'
+import { useConfirmation } from '@/shared/hooks/useConfirmation'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import {
   Upload,
   FileText,
@@ -86,6 +88,8 @@ interface Step4Props extends StepProps {
   onUserCommentsChange?: (comments: Record<string, string>) => void
   /** Callback when refined document changes */
   onRefinedDocumentChange?: (document: string | null) => void
+  /** Callback when a new version is uploaded (to clear parent state) */
+  onNewVersionUploaded?: () => void
 }
 
 interface UploadedFile {
@@ -650,7 +654,7 @@ function SummaryStats({ stats }: SummaryStatsProps) {
             percent: total > 0 ? (stats.needs_improvement_count / total) * 100 : 0,
             config: STATUS_CONFIG.NEEDS_IMPROVEMENT,
           },
-        ].map((item) => (
+        ].map(item => (
           <div key={item.key} className={styles.statRow}>
             <div className={styles.statLabel}>
               <div className={styles.statDot} style={{ background: item.config.textColor }} />
@@ -1107,6 +1111,7 @@ export function Step4ProposalReview({
   onSelectedSectionsChange,
   onUserCommentsChange,
   onRefinedDocumentChange,
+  onNewVersionUploaded,
 }: Step4Props) {
   // Toast notifications
   const { showSuccess, showError } = useToast()
@@ -1192,6 +1197,15 @@ export function Step4ProposalReview({
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const pollingStartTimeRef = useRef<number>(0)
   const isPollingActiveRef = useRef<boolean>(false)
+
+  // Confirmation dialog hook for upload new version
+  const {
+    isOpen: isConfirmOpen,
+    options: confirmOptions,
+    handleConfirm,
+    handleCancel,
+    confirm,
+  } = useConfirmation()
 
   // Refs for tracking parent prop changes (for persistence sync)
   const prevInitialSectionsRef = useRef<string[] | null>(null)
@@ -1503,95 +1517,98 @@ export function Step4ProposalReview({
   ])
 
   // Start analysis
-  const startAnalysis = useCallback(async () => {
-    if (!proposalId) {
-      showError('Error', 'No proposal ID available')
-      return
-    }
-
-    try {
-      // Stop any existing polling before starting new analysis
-      isPollingActiveRef.current = false
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current)
-        pollingRef.current = null
+  const startAnalysis = useCallback(
+    async (force: boolean = false) => {
+      if (!proposalId) {
+        showError('Error', 'No proposal ID available')
+        return
       }
 
-      setIsAnalyzing(true)
-      setAnalysisProgress({
-        step: 1,
-        total: 2,
-        message: 'Analyzing Your Draft Proposal',
-        description: DRAFT_FEEDBACK_DESCRIPTION,
-        steps: DRAFT_FEEDBACK_STEPS,
-      })
+      try {
+        // Stop any existing polling before starting new analysis
+        isPollingActiveRef.current = false
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current)
+          pollingRef.current = null
+        }
 
-      const result = await proposalService.analyzeDraftFeedback(proposalId)
+        setIsAnalyzing(true)
+        setAnalysisProgress({
+          step: 1,
+          total: 2,
+          message: 'Analyzing Your Draft Proposal',
+          description: DRAFT_FEEDBACK_DESCRIPTION,
+          steps: DRAFT_FEEDBACK_STEPS,
+        })
 
-      if (result.status === 'processing' || result.status === 'already_running') {
-        // Start polling
-        isPollingActiveRef.current = true
-        pollingStartTimeRef.current = Date.now()
-        pollingRef.current = setInterval(pollAnalysisStatus, POLLING_INTERVAL)
+        const result = await proposalService.analyzeDraftFeedback(proposalId, force)
 
-        // Initial poll
-        setTimeout(pollAnalysisStatus, 1000)
-      } else if (result.status === 'completed') {
-        // Already completed (cached)
+        if (result.status === 'processing' || result.status === 'already_running') {
+          // Start polling
+          isPollingActiveRef.current = true
+          pollingStartTimeRef.current = Date.now()
+          pollingRef.current = setInterval(pollAnalysisStatus, POLLING_INTERVAL)
+
+          // Initial poll
+          setTimeout(pollAnalysisStatus, 1000)
+        } else if (result.status === 'completed') {
+          // Already completed (cached)
+          setIsAnalyzing(false)
+          setAnalysisProgress(null)
+
+          // Fetch the completed data
+          const status = await proposalService.getDraftFeedbackStatus(proposalId)
+          // Handle both nested (draft_feedback_analysis) and direct (section_feedback) structures
+          const analysis =
+            status.data?.draft_feedback_analysis ||
+            (status.data?.section_feedback ? status.data : null)
+          if (analysis) {
+            setFeedbackData(mapAnalysisToFeedback(analysis))
+            onFeedbackAnalyzed?.(analysis)
+          }
+          showSuccess('Analysis Complete', 'Draft feedback analysis completed!')
+        }
+      } catch (error: unknown) {
+        // Removed console.error
         setIsAnalyzing(false)
         setAnalysisProgress(null)
 
-        // Fetch the completed data
-        const status = await proposalService.getDraftFeedbackStatus(proposalId)
-        // Handle both nested (draft_feedback_analysis) and direct (section_feedback) structures
-        const analysis =
-          status.data?.draft_feedback_analysis ||
-          (status.data?.section_feedback ? status.data : null)
-        if (analysis) {
-          setFeedbackData(mapAnalysisToFeedback(analysis))
-          onFeedbackAnalyzed?.(analysis)
+        // Get error message from response
+        const err = error as { response?: { data?: { message?: string; detail?: string } } }
+        const errorMsg =
+          err.response?.data?.message || err.response?.data?.detail || 'Failed to start analysis'
+
+        // Provide more specific error messages for common issues
+        if (
+          errorMsg.toLowerCase().includes('extract text') ||
+          errorMsg.toLowerCase().includes('could not extract')
+        ) {
+          showError(
+            'Document Processing Error',
+            "Unable to extract text from the draft file. Please ensure it's a valid PDF, DOC, or DOCX file. If using an AI-generated draft, try downloading it first and re-uploading as a PDF."
+          )
+        } else if (
+          errorMsg.toLowerCase().includes('not found') ||
+          errorMsg.toLowerCase().includes('no draft')
+        ) {
+          showError(
+            'Draft Not Found',
+            'The draft file could not be found. Please upload a new draft proposal.'
+          )
+        } else {
+          showError('Analysis Failed', errorMsg)
         }
-        showSuccess('Analysis Complete', 'Draft feedback analysis completed!')
       }
-    } catch (error: unknown) {
-      // Removed console.error
-      setIsAnalyzing(false)
-      setAnalysisProgress(null)
-
-      // Get error message from response
-      const err = error as { response?: { data?: { message?: string; detail?: string } } }
-      const errorMsg =
-        err.response?.data?.message || err.response?.data?.detail || 'Failed to start analysis'
-
-      // Provide more specific error messages for common issues
-      if (
-        errorMsg.toLowerCase().includes('extract text') ||
-        errorMsg.toLowerCase().includes('could not extract')
-      ) {
-        showError(
-          'Document Processing Error',
-          "Unable to extract text from the draft file. Please ensure it's a valid PDF, DOC, or DOCX file. If using an AI-generated draft, try downloading it first and re-uploading as a PDF."
-        )
-      } else if (
-        errorMsg.toLowerCase().includes('not found') ||
-        errorMsg.toLowerCase().includes('no draft')
-      ) {
-        showError(
-          'Draft Not Found',
-          'The draft file could not be found. Please upload a new draft proposal.'
-        )
-      } else {
-        showError('Analysis Failed', errorMsg)
-      }
-    }
-  }, [
-    proposalId,
-    pollAnalysisStatus,
-    onFeedbackAnalyzed,
-    showError,
-    showSuccess,
-    DRAFT_FEEDBACK_STEPS,
-  ])
+    },
+    [
+      proposalId,
+      pollAnalysisStatus,
+      onFeedbackAnalyzed,
+      showError,
+      showSuccess,
+      DRAFT_FEEDBACK_STEPS,
+    ]
+  )
 
   // NOTE: Auto-trigger removed for better UX - user now manually starts analysis
   // This gives user control and prevents timing issues with file availability
@@ -1624,6 +1641,14 @@ export function Step4ProposalReview({
       try {
         setIsUploading(true)
 
+        // CLEAR ALL STEP 4 STATE BEFORE UPLOAD (for new version uploads)
+        setFeedbackData([])
+        setSelectedSections([])
+        setUserComments({})
+        setRefinedProposalDocument(null)
+        setOriginalSelectedSections([])
+        setOriginalUserComments({})
+
         const result = await proposalService.uploadDraftProposal(proposalId, file)
 
         if (result.success) {
@@ -1633,11 +1658,14 @@ export function Step4ProposalReview({
             file: file,
           })
 
-          onFilesChanged?.([result.filename])
-          showSuccess('Upload Complete', 'Draft uploaded successfully!')
+          // Notify parent to clear its state (for new version uploads)
+          onNewVersionUploaded?.()
 
-          // Automatically start analysis after upload
-          setTimeout(() => startAnalysis(), 500)
+          onFilesChanged?.([result.filename])
+          showSuccess('Upload Complete', 'Draft uploaded. Starting fresh analysis...')
+
+          // Start analysis with FORCE=TRUE to bypass cache
+          setTimeout(() => startAnalysis(true), 500)
         }
       } catch (error: unknown) {
         // Removed console.error
@@ -1647,7 +1675,7 @@ export function Step4ProposalReview({
         setIsUploading(false)
       }
     },
-    [proposalId, startAnalysis, onFilesChanged, showError, showSuccess]
+    [proposalId, startAnalysis, onFilesChanged, onNewVersionUploaded, showError, showSuccess]
   )
 
   const handleDrop = useCallback(
@@ -1686,9 +1714,26 @@ export function Step4ProposalReview({
     }
   }, [proposalId, uploadedFile, onFilesChanged, showSuccess, showError])
 
-  const handleUploadNewVersion = useCallback(() => {
+  const handleUploadNewVersion = useCallback(async () => {
+    // Only show confirmation if there's existing analysis or refined document
+    if (feedbackData.length > 0 || refinedProposalDocument) {
+      const confirmed = await confirm({
+        type: 'warning',
+        title: 'Upload New Version?',
+        message:
+          'Uploading a new version will clear the current analysis, your selected sections, comments, and any generated refined document. Do you want to continue?',
+        confirmText: 'Upload New Version',
+        cancelText: 'Cancel',
+        showCancel: true,
+      })
+
+      if (!confirmed) {
+        return
+      }
+    }
+
     fileInputRef.current?.click()
-  }, [])
+  }, [feedbackData.length, refinedProposalDocument, confirm])
 
   /**
    * Parse inline formatting (bold, italic) into TextRun array
@@ -2629,6 +2674,18 @@ export function Step4ProposalReview({
         {isGeneratingDocument && generationProgress && (
           <AnalysisProgressModal isOpen={isGeneratingDocument} progress={generationProgress} />
         )}
+
+        {/* Confirmation Dialog for Upload New Version */}
+        <ConfirmDialog
+          isOpen={isConfirmOpen}
+          title={confirmOptions.title}
+          message={confirmOptions.message || ''}
+          confirmText={confirmOptions.confirmText}
+          cancelText={confirmOptions.cancelText}
+          type="warning"
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
       </div>
     </div>
   )

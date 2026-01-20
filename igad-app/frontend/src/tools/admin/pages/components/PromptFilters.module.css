@@ -21,23 +21,23 @@
 .select,
 .input {
   padding: 10px 12px;
-  border: 1px solid #D1D5DB;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
   font-family: inherit;
   font-size: 14px;
-  background: #FFFFFF;
+  background: #ffffff;
   transition: border-color 0.2s ease;
 }
 
 .select:focus,
 .input:focus {
   outline: none;
-  border-color: #6366F1;
+  border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .input::placeholder {
-  color: #9CA3AF;
+  color: #9ca3af;
 }
 
 @media (max-width: 768px) {

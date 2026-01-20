@@ -15,7 +15,7 @@
 .titleIcon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -31,7 +31,7 @@
 }
 
 .subtitle {
-  color: #6B7280;
+  color: #6b7280;
   font-size: 16px;
   margin: 4px 0 0 0;
   line-height: 1.5;
@@ -61,13 +61,13 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #016630 0%, #00A63E 50%, #008236 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 50%, #008236 100%);
 }
 
 .section:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border-color: #B9F8CF;
+  border-color: #b9f8cf;
 }
 
 .sectionTitle {
@@ -92,11 +92,11 @@
 }
 
 .configItem {
-  border: 2px solid #F3F4F6;
+  border: 2px solid #f3f4f6;
   border-radius: 16px;
   padding: 24px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   position: relative;
   overflow: hidden;
 }
@@ -113,14 +113,14 @@
 }
 
 .configItem:hover {
-  border-color: #B9F8CF;
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #b9f8cf;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(1, 102, 48, 0.1);
 }
 
 .configItem:hover::before {
-  background: linear-gradient(180deg, #016630 0%, #00A63E 100%);
+  background: linear-gradient(180deg, #016630 0%, #00a63e 100%);
 }
 
 .configHeader {
@@ -145,8 +145,8 @@
 }
 
 .statusSuccess {
-  color: #10B981;
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
+  color: #10b981;
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 12px;
@@ -157,8 +157,8 @@
 }
 
 .statusError {
-  color: #EF4444;
-  background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+  color: #ef4444;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 12px;
@@ -175,8 +175,8 @@
 }
 
 .code {
-  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
-  border: 2px solid #E2E8F0;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid #e2e8f0;
   border-radius: 12px;
   padding: 16px 20px;
   font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
@@ -189,14 +189,14 @@
 }
 
 .code:hover {
-  border-color: #B9F8CF;
-  background: linear-gradient(135def, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #b9f8cf;
+  background: linear-gradient(135def, #f0fdf4 0%, #dcfce7 100%);
 }
 
 .copyButton {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
-  border: 2px solid #D1D5DB;
-  color: #6B7280;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #d1d5db;
+  color: #6b7280;
   padding: 12px;
   border-radius: 12px;
   cursor: pointer;
@@ -210,8 +210,8 @@
 }
 
 .copyButton:hover {
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
-  border-color: #B9F8CF;
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
+  border-color: #b9f8cf;
   color: #016630;
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(1, 102, 48, 0.2);
@@ -227,10 +227,10 @@
   align-items: flex-start;
   gap: 16px;
   padding: 24px;
-  border: 2px solid #F3F4F6;
+  border: 2px solid #f3f4f6;
   border-radius: 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   position: relative;
   overflow: hidden;
 }
@@ -247,14 +247,14 @@
 }
 
 .statusItem:hover {
-  border-color: #B9F8CF;
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #b9f8cf;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(1, 102, 48, 0.1);
 }
 
 .statusItem:hover::before {
-  background: linear-gradient(180deg, #016630 0%, #00A63E 100%);
+  background: linear-gradient(180deg, #016630 0%, #00a63e 100%);
 }
 
 .statusIndicator {
@@ -264,7 +264,7 @@
   min-width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   color: #016630;
   box-shadow: 0 4px 12px rgba(1, 102, 48, 0.15);
 }
@@ -282,14 +282,15 @@
 
 .statusDescription {
   font-size: 14px;
-  color: #6B7280;
+  color: #6b7280;
   margin: 0;
   line-height: 1.5;
 }
 
 /* Enhanced Animations */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -307,19 +308,19 @@
     padding: 24px;
     border-radius: 16px;
   }
-  
+
   .configItem,
   .statusItem {
     padding: 20px;
     border-radius: 12px;
   }
-  
+
   .configValue {
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
   }
-  
+
   .copyButton {
     align-self: flex-end;
     min-width: 40px;

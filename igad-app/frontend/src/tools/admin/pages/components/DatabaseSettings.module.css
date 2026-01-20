@@ -18,7 +18,7 @@
 .titleIcon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -34,15 +34,15 @@
 }
 
 .subtitle {
-  color: #6B7280;
+  color: #6b7280;
   font-size: 16px;
   margin: 4px 0 0 0;
   line-height: 1.5;
 }
 
 .refreshButton {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
-  border: 2px solid #D1D5DB;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #d1d5db;
   color: #374151;
   padding: 12px 20px;
   border-radius: 12px;
@@ -57,8 +57,8 @@
 }
 
 .refreshButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
-  border-color: #B9F8CF;
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
+  border-color: #b9f8cf;
   color: #016630;
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(1, 102, 48, 0.2);
@@ -75,8 +75,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .content {
@@ -103,13 +107,13 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #016630 0%, #00A63E 50%, #008236 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 50%, #008236 100%);
 }
 
 .section:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border-color: #B9F8CF;
+  border-color: #b9f8cf;
 }
 
 .sectionTitle {
@@ -136,11 +140,11 @@
 
 .overviewItem {
   padding: 24px;
-  border: 2px solid #F3F4F6;
+  border: 2px solid #f3f4f6;
   border-radius: 16px;
   text-align: center;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   position: relative;
   overflow: hidden;
 }
@@ -157,19 +161,19 @@
 }
 
 .overviewItem:hover {
-  border-color: #B9F8CF;
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #b9f8cf;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(1, 102, 48, 0.15);
 }
 
 .overviewItem:hover::before {
-  background: linear-gradient(90deg, #016630 0%, #00A63E 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 100%);
 }
 
 .overviewLabel {
   font-size: 12px;
-  color: #6B7280;
+  color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 12px;
@@ -180,14 +184,14 @@
   font-size: 28px;
   font-weight: 700;
   color: #111827;
-  background: linear-gradient(135deg, #016630 0%, #00A63E 100%);
+  background: linear-gradient(135deg, #016630 0%, #00a63e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .tablesContainer {
-  background: linear-gradient(135deg, #F0FDF4 0%, #F9FAFB 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #f9fafb 100%);
   border-radius: 16px;
   padding: 24px;
   border: 2px solid rgba(185, 248, 207, 0.3);
@@ -200,7 +204,7 @@
 
 .tableCard {
   background: white;
-  border: 2px solid #E5E7EB;
+  border: 2px solid #e5e7eb;
   border-radius: 16px;
   padding: 24px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -220,13 +224,13 @@
 }
 
 .tableCard:hover {
-  border-color: #B9F8CF;
+  border-color: #b9f8cf;
   box-shadow: 0 8px 32px rgba(1, 102, 48, 0.1);
   transform: translateY(-2px);
 }
 
 .tableCard:hover::before {
-  background: linear-gradient(180deg, #016630 0%, #00A63E 100%);
+  background: linear-gradient(180deg, #016630 0%, #00a63e 100%);
 }
 
 .tableHeader {
@@ -246,17 +250,17 @@
   color: #111827;
   margin: 0;
   font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
-  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #e2e8f0;
 }
 
 .tableStatus {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
   padding: 6px 12px;
   border-radius: 20px;
 }
@@ -268,7 +272,7 @@
 }
 
 .statusActive {
-  background: #10B981;
+  background: #10b981;
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
@@ -282,7 +286,7 @@
   display: flex;
   gap: 32px;
   padding-top: 16px;
-  border-top: 1px solid #F3F4F6;
+  border-top: 1px solid #f3f4f6;
 }
 
 .statItem {
@@ -293,7 +297,7 @@
 
 .statLabel {
   font-size: 12px;
-  color: #6B7280;
+  color: #6b7280;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -316,10 +320,10 @@
   align-items: flex-start;
   gap: 16px;
   padding: 24px;
-  border: 2px solid #F3F4F6;
+  border: 2px solid #f3f4f6;
   border-radius: 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   position: relative;
   overflow: hidden;
 }
@@ -336,20 +340,20 @@
 }
 
 .infoItem:hover {
-  border-color: #B9F8CF;
-  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #b9f8cf;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(1, 102, 48, 0.1);
 }
 
 .infoItem:hover::before {
-  background: linear-gradient(180deg, #016630 0%, #00A63E 100%);
+  background: linear-gradient(180deg, #016630 0%, #00a63e 100%);
 }
 
 .infoIcon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #DCFCE7 0%, #B9F8CF 100%);
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -371,7 +375,7 @@
 
 .infoDescription {
   font-size: 14px;
-  color: #6B7280;
+  color: #6b7280;
   margin: 0;
   line-height: 1.5;
 }
@@ -383,31 +387,31 @@
     gap: 16px;
     align-items: flex-start;
   }
-  
+
   .section {
     padding: 24px;
     border-radius: 16px;
   }
-  
+
   .overviewGrid {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 16px;
   }
-  
+
   .overviewItem {
     padding: 20px;
   }
-  
+
   .tableCard,
   .infoItem {
     padding: 20px;
     border-radius: 12px;
   }
-  
+
   .tableStats {
     gap: 20px;
   }
-  
+
   .tablesContainer {
     padding: 20px;
     border-radius: 12px;

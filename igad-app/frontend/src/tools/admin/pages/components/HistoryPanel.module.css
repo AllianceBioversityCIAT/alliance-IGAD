@@ -266,17 +266,17 @@
     width: 90vw;
     max-height: 90vh;
   }
-  
+
   .fieldDiff {
     grid-template-columns: 1fr;
   }
-  
+
   .changeHeader {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .changeInfo {
     flex-wrap: wrap;
   }

@@ -35,7 +35,8 @@
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px);
   }
   50% {
@@ -52,14 +53,14 @@
 
 .description {
   font-size: 16px;
-  color: #6B7280;
+  color: #6b7280;
   margin-bottom: 8px;
   font-weight: 500;
 }
 
 .message {
   font-size: 14px;
-  color: #9CA3AF;
+  color: #9ca3af;
   line-height: 1.6;
   margin-bottom: 28px;
 }

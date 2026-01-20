@@ -55,7 +55,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #016630 0%, #00A63E 50%, #008236 100%);
+  background: linear-gradient(90deg, #016630 0%, #00a63e 50%, #008236 100%);
 }
 
 .header {
@@ -97,7 +97,7 @@
 .closeButton {
   background: rgba(107, 114, 128, 0.1);
   border: none;
-  color: #6B7280;
+  color: #6b7280;
   cursor: pointer;
   padding: 8px;
   border-radius: 12px;
@@ -109,7 +109,7 @@
 
 .closeButton:hover {
   background: rgba(220, 38, 38, 0.1);
-  color: #DC2626;
+  color: #dc2626;
   transform: scale(1.05);
 }
 
@@ -118,9 +118,9 @@
 }
 
 .error {
-  background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
-  border: 1px solid #F87171;
-  color: #DC2626;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #f87171;
+  color: #dc2626;
   padding: 16px 20px;
   border-radius: 12px;
   margin-bottom: 24px;
@@ -139,14 +139,14 @@
 .loading {
   text-align: center;
   padding: 60px 20px;
-  color: #6B7280;
+  color: #6b7280;
   font-size: 16px;
 }
 
 .empty {
   text-align: center;
   padding: 60px 20px;
-  color: #6B7280;
+  color: #6b7280;
 }
 
 .empty p {
@@ -155,7 +155,7 @@
 }
 
 .emptyIcon {
-  color: #D1D5DB;
+  color: #d1d5db;
   margin-bottom: 16px;
 }
 
@@ -170,15 +170,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px;
-  border: 2px solid #E5E7EB;
+  border: 2px solid #e5e7eb;
   border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: white;
 }
 
 .groupItem:hover {
-  border-color: #B9F8CF;
-  background: linear-gradient(135deg, #F0FDF4 0%, #FAFAFA 100%);
+  border-color: #b9f8cf;
+  background: linear-gradient(135deg, #f0fdf4 0%, #fafafa 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(1, 102, 48, 0.1);
 }
@@ -195,15 +195,15 @@
 }
 
 .groupDescription {
-  color: #6B7280;
+  color: #6b7280;
   font-size: 14px;
   line-height: 1.4;
 }
 
 .groupToggle {
   background: white;
-  border: 2px solid #E5E7EB;
-  color: #6B7280;
+  border: 2px solid #e5e7eb;
+  color: #6b7280;
   padding: 10px 20px;
   border-radius: 10px;
   font-size: 14px;
@@ -218,8 +218,8 @@
 }
 
 .groupToggle:hover:not(:disabled) {
-  background: #F9FAFB;
-  border-color: #D1D5DB;
+  background: #f9fafb;
+  border-color: #d1d5db;
   color: #374151;
   transform: translateY(-1px);
 }
@@ -232,8 +232,8 @@
 }
 
 .groupActive:hover:not(:disabled) {
-  background: linear-gradient(135deg, #00A63E 0%, #016630 100%);
-  border-color: #00A63E;
+  background: linear-gradient(135deg, #00a63e 0%, #016630 100%);
+  border-color: #00a63e;
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(1, 102, 48, 0.4);
 }
@@ -306,26 +306,26 @@
     max-width: calc(100vw - 32px);
     border-radius: 16px;
   }
-  
+
   .header,
   .content {
     padding-left: 24px;
     padding-right: 24px;
   }
-  
+
   .title {
     font-size: 20px;
     flex-direction: column;
     text-align: center;
     gap: 8px;
   }
-  
+
   .groupItem {
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
   }
-  
+
   .groupToggle {
     align-self: flex-end;
     min-width: 100px;
