@@ -761,14 +761,21 @@ export function ProposalWriterPage() {
     const completed: number[] = []
 
     // Step 1: Requires RFP uploaded AND (concept text OR file) AND analyses completed
+    // OR: Infer completion if downstream steps have data (proves Step 1 was completed)
     const hasRfp = formData.uploadedFiles['rfp-document']?.length > 0
     const hasConceptText = (formData.textInputs['initial-concept'] || '').length >= 100
     const hasConceptFile = formData.uploadedFiles['concept-document']?.length > 0
     const hasConcept = hasConceptText || hasConceptFile
     const hasStep1Analyses = rfpAnalysis && conceptAnalysis
 
-    // Step 1 is complete only if it has requirements AND analyses
-    if (hasRfp && hasConcept && hasStep1Analyses) {
+    // Infer Step 1 completion from downstream data (when localStorage analyses are lost)
+    // If any downstream step has data, Step 1 must have been completed
+    const step1InferredFromDownstream = !!(conceptDocument || structureWorkplanAnalysis || draftFeedbackAnalysis)
+
+    // Step 1 is complete if:
+    // 1. It has requirements AND analyses (normal case), OR
+    // 2. Downstream data exists (inferred completion when localStorage is cleared)
+    if ((hasRfp && hasConcept && hasStep1Analyses) || step1InferredFromDownstream) {
       completed.push(1)
     }
 
@@ -803,6 +810,7 @@ export function ProposalWriterPage() {
     rfpAnalysis,
     conceptAnalysis,
     conceptDocument,
+    structureWorkplanAnalysis,
     proposalTemplate,
     generatedProposalContent,
     draftFeedbackAnalysis,
