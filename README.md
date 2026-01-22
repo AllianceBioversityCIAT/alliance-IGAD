@@ -7,7 +7,7 @@ AI-powered platform for proposal writing and administrative prompt management, b
 - Document Management: upload/delete RFPs, concept files, reference proposals, and supporting documents with async vectorization.
 - Admin Prompt Manager: create, edit, publish, and audit AI prompts used by the proposal workflow.
 - Authentication: AWS Cognito-backed login, password reset, and session refresh.
-- Newsletter Generator: UI placeholder (coming soon).
+- Newsletter Generator: under construction.
 
 ## Architecture Summary
 - Frontend: React 18 + TypeScript + Vite + Tailwind CSS.
