@@ -2,7 +2,7 @@
 
 AI-powered platform for proposal writing and administrative prompt management, built on a serverless AWS stack. The core application lives in `igad-app/`, with planning, prompts, and specs at the repo root.
 
-## Product Modules
+## Product Core Modules
 
 - Proposal Writer: multi-step workflow for RFP ingestion, concept review, structure/workplan generation, and draft feedback.
 - Document Management: upload/delete RFPs, concept files, reference proposals, and supporting documents with async vectorization.
