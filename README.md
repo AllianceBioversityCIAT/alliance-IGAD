@@ -14,6 +14,7 @@ AI-powered platform for proposal writing and administrative prompt management, b
 
 - Frontend: React 18 + TypeScript + Vite + Tailwind CSS.
 - Backend: FastAPI API layer, AWS Lambda workers for async processing.
+- Folders Architecuter: Scremaming architecture.
 - AI: AWS Bedrock (prompts stored in DynamoDB and managed via admin UI).
 - Storage: DynamoDB single-table, S3 documents bucket, S3 Vectors for embeddings.
 - Infrastructure: AWS CDK + SAM.
