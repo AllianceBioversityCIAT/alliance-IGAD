@@ -19,7 +19,7 @@ aws-credentials.json
 # OpenCode local config and data
 .opencode/
 .opencode-local.json
-
+.agents/
 
 # Internal Planning and Development Documentation
 planning/
