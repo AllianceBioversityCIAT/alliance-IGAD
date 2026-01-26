@@ -75,6 +75,93 @@ services/
 
 ---
 
+## Design System & Tailwind
+
+> **Skill Reference**: Use the `tailwind-design-system` skill for comprehensive patterns on design tokens, CVA components, theming, and accessibility.
+
+### Core Utilities
+
+```typescript
+// lib/utils.ts - Required utility for class merging
+import { type ClassValue, clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+```
+
+### Design Tokens (tailwind.config.js)
+
+The project uses semantic color tokens defined in `tailwind.config.js`:
+
+| Token | Purpose |
+|-------|---------|
+| `primary-*` | Main actions, links |
+| `success-*` | Positive states |
+| `warning-*` | Caution states |
+| `error-*` | Error states |
+| `gray-*` | Neutral UI |
+| `igad-*` | Brand colors |
+
+### Component Variants with CVA
+
+Prefer [Class Variance Authority (CVA)](https://cva.style/docs) for type-safe component variants:
+
+```typescript
+import { cva, type VariantProps } from 'class-variance-authority'
+import { cn } from '@/lib/utils'
+
+const buttonVariants = cva(
+  // Base styles
+  'inline-flex items-center justify-center rounded-button font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        primary: 'bg-primary-500 text-white hover:bg-primary-600',
+        secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+        outline: 'border border-gray-300 bg-transparent hover:bg-gray-50',
+        ghost: 'hover:bg-gray-100',
+        destructive: 'bg-error-500 text-white hover:bg-error-600',
+      },
+      size: {
+        sm: 'h-9 px-3 text-sm',
+        md: 'h-10 px-4 text-sm',
+        lg: 'h-11 px-6 text-base',
+        icon: 'h-10 w-10',
+      },
+    },
+    defaultVariants: {
+      variant: 'primary',
+      size: 'md',
+    },
+  }
+)
+
+interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {}
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, ...props }, ref) => (
+    <button
+      ref={ref}
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  )
+)
+```
+
+### Recommended Dependencies
+
+```bash
+# Add these for better DX with Tailwind components
+npm install class-variance-authority tailwind-merge
+```
+
+---
+
 ## Code Style
 
 ### Prettier Config
@@ -310,25 +397,65 @@ const pollForCompletion = useCallback(async () => {
 
 ---
 
-## CSS Modules
+## Styling
+
+### Tailwind CSS (Preferred)
+
+Use Tailwind utilities with the `cn()` helper for conditional classes:
 
 ```typescript
-// Import
+import { cn } from '@/lib/utils'
+
+// Conditional classes
+<div className={cn(
+  'flex items-center gap-4 p-4 rounded-card',
+  isActive && 'bg-primary-50 border-primary-500',
+  isDisabled && 'opacity-50 pointer-events-none'
+)}>
+
+// Merging with props
+<button className={cn(buttonVariants({ variant, size }), className)}>
+```
+
+### CSS Modules (When Needed)
+
+Use CSS Modules for complex, component-specific styles:
+
+```typescript
 import styles from './Component.module.css'
 
-// Usage
+// Pure CSS Modules
 <div className={styles.container}>
   <span className={styles.highlight}>Text</span>
 </div>
 
-// Conditional
-<div className={`${styles.base} ${isActive ? styles.active : ''}`}>
+// Combined with Tailwind
+<div className={cn(styles.card, 'flex items-center gap-4 p-4')}>
 ```
 
-### Tailwind + CSS Modules
-Use Tailwind for utilities, CSS Modules for component-specific styles:
+### Styling Guidelines
+
+| Use Case | Approach |
+|----------|----------|
+| Layout, spacing, colors | Tailwind utilities |
+| Component variants | CVA + Tailwind |
+| Complex animations | CSS Modules |
+| Pseudo-elements (::before) | CSS Modules |
+| Third-party overrides | CSS Modules |
+
+### Accessibility
+
+Always include focus states and ARIA attributes:
+
 ```typescript
-<div className={`${styles.card} flex items-center gap-4 p-4`}>
+<button
+  className={cn(
+    'rounded-button',
+    // Focus ring for keyboard navigation
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2'
+  )}
+  aria-label="Close dialog"
+>
 ```
 
 ---

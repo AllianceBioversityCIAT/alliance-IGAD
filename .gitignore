@@ -1,5 +1,5 @@
 # Specs folder (ignore all specifications and mockups)
-specs/
+# specs/  # Commented out to allow @specs/ reference in Claude Code
 
 # AWS Credentials and Secrets
 .aws/
@@ -22,7 +22,7 @@ aws-credentials.json
 .agents/
 
 # Internal Planning and Development Documentation
-planning/
+# planning/  # Commented out to allow @planning/ reference in Claude Code
 specs/cost/
 
 # Temporary and Debug Files
