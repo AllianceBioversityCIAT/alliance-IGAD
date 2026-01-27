@@ -164,6 +164,40 @@ export function Navigation() {
             </span>
           </Link>
 
+          {/* Guide/Tutorial Button */}
+          <Link
+            to="/guide"
+            title="Watch Tutorial"
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              width: '36px',
+              height: '36px',
+              background: location.pathname === '/guide' ? '#DCFCE7' : 'transparent',
+              borderRadius: '8px',
+              transition: 'background 0.2s ease',
+              textDecoration: 'none',
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={location.pathname === '/guide' ? '#016630' : '#364153'}
+              strokeWidth="1.33"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polygon
+                points="10 8 16 12 10 16 10 8"
+                fill={location.pathname === '/guide' ? '#016630' : '#364153'}
+              />
+            </svg>
+          </Link>
+
           {/* Notifications Button - Disabled */}
           <div
             style={{

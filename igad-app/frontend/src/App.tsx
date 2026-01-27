@@ -18,6 +18,7 @@ import { PromptManagerPage } from '@/tools/admin/pages/PromptManagerPage'
 import { PromptEditorPage } from '@/tools/admin/pages/PromptEditorPage'
 import { SettingsPage } from '@/tools/admin/pages/SettingsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { GuidePage } from '@/pages/GuidePage'
 import { Layout } from '@/shared/components/Layout'
 import { ProtectedRoute } from '@/shared/components/ProtectedRoute'
 import { AdminRoute } from '@/shared/components/AdminRoute'
@@ -56,6 +57,7 @@ function App() {
               }
             />
             <Route path="/change-password" element={<ChangePasswordPage />} />
+            <Route path="/guide" element={<GuidePage />} />
             <Route
               path="/"
               element={

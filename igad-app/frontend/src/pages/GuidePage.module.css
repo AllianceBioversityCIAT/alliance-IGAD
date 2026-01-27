@@ -1,0 +1,385 @@
+/* GuidePage Styles */
+
+.container {
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 48px 20px;
+  background-image: url(/textura.png);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow-y: auto;
+}
+
+.contentWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  width: 100%;
+  max-width: 640px;
+  padding: 0 20px;
+}
+
+.logoLink {
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.logoLink:hover {
+  opacity: 0.9;
+}
+
+.logo {
+  width: 320px;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Hero Section */
+.heroSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  width: 100%;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
+  border: 1px solid #b9f8cf;
+  border-radius: 20px;
+  color: #016630;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.title {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 36px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #016630;
+  margin: 0;
+}
+
+.subtitle {
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #4a5565;
+  margin: 0;
+  max-width: 500px;
+}
+
+/* Video Container */
+.videoContainer {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #000;
+}
+
+.video {
+  width: 100%;
+  display: block;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.video:focus {
+  outline: 2px solid #00a63e;
+  outline-offset: 2px;
+}
+
+/* Features Section */
+.featuresSection {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.featuresTitle {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 20px;
+  color: #016630;
+  margin: 0;
+  text-align: center;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.featureCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(185, 248, 207, 0.5);
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 166, 62, 0.1);
+  border-color: #b9f8cf;
+}
+
+.featureIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #dcfce7 0%, #b9f8cf 100%);
+  border-radius: 12px;
+  color: #016630;
+}
+
+.featureContent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.featureTitle {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  color: #101828;
+  margin: 0;
+}
+
+.featureDescription {
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #4a5565;
+  margin: 0;
+}
+
+/* CTA Section */
+.ctaSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(220, 252, 231, 0.6) 0%, rgba(185, 248, 207, 0.4) 100%);
+  border: 1px solid #b9f8cf;
+  border-radius: 16px;
+}
+
+.ctaText {
+  font-family: inherit;
+  font-size: 15px;
+  color: #016630;
+  margin: 0;
+  font-weight: 500;
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 28px;
+  background: #00a63e;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 166, 62, 0.3);
+}
+
+.ctaButton:hover {
+  background: #008236;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 166, 62, 0.4);
+}
+
+/* Footer */
+.footer {
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  width: 100%;
+  text-align: center;
+}
+
+.footerText {
+  font-family: inherit;
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Responsive Styles */
+
+@media (max-width: 768px) {
+  .leftColumn {
+    padding: 32px 20px 48px;
+  }
+
+  .contentWrapper {
+    gap: 24px;
+  }
+
+  .logo {
+    width: 280px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .videoContainer {
+    border-radius: 12px;
+  }
+
+  .featuresGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .featureCard {
+    flex-direction: row;
+    text-align: left;
+    padding: 16px;
+  }
+
+  .featureContent {
+    align-items: flex-start;
+  }
+
+  .featureIconWrapper {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+
+  .featuresSection {
+    gap: 16px;
+  }
+
+  .ctaSection {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .leftColumn {
+    padding: 24px 16px 40px;
+  }
+
+  .contentWrapper {
+    gap: 20px;
+  }
+
+  .logo {
+    width: 240px;
+  }
+
+  .badge {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+
+  .featuresTitle {
+    font-size: 18px;
+  }
+
+  .featureCard {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .featureIconWrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  .featureTitle {
+    font-size: 13px;
+  }
+
+  .featureDescription {
+    font-size: 11px;
+  }
+
+  .ctaSection {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .ctaText {
+    font-size: 13px;
+  }
+
+  .ctaButton {
+    padding: 10px 24px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 375px) {
+  .leftColumn {
+    padding: 20px 12px 32px;
+  }
+
+  .logo {
+    width: 200px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+  }
+}
