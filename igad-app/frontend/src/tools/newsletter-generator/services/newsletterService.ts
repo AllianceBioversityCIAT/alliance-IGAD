@@ -13,8 +13,9 @@ export interface NewsletterConfig {
   title: string
   status: 'draft' | 'processing' | 'completed' | 'exported'
   target_audience: string[]
-  tone_professional: number
-  tone_technical: number
+  tone_professional: number // Legacy
+  tone_technical: number // Legacy
+  tone_preset: string // New semantic preset
   format_type: string
   length_preference: string
   frequency: string
@@ -39,8 +40,9 @@ export interface CreateNewsletterRequest {
 
 export interface UpdateNewsletterRequest {
   target_audience?: string[]
-  tone_professional?: number
-  tone_technical?: number
+  tone_professional?: number // Legacy
+  tone_technical?: number // Legacy
+  tone_preset?: string // New semantic preset
   format_type?: string
   length_preference?: string
   frequency?: string

@@ -45,8 +45,9 @@ class NewsletterConfigUpdate(BaseModel):
     """Request model for updating newsletter configuration (Step 1)."""
 
     target_audience: Optional[List[str]] = None
-    tone_professional: Optional[int] = Field(None, ge=0, le=100)
-    tone_technical: Optional[int] = Field(None, ge=0, le=100)
+    tone_professional: Optional[int] = Field(None, ge=0, le=100)  # Legacy
+    tone_technical: Optional[int] = Field(None, ge=0, le=100)  # Legacy
+    tone_preset: Optional[str] = None  # New semantic preset
     format_type: Optional[str] = None
     length_preference: Optional[str] = None
     frequency: Optional[str] = None
@@ -62,9 +63,10 @@ class TopicsUpdate(BaseModel):
 
 # ==================== CONSTANTS ====================
 
-VALID_FORMAT_TYPES = ["email", "pdf", "web"]
-VALID_LENGTH_PREFERENCES = ["short", "mixed", "long"]
+VALID_FORMAT_TYPES = ["email", "pdf", "web", "html"]
+VALID_LENGTH_PREFERENCES = ["quick_read", "standard", "deep_dive", "short", "mixed", "long"]  # New + legacy
 VALID_FREQUENCIES = ["daily", "weekly", "monthly", "quarterly"]
+VALID_TONE_PRESETS = ["expert_analysis", "industry_insight", "friendly_summary"]
 VALID_AUDIENCE_OPTIONS = [
     "myself",
     "researchers",
@@ -110,6 +112,12 @@ def validate_config_update(update: NewsletterConfigUpdate) -> None:
             detail=f"Invalid frequency. Must be one of: {VALID_FREQUENCIES}",
         )
 
+    if update.tone_preset and update.tone_preset not in VALID_TONE_PRESETS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid tone_preset. Must be one of: {VALID_TONE_PRESETS}",
+        )
+
 
 # ==================== ENDPOINTS ====================
 
@@ -121,17 +129,55 @@ async def create_newsletter(
     """
     Create a new newsletter.
 
+    - Limits to 1 draft newsletter per user
     - Generates unique newsletter code
     - Sets default configuration values
     - Returns full newsletter object
     """
+    # Get user info (user is a dict from auth middleware)
+    user_id = user.get("user_id") if user else "anonymous"
+    user_email = user.get("email", "") if user else ""
+
+    # Check if user already has a draft newsletter
+    existing_newsletters = await db_client.query_items(
+        pk=f"USER#{user_id}",
+        index_name="GSI1",
+        sk_begins_with="NEWSLETTER#",
+    )
+
+    # Filter for draft newsletters
+    draft_newsletters = [
+        nl for nl in existing_newsletters if nl.get("status") == "draft"
+    ]
+
+    if draft_newsletters:
+        # Return the existing draft instead of creating a new one
+        existing = draft_newsletters[0]
+        logger.info(
+            f"User {user_id} already has draft newsletter {existing.get('newsletterCode')}"
+        )
+        return {
+            "id": existing.get("id"),
+            "newsletterCode": existing.get("newsletterCode"),
+            "title": existing.get("title", "Newsletter Draft"),
+            "status": existing.get("status", "draft"),
+            "target_audience": existing.get("target_audience", []),
+            "tone_professional": existing.get("tone_professional", 50),
+            "tone_technical": existing.get("tone_technical", 50),
+            "tone_preset": existing.get("tone_preset", "industry_insight"),
+            "format_type": existing.get("format_type", "email"),
+            "length_preference": existing.get("length_preference", "standard"),
+            "frequency": existing.get("frequency", "weekly"),
+            "geographic_focus": existing.get("geographic_focus", ""),
+            "current_step": existing.get("current_step", 1),
+            "created_at": existing.get("created_at"),
+            "updated_at": existing.get("updated_at"),
+            "existing": True,  # Flag to indicate this is an existing newsletter
+        }
+
     newsletter_id = str(uuid.uuid4())
     newsletter_code = generate_newsletter_code()
     now = datetime.utcnow().isoformat()
-
-    # Get user info
-    user_id = getattr(user, "id", str(user)) if user else "anonymous"
-    user_email = getattr(user, "email", "") if user else ""
 
     item = {
         "PK": f"NEWSLETTER#{newsletter_code}",
@@ -148,10 +194,11 @@ async def create_newsletter(
         "updated_at": now,
         # Step 1 defaults
         "target_audience": [],
-        "tone_professional": 50,
-        "tone_technical": 50,
+        "tone_professional": 50,  # Legacy
+        "tone_technical": 50,  # Legacy
+        "tone_preset": "industry_insight",  # New semantic preset
         "format_type": "email",
-        "length_preference": "mixed",
+        "length_preference": "standard",  # Updated default
         "frequency": "weekly",
         "geographic_focus": "",
         "current_step": 1,
@@ -169,8 +216,9 @@ async def create_newsletter(
         "target_audience": [],
         "tone_professional": 50,
         "tone_technical": 50,
+        "tone_preset": "industry_insight",
         "format_type": "email",
-        "length_preference": "mixed",
+        "length_preference": "standard",
         "frequency": "weekly",
         "geographic_focus": "",
         "current_step": 1,
@@ -197,8 +245,8 @@ async def get_newsletter(
             status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
         )
 
-    # Get user info
-    user_id = getattr(user, "id", str(user)) if user else "anonymous"
+    # Get user info (user is a dict from auth middleware)
+    user_id = user.get("user_id") if user else "anonymous"
 
     # Verify ownership
     if item.get("user_id") != user_id:
@@ -215,8 +263,9 @@ async def get_newsletter(
         "target_audience": item.get("target_audience", []),
         "tone_professional": item.get("tone_professional", 50),
         "tone_technical": item.get("tone_technical", 50),
+        "tone_preset": item.get("tone_preset", "industry_insight"),
         "format_type": item.get("format_type", "email"),
-        "length_preference": item.get("length_preference", "mixed"),
+        "length_preference": item.get("length_preference", "standard"),
         "frequency": item.get("frequency", "weekly"),
         "geographic_focus": item.get("geographic_focus", ""),
         "current_step": item.get("current_step", 1),
@@ -240,8 +289,8 @@ async def update_newsletter(
     """
     pk = f"NEWSLETTER#{newsletter_code}"
 
-    # Get user info
-    user_id = getattr(user, "id", str(user)) if user else "anonymous"
+    # Get user info (user is a dict from auth middleware)
+    user_id = user.get("user_id") if user else "anonymous"
 
     # Verify newsletter exists and user owns it
     existing = await db_client.get_item(pk=pk, sk="METADATA")
@@ -306,8 +355,8 @@ async def list_newsletters(user: Any = Depends(get_current_user)) -> Dict[str, A
     - Returns summary data only
     - Sorted by creation date (newest first)
     """
-    # Get user info
-    user_id = getattr(user, "id", str(user)) if user else "anonymous"
+    # Get user info (user is a dict from auth middleware)
+    user_id = user.get("user_id") if user else "anonymous"
 
     items = await db_client.query_items(
         pk=f"USER#{user_id}",
@@ -344,8 +393,8 @@ async def delete_newsletter(
     """
     pk = f"NEWSLETTER#{newsletter_code}"
 
-    # Get user info
-    user_id = getattr(user, "id", str(user)) if user else "anonymous"
+    # Get user info (user is a dict from auth middleware)
+    user_id = user.get("user_id") if user else "anonymous"
 
     # Verify ownership
     existing = await db_client.get_item(pk=pk, sk="METADATA")
@@ -388,8 +437,8 @@ async def save_topics(
     """
     pk = f"NEWSLETTER#{newsletter_code}"
 
-    # Get user info
-    user_id = getattr(user, "id", str(user)) if user else "anonymous"
+    # Get user info (user is a dict from auth middleware)
+    user_id = user.get("user_id") if user else "anonymous"
 
     # Verify ownership
     metadata = await db_client.get_item(pk=pk, sk="METADATA")
@@ -451,8 +500,8 @@ async def get_topics(
     """
     pk = f"NEWSLETTER#{newsletter_code}"
 
-    # Get user info
-    user_id = getattr(user, "id", str(user)) if user else "anonymous"
+    # Get user info (user is a dict from auth middleware)
+    user_id = user.get("user_id") if user else "anonymous"
 
     # Verify ownership
     metadata = await db_client.get_item(pk=pk, sk="METADATA")

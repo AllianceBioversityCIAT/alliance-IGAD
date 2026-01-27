@@ -195,13 +195,16 @@ async def get_proposals(user=Depends(get_current_user)):
 async def get_proposal(proposal_id: str, user=Depends(get_current_user)):
     """Get a specific proposal by ID or proposal code"""
     try:
+        user_id = user.get("user_id")
+
         # Check if it's a proposal code (PROP-YYYYMMDD-XXXX) or UUID
         if proposal_id.startswith("PROP-"):
             pk = f"PROPOSAL#{proposal_id}"
         else:
             # Need to query by ID - use GSI to find it
+            query_pk = f"USER#{user_id}"
             items = await db_client.query_items(
-                pk=f"USER#{user.get('user_id')}", index_name="GSI1"
+                pk=query_pk, index_name="GSI1"
             )
 
             # Find the proposal with matching ID
@@ -210,6 +213,20 @@ async def get_proposal(proposal_id: str, user=Depends(get_current_user)):
                 if item.get("id") == proposal_id:
                     proposal_item = item
                     break
+
+            # Fallback: GSI eventual consistency - scan main table by ID
+            # This handles newly created proposals that aren't in GSI yet
+            if not proposal_item:
+                scan_response = await db_client.scan_items(
+                    filter_expression="id = :id AND user_id = :user_id",
+                    expression_attribute_values={
+                        ":id": proposal_id,
+                        ":user_id": user_id,
+                    },
+                    limit=1,
+                )
+                if scan_response:
+                    proposal_item = scan_response[0]
 
             if not proposal_item:
                 raise HTTPException(status_code=404, detail="Proposal not found")
@@ -223,7 +240,7 @@ async def get_proposal(proposal_id: str, user=Depends(get_current_user)):
             raise HTTPException(status_code=404, detail="Proposal not found")
 
         # Verify ownership
-        if proposal.get("user_id") != user.get("user_id"):
+        if proposal.get("user_id") != user_id:
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Remove DynamoDB keys from response

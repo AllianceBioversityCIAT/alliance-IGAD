@@ -38,6 +38,11 @@ export function NewsletterGeneratorPage() {
     }
   }, [newsletterCode, location.pathname, navigate])
 
+  // Scroll to top when page loads or step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [location.pathname])
+
   // Show loading while creating newsletter
   if (isLoading) {
     return (

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Construction } from 'lucide-react'
 import { NewsletterLayout } from '../components/NewsletterLayout'
@@ -17,6 +18,11 @@ export function StepPlaceholder({ stepNumber, stepTitle }: StepPlaceholderProps)
     newsletterCode,
   })
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [stepNumber])
+
   // Calculate completed steps
   const completedSteps: number[] = []
   if (newsletter?.current_step && newsletter.current_step > 1) completedSteps.push(1)
@@ -35,27 +41,27 @@ export function StepPlaceholder({ stepNumber, stepTitle }: StepPlaceholderProps)
     }
   }
 
-  // Navigation buttons
-  const navigationButtons = (
-    <>
-      <button
-        className={`${styles.navButton} ${styles.navButtonSecondary}`}
-        onClick={handlePrevious}
-        disabled={isLoading}
-      >
-        <ChevronLeft size={18} />
-        Previous
-      </button>
-      <button
-        className={`${styles.navButton} ${styles.navButtonPrimary}`}
-        onClick={handleNext}
-        disabled={stepNumber === 4 || isLoading}
-      >
-        {stepNumber === 4 ? 'Finish' : 'Next'}
-        <ChevronRight size={18} />
-      </button>
-    </>
-  )
+  // Navigation buttons - must be an array for React.Children.toArray in NewsletterLayout
+  const navigationButtons = [
+    <button
+      key="previous"
+      className={`${styles.navButton} ${styles.navButtonSecondary}`}
+      onClick={handlePrevious}
+      disabled={isLoading}
+    >
+      <ChevronLeft size={18} />
+      Previous
+    </button>,
+    <button
+      key="next"
+      className={`${styles.navButton} ${styles.navButtonPrimary}`}
+      onClick={handleNext}
+      disabled={stepNumber === 4 || isLoading}
+    >
+      {stepNumber === 4 ? 'Finish' : 'Next'}
+      <ChevronRight size={18} />
+    </button>,
+  ]
 
   return (
     <NewsletterLayout

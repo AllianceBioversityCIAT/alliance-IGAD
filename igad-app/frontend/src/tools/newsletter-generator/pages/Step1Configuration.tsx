@@ -1,17 +1,13 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Info } from 'lucide-react'
 import { NewsletterLayout } from '../components/NewsletterLayout'
 import { AudienceCheckboxGroup } from '../components/AudienceCheckboxGroup'
-import { DualToneSlider } from '../components/DualToneSlider'
-import { DiscreteSlider } from '../components/DiscreteSlider'
+import { ToneSelector } from '../components/ToneSelector'
+import { LengthSelector } from '../components/LengthSelector'
+import { FrequencySelector } from '../components/FrequencySelector'
 import { useNewsletter } from '../hooks/useNewsletter'
-import {
-  AUDIENCE_OPTIONS,
-  FORMAT_OPTIONS,
-  LENGTH_OPTIONS,
-  FREQUENCY_OPTIONS,
-  DEFAULT_NEWSLETTER_CONFIG,
-} from '../types/newsletter'
+import { AUDIENCE_OPTIONS, FORMAT_OPTIONS, DEFAULT_NEWSLETTER_CONFIG } from '../types/newsletter'
 import styles from './newsletterGenerator.module.css'
 
 export function Step1Configuration() {
@@ -23,11 +19,14 @@ export function Step1Configuration() {
     autoSaveDelay: 500,
   })
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
   // Use newsletter values or defaults
   const targetAudience = newsletter?.target_audience ?? DEFAULT_NEWSLETTER_CONFIG.target_audience
-  const toneProfessional =
-    newsletter?.tone_professional ?? DEFAULT_NEWSLETTER_CONFIG.tone_professional
-  const toneTechnical = newsletter?.tone_technical ?? DEFAULT_NEWSLETTER_CONFIG.tone_technical
+  const tonePreset = newsletter?.tone_preset ?? DEFAULT_NEWSLETTER_CONFIG.tone_preset ?? 'industry_insight'
   const formatType = newsletter?.format_type ?? DEFAULT_NEWSLETTER_CONFIG.format_type
   const lengthPreference =
     newsletter?.length_preference ?? DEFAULT_NEWSLETTER_CONFIG.length_preference
@@ -42,12 +41,8 @@ export function Step1Configuration() {
     updateConfig({ target_audience: selectedValues })
   }
 
-  const handleProfessionalChange = (value: number) => {
-    updateConfig({ tone_professional: value })
-  }
-
-  const handleTechnicalChange = (value: number) => {
-    updateConfig({ tone_technical: value })
+  const handleToneChange = (value: string) => {
+    updateConfig({ tone_preset: value })
   }
 
   const handleFormatChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -79,27 +74,27 @@ export function Step1Configuration() {
   // Check if can proceed to next step
   const canProceed = targetAudience.length > 0
 
-  // Navigation buttons
-  const navigationButtons = (
-    <>
-      <button
-        className={`${styles.navButton} ${styles.navButtonSecondary}`}
-        onClick={handlePrevious}
-        disabled={true}
-      >
-        <ChevronLeft size={18} />
-        Previous
-      </button>
-      <button
-        className={`${styles.navButton} ${styles.navButtonPrimary}`}
-        onClick={handleNext}
-        disabled={!canProceed || isLoading}
-      >
-        Next
-        <ChevronRight size={18} />
-      </button>
-    </>
-  )
+  // Navigation buttons - must be an array for React.Children.toArray in NewsletterLayout
+  const navigationButtons = [
+    <button
+      key="previous"
+      className={`${styles.navButton} ${styles.navButtonSecondary}`}
+      onClick={handlePrevious}
+      disabled={true}
+    >
+      <ChevronLeft size={18} />
+      Previous
+    </button>,
+    <button
+      key="next"
+      className={`${styles.navButton} ${styles.navButtonPrimary}`}
+      onClick={handleNext}
+      disabled={!canProceed || isLoading}
+    >
+      Next
+      <ChevronRight size={18} />
+    </button>,
+  ]
 
   return (
     <NewsletterLayout
@@ -147,15 +142,9 @@ export function Step1Configuration() {
         <div className={styles.formCard}>
           <h3 className={styles.formCardTitle}>Writing Tone</h3>
           <p className={styles.formCardDescription}>
-            Adjust the sliders to set the tone of your newsletter content.
+            Select the tone that best matches your audience and communication style.
           </p>
-          <DualToneSlider
-            professionalValue={toneProfessional}
-            technicalValue={toneTechnical}
-            onProfessionalChange={handleProfessionalChange}
-            onTechnicalChange={handleTechnicalChange}
-            disabled={isLoading}
-          />
+          <ToneSelector value={tonePreset} onChange={handleToneChange} disabled={isLoading} />
         </div>
 
         {/* Format Card */}
@@ -184,29 +173,25 @@ export function Step1Configuration() {
         <div className={styles.formCard}>
           <h3 className={styles.formCardTitle}>Content Length</h3>
           <p className={styles.formCardDescription}>
-            Select your preferred content length for newsletter sections.
+            Select the depth and length of your newsletter articles.
           </p>
-          <DiscreteSlider
-            options={LENGTH_OPTIONS}
+          <LengthSelector
             value={lengthPreference}
             onChange={handleLengthChange}
             disabled={isLoading}
-            showSelected={true}
           />
         </div>
 
         {/* Frequency Card */}
         <div className={styles.formCard}>
-          <h3 className={styles.formCardTitle}>Publishing Frequency</h3>
+          <h3 className={styles.formCardTitle}>Publishing Strategy</h3>
           <p className={styles.formCardDescription}>
-            How often do you plan to publish this newsletter?
+            Choose your publishing frequency. This affects content generation approach.
           </p>
-          <DiscreteSlider
-            options={FREQUENCY_OPTIONS}
+          <FrequencySelector
             value={frequency}
             onChange={handleFrequencyChange}
             disabled={isLoading}
-            showSelected={true}
           />
         </div>
 
