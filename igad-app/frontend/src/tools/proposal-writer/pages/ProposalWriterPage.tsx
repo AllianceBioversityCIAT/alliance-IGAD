@@ -1746,7 +1746,9 @@ export function ProposalWriterPage() {
             status.reference_proposals_analysis.status === 'completed' &&
             status.reference_proposals_analysis.data
           ) {
-            setReferenceProposalsAnalysis(status.reference_proposals_analysis.data)
+            setReferenceProposalsAnalysis(
+              (status.reference_proposals_analysis.data || null) as ReferenceProposalsAnalysis | null
+            )
           }
 
           // Check overall status
@@ -1931,6 +1933,33 @@ export function ProposalWriterPage() {
       const err = error as { message?: string }
       showError('Generation failed', err.message || 'Unknown error')
     }
+  }
+
+  const parseMarkdownToHTML = (markdown: string): string => {
+    let formatted = markdown
+
+    // Headers
+    formatted = formatted.replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    formatted = formatted.replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    formatted = formatted.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+
+    // Bold
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+
+    // Italic
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
+
+    // Code
+    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
+
+    // Lists
+    formatted = formatted.replace(/^- (.*$)/gim, '<li>$1</li>')
+    formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+
+    // Line breaks
+    formatted = formatted.replace(/\n/g, '<br/>')
+
+    return formatted
   }
 
   const handleDownloadConceptDocument = async () => {

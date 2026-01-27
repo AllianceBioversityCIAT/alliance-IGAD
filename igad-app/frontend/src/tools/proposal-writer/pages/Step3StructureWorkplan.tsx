@@ -29,7 +29,7 @@ import styles from './step3-structure.module.css'
 import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
 import { useToast } from '@/shared/components/ui/ToastContainer'
-import { StructureWorkplanAnalysis, ProposalSection } from '../types/analysis'
+import { StructureWorkplanAnalysis } from '../types/analysis'
 
 // Removed unused Section interface
 
