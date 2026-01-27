@@ -29,17 +29,13 @@ import styles from './step3-structure.module.css'
 import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
 import { useToast } from '@/shared/components/ui/ToastContainer'
+import { StructureWorkplanAnalysis, ProposalSection } from '../types/analysis'
 
 // Removed unused Section interface
 
 interface Step3Props extends StepProps {
   proposalId?: string
-  structureWorkplanAnalysis?: {
-    narrative_overview?: string
-    proposal_mandatory?: ProposalSection[]
-    proposal_outline?: ProposalSection[]
-    hcd_notes?: { note: string }[]
-  }
+  structureWorkplanAnalysis?: StructureWorkplanAnalysis
   onGenerateTemplate?: (selectedSections: string[]) => void
   onTemplateGenerated?: () => void
   initialGeneratedContent?: string | null
@@ -48,13 +44,7 @@ interface Step3Props extends StepProps {
   onSelectedSectionsChange?: (sections: string[]) => void
 }
 
-interface ProposalSection {
-  section_title: string
-  recommended_word_count: string
-  purpose: string
-  content_guidance: string
-  guiding_questions: string[]
-}
+// Local ProposalSection removed, using shared type
 
 // Removed unused PRIORITY_COLORS constant
 

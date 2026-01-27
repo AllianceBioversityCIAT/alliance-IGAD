@@ -5,6 +5,7 @@
  */
 
 import { apiClient } from '@/shared/services/apiClient'
+import type { PublishingSchedule } from '../types/newsletter'
 
 // Types
 export interface NewsletterConfig {
@@ -19,6 +20,7 @@ export interface NewsletterConfig {
   format_type: string
   length_preference: string
   frequency: string
+  schedule?: PublishingSchedule // Publishing schedule configuration
   geographic_focus: string
   current_step: number
   created_at: string
@@ -46,6 +48,7 @@ export interface UpdateNewsletterRequest {
   format_type?: string
   length_preference?: string
   frequency?: string
+  schedule?: PublishingSchedule // Publishing schedule configuration
   geographic_focus?: string
   current_step?: number
 }

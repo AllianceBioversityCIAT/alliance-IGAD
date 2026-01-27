@@ -15,12 +15,12 @@ export const stepConfig = [
 
 export interface StepProps {
   formData: {
-    uploadedFiles: { [key: string]: File[] }
+    uploadedFiles: { [key: string]: (File | string)[] }
     textInputs: { [key: string]: string }
   }
   setFormData: React.Dispatch<
     React.SetStateAction<{
-      uploadedFiles: { [key: string]: File[] }
+      uploadedFiles: { [key: string]: (File | string)[] }
       textInputs: { [key: string]: string }
     }>
   >

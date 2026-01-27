@@ -43,6 +43,26 @@ class NewsletterCreate(BaseModel):
     title: str = Field(default="Newsletter Draft", max_length=200)
 
 
+class ScheduleRuleModel(BaseModel):
+    """Model for a single schedule rule."""
+
+    intervalType: str = Field(..., pattern="^(days|weeks|months)$")
+    intervalAmount: int = Field(..., ge=1, le=365)
+    weekdays: Optional[List[int]] = Field(None, min_length=0, max_length=7)
+    dayOfMonth: Optional[int] = Field(None, ge=1, le=31)
+    hour: int = Field(..., ge=0, le=23)
+    minute: int = Field(..., ge=0, le=59)
+
+
+class PublishingScheduleModel(BaseModel):
+    """Model for publishing schedule configuration."""
+
+    conceptualFrequency: str = Field(
+        ..., pattern="^(daily|weekly|monthly|quarterly|custom)$"
+    )
+    scheduleRules: List[ScheduleRuleModel] = Field(..., min_length=1, max_length=5)
+
+
 class NewsletterConfigUpdate(BaseModel):
     """Request model for updating newsletter configuration (Step 1)."""
 
@@ -53,6 +73,7 @@ class NewsletterConfigUpdate(BaseModel):
     format_type: Optional[str] = None
     length_preference: Optional[str] = None
     frequency: Optional[str] = None
+    schedule: Optional[PublishingScheduleModel] = None  # Publishing schedule
     geographic_focus: Optional[str] = None
     current_step: Optional[int] = None
 
@@ -74,7 +95,7 @@ VALID_LENGTH_PREFERENCES = [
     "mixed",
     "long",
 ]  # New + legacy
-VALID_FREQUENCIES = ["daily", "weekly", "monthly", "quarterly"]
+VALID_FREQUENCIES = ["daily", "weekly", "monthly", "quarterly", "custom"]
 VALID_TONE_PRESETS = ["expert_analysis", "industry_insight", "friendly_summary"]
 VALID_AUDIENCE_OPTIONS = [
     "myself",
@@ -96,6 +117,33 @@ def generate_newsletter_code() -> str:
     date_str = now.strftime("%Y%m%d")
     random_suffix = str(uuid.uuid4())[:4].upper()
     return f"NL-{date_str}-{random_suffix}"
+
+
+def validate_schedule_rule(rule: ScheduleRuleModel) -> List[str]:
+    """Validate a schedule rule and return list of errors."""
+    errors = []
+
+    # Validate interval amount based on type
+    if rule.intervalType == "days" and rule.intervalAmount > 365:
+        errors.append("Days interval must be between 1 and 365")
+    elif rule.intervalType == "weeks" and rule.intervalAmount > 52:
+        errors.append("Weeks interval must be between 1 and 52")
+    elif rule.intervalType == "months" and rule.intervalAmount > 12:
+        errors.append("Months interval must be between 1 and 12")
+
+    # Validate weekdays for daily/weekly
+    if rule.intervalType in ("days", "weeks"):
+        if rule.weekdays:
+            for day in rule.weekdays:
+                if day < 0 or day > 6:
+                    errors.append("Weekdays must be between 0 (Sunday) and 6 (Saturday)")
+                    break
+
+    # Validate minute is one of the allowed values
+    if rule.minute not in (0, 15, 30, 45):
+        errors.append("Minute must be 0, 15, 30, or 45")
+
+    return errors
 
 
 def validate_config_update(update: NewsletterConfigUpdate) -> None:
@@ -126,6 +174,20 @@ def validate_config_update(update: NewsletterConfigUpdate) -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid tone_preset. Must be one of: {VALID_TONE_PRESETS}",
         )
+
+    # Validate schedule rules
+    if update.schedule:
+        all_errors = []
+        for i, rule in enumerate(update.schedule.scheduleRules):
+            rule_errors = validate_schedule_rule(rule)
+            if rule_errors:
+                all_errors.extend([f"Rule {i + 1}: {e}" for e in rule_errors])
+
+        if all_errors:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid schedule: {'; '.join(all_errors)}",
+            )
 
 
 # ==================== ENDPOINTS ====================
@@ -165,6 +227,19 @@ async def create_newsletter(
         logger.info(
             f"User {user_id} already has draft newsletter {existing.get('newsletterCode')}"
         )
+        # Default schedule for existing newsletters without schedule
+        existing_schedule = existing.get("schedule") or {
+            "conceptualFrequency": existing.get("frequency", "weekly"),
+            "scheduleRules": [
+                {
+                    "intervalType": "weeks",
+                    "intervalAmount": 1,
+                    "weekdays": [1],
+                    "hour": 9,
+                    "minute": 0,
+                }
+            ],
+        }
         return {
             "id": existing.get("id"),
             "newsletterCode": existing.get("newsletterCode"),
@@ -177,6 +252,7 @@ async def create_newsletter(
             "format_type": existing.get("format_type", "email"),
             "length_preference": existing.get("length_preference", "standard"),
             "frequency": existing.get("frequency", "weekly"),
+            "schedule": existing_schedule,
             "geographic_focus": existing.get("geographic_focus", ""),
             "current_step": existing.get("current_step", 1),
             "created_at": existing.get("created_at"),
@@ -187,6 +263,20 @@ async def create_newsletter(
     newsletter_id = str(uuid.uuid4())
     newsletter_code = generate_newsletter_code()
     now = datetime.utcnow().isoformat()
+
+    # Default schedule (weekly on Monday at 9:00 AM)
+    default_schedule = {
+        "conceptualFrequency": "weekly",
+        "scheduleRules": [
+            {
+                "intervalType": "weeks",
+                "intervalAmount": 1,
+                "weekdays": [1],  # Monday
+                "hour": 9,
+                "minute": 0,
+            }
+        ],
+    }
 
     item = {
         "PK": f"NEWSLETTER#{newsletter_code}",
@@ -209,6 +299,7 @@ async def create_newsletter(
         "format_type": "email",
         "length_preference": "standard",  # Updated default
         "frequency": "weekly",
+        "schedule": default_schedule,  # Publishing schedule
         "geographic_focus": "",
         "current_step": 1,
     }
@@ -229,6 +320,7 @@ async def create_newsletter(
         "format_type": "email",
         "length_preference": "standard",
         "frequency": "weekly",
+        "schedule": default_schedule,
         "geographic_focus": "",
         "current_step": 1,
         "created_at": now,
@@ -264,6 +356,20 @@ async def get_newsletter(
             detail="Not authorized to access this newsletter",
         )
 
+    # Default schedule for items without schedule
+    item_schedule = item.get("schedule") or {
+        "conceptualFrequency": item.get("frequency", "weekly"),
+        "scheduleRules": [
+            {
+                "intervalType": "weeks",
+                "intervalAmount": 1,
+                "weekdays": [1],
+                "hour": 9,
+                "minute": 0,
+            }
+        ],
+    }
+
     return {
         "id": item.get("id"),
         "newsletterCode": item.get("newsletterCode"),
@@ -276,6 +382,7 @@ async def get_newsletter(
         "format_type": item.get("format_type", "email"),
         "length_preference": item.get("length_preference", "standard"),
         "frequency": item.get("frequency", "weekly"),
+        "schedule": item_schedule,
         "geographic_focus": item.get("geographic_focus", ""),
         "current_step": item.get("current_step", 1),
         "created_at": item.get("created_at"),

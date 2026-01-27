@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from app.models.prompt_model import Prompt, PromptCreate, ProposalSection
+from app.shared.schemas.prompt_model import Prompt, PromptCreate, ProposalSection
 
 
 @pytest.fixture

@@ -5,9 +5,14 @@ import { NewsletterLayout } from '../components/NewsletterLayout'
 import { AudienceCheckboxGroup } from '../components/AudienceCheckboxGroup'
 import { ToneSelector } from '../components/ToneSelector'
 import { LengthSelector } from '../components/LengthSelector'
-import { FrequencySelector } from '../components/FrequencySelector'
+import { PublishingStrategy } from '../components/PublishingStrategy'
 import { useNewsletter } from '../hooks/useNewsletter'
-import { AUDIENCE_OPTIONS, FORMAT_OPTIONS, DEFAULT_NEWSLETTER_CONFIG } from '../types/newsletter'
+import {
+  AUDIENCE_OPTIONS,
+  FORMAT_OPTIONS,
+  DEFAULT_NEWSLETTER_CONFIG,
+  type PublishingSchedule,
+} from '../types/newsletter'
 import styles from './newsletterGenerator.module.css'
 
 export function Step1Configuration() {
@@ -32,6 +37,7 @@ export function Step1Configuration() {
   const lengthPreference =
     newsletter?.length_preference ?? DEFAULT_NEWSLETTER_CONFIG.length_preference
   const frequency = newsletter?.frequency ?? DEFAULT_NEWSLETTER_CONFIG.frequency
+  const schedule = newsletter?.schedule ?? DEFAULT_NEWSLETTER_CONFIG.schedule
   const geographicFocus = newsletter?.geographic_focus ?? DEFAULT_NEWSLETTER_CONFIG.geographic_focus
 
   // Calculate completed steps (for now, step 1 is complete if audience is selected)
@@ -54,8 +60,8 @@ export function Step1Configuration() {
     updateConfig({ length_preference: value })
   }
 
-  const handleFrequencyChange = (value: string) => {
-    updateConfig({ frequency: value })
+  const handleFrequencyChange = (frequencyValue: string, scheduleValue: PublishingSchedule) => {
+    updateConfig({ frequency: frequencyValue, schedule: scheduleValue })
   }
 
   const handleGeographicFocusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -186,14 +192,16 @@ export function Step1Configuration() {
           />
         </div>
 
-        {/* Frequency Card */}
+        {/* Publishing Strategy Card */}
         <div className={styles.formCard}>
           <h3 className={styles.formCardTitle}>Publishing Strategy</h3>
           <p className={styles.formCardDescription}>
-            Choose your publishing frequency. This affects content generation approach.
+            Choose your publishing frequency and schedule. Customize the timing to fit your
+            workflow.
           </p>
-          <FrequencySelector
+          <PublishingStrategy
             value={frequency}
+            schedule={schedule}
             onChange={handleFrequencyChange}
             disabled={isLoading}
           />

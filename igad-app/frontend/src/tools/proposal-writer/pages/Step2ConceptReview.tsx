@@ -60,11 +60,13 @@ import { useToast } from '@/shared/components/ui/ToastContainer'
 // TYPE DEFINITIONS
 // ============================================================================
 
+import type { ConceptAnalysis, FitAssessment, SectionNeedingElaboration } from '../types/analysis'
+
 /**
  * Props for the Step2ConceptReview component
  * Extends base StepProps with Step 2 specific properties
  */
-interface Step2Props extends StepProps {
+interface Step2Props extends Omit<StepProps, 'conceptAnalysis' | 'conceptDocument'> {
   /** AI-generated concept analysis (may be nested due to backend structure) */
   conceptAnalysis?: ConceptAnalysis | { concept_analysis: ConceptAnalysis }
   /** Generated concept document (can have various formats) */
@@ -86,51 +88,6 @@ interface Step2Props extends StepProps {
   onRegenerationStateChanged?: (isRegenerating: boolean) => void
   /** Current concept file name (for display in confirmation modal) */
   currentConceptFileName?: string
-}
-
-/**
- * Represents the fit assessment between the proposal concept and donor priorities
- */
-interface FitAssessment {
-  /** Level of alignment (e.g., "Very strong alignment", "Moderate alignment") */
-  alignment_level: string
-  /** Detailed explanation of the alignment assessment */
-  justification: string
-  /** Confidence level in the assessment */
-  confidence: string
-}
-
-/**
- * Represents a section of the proposal that needs further elaboration
- * UPDATED to include user_comment field
- */
-interface SectionNeedingElaboration {
-  /** Name of the section requiring elaboration */
-  section: string
-  /** Description of the issue or gap in the section */
-  issue: string
-  /** Priority level for addressing this section */
-  priority: 'Critical' | 'Recommended' | 'Optional'
-  /** Optional array of suggestions for improving the section */
-  suggestions?: string[]
-  /** Whether this section is selected for generation */
-  selected?: boolean
-  /** Optional user comment for this section - ADDED */
-  user_comment?: string
-}
-
-/**
- * Complete analysis of the proposal concept from AI evaluation
- */
-interface ConceptAnalysis {
-  /** Overall fit assessment with donor priorities */
-  fit_assessment: FitAssessment
-  /** List of strong aspects identified in the concept */
-  strong_aspects: string[]
-  /** Sections that need further elaboration */
-  sections_needing_elaboration: SectionNeedingElaboration[]
-  /** Strategic verdict and recommendations */
-  strategic_verdict: string
 }
 
 /**
@@ -1203,17 +1160,6 @@ export function Step2ConceptReview({
           user_comment: comments[section.section] || '',
         }))
 
-        // Step 3: Build the full concept evaluation payload
-        const conceptEvaluation = {
-          concept_analysis: {
-            fit_assessment: unwrappedAnalysis.fit_assessment,
-            strong_aspects: unwrappedAnalysis.strong_aspects,
-            sections_needing_elaboration: allSectionsWithSelection,
-            strategic_verdict: unwrappedAnalysis.strategic_verdict,
-          },
-          status: 'completed',
-        }
-
         // Step 4: Prepare update payload for DynamoDB
         const userCommentsPayload: Record<string, string> = {}
         allSectionsWithSelection.forEach((section: { section: string; user_comment: string }) => {
@@ -1245,7 +1191,7 @@ export function Step2ConceptReview({
         // Step 6: Start document generation
         setProgressMessage('Generating updated concept document...')
         // Removed console.log'📄 Starting document generation...')
-        await proposalService.generateConceptDocument(proposalId, conceptEvaluation)
+        await proposalService.generateConceptDocument(proposalId, updatePayload)
 
         // Step 7: Poll for completion
         let generationComplete = false

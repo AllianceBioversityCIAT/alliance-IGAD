@@ -2,6 +2,53 @@
  * Newsletter Types
  */
 
+// Schedule Rule for publishing
+export interface ScheduleRule {
+  intervalType: 'days' | 'weeks' | 'months'
+  intervalAmount: number
+  weekdays?: number[] // [0-6] where 0=Sunday
+  dayOfMonth?: number // 1-31 (for monthly)
+  hour: number // 0-23 (24-hour for storage)
+  minute: number // 0, 15, 30, 45
+}
+
+export interface PublishingSchedule {
+  conceptualFrequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'custom'
+  scheduleRules: ScheduleRule[]
+}
+
+// Preset schedule configurations
+export const SCHEDULE_PRESETS: Record<string, ScheduleRule> = {
+  daily: {
+    intervalType: 'days',
+    intervalAmount: 1,
+    weekdays: [1, 2, 3, 4, 5], // Mon-Fri
+    hour: 9,
+    minute: 0,
+  },
+  weekly: {
+    intervalType: 'weeks',
+    intervalAmount: 1,
+    weekdays: [1], // Monday
+    hour: 9,
+    minute: 0,
+  },
+  monthly: {
+    intervalType: 'months',
+    intervalAmount: 1,
+    dayOfMonth: 1, // 1st of month
+    hour: 9,
+    minute: 0,
+  },
+  quarterly: {
+    intervalType: 'months',
+    intervalAmount: 3,
+    dayOfMonth: 1, // 1st of month
+    hour: 9,
+    minute: 0,
+  },
+}
+
 export interface Newsletter {
   id: string
   newsletterCode: string
@@ -17,6 +64,7 @@ export interface Newsletter {
   format_type: string
   length_preference: string
   frequency: string
+  schedule?: PublishingSchedule // New publishing schedule
   geographic_focus: string
   example_files?: string[]
 
@@ -35,6 +83,7 @@ export interface NewsletterConfig {
   format_type: string
   length_preference: string
   frequency: string
+  schedule?: PublishingSchedule // Publishing schedule configuration
   geographic_focus: string
 }
 
@@ -168,5 +217,9 @@ export const DEFAULT_NEWSLETTER_CONFIG: NewsletterConfig = {
   format_type: 'email',
   length_preference: 'standard',
   frequency: 'weekly',
+  schedule: {
+    conceptualFrequency: 'weekly',
+    scheduleRules: [SCHEDULE_PRESETS.weekly],
+  },
   geographic_focus: '',
 }

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type {
   RFPAnalysis,
@@ -65,7 +66,7 @@ export function ProposalWriterPage() {
   const [generatedProposalContent, setGeneratedProposalContent] = useState<string | null>(null)
   const [selectedSections, setSelectedSections] = useState<string[] | null>(null)
   const [formData, setFormData] = useState<{
-    uploadedFiles: { [key: string]: File[] | string[] }
+    uploadedFiles: { [key: string]: (File | string)[] }
     textInputs: { [key: string]: string }
   }>({
     uploadedFiles: {},
@@ -551,7 +552,7 @@ export function ProposalWriterPage() {
           // Map DynamoDB documents field to formData uploadedFiles structure
           // DynamoDB stores documents in a separate 'documents' field with arrays like:
           // documents: { rfp_documents: [...], concept_documents: [...], ... }
-          const uploadedFiles: { [key: string]: string[] } = {}
+          const uploadedFiles: { [key: string]: (string | File)[] } = {}
 
           if (proposal.documents) {
             uploadedFiles['rfp-document'] = proposal.documents.rfp_documents || []
@@ -1399,6 +1400,7 @@ export function ProposalWriterPage() {
 
   // Removed unused _handleGenerateTemplate function - was not being called
   /* eslint-disable @typescript-eslint/no-unused-vars */
+  // @ts-ignore
   const _handleGenerateTemplate = async (
     selectedSections: string[],
     userComments: { [key: string]: string }
@@ -1502,7 +1504,7 @@ export function ProposalWriterPage() {
         // STEP 1: RFP Analysis ONLY
         if (!rfpAnalysis) {
           // Removed console.log'📡 Step 1/3: Starting RFP analysis...')
-          const _step1Result = await proposalService.analyzeStep1(proposalId!)
+          await proposalService.analyzeStep1(proposalId!)
 
           // Removed console.log'📊 Step 1 (RFP) launched:', _step1Result)
 
@@ -1529,7 +1531,7 @@ export function ProposalWriterPage() {
 
         setAnalysisProgress({ step: 2, total: 3, message: step2Message })
 
-        const _step2Result = await proposalService.analyzeStep2(proposalId!)
+        await proposalService.analyzeStep2(proposalId!)
         // Removed console.log'📊 Step 2 (Reference Proposals + Existing Work) launched:', _step2Result)
 
         // Poll for Step 2 completion
@@ -1594,9 +1596,6 @@ export function ProposalWriterPage() {
         step: 1,
         total: 1,
         message: 'Generating Proposal Structure',
-        steps: [
-          'Analyzing RFP requirements and concept evaluation to generate tailored proposal structure',
-        ],
       })
 
       try {
@@ -1776,7 +1775,7 @@ export function ProposalWriterPage() {
 
   // Helper function to poll analysis status (for Concept analysis)
   const pollAnalysisStatus = async <T,>(
-    statusFn: () => Promise<{ status: string; [key: string]: unknown }>,
+    statusFn: () => Promise<{ status: string;[key: string]: unknown }>,
     onSuccess: (result: T) => void,
     analysisName: string
   ): Promise<void> => {
@@ -1821,127 +1820,8 @@ export function ProposalWriterPage() {
     }
   }
 
-  const _handleGenerateConceptDocument = async (overrideData?: {
-    selectedSections: string[]
-    userComments?: { [key: string]: string }
-  }) => {
-    // Removed console.log'🟢 Starting concept document generation...')
-    // Removed console.log'📋 Override data:', overrideData)
-    // Removed console.log'📋 Concept evaluation data:', conceptEvaluationData)
-
-    // Use override data if provided (from Step 3 regeneration), otherwise use conceptEvaluationData
-    const evaluationData = overrideData || conceptEvaluationData
-
-    // Removed console.log'📋 Final evaluation data to use:', evaluationData)
-    // If concept document already exists and no override, just proceed to next step
-    if (conceptDocument && !overrideData) {
-      // Removed console.log'✅ Concept document already exists, proceeding to next step')
-      proceedToNextStep()
-      return
-    }
-
-    if (!proposalId || !evaluationData) {
-      showError('Missing selection', 'Please select sections before generating')
-      return
-    }
-
-    setIsGeneratingDocument(true)
-    setGenerationProgressStep(1)
-
-    try {
-      const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-
-      // Prepare concept evaluation
-      // conceptAnalysis is already unwrapped, use it directly
-      const unwrappedAnalysis = conceptAnalysis
-
-      // Removed console.log'🔍 Unwrapped concept analysis:', unwrappedAnalysis)
-
-      // Filter sections to include ONLY the ones user selected
-      const allSections = unwrappedAnalysis?.sections_needing_elaboration || []
-      // Mark all sections with selected flag
-      const allSectionsWithSelection = allSections.map(section => ({
-        ...section,
-        selected: evaluationData.selectedSections.includes(section.section),
-        user_comment: overrideData?.userComments?.[section.section] || '',
-      }))
-
-      const conceptEvaluation = {
-        concept_analysis: {
-          // Include complete original analysis (already unwrapped)
-          fit_assessment: unwrappedAnalysis?.fit_assessment,
-          strong_aspects: unwrappedAnalysis?.strong_aspects,
-          // Include ALL sections with selected flags and comments
-          sections_needing_elaboration: allSectionsWithSelection,
-          strategic_verdict: unwrappedAnalysis?.strategic_verdict,
-        },
-        status: 'completed',
-      }
-
-      // Removed console.log'📤 Sending concept evaluation:', conceptEvaluation)
-
-      // Step 1: Save concept evaluation to DynamoDB
-      // Removed console.log'💾 Saving concept evaluation to DynamoDB...')
-
-      // Prepare update payload in the format expected by the endpoint
-      const userComments: Record<string, string> = {}
-      allSectionsWithSelection.forEach(section => {
-        if (section.user_comment) {
-          userComments[section.section] = section.user_comment
-        }
-      })
-
-      const updatePayload = {
-        selected_sections: allSectionsWithSelection.map(section => ({
-          title: section.section,
-          selected: section.selected,
-          reason: section.reason,
-          suggestions: section.suggestions,
-        })),
-        user_comments: Object.keys(userComments).length > 0 ? userComments : undefined,
-      }
-
-      const updateResult = await proposalService.updateConceptEvaluation(proposalId, updatePayload)
-      // Removed console.log'✅ Concept evaluation saved to DynamoDB')
-
-      // Update local state with saved concept evaluation
-      // Keep the existing structure, just update the sections
-      const updatedConceptAnalysis =
-        updateResult.concept_evaluation?.concept_analysis || updateResult.concept_evaluation
-      if (updatedConceptAnalysis) {
-        // Removed console.log'📊 Updated conceptAnalysis:', updatedConceptAnalysis)
-        setConceptAnalysis(updatedConceptAnalysis as ConceptAnalysis)
-      }
-
-      // Step 2: Generate concept document
-      setGenerationProgressStep(2)
-      const result = await proposalService.generateConceptDocument(proposalId, conceptEvaluation)
-
-      if (result.status === 'completed' && result.concept_document) {
-        // Removed console.log'✅ Document generated successfully')
-        setGenerationProgressStep(3)
-        setConceptDocument(result.concept_document)
-        setIsGeneratingDocument(false)
-        setGenerationProgressStep(1) // Reset for next time
-        // Only proceed to next step if not regenerating from Step 3
-        if (!overrideData) {
-          proceedToNextStep()
-        }
-      } else {
-        // Poll for completion
-        await pollConceptDocumentStatus(!!overrideData)
-      }
-    } catch (error: unknown) {
-      // Removed console.error❌ Concept document generation failed:', error)
-      setIsGeneratingDocument(false)
-      setGenerationProgressStep(1) // Reset on error
-      const err = error as { message?: string }
-      showError('Generation failed', err.message || 'Unknown error')
-    }
-  }
-
   const pollConceptDocumentStatus = async (isRegenerating = false) => {
-    const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
+    if (!proposalId) return
 
     let attempts = 0
     const maxAttempts = 60 // 3 minutes max
@@ -1957,7 +1837,7 @@ export function ProposalWriterPage() {
       }
 
       try {
-        const status = await proposalService.getConceptDocumentStatus(proposalId!)
+        const status = await proposalService.getConceptDocumentStatus(proposalId)
 
         if (status.status === 'completed' && status.concept_document) {
           setGenerationProgressStep(3) // Ensure we're at final step
@@ -1996,31 +1876,61 @@ export function ProposalWriterPage() {
     []
   )
 
-  const parseMarkdownToHTML = (markdown: string): string => {
-    let formatted = markdown
+  // Logic to trigger concept document generation - to be wired to "Next" button or similar
+  // @ts-ignore
+  const _triggerConceptDocumentGeneration = async (overrideData?: any) => {
+    if (!proposalId || !conceptAnalysis) return
 
-    // Headers
-    formatted = formatted.replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    formatted = formatted.replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    formatted = formatted.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    setIsGeneratingDocument(true)
+    setGenerationProgressStep(1)
 
-    // Bold
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    try {
+      const evaluationData = overrideData || conceptEvaluationData
+      // Prepare update payload
+      const updatePayload = {
+        selected_sections: conceptAnalysis.sections_needing_elaboration
+          .filter(section => evaluationData?.selectedSections?.includes(section.section))
+          .map(section => ({
+            title: section.section,
+            selected: true,
+            suggestions: section.suggestions,
+          })),
+        user_comments: evaluationData?.userComments,
+      }
 
-    // Italic
-    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
+      await proposalService.updateConceptEvaluation(proposalId, updatePayload)
 
-    // Code
-    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
+      // Update local state
+      const updatedSections = conceptAnalysis.sections_needing_elaboration.map(section => ({
+        ...section,
+        selected: evaluationData?.selectedSections?.includes(section.section) || false,
+        user_comment: evaluationData?.userComments?.[section.section],
+      }))
 
-    // Lists
-    formatted = formatted.replace(/^- (.*$)/gim, '<li>$1</li>')
-    formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+      setConceptAnalysis({
+        ...conceptAnalysis,
+        sections_needing_elaboration: updatedSections,
+      })
 
-    // Line breaks
-    formatted = formatted.replace(/\n/g, '<br/>')
+      // Generate
+      setGenerationProgressStep(2)
+      const result = await proposalService.generateConceptDocument(proposalId, updatePayload)
 
-    return formatted
+      if (result.status === 'completed' && result.concept_document) {
+        setGenerationProgressStep(3)
+        setConceptDocument(result.concept_document)
+        setIsGeneratingDocument(false)
+        setGenerationProgressStep(1)
+        proceedToNextStep()
+      } else {
+        await pollConceptDocumentStatus(false)
+      }
+    } catch (error: unknown) {
+      setIsGeneratingDocument(false)
+      setGenerationProgressStep(1)
+      const err = error as { message?: string }
+      showError('Generation failed', err.message || 'Unknown error')
+    }
   }
 
   const handleDownloadConceptDocument = async () => {
@@ -2133,10 +2043,10 @@ export function ProposalWriterPage() {
       formData,
       setFormData,
       proposalId,
-      rfpAnalysis,
-      conceptAnalysis,
+      rfpAnalysis: rfpAnalysis || undefined,
+      conceptAnalysis: conceptAnalysis || undefined,
       onConceptEvaluationChange: handleConceptEvaluationChange,
-      conceptDocument,
+      conceptDocument: conceptDocument || undefined,
       conceptEvaluationData,
       // Upload state setters for Step 1
       setIsUploadingRFP,
@@ -2152,6 +2062,7 @@ export function ProposalWriterPage() {
         return (
           <Step1InformationConsolidation
             {...stepProps}
+            rfpAnalysis={rfpAnalysis || undefined}
             onRfpDocumentChanged={() => {
               // Removed console.log'🔄 RFP Document changed - invalidating all downstream analyses')
               // Clear all analyses that depend on RFP
@@ -2205,6 +2116,7 @@ export function ProposalWriterPage() {
           <Step2ConceptReview
             {...stepProps}
             conceptDocument={conceptDocument}
+            conceptAnalysis={conceptAnalysis || undefined}
             proposalId={proposalId}
             onConceptAnalysisChanged={newConceptAnalysis => {
               // Called when concept analysis is regenerated (from Step2's internal handler)
@@ -2261,7 +2173,7 @@ export function ProposalWriterPage() {
           <Step3StructureWorkplan
             {...stepProps}
             proposalId={proposalId}
-            structureWorkplanAnalysis={structureWorkplanAnalysis}
+            structureWorkplanAnalysis={structureWorkplanAnalysis || undefined}
             initialGeneratedContent={generatedProposalContent}
             onGeneratedContentChange={content => {
               setGeneratedProposalContent(content)
@@ -2307,9 +2219,7 @@ export function ProposalWriterPage() {
             uploadedDraftFiles={
               (formData.uploadedFiles['draft-proposal'] as unknown as string[]) || []
             }
-            draftFeedbackAnalysis={
-              draftFeedbackAnalysis?.draft_feedback_analysis || draftFeedbackAnalysis
-            }
+            draftFeedbackAnalysis={draftFeedbackAnalysis || undefined}
             draftIsAiGenerated={draftIsAiGenerated}
             generatedProposalContent={generatedProposalContent}
             initialSelectedSections={step4SelectedSections}
@@ -2329,7 +2239,7 @@ export function ProposalWriterPage() {
                 ...prev,
                 uploadedFiles: {
                   ...prev.uploadedFiles,
-                  'draft-proposal': files as File[],
+                  'draft-proposal': files as unknown as File[],
                 },
               }))
               // If user uploads a new file, it's not AI-generated anymore
@@ -2456,18 +2366,18 @@ export function ProposalWriterPage() {
         currentStep === 1 && isVectorizingFiles
           ? 'Please wait for document vectorization to complete'
           : currentStep === 1 &&
-              (isUploadingRFP ||
-                isUploadingReference ||
-                isUploadingSupporting ||
-                isUploadingConcept)
+            (isUploadingRFP ||
+              isUploadingReference ||
+              isUploadingSupporting ||
+              isUploadingConcept)
             ? 'Please wait for file uploads to complete'
             : currentStep === 1 &&
-                (!(formData.textInputs['proposal-title'] || '').trim() ||
-                  !formData.uploadedFiles['rfp-document'] ||
-                  formData.uploadedFiles['rfp-document'].length === 0 ||
-                  ((formData.textInputs['initial-concept'] || '').length < 100 &&
-                    (!formData.uploadedFiles['concept-document'] ||
-                      formData.uploadedFiles['concept-document'].length === 0)))
+              (!(formData.textInputs['proposal-title'] || '').trim() ||
+                !formData.uploadedFiles['rfp-document'] ||
+                formData.uploadedFiles['rfp-document'].length === 0 ||
+                ((formData.textInputs['initial-concept'] || '').length < 100 &&
+                  (!formData.uploadedFiles['concept-document'] ||
+                    formData.uploadedFiles['concept-document'].length === 0)))
               ? 'Please provide a title, upload an RFP document, and provide an initial concept'
               : ''
       }
@@ -2540,47 +2450,47 @@ export function ProposalWriterPage() {
         progress={
           isResuming
             ? {
-                step: 1,
-                total: resumingOperations.length,
-                message: 'Resuming Analysis...',
-                description:
-                  'We detected an analysis that was in progress. Waiting for it to complete.',
-                steps: resumingOperations,
-              }
+              step: 1,
+              total: resumingOperations.length,
+              message: 'Resuming Analysis...',
+              description:
+                'We detected an analysis that was in progress. Waiting for it to complete.',
+              steps: resumingOperations,
+            }
             : isPreparingDraft
               ? {
-                  step: 1,
-                  total: 2,
-                  message: 'Preparing Draft for Review...',
-                  description:
-                    'Your AI-generated proposal draft is being prepared for the review process. This will only take a moment.',
-                  steps: ['Transferring AI-generated content', 'Setting up for analysis'],
-                }
+                step: 1,
+                total: 2,
+                message: 'Preparing Draft for Review...',
+                description:
+                  'Your AI-generated proposal draft is being prepared for the review process. This will only take a moment.',
+                steps: ['Transferring AI-generated content', 'Setting up for analysis'],
+              }
               : isRegeneratingConcept
                 ? {
-                    step: 1,
-                    total: 2,
-                    message: 'Regenerating Concept Analysis...',
-                    description:
-                      'Our AI is re-analyzing your concept note against the RFP requirements. This typically takes 1-2 minutes.',
-                    steps: [
-                      'Analyzing concept note and RFP alignment',
-                      'Generating fit assessment and improvement areas',
-                    ],
-                  }
+                  step: 1,
+                  total: 2,
+                  message: 'Regenerating Concept Analysis...',
+                  description:
+                    'Our AI is re-analyzing your concept note against the RFP requirements. This typically takes 1-2 minutes.',
+                  steps: [
+                    'Analyzing concept note and RFP alignment',
+                    'Generating fit assessment and improvement areas',
+                  ],
+                }
                 : isGeneratingDocument
                   ? {
-                      step: generationProgressStep,
-                      total: 3,
-                      message: 'Generating Enhanced Concept Document...',
-                      description:
-                        'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
-                      steps: [
-                        'Analyzing RFP requirements and selected sections',
-                        'Generating detailed narrative content with examples',
-                        'Finalizing and validating concept document',
-                      ],
-                    }
+                    step: generationProgressStep,
+                    total: 3,
+                    message: 'Generating Enhanced Concept Document...',
+                    description:
+                      'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
+                    steps: [
+                      'Analyzing RFP requirements and selected sections',
+                      'Generating detailed narrative content with examples',
+                      'Finalizing and validating concept document',
+                    ],
+                  }
                   : analysisProgress
         }
       />

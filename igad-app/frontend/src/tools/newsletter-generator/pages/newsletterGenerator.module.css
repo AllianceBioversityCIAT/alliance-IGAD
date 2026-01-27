@@ -1025,6 +1025,309 @@
   color: #9ca3af;
 }
 
+/* ================================
+   Publishing Strategy
+   ================================ */
+
+.publishingStrategy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Option Card Check Icon */
+.optionCardCheck {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.optionCard {
+  position: relative;
+}
+
+/* Customized Badge */
+.customizedBadge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #166534;
+  background: #dcfce7;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* ================================
+   Schedule Preview
+   ================================ */
+
+.schedulePreview {
+  background: #eff6ff;
+  border: 1px solid #bedbff;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.schedulePreviewHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.schedulePreviewIcon {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.schedulePreviewTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.schedulePreviewDates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #1e3a5f;
+}
+
+.schedulePreviewDate {
+  font-weight: 500;
+}
+
+.schedulePreviewSeparator {
+  color: #64748b;
+  margin-right: 2px;
+}
+
+.schedulePreviewTime {
+  color: #64748b;
+  margin-left: 4px;
+}
+
+.schedulePreviewEmpty {
+  font-size: 13px;
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ================================
+   Advanced Schedule Editor
+   ================================ */
+
+.advancedScheduleEditor {
+  display: flex;
+  flex-direction: column;
+}
+
+.advancedScheduleToggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  color: #166534;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.advancedScheduleToggle:hover:not(:disabled) {
+  color: #14532d;
+}
+
+.advancedScheduleToggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.advancedScheduleContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+/* Schedule Row */
+.scheduleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scheduleLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  min-width: 50px;
+}
+
+/* Interval Selector */
+.intervalSelector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.intervalInput {
+  width: 60px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #ffffff;
+  text-align: center;
+}
+
+.intervalInput:focus {
+  outline: none;
+  border-color: #166534;
+  box-shadow: 0 0 0 2px rgba(22, 101, 52, 0.1);
+}
+
+.intervalSelect {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.intervalSelect:focus {
+  outline: none;
+  border-color: #166534;
+}
+
+/* Day of Month Select */
+.dayOfMonthSelect {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.dayOfMonthSelect:focus {
+  outline: none;
+  border-color: #166534;
+}
+
+/* ================================
+   Weekday Chip Group
+   ================================ */
+
+.weekdayChipGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.weekdayChip {
+  padding: 8px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.weekdayChip:hover:not(:disabled) {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.weekdayChip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.weekdayChipSelected {
+  background: #dcfce7;
+  border-color: #166534;
+  color: #166534;
+}
+
+.weekdayChipSelected:hover:not(:disabled) {
+  background: #bbf7d0;
+  border-color: #14532d;
+}
+
+/* ================================
+   Time Selector
+   ================================ */
+
+.timeSelector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeSelectorHour,
+.timeSelectorMinute,
+.timeSelectorPeriod {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #ffffff;
+  cursor: pointer;
+  min-width: 55px;
+}
+
+.timeSelectorHour:focus,
+.timeSelectorMinute:focus,
+.timeSelectorPeriod:focus {
+  outline: none;
+  border-color: #166534;
+}
+
+.timeSelectorColon {
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b7280;
+  padding: 0 2px;
+}
+
+/* Schedule Errors */
+.scheduleErrors {
+  margin-top: 8px;
+}
+
+.scheduleError {
+  font-size: 12px;
+  color: #dc2626;
+  margin: 4px 0;
+}
+
 /* Responsive for new components */
 @media (max-width: 768px) {
   .toneSelector,
@@ -1040,5 +1343,40 @@
   .toneOptionLabel,
   .optionCardLabel {
     font-size: 14px;
+  }
+
+  /* Publishing Strategy Mobile */
+  .scheduleRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .scheduleLabel {
+    min-width: auto;
+  }
+
+  .weekdayChipGroup {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .weekdayChip {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .timeSelector {
+    width: 100%;
+  }
+
+  .timeSelectorHour,
+  .timeSelectorMinute {
+    flex: 1;
+    min-width: auto;
+  }
+
+  .timeSelectorPeriod {
+    min-width: 60px;
   }
 }
