@@ -149,7 +149,7 @@ class ProposalService {
   async updateFormData(
     proposalId: string,
     formData: {
-      uploadedFiles?: Record<string, File[] | string[]>
+      uploadedFiles?: Record<string, (File | string)[]>
       textInputs?: Record<string, string>
     }
   ): Promise<Proposal> {
@@ -513,7 +513,16 @@ class ProposalService {
 
   async generateConceptDocument(
     proposalId: string,
-    conceptEvaluation: { selectedSections: string[]; userComments?: Record<string, string> }
+    conceptEvaluation: {
+      selected_sections: Array<{
+        title: string
+        selected: boolean
+        analysis?: string
+        alignment_level?: string
+        suggestions?: string[]
+      }>
+      user_comments?: Record<string, string>
+    }
   ): Promise<{
     status: string
     message: string
@@ -539,11 +548,20 @@ class ProposalService {
 
   async updateConceptEvaluation(
     proposalId: string,
-    conceptEvaluation: { selectedSections: string[]; userComments?: Record<string, string> }
+    conceptEvaluation: {
+      selected_sections: Array<{
+        title: string
+        selected: boolean
+        analysis?: string
+        alignment_level?: string
+        suggestions?: string[]
+      }>
+      user_comments?: Record<string, string>
+    }
   ): Promise<{
     status: string
     message: string
-    concept_evaluation: { selectedSections: string[]; userComments?: Record<string, string> }
+    concept_evaluation: unknown
   }> {
     const response = await apiClient.put(
       `/api/proposals/${proposalId}/concept-evaluation`,

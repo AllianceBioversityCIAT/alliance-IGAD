@@ -1,107 +1,80 @@
-import { Rocket, Lock } from 'lucide-react'
+import { useEffect } from 'react'
+import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
+import { useNewsletter } from '../hooks/useNewsletter'
 
+/**
+ * NewsletterGeneratorPage - Main wrapper/router for newsletter generator
+ *
+ * This component handles:
+ * 1. Creating a new newsletter when accessing /newsletter-generator (no code)
+ * 2. Routing to step pages when a newsletterCode is present
+ */
 export function NewsletterGeneratorPage() {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 'calc(100vh - 65px)',
-        padding: '40px 20px',
-      }}
-    >
+  const { newsletterCode } = useParams<{ newsletterCode?: string }>()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const { createNewsletter, isLoading } = useNewsletter({})
+
+  // If no newsletter code, create a new newsletter
+  useEffect(() => {
+    // Only create if we're at the base route /newsletter-generator
+    const isBaseRoute =
+      location.pathname === '/newsletter-generator' ||
+      location.pathname === '/newsletter-generator/'
+
+    if (isBaseRoute && !newsletterCode && !isLoading) {
+      createNewsletter()
+    }
+  }, [newsletterCode, location.pathname, createNewsletter, isLoading])
+
+  // If we have a newsletter code but no step, redirect to step-1
+  useEffect(() => {
+    if (newsletterCode) {
+      const hasStep = location.pathname.includes('/step-')
+      if (!hasStep) {
+        navigate(`/newsletter-generator/${newsletterCode}/step-1`, { replace: true })
+      }
+    }
+  }, [newsletterCode, location.pathname, navigate])
+
+  // Scroll to top when page loads or step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [location.pathname])
+
+  // Show loading while creating newsletter
+  if (isLoading) {
+    return (
       <div
         style={{
-          textAlign: 'center',
-          maxWidth: '500px',
-          animation: 'fadeIn 0.5s ease-in-out',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 65px)',
+          gap: '16px',
         }}
       >
-        <div
+        <Loader2
+          size={40}
           style={{
-            marginBottom: '32px',
-            display: 'flex',
-            justifyContent: 'center',
-            animation: 'float 3s ease-in-out infinite',
+            color: '#016630',
+            animation: 'spin 1s linear infinite',
           }}
-        >
-          <Rocket size={48} style={{ color: '#016630' }} />
-        </div>
-
-        <h2
-          style={{
-            fontSize: '28px',
-            fontWeight: 600,
-            color: '#111827',
-            marginBottom: '12px',
-          }}
-        >
-          Coming Soon
-        </h2>
-
-        <p
-          style={{
-            fontSize: '16px',
-            color: '#6B7280',
-            marginBottom: '8px',
-            fontWeight: 500,
-          }}
-        >
-          Newsletter Generator Tool
-        </p>
-
-        <p
-          style={{
-            fontSize: '14px',
-            color: '#9CA3AF',
-            lineHeight: '1.6',
-            marginBottom: '28px',
-          }}
-        >
-          This powerful tool will help you create and manage newsletters. Coming soon!
-        </p>
-
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-            border: '1px solid #bbf7d0',
-            borderRadius: '20px',
-            color: '#059669',
-            fontSize: '13px',
-            fontWeight: 500,
-          }}
-        >
-          <Lock size={16} style={{ strokeWidth: 2 }} />
-          <span>Work in Progress</span>
-        </div>
+        />
+        <p style={{ color: '#6B7280', fontSize: '14px' }}>Creating your newsletter...</p>
+        <style>{`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
+    )
+  }
 
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-      `}</style>
-    </div>
-  )
+  // Render child routes (Step1, Step2, etc.)
+  return <Outlet />
 }

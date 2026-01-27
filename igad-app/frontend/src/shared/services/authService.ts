@@ -31,6 +31,12 @@ export interface UserInfo {
 }
 
 class AuthService {
+  // Cache for getCurrentUser to avoid multiple API calls
+  private userCache: UserInfo | null = null
+  private userCacheTimestamp: number = 0
+  private userCachePromise: Promise<UserInfo | null> | null = null
+  private readonly USER_CACHE_TTL = 30000 // 30 seconds
+
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
@@ -61,6 +67,7 @@ class AuthService {
 
   removeToken(): void {
     tokenManager.clearTokens()
+    this.clearUserCache()
 
     // Only remove email if remember me was not checked
     const rememberMe = localStorage.getItem('remember_me')
@@ -92,9 +99,36 @@ class AuthService {
   async getCurrentUser(): Promise<UserInfo | null> {
     const token = this.getToken()
     if (!token) {
+      this.clearUserCache()
       return null
     }
 
+    // Check cache first
+    const now = Date.now()
+    if (this.userCache && now - this.userCacheTimestamp < this.USER_CACHE_TTL) {
+      return this.userCache
+    }
+
+    // If there's already a request in flight, return that promise
+    // This prevents multiple simultaneous requests
+    if (this.userCachePromise) {
+      return this.userCachePromise
+    }
+
+    // Make the request and cache the promise
+    this.userCachePromise = this.fetchCurrentUser(token)
+
+    try {
+      const user = await this.userCachePromise
+      this.userCache = user
+      this.userCacheTimestamp = Date.now()
+      return user
+    } finally {
+      this.userCachePromise = null
+    }
+  }
+
+  private async fetchCurrentUser(token: string): Promise<UserInfo | null> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: {
@@ -126,6 +160,12 @@ class AuthService {
     } catch (error) {
       return null
     }
+  }
+
+  private clearUserCache(): void {
+    this.userCache = null
+    this.userCacheTimestamp = 0
+    this.userCachePromise = null
   }
 
   async completePasswordChange(

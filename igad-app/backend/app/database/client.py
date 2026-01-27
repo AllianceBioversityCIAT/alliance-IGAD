@@ -125,8 +125,9 @@ class DynamoDBClient:
         limit: Optional[int] = None,
         scan_index_forward: bool = True,
         pk_name: Optional[str] = None,
+        sk_begins_with: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """Query items by partition key"""
+        """Query items by partition key with pagination support"""
         try:
             # Determine the partition key name based on index
             if pk_name:
@@ -136,10 +137,22 @@ class DynamoDBClient:
             else:
                 partition_key_name = "PK"
 
+            # Determine sort key name based on index
+            if index_name == "GSI1":
+                sort_key_name = "GSI1SK"
+            else:
+                sort_key_name = "SK"
+
             kwargs = {"KeyConditionExpression": Key(partition_key_name).eq(pk)}
 
             if sk_condition:
                 kwargs["KeyConditionExpression"] &= sk_condition
+
+            # Support sk_begins_with for filtering by sort key prefix
+            if sk_begins_with:
+                kwargs["KeyConditionExpression"] &= Key(sort_key_name).begins_with(
+                    sk_begins_with
+                )
 
             if index_name:
                 kwargs["IndexName"] = index_name
@@ -149,8 +162,18 @@ class DynamoDBClient:
 
             kwargs["ScanIndexForward"] = scan_index_forward
 
+            # Handle pagination - collect all items
+            all_items = []
             response = self.table.query(**kwargs)
-            return response.get("Items", [])
+            all_items.extend(response.get("Items", []))
+
+            # Continue fetching if there are more items (unless limit is set)
+            while "LastEvaluatedKey" in response and not limit:
+                kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+                response = self.table.query(**kwargs)
+                all_items.extend(response.get("Items", []))
+
+            return all_items
         except ClientError as e:
             logger.error(f"Error querying items: {e}")
             raise
@@ -205,6 +228,60 @@ class DynamoDBClient:
             return items
         except ClientError as e:
             logger.error(f"Error scanning table: {e}")
+            raise
+
+    async def scan_items(
+        self,
+        filter_expression: str,
+        expression_attribute_values: Dict[str, Any],
+        expression_attribute_names: Optional[Dict[str, str]] = None,
+        limit: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Scan table with filter expression string and attribute values.
+        Use sparingly - prefer query when possible.
+        Useful for eventual consistency fallback when GSI hasn't replicated yet.
+        """
+        try:
+            from boto3.dynamodb.conditions import Attr
+
+            # Build filter expression from string conditions
+            # Parse simple "field = :value AND field2 = :value2" format
+            conditions = None
+            parts = filter_expression.split(" AND ")
+
+            for part in parts:
+                part = part.strip()
+                if " = " in part:
+                    field, placeholder = part.split(" = ")
+                    field = field.strip()
+                    placeholder = placeholder.strip()
+                    value = expression_attribute_values.get(placeholder)
+
+                    condition = Attr(field).eq(value)
+                    if conditions is None:
+                        conditions = condition
+                    else:
+                        conditions = conditions & condition
+
+            kwargs = {}
+            if conditions:
+                kwargs["FilterExpression"] = conditions
+
+            if limit:
+                kwargs["Limit"] = limit
+
+            response = self.table.scan(**kwargs)
+            items = response.get("Items", [])
+
+            # For fallback scans with limit, we don't need full pagination
+            # Just return first batch that matches
+            if limit and len(items) >= limit:
+                return items[:limit]
+
+            return items
+        except ClientError as e:
+            logger.error(f"Error scanning items: {e}")
             raise
 
 

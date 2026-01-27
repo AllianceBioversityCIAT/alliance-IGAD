@@ -4,6 +4,77 @@ Guidelines for AI agents working in the Python FastAPI backend.
 
 > **See also:** Detailed guidelines in [`app/tools/AGENTS.md`](./app/tools/AGENTS.md) for feature modules
 
+---
+
+## FastAPI Skills Reference
+
+> **Primary Skill**: Use `fastapi-serverless` for Lambda + DynamoDB + Cognito patterns specific to this project.
+> 
+> **Secondary Skill**: Use `fastapi` for general FastAPI patterns, Pydantic v2, and known issues.
+
+### Compatibility Notes
+
+This backend uses **AWS serverless architecture**:
+
+| Skill Pattern | This Backend | Adaptation |
+|---------------|--------------|------------|
+| SQLAlchemy async | DynamoDB (boto3) | Use `get_dynamodb_client()` |
+| `uv` package manager | pip + requirements.txt | Lambda deployment requires pip |
+| Lifespan events | Not used | Lambda manages lifecycle |
+| Uvicorn deployment | Lambda + Mangum | SAM template handles deployment |
+| `async_sessionmaker` | boto3 sync | DynamoDB SDK is sync |
+
+### What Applies from the Skill
+
+- **Pydantic v2 patterns**: Schemas, `Field()` validation, `ConfigDict`
+- **Router organization**: `APIRouter` with prefix/tags
+- **JWT authentication**: python-jose + passlib patterns
+- **CORS configuration**: Environment-based origins (not `*`)
+- **Error handling**: `HTTPException` patterns
+- **Type hints**: All functions must be typed
+
+### Known Issues to Avoid
+
+From the FastAPI skill, these issues are relevant:
+
+**Issue #6: Pydantic v2 Union Type Breaking Change**
+```python
+# AVOID: Union with str in path parameters
+@router.get("/items/{item_id}")
+async def get_item(item_id: int | str):  # Always parses as str!
+    ...
+
+# USE: Specific types
+@router.get("/items/{item_id}")
+async def get_item(item_id: str):  # Explicit
+    ...
+```
+
+**Issue #7: ValueError Returns 500 Instead of 422**
+```python
+# AVOID: ValueError in validators
+@field_validator('value')
+def validate(cls, v):
+    if v < 0:
+        raise ValueError("Must be positive")  # Returns 500!
+
+# USE: Pydantic Field constraints
+value: int = Field(..., gt=0)  # Returns 422 correctly
+```
+
+**Async Blocking Prevention**
+```python
+# AVOID: Blocking calls in async routes
+@router.get("/data")
+async def get_data():
+    time.sleep(1)  # Blocks event loop!
+    
+# USE: Async alternatives or sync def
+@router.get("/data")
+def get_data():  # FastAPI runs in thread pool
+    time.sleep(1)  # OK in sync function
+```
+
 ## Quick Reference
 
 ```bash
@@ -113,6 +184,39 @@ def analyze_rfp(
     ...
 ```
 
+### Pydantic v2 Patterns
+
+```python
+from pydantic import BaseModel, Field, ConfigDict
+
+# Schema with validation
+class ProposalCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str | None = Field(None, max_length=2000)
+    budget: float = Field(..., gt=0, description="Budget must be positive")
+
+# Schema for database responses
+class ProposalResponse(BaseModel):
+    proposal_id: str
+    title: str
+    status: str
+    created_at: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+# Update schema (all optional)
+class ProposalUpdate(BaseModel):
+    title: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
+    status: str | None = None
+```
+
+**Key Rules:**
+- Use `str | None` (Python 3.10+) instead of `Optional[str]`
+- Always add `= None` for truly optional fields
+- Use `Field()` for validation constraints
+- Separate Create/Update/Response schemas
+
 ---
 
 ## Error Handling
@@ -142,6 +246,26 @@ def analyze(self, proposal_id: str) -> Dict[str, Any]:
     # ... business logic
 ```
 
+### Validation Error Handler (Recommended)
+
+Add to `main.py` for better 422 error responses:
+
+```python
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": exc.errors(),
+            "body": exc.body,
+            "message": "Validation failed"
+        }
+    )
+```
+
 ---
 
 ## DynamoDB Patterns
@@ -169,6 +293,74 @@ response = table.query(
     },
 )
 ```
+
+### Pagination (CRITICAL)
+
+**IMPORTANT:** DynamoDB returns a maximum of 1MB per query/scan. If your data exceeds this limit, you MUST handle pagination using `LastEvaluatedKey` and `ExclusiveStartKey`.
+
+**Problem:** Without pagination handling, queries silently return incomplete results, causing data loss bugs that are hard to debug.
+
+**Correct Pattern - Collect All Items:**
+```python
+def get_all_items(self, pk: str) -> List[Dict[str, Any]]:
+    """Query all items with pagination support."""
+    all_items = []
+    
+    kwargs = {
+        "KeyConditionExpression": Key("PK").eq(pk)
+    }
+    
+    # First query
+    response = self.table.query(**kwargs)
+    all_items.extend(response.get("Items", []))
+    
+    # Continue fetching while there are more pages
+    while "LastEvaluatedKey" in response:
+        kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+        response = self.table.query(**kwargs)
+        all_items.extend(response.get("Items", []))
+    
+    return all_items
+```
+
+**With Limit (stop after N items):**
+```python
+def get_items_with_limit(self, pk: str, limit: int) -> List[Dict[str, Any]]:
+    """Query with limit - no pagination needed."""
+    response = self.table.query(
+        KeyConditionExpression=Key("PK").eq(pk),
+        Limit=limit
+    )
+    return response.get("Items", [])
+```
+
+**When to Use Each:**
+| Scenario | Pattern |
+|----------|---------|
+| Get ALL items for a proposal | Full pagination loop |
+| Get recent N items | Use `Limit`, no loop |
+| List with client pagination | Return `LastEvaluatedKey` to client |
+| Scan entire table | Always use pagination loop |
+
+**Common Mistake:**
+```python
+# WRONG - May return incomplete results!
+response = table.query(KeyConditionExpression=Key("PK").eq(pk))
+items = response.get("Items", [])  # Could be partial!
+
+# CORRECT - Always handle pagination
+items = []
+response = table.query(KeyConditionExpression=Key("PK").eq(pk))
+items.extend(response.get("Items", []))
+while "LastEvaluatedKey" in response:
+    response = table.query(
+        KeyConditionExpression=Key("PK").eq(pk),
+        ExclusiveStartKey=response["LastEvaluatedKey"]
+    )
+    items.extend(response.get("Items", []))
+```
+
+**Reference Implementation:** See `app/database/client.py` - `query_items()` method handles pagination automatically.
 
 ---
 

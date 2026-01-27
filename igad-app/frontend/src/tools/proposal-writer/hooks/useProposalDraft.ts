@@ -21,7 +21,7 @@ export function useProposalDraft() {
 
   // Save form data
   const saveFormData = (data: {
-    uploadedFiles: Record<string, File[] | string[]>
+    uploadedFiles: Record<string, (File | string)[]>
     textInputs: Record<string, string>
   }) => {
     localStorage.setItem(DRAFT_KEYS.FORM_DATA, JSON.stringify(data))

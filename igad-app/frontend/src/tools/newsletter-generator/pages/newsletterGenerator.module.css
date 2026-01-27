@@ -1,0 +1,1382 @@
+/* Newsletter Generator Layout - Following Figma Specifications */
+
+/* Secondary Navbar */
+.secondaryNavbar {
+  background: #edfdf5;
+  border-bottom: 1px solid #e8ebed;
+  padding: 0;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: sticky;
+  top: 65px;
+  z-index: 100;
+}
+
+.secondaryNavbarContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  color: #0a0a0a;
+}
+
+.newsletterCode {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: #4a5565;
+  font-weight: 500;
+  background: #ffffff;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.newsletterCodeDivider {
+  color: #9ca3af;
+  font-size: 20px;
+  font-weight: 300;
+}
+
+.newsletterCodeSkeleton {
+  display: inline-block;
+  width: 140px;
+  height: 28px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 6px;
+  margin-left: 8px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Status Badge in Secondary Navbar */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.statusBadgeDraft {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.statusBadgeProcessing {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.statusBadgeCompleted {
+  background: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.statusBadgeExported {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #d1fae5;
+}
+
+.navbarButtons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.promptManagerButton {
+  background: #00a63e;
+  color: #ffffff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.promptManagerButton:hover {
+  background: #059669;
+}
+
+.saveAndCloseButton {
+  background: #ffffff;
+  color: #016630;
+  border: 1px solid #016630;
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.saveAndCloseButton:hover:not(:disabled) {
+  background: #f0fdf4;
+  border-color: #00a63e;
+  color: #00a63e;
+}
+
+.saveAndCloseButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f9fafb;
+  color: #9ca3af;
+  border-color: #d1d5dc;
+}
+
+.buttonSpinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(1, 102, 48, 0.3);
+  border-top-color: #016630;
+  border-radius: 50%;
+  animation: buttonSpin 0.6s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes buttonSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Main Container */
+.newsletterGeneratorContainer {
+  display: flex;
+  min-height: calc(100vh - 129px);
+  background: #ffffff;
+  padding-bottom: 80px;
+  justify-content: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Left Sidebar */
+.sidebar {
+  position: fixed;
+  top: 129px;
+  left: 0;
+  width: 400px;
+  height: calc(100vh - 129px - 80px);
+  padding: 25px 15px 25px 25px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+@media (min-width: 1440px) {
+  .sidebar {
+    left: calc((100vw - 1400px) / 2);
+  }
+}
+
+.sidebarContent {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Progress Header */
+.progressHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.progressInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progressTitle {
+  font-size: 16px;
+  font-weight: 400;
+  color: #0a0a0a;
+  margin: 0;
+}
+
+.progressPercentage {
+  font-size: 16px;
+  font-weight: 400;
+  color: #166534;
+}
+
+.progressBar {
+  width: 100%;
+  height: 10px;
+  background: rgba(22, 101, 52, 0.2);
+  border-radius: 50px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #166534;
+  border-radius: 50px;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 14px;
+  color: #717182;
+  margin: 0;
+}
+
+/* Steps List */
+.stepsList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebarStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.stepIndicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.stepCircle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 400;
+  transition: all 0.3s ease;
+}
+
+.stepCircleActive {
+  background: #166534;
+  color: #ffffff;
+  box-shadow: 0px 0px 0px 4px #dcfce7;
+}
+
+.stepCircleCompleted {
+  background: #166534;
+  color: #ffffff;
+}
+
+.stepCirclePending {
+  background: #e5e7eb;
+  color: #6a7282;
+}
+
+.stepLine {
+  width: 2px;
+  height: 16px;
+  margin-top: 0;
+  transition: background-color 0.3s ease;
+}
+
+.stepLineCompleted {
+  background: #166534;
+}
+
+.stepLinePending {
+  background: #d1d5dc;
+}
+
+.stepContent {
+  flex: 1;
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebarStepTitle {
+  font-size: 15px;
+  line-height: 22px;
+  display: block;
+}
+
+.sidebarStepTitleActive {
+  color: #101828;
+  font-weight: 400;
+}
+
+.sidebarStepTitleCompleted {
+  color: #101828;
+  font-weight: 400;
+}
+
+.sidebarStepTitlePending {
+  color: #6a7282;
+  font-weight: 400;
+  opacity: 0.4;
+}
+
+/* Skeleton Styles */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 6px;
+}
+
+.skeletonProgressTitle {
+  height: 20px;
+  width: 120px;
+}
+
+.skeletonProgressPercent {
+  height: 20px;
+  width: 40px;
+}
+
+.skeletonProgressBar {
+  height: 8px;
+  width: 100%;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+.skeletonStepText {
+  height: 14px;
+  width: 80px;
+}
+
+.skeletonStepCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.skeletonStepLine {
+  width: 2px;
+  height: 24px;
+  margin: 4px 0 4px 15px;
+}
+
+.skeletonStepTitle {
+  height: 16px;
+  width: 140px;
+}
+
+/* Main Content Area */
+.contentArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 896px;
+  margin: 0 auto;
+  margin-left: 400px;
+  padding: 32px 24px;
+}
+
+/* Step Content Cards */
+.stepContentWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Info Card (Blue) */
+.infoCard {
+  background: #eff6ff;
+  border: 1px solid #bedbff;
+  border-radius: 14px;
+  padding: 20px 24px;
+}
+
+.infoCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #193cb8;
+  margin: 0 0 8px 0;
+}
+
+.infoCardDescription {
+  font-size: 14px;
+  color: #364153;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Form Card */
+.formCard {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.formCardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0a0a0a;
+  margin: 0 0 8px 0;
+}
+
+.formCardDescription {
+  font-size: 14px;
+  color: #717182;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+/* Audience Checkboxes */
+.audienceList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.audienceItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.audienceItem:hover {
+  border-color: #00a63e;
+  background: #f0fdf4;
+}
+
+.audienceItemSelected {
+  border-color: #00a63e;
+  background: #f0fdf4;
+}
+
+.audienceItemDisabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.audienceCheckbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.audienceItemSelected .audienceCheckbox {
+  background: #00a63e;
+  border-color: #00a63e;
+  color: white;
+}
+
+.audienceLabel {
+  font-size: 15px;
+  color: #0a0a0a;
+}
+
+/* Tone Sliders */
+.toneSliderContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sliderGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sliderLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #717182;
+}
+
+.sliderLabelActive {
+  color: #166534;
+  font-weight: 500;
+}
+
+.slider {
+  width: 100%;
+  height: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.slider:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #166534;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #166534;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Discrete Slider */
+.discreteSlider {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.discreteSliderLabels {
+  display: flex;
+  justify-content: space-between;
+}
+
+.discreteSliderLabel {
+  font-size: 13px;
+  color: #717182;
+  text-align: center;
+  flex: 1;
+}
+
+.discreteSliderLabelActive {
+  color: #166534;
+  font-weight: 500;
+}
+
+.discreteSliderTrack {
+  position: relative;
+  height: 8px;
+  background: #ececf0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.discreteSliderFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: #166534;
+  border-radius: 4px;
+  transition: width 0.2s ease;
+}
+
+.discreteSliderDots {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+  padding: 0 4px;
+}
+
+.discreteSliderDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d1d5db;
+  border: 2px solid white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.discreteSliderDotActive {
+  background: #166534;
+}
+
+.discreteSliderDotSelected {
+  background: #166534;
+  transform: scale(1.2);
+}
+
+.discreteSliderSelected {
+  font-size: 14px;
+  color: #166534;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Form Inputs */
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.formSelect {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #f3f3f5;
+  cursor: pointer;
+}
+
+.formSelect:focus {
+  outline: none;
+  border-color: #00a63e;
+  background: #ffffff;
+}
+
+.formInput {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #f3f3f5;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: #00a63e;
+  background: #ffffff;
+}
+
+.formInput::placeholder {
+  color: #9ca3af;
+}
+
+/* Error Message */
+.errorMessage {
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* Navigation Buttons */
+.navigationButtons {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 17px 215px 17px;
+  height: 69px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  box-shadow:
+    0px 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.navButtonLeft {
+  /* No positioning needed - handled by space-between */
+}
+
+.navButtonRight {
+  /* No positioning needed - handled by space-between */
+}
+
+.stepIndicatorNav {
+  font-size: 14px;
+  color: #717182;
+  font-weight: 400;
+}
+
+.navButton {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navButtonPrimary {
+  background: #00a63e;
+  color: white;
+  border: none;
+}
+
+.navButtonPrimary:hover:not(:disabled) {
+  background: #059669;
+}
+
+.navButtonPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.navButtonSecondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.navButtonSecondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.navButtonSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 280px;
+    padding: 24px 16px;
+  }
+
+  .contentArea {
+    margin-left: 280px;
+    padding: 24px 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .newsletterGeneratorContainer {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: relative;
+    top: 0;
+    width: 100%;
+    height: auto;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 16px;
+  }
+
+  .contentArea {
+    margin-left: 0;
+    padding: 16px;
+  }
+
+  .navigationButtons {
+    flex-direction: column-reverse;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .navButton {
+    width: 100%;
+  }
+}
+
+/* ================================
+   Tone Selector
+   ================================ */
+.toneSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toneOption {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toneOption:hover:not(:disabled) {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.toneOption:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.toneOptionSelected {
+  border-color: #166534;
+  background: #f0fdf4;
+}
+
+.toneOptionSelected:hover:not(:disabled) {
+  border-color: #166534;
+  background: #f0fdf4;
+}
+
+.toneOptionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toneOptionLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.toneOptionCheck {
+  color: #166534;
+  display: flex;
+  align-items: center;
+}
+
+.toneOptionDescription {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.toneOptionExample {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.toneOptionSelected .toneOptionExample {
+  background: #dcfce7;
+}
+
+.toneOptionExampleLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toneOptionExampleText {
+  font-size: 12px;
+  color: #4b5563;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* ================================
+   Option Cards (Length & Frequency)
+   ================================ */
+.optionCards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.optionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.optionCard:hover:not(:disabled) {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.optionCard:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.optionCardSelected {
+  border-color: #166534;
+  background: #f0fdf4;
+}
+
+.optionCardSelected:hover:not(:disabled) {
+  border-color: #166534;
+  background: #f0fdf4;
+}
+
+.optionCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.optionCardLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.optionCardMeta {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.optionCardSelected .optionCardMeta {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.optionCardDetail {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.optionCardFocus {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  padding-top: 4px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 4px;
+}
+
+.optionCardSelected .optionCardFocus {
+  border-top-color: #bbf7d0;
+}
+
+.optionCardFocusLabel {
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+/* ================================
+   Publishing Strategy
+   ================================ */
+
+.publishingStrategy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Option Card Check Icon */
+.optionCardCheck {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.optionCard {
+  position: relative;
+}
+
+/* Customized Badge */
+.customizedBadge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #166534;
+  background: #dcfce7;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* ================================
+   Schedule Preview
+   ================================ */
+
+.schedulePreview {
+  background: #eff6ff;
+  border: 1px solid #bedbff;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.schedulePreviewHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.schedulePreviewIcon {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.schedulePreviewTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.schedulePreviewDates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #1e3a5f;
+}
+
+.schedulePreviewDate {
+  font-weight: 500;
+}
+
+.schedulePreviewSeparator {
+  color: #64748b;
+  margin-right: 2px;
+}
+
+.schedulePreviewTime {
+  color: #64748b;
+  margin-left: 4px;
+}
+
+.schedulePreviewEmpty {
+  font-size: 13px;
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ================================
+   Advanced Schedule Editor
+   ================================ */
+
+.advancedScheduleEditor {
+  display: flex;
+  flex-direction: column;
+}
+
+.advancedScheduleToggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  color: #166534;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.advancedScheduleToggle:hover:not(:disabled) {
+  color: #14532d;
+}
+
+.advancedScheduleToggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.advancedScheduleContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+/* Schedule Row */
+.scheduleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scheduleLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  min-width: 50px;
+}
+
+/* Interval Selector */
+.intervalSelector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.intervalInput {
+  width: 60px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #ffffff;
+  text-align: center;
+}
+
+.intervalInput:focus {
+  outline: none;
+  border-color: #166534;
+  box-shadow: 0 0 0 2px rgba(22, 101, 52, 0.1);
+}
+
+.intervalSelect {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.intervalSelect:focus {
+  outline: none;
+  border-color: #166534;
+}
+
+/* Day of Month Select */
+.dayOfMonthSelect {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.dayOfMonthSelect:focus {
+  outline: none;
+  border-color: #166534;
+}
+
+/* ================================
+   Weekday Chip Group
+   ================================ */
+
+.weekdayChipGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.weekdayChip {
+  padding: 8px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.weekdayChip:hover:not(:disabled) {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.weekdayChip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.weekdayChipSelected {
+  background: #dcfce7;
+  border-color: #166534;
+  color: #166534;
+}
+
+.weekdayChipSelected:hover:not(:disabled) {
+  background: #bbf7d0;
+  border-color: #14532d;
+}
+
+/* ================================
+   Time Selector
+   ================================ */
+
+.timeSelector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeSelectorHour,
+.timeSelectorMinute,
+.timeSelectorPeriod {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #ffffff;
+  cursor: pointer;
+  min-width: 55px;
+}
+
+.timeSelectorHour:focus,
+.timeSelectorMinute:focus,
+.timeSelectorPeriod:focus {
+  outline: none;
+  border-color: #166534;
+}
+
+.timeSelectorColon {
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b7280;
+  padding: 0 2px;
+}
+
+/* Schedule Errors */
+.scheduleErrors {
+  margin-top: 8px;
+}
+
+.scheduleError {
+  font-size: 12px;
+  color: #dc2626;
+  margin: 4px 0;
+}
+
+/* Responsive for new components */
+@media (max-width: 768px) {
+  .toneSelector,
+  .optionCards {
+    gap: 10px;
+  }
+
+  .toneOption,
+  .optionCard {
+    padding: 14px;
+  }
+
+  .toneOptionLabel,
+  .optionCardLabel {
+    font-size: 14px;
+  }
+
+  /* Publishing Strategy Mobile */
+  .scheduleRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .scheduleLabel {
+    min-width: auto;
+  }
+
+  .weekdayChipGroup {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .weekdayChip {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .timeSelector {
+    width: 100%;
+  }
+
+  .timeSelectorHour,
+  .timeSelectorMinute {
+    flex: 1;
+    min-width: auto;
+  }
+
+  .timeSelectorPeriod {
+    min-width: 60px;
+  }
+}

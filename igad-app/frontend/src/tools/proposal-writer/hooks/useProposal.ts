@@ -22,7 +22,7 @@ export function useProposal(proposalId?: string) {
     mutationFn: (updates: Partial<Proposal>) =>
       proposalService.updateProposal(proposalId!, updates),
     onSuccess: updatedProposal => {
-      queryClient.setQueryData({ queryKey: ['proposal', proposalId] }, updatedProposal)
+      queryClient.setQueryData(['proposal', proposalId], updatedProposal)
       queryClient.invalidateQueries({ queryKey: ['proposals'] })
     },
   })
@@ -60,7 +60,7 @@ export function useProposal(proposalId?: string) {
 
   // Update form data
   const updateFormData = async (formData: {
-    uploadedFiles?: Record<string, File[]>
+    uploadedFiles?: Record<string, (File | string)[]>
     textInputs?: Record<string, string>
   }) => {
     if (!proposalId) {
@@ -68,7 +68,7 @@ export function useProposal(proposalId?: string) {
     }
 
     const updatedProposal = await proposalService.updateFormData(proposalId, formData)
-    queryClient.setQueryData({ queryKey: ['proposal', proposalId] }, updatedProposal)
+    queryClient.setQueryData(['proposal', proposalId], updatedProposal)
     return updatedProposal
   }
 
@@ -112,11 +112,8 @@ export function useProposals() {
   const createMutation = useMutation({
     mutationFn: proposalService.createProposal,
     onSuccess: newProposal => {
-      queryClient.setQueryData({ queryKey: ['proposals'] }, (old: Proposal[] = []) => [
-        newProposal,
-        ...old,
-      ])
-      queryClient.setQueryData({ queryKey: ['proposal', newProposal.id] }, newProposal)
+      queryClient.setQueryData(['proposals'], (old: Proposal[] = []) => [newProposal, ...old])
+      queryClient.setQueryData(['proposal', newProposal.id], newProposal)
     },
   })
 
@@ -124,7 +121,7 @@ export function useProposals() {
   const deleteMutation = useMutation({
     mutationFn: proposalService.deleteProposal,
     onSuccess: (_, proposalId) => {
-      queryClient.setQueryData({ queryKey: ['proposals'] }, (old: Proposal[] = []) =>
+      queryClient.setQueryData(['proposals'], (old: Proposal[] = []) =>
         old.filter(p => p.id !== proposalId)
       )
       queryClient.removeQueries({ queryKey: ['proposal', proposalId] })

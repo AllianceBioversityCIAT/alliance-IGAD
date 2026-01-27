@@ -2568,7 +2568,7 @@ export function Step4ProposalReview({
               <button
                 type="button"
                 className={styles.startAnalysisButtonLarge}
-                onClick={startAnalysis}
+                onClick={() => startAnalysis()}
                 disabled={isAnalyzing}
               >
                 <Sparkles size={20} />

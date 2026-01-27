@@ -8,6 +8,7 @@ import { useToast } from '@/shared/hooks/useToast'
 import { StepProps } from './stepConfig'
 import styles from './Step1InformationConsolidation.module.css'
 import { apiClient } from '@/shared/services/apiClient'
+import { RFPAnalysis, ConceptAnalysis } from '../types/analysis'
 import { proposalService } from '@/tools/proposal-writer/services/proposalService'
 import ManualRFPInput from '@/tools/proposal-writer/components/ManualRFPInput'
 import {
@@ -47,9 +48,9 @@ interface Step1Props extends StepProps {
   /** Unique identifier for the proposal */
   proposalId?: string
   /** RFP analysis data from AI processing */
-  rfpAnalysis?: Record<string, unknown>
+  rfpAnalysis?: RFPAnalysis
   /** Concept analysis data from AI processing */
-  conceptAnalysis?: Record<string, unknown>
+  conceptAnalysis?: ConceptAnalysis
   /** Setter for RFP upload state */
   setIsUploadingRFP?: (isUploading: boolean) => void
   /** Setter for reference proposals upload state */
@@ -638,7 +639,8 @@ export function Step1InformationConsolidation({
    */
   const handleDeleteFile = async (section: string, fileIndex: number) => {
     const updatedFiles = { ...formData.uploadedFiles }
-    const fileName = updatedFiles[section][fileIndex]
+    const fileEntry = updatedFiles[section][fileIndex]
+    const fileName = typeof fileEntry === 'string' ? fileEntry : fileEntry.name
 
     // Optimistic UI update
     updatedFiles[section].splice(fileIndex, 1)

@@ -22,6 +22,7 @@ from .shared.vectors import routes as vectors_router
 from .tools.admin.prompts_manager import routes as prompts_routes
 from .tools.admin.settings import routes as admin_routes
 from .tools.auth import routes as auth_routes
+from .tools.newsletter_generator import routes as newsletter_generator_routes
 from .tools.proposal_writer import routes as proposal_writer_routes
 
 # Configure logging
@@ -119,6 +120,7 @@ app.add_middleware(ErrorMiddleware)
 app.include_router(health_routes.router)
 app.include_router(auth_routes.router)
 app.include_router(proposal_writer_routes.router)
+app.include_router(newsletter_generator_routes.router)
 app.include_router(documents_routes.router)
 app.include_router(admin_routes.router)
 app.include_router(prompts_routes.router)

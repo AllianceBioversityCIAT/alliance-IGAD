@@ -28,7 +28,10 @@ export interface RFPAnalysis {
 // Concept Analysis Types
 export interface FitAssessment {
   alignment_level: string
-  priority_areas: Array<{
+  justification: string
+  confidence: string
+  // Legacy support if needed, but Step2 uses justification/confidence
+  priority_areas?: Array<{
     priority: string
     alignment: string
     explanation: string
@@ -37,8 +40,12 @@ export interface FitAssessment {
 
 export interface SectionNeedingElaboration {
   section: string
-  reason: string
-  suggestions: string[]
+  issue: string // Used in Step2
+  reason?: string // Legacy?
+  priority: 'Critical' | 'Recommended' | 'Optional'
+  suggestions?: string[]
+  selected?: boolean
+  user_comment?: string
 }
 
 export interface ConceptAnalysis {
@@ -49,7 +56,19 @@ export interface ConceptAnalysis {
 }
 
 // Structure Workplan Analysis Types
+export interface ProposalSection {
+  section_title: string
+  recommended_word_count: string
+  purpose: string
+  content_guidance: string
+  guiding_questions: string[]
+}
+
 export interface StructureWorkplanAnalysis {
+  narrative_overview?: string
+  proposal_mandatory?: ProposalSection[]
+  proposal_outline?: ProposalSection[]
+  hcd_notes?: { note: string }[]
   sections?: Array<{
     id: string
     title: string
@@ -103,6 +122,10 @@ export interface ConceptDocument {
     title: string
     content: string
   }>
+  // Add other properties that might be present
+  generated_concept_document?: string
+  content?: string
+  document?: string
   [key: string]: unknown // Allow for additional dynamic properties
 }
 

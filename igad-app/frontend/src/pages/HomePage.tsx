@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -33,6 +34,11 @@ export function HomePage() {
   const navigate = useNavigate()
   // Responsive icon sizing: 24px (mobile) -> 28px (tablet) -> 32px (desktop)
   const iconSize = useResponsiveIconSize()
+
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
 
   const handleLaunchProposalWriter = () => {
     // Clear any existing draft from localStorage to start fresh
