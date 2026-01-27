@@ -10,7 +10,7 @@ interface FrequencySelectorProps {
 export function FrequencySelector({ value, onChange, disabled = false }: FrequencySelectorProps) {
   return (
     <div className={styles.optionCards}>
-      {FREQUENCY_OPTIONS.map((option) => (
+      {FREQUENCY_OPTIONS.map(option => (
         <button
           key={option.value}
           type="button"

@@ -203,9 +203,7 @@ async def get_proposal(proposal_id: str, user=Depends(get_current_user)):
         else:
             # Need to query by ID - use GSI to find it
             query_pk = f"USER#{user_id}"
-            items = await db_client.query_items(
-                pk=query_pk, index_name="GSI1"
-            )
+            items = await db_client.query_items(pk=query_pk, index_name="GSI1")
 
             # Find the proposal with matching ID
             proposal_item = None

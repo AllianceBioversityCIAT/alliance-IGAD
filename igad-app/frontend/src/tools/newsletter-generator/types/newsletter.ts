@@ -61,23 +61,31 @@ export const TONE_OPTIONS = [
   {
     value: 'expert_analysis',
     label: 'Expert Analysis',
-    description: 'Formal, data-driven content with technical terminology. Best for researchers and specialists.',
-    example: 'Our regression analysis indicates a statistically significant correlation (p<0.05)...',
-    aiInstruction: 'Write in formal academic/research tone. Use domain-specific terminology, cite methodologies, present data-driven conclusions. Assume expert readership.',
+    description:
+      'Formal, data-driven content with technical terminology. Best for researchers and specialists.',
+    example:
+      'Our regression analysis indicates a statistically significant correlation (p<0.05)...',
+    aiInstruction:
+      'Write in formal academic/research tone. Use domain-specific terminology, cite methodologies, present data-driven conclusions. Assume expert readership.',
   },
   {
     value: 'industry_insight',
     label: 'Industry Insight',
-    description: 'Professional business tone balancing accuracy with clarity. Best for decision-makers.',
+    description:
+      'Professional business tone balancing accuracy with clarity. Best for decision-makers.',
     example: 'Three key trends are reshaping the agricultural landscape this quarter...',
-    aiInstruction: 'Write in professional business tone. Balance technical accuracy with clarity. Use industry terms but explain implications. Think Harvard Business Review style.',
+    aiInstruction:
+      'Write in professional business tone. Balance technical accuracy with clarity. Use industry terms but explain implications. Think Harvard Business Review style.',
   },
   {
     value: 'friendly_summary',
     label: 'Friendly Summary',
-    description: 'Conversational and accessible language with simplified concepts. Best for general audiences.',
-    example: 'Think of climate-smart agriculture as farming that works with nature, not against it...',
-    aiInstruction: 'Write conversationally as if explaining to a curious colleague. Simplify complex ideas, use analogies, maintain enthusiasm without sacrificing accuracy.',
+    description:
+      'Conversational and accessible language with simplified concepts. Best for general audiences.',
+    example:
+      'Think of climate-smart agriculture as farming that works with nature, not against it...',
+    aiInstruction:
+      'Write conversationally as if explaining to a curious colleague. Simplify complex ideas, use analogies, maintain enthusiasm without sacrificing accuracy.',
   },
 ] as const
 
@@ -87,7 +95,8 @@ export const LENGTH_OPTIONS = [
     value: 'quick_read',
     label: 'Quick Read',
     description: '2-3 min read • 400-600 words',
-    detail: 'Perfect for daily digests and morning briefings. 3-4 focused paragraphs with key points.',
+    detail:
+      'Perfect for daily digests and morning briefings. 3-4 focused paragraphs with key points.',
     wordRange: [400, 600],
     readingTime: '2-3 min',
   },
@@ -103,7 +112,8 @@ export const LENGTH_OPTIONS = [
     value: 'deep_dive',
     label: 'Deep Dive',
     description: '10-15 min read • 2,500-3,500 words',
-    detail: 'Comprehensive guides and monthly reports. Long-form with sections, data, and examples.',
+    detail:
+      'Comprehensive guides and monthly reports. Long-form with sections, data, and examples.',
     wordRange: [2500, 3500],
     readingTime: '10-15 min',
   },
@@ -124,7 +134,7 @@ export const FREQUENCY_OPTIONS = [
     value: 'weekly',
     label: 'Weekly Digest',
     description: 'Curated highlights and emerging trends',
-    detail: 'Synthesize the week\'s key developments into themes, identify patterns.',
+    detail: "Synthesize the week's key developments into themes, identify patterns.",
     contentFocus: 'Trend analysis, curated highlights',
     recommendedLength: 'standard',
     recommendedTone: 'industry_insight',

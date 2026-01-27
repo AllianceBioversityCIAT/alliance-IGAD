@@ -35,7 +35,7 @@ export function DualToneSlider({
           min="0"
           max="100"
           value={professionalValue}
-          onChange={(e) => onProfessionalChange(Number(e.target.value))}
+          onChange={e => onProfessionalChange(Number(e.target.value))}
           className={styles.slider}
           style={getSliderStyle(professionalValue)}
           disabled={disabled}
@@ -54,7 +54,7 @@ export function DualToneSlider({
           min="0"
           max="100"
           value={technicalValue}
-          onChange={(e) => onTechnicalChange(Number(e.target.value))}
+          onChange={e => onTechnicalChange(Number(e.target.value))}
           className={styles.slider}
           style={getSliderStyle(technicalValue)}
           disabled={disabled}

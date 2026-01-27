@@ -21,7 +21,8 @@ export function NewsletterGeneratorPage() {
   useEffect(() => {
     // Only create if we're at the base route /newsletter-generator
     const isBaseRoute =
-      location.pathname === '/newsletter-generator' || location.pathname === '/newsletter-generator/'
+      location.pathname === '/newsletter-generator' ||
+      location.pathname === '/newsletter-generator/'
 
     if (isBaseRoute && !newsletterCode && !isLoading) {
       createNewsletter()

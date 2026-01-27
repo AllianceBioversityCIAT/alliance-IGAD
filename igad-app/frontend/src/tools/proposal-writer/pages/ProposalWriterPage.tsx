@@ -770,7 +770,11 @@ export function ProposalWriterPage() {
 
     // Infer Step 1 completion from downstream data (when localStorage analyses are lost)
     // If any downstream step has data, Step 1 must have been completed
-    const step1InferredFromDownstream = !!(conceptDocument || structureWorkplanAnalysis || draftFeedbackAnalysis)
+    const step1InferredFromDownstream = !!(
+      conceptDocument ||
+      structureWorkplanAnalysis ||
+      draftFeedbackAnalysis
+    )
 
     // Step 1 is complete if:
     // 1. It has requirements AND analyses (normal case), OR

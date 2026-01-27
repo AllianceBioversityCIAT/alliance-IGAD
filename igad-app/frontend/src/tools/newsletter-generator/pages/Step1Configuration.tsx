@@ -26,7 +26,8 @@ export function Step1Configuration() {
 
   // Use newsletter values or defaults
   const targetAudience = newsletter?.target_audience ?? DEFAULT_NEWSLETTER_CONFIG.target_audience
-  const tonePreset = newsletter?.tone_preset ?? DEFAULT_NEWSLETTER_CONFIG.tone_preset ?? 'industry_insight'
+  const tonePreset =
+    newsletter?.tone_preset ?? DEFAULT_NEWSLETTER_CONFIG.tone_preset ?? 'industry_insight'
   const formatType = newsletter?.format_type ?? DEFAULT_NEWSLETTER_CONFIG.format_type
   const lengthPreference =
     newsletter?.length_preference ?? DEFAULT_NEWSLETTER_CONFIG.length_preference
@@ -111,13 +112,16 @@ export function Step1Configuration() {
         {/* Welcome Info Card */}
         <div className={styles.infoCard}>
           <div className={styles.infoCardTitle}>
-            <Info size={18} style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} />
+            <Info
+              size={18}
+              style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }}
+            />
             Welcome to the Newsletter Generator
           </div>
           <p className={styles.infoCardDescription}>
             Configure your newsletter preferences below. These settings will help us generate
-            content that matches your audience and communication style. All changes are automatically
-            saved.
+            content that matches your audience and communication style. All changes are
+            automatically saved.
           </p>
         </div>
 
@@ -160,7 +164,7 @@ export function Step1Configuration() {
               onChange={handleFormatChange}
               disabled={isLoading}
             >
-              {FORMAT_OPTIONS.map((option) => (
+              {FORMAT_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

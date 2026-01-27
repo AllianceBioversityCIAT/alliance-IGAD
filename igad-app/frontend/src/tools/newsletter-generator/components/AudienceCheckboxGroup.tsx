@@ -20,11 +20,13 @@ export function AudienceCheckboxGroup({
   disabled = false,
 }: AudienceCheckboxGroupProps) {
   const handleToggle = (optionId: string) => {
-    if (disabled) return
+    if (disabled) {
+      return
+    }
 
     const isSelected = selectedValues.includes(optionId)
     if (isSelected) {
-      onChange(selectedValues.filter((id) => id !== optionId))
+      onChange(selectedValues.filter(id => id !== optionId))
     } else {
       onChange([...selectedValues, optionId])
     }
@@ -32,7 +34,7 @@ export function AudienceCheckboxGroup({
 
   return (
     <div className={styles.audienceList}>
-      {options.map((option) => {
+      {options.map(option => {
         const isSelected = selectedValues.includes(option.id)
         return (
           <div
@@ -42,7 +44,7 @@ export function AudienceCheckboxGroup({
             role="checkbox"
             aria-checked={isSelected}
             tabIndex={disabled ? -1 : 0}
-            onKeyDown={(e) => {
+            onKeyDown={e => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
                 handleToggle(option.id)

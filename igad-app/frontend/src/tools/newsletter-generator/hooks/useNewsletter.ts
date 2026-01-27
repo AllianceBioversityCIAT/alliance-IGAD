@@ -40,7 +40,9 @@ export function useNewsletter({
 
   // Fetch newsletter data
   const fetchNewsletter = useCallback(async () => {
-    if (!newsletterCode) return
+    if (!newsletterCode) {
+      return
+    }
 
     setIsLoading(true)
     setError(null)
@@ -100,8 +102,10 @@ export function useNewsletter({
   const updateConfig = useCallback(
     (updates: UpdateNewsletterRequest) => {
       // Update local state immediately for responsiveness
-      setNewsletter((prev) => {
-        if (!prev) return prev
+      setNewsletter(prev => {
+        if (!prev) {
+          return prev
+        }
         return {
           ...prev,
           ...updates,

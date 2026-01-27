@@ -143,12 +143,14 @@ class AuthMiddleware:
                 # The 'sub' claim is the unique, immutable user identifier in Cognito
                 user_id = payload.get("sub")
                 if not user_id:
-                    logger.error(f"Token missing 'sub' claim. Payload keys: {list(payload.keys())}")
+                    logger.error(
+                        f"Token missing 'sub' claim. Payload keys: {list(payload.keys())}"
+                    )
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="Invalid token: missing user identifier"
+                        detail="Invalid token: missing user identifier",
                     )
-                
+
                 return {
                     "user_id": user_id,
                     "email": email,

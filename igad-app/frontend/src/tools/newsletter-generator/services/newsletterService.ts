@@ -109,9 +109,7 @@ export const newsletterService = {
   /**
    * Delete a newsletter
    */
-  async deleteNewsletter(
-    newsletterCode: string
-  ): Promise<{ success: boolean; deleted: string }> {
+  async deleteNewsletter(newsletterCode: string): Promise<{ success: boolean; deleted: string }> {
     const response = await apiClient.delete(`/api/newsletters/${newsletterCode}`)
     return response.data
   },

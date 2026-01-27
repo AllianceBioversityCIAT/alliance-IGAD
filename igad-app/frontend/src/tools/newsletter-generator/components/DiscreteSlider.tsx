@@ -20,7 +20,7 @@ export function DiscreteSlider({
   disabled = false,
   showSelected = true,
 }: DiscreteSliderProps) {
-  const selectedIndex = options.findIndex((opt) => opt.value === value)
+  const selectedIndex = options.findIndex(opt => opt.value === value)
   const fillPercentage = options.length > 1 ? (selectedIndex / (options.length - 1)) * 100 : 0
 
   const handleDotClick = (optionValue: string) => {
@@ -29,7 +29,7 @@ export function DiscreteSlider({
     }
   }
 
-  const selectedLabel = options.find((opt) => opt.value === value)?.label || ''
+  const selectedLabel = options.find(opt => opt.value === value)?.label || ''
 
   return (
     <div className={styles.discreteSlider}>
@@ -56,8 +56,10 @@ export function DiscreteSlider({
         aria-valuemax={options.length - 1}
         aria-label="Select option"
         tabIndex={disabled ? -1 : 0}
-        onKeyDown={(e) => {
-          if (disabled) return
+        onKeyDown={e => {
+          if (disabled) {
+            return
+          }
           if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
             const nextIndex = Math.min(selectedIndex + 1, options.length - 1)
             onChange(options[nextIndex].value)

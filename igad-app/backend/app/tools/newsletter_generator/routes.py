@@ -5,13 +5,14 @@ API endpoints for newsletter CRUD operations.
 MVP Implementation - Step 1: Configuration
 """
 
+import logging
+import uuid
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from typing import Optional, List, Any, Dict
 from pydantic import BaseModel, Field
-from datetime import datetime
-import uuid
-import logging
 
 from app.database.client import db_client
 from app.middleware.auth_middleware import AuthMiddleware
@@ -28,6 +29,7 @@ async def get_current_user(
 ):
     """Get current user from token"""
     return auth_middleware.verify_token(credentials)
+
 
 router = APIRouter(prefix="/api/newsletters", tags=["newsletters"])
 
@@ -64,7 +66,14 @@ class TopicsUpdate(BaseModel):
 # ==================== CONSTANTS ====================
 
 VALID_FORMAT_TYPES = ["email", "pdf", "web", "html"]
-VALID_LENGTH_PREFERENCES = ["quick_read", "standard", "deep_dive", "short", "mixed", "long"]  # New + legacy
+VALID_LENGTH_PREFERENCES = [
+    "quick_read",
+    "standard",
+    "deep_dive",
+    "short",
+    "mixed",
+    "long",
+]  # New + legacy
 VALID_FREQUENCIES = ["daily", "weekly", "monthly", "quarterly"]
 VALID_TONE_PRESETS = ["expert_analysis", "industry_insight", "friendly_summary"]
 VALID_AUDIENCE_OPTIONS = [

@@ -10,7 +10,7 @@ interface LengthSelectorProps {
 export function LengthSelector({ value, onChange, disabled = false }: LengthSelectorProps) {
   return (
     <div className={styles.optionCards}>
-      {LENGTH_OPTIONS.map((option) => (
+      {LENGTH_OPTIONS.map(option => (
         <button
           key={option.value}
           type="button"

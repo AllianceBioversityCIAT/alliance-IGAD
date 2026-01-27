@@ -10,7 +10,7 @@ interface ToneSelectorProps {
 export function ToneSelector({ value, onChange, disabled = false }: ToneSelectorProps) {
   return (
     <div className={styles.toneSelector}>
-      {TONE_OPTIONS.map((option) => (
+      {TONE_OPTIONS.map(option => (
         <button
           key={option.value}
           type="button"
@@ -38,7 +38,7 @@ export function ToneSelector({ value, onChange, disabled = false }: ToneSelector
           <p className={styles.toneOptionDescription}>{option.description}</p>
           <div className={styles.toneOptionExample}>
             <span className={styles.toneOptionExampleLabel}>Example:</span>
-            <span className={styles.toneOptionExampleText}>"{option.example}"</span>
+            <span className={styles.toneOptionExampleText}>&quot;{option.example}&quot;</span>
           </div>
         </button>
       ))}

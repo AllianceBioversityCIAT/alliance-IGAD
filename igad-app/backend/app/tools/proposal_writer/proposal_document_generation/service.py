@@ -235,9 +235,13 @@ class ProposalDocumentGenerator:
 
         # Log which sections matched and which didn't
         matched_titles = [f.get("section_title") for f in filtered_feedback]
-        unmatched_selections = [s for s in selected_sections if s not in available_titles]
+        unmatched_selections = [
+            s for s in selected_sections if s not in available_titles
+        ]
         if unmatched_selections:
-            logger.warning(f"⚠️ Selected sections NOT found in feedback: {unmatched_selections}")
+            logger.warning(
+                f"⚠️ Selected sections NOT found in feedback: {unmatched_selections}"
+            )
 
         logger.info(
             f"📊 Filtered to {len(filtered_feedback)} sections from {len(section_feedback)} total"
@@ -317,12 +321,16 @@ class ProposalDocumentGenerator:
         # Format 1: {[...]}
         remaining_brackets = re.findall(r"\{\[[^\]]+\]\}", prompt)
         if remaining_brackets:
-            logger.warning(f"⚠️ Unreplaced {[...]} placeholders: {remaining_brackets[:5]}")
+            logger.warning(
+                f"⚠️ Unreplaced {[...]} placeholders: {remaining_brackets[:5]}"
+            )
 
         # Format 2: {{...}}
         remaining_double_braces = re.findall(r"\{\{[^}]+\}\}", prompt)
         if remaining_double_braces:
-            logger.warning(f"⚠️ Unreplaced {{{{...}}}} placeholders: {remaining_double_braces[:5]}")
+            logger.warning(
+                f"⚠️ Unreplaced {{{{...}}}} placeholders: {remaining_double_braces[:5]}"
+            )
 
         return prompt
 

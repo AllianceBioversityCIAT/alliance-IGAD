@@ -25,9 +25,15 @@ export function StepPlaceholder({ stepNumber, stepTitle }: StepPlaceholderProps)
 
   // Calculate completed steps
   const completedSteps: number[] = []
-  if (newsletter?.current_step && newsletter.current_step > 1) completedSteps.push(1)
-  if (newsletter?.current_step && newsletter.current_step > 2) completedSteps.push(2)
-  if (newsletter?.current_step && newsletter.current_step > 3) completedSteps.push(3)
+  if (newsletter?.current_step && newsletter.current_step > 1) {
+    completedSteps.push(1)
+  }
+  if (newsletter?.current_step && newsletter.current_step > 2) {
+    completedSteps.push(2)
+  }
+  if (newsletter?.current_step && newsletter.current_step > 3) {
+    completedSteps.push(3)
+  }
 
   const handlePrevious = () => {
     const prevStep = stepNumber - 1
