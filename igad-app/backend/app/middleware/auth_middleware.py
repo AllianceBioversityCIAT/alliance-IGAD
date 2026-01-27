@@ -139,8 +139,18 @@ class AuthMiddleware:
                         "j.cadavid@cgiar.org",
                     ]
 
+                # CRITICAL: Always use 'sub' as user_id for consistency
+                # The 'sub' claim is the unique, immutable user identifier in Cognito
+                user_id = payload.get("sub")
+                if not user_id:
+                    logger.error(f"Token missing 'sub' claim. Payload keys: {list(payload.keys())}")
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Invalid token: missing user identifier"
+                    )
+                
                 return {
-                    "user_id": payload.get("sub", username),
+                    "user_id": user_id,
                     "email": email,
                     "username": username,
                     "role": "admin" if is_admin else "user",
