@@ -294,6 +294,74 @@ response = table.query(
 )
 ```
 
+### Pagination (CRITICAL)
+
+**IMPORTANT:** DynamoDB returns a maximum of 1MB per query/scan. If your data exceeds this limit, you MUST handle pagination using `LastEvaluatedKey` and `ExclusiveStartKey`.
+
+**Problem:** Without pagination handling, queries silently return incomplete results, causing data loss bugs that are hard to debug.
+
+**Correct Pattern - Collect All Items:**
+```python
+def get_all_items(self, pk: str) -> List[Dict[str, Any]]:
+    """Query all items with pagination support."""
+    all_items = []
+    
+    kwargs = {
+        "KeyConditionExpression": Key("PK").eq(pk)
+    }
+    
+    # First query
+    response = self.table.query(**kwargs)
+    all_items.extend(response.get("Items", []))
+    
+    # Continue fetching while there are more pages
+    while "LastEvaluatedKey" in response:
+        kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+        response = self.table.query(**kwargs)
+        all_items.extend(response.get("Items", []))
+    
+    return all_items
+```
+
+**With Limit (stop after N items):**
+```python
+def get_items_with_limit(self, pk: str, limit: int) -> List[Dict[str, Any]]:
+    """Query with limit - no pagination needed."""
+    response = self.table.query(
+        KeyConditionExpression=Key("PK").eq(pk),
+        Limit=limit
+    )
+    return response.get("Items", [])
+```
+
+**When to Use Each:**
+| Scenario | Pattern |
+|----------|---------|
+| Get ALL items for a proposal | Full pagination loop |
+| Get recent N items | Use `Limit`, no loop |
+| List with client pagination | Return `LastEvaluatedKey` to client |
+| Scan entire table | Always use pagination loop |
+
+**Common Mistake:**
+```python
+# WRONG - May return incomplete results!
+response = table.query(KeyConditionExpression=Key("PK").eq(pk))
+items = response.get("Items", [])  # Could be partial!
+
+# CORRECT - Always handle pagination
+items = []
+response = table.query(KeyConditionExpression=Key("PK").eq(pk))
+items.extend(response.get("Items", []))
+while "LastEvaluatedKey" in response:
+    response = table.query(
+        KeyConditionExpression=Key("PK").eq(pk),
+        ExclusiveStartKey=response["LastEvaluatedKey"]
+    )
+    items.extend(response.get("Items", []))
+```
+
+**Reference Implementation:** See `app/database/client.py` - `query_items()` method handles pagination automatically.
+
 ---
 
 ## Prompt Placeholder Replacement
