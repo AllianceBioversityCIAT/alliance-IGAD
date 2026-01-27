@@ -1217,58 +1217,58 @@ class ProposalService {
     return {
       step1_rfp: step1Status?.rfp_analysis
         ? {
-          status: step1Status.rfp_analysis.status as OperationStatus['status'],
-          data: step1Status.rfp_analysis.data,
-          error: step1Status.rfp_analysis.error,
-        }
+            status: step1Status.rfp_analysis.status as OperationStatus['status'],
+            data: step1Status.rfp_analysis.data,
+            error: step1Status.rfp_analysis.error,
+          }
         : defaultStatus,
 
       step1_reference: step2Status?.reference_proposals_analysis
         ? {
-          status: step2Status.reference_proposals_analysis.status as OperationStatus['status'],
-          data: step2Status.reference_proposals_analysis.data,
-          error: step2Status.reference_proposals_analysis.error,
-        }
+            status: step2Status.reference_proposals_analysis.status as OperationStatus['status'],
+            data: step2Status.reference_proposals_analysis.data,
+            error: step2Status.reference_proposals_analysis.error,
+          }
         : defaultStatus,
 
       step1_concept: conceptStatus
         ? {
-          status: conceptStatus.status as OperationStatus['status'],
-          data: conceptStatus.concept_analysis,
-          error: conceptStatus.error,
-        }
+            status: conceptStatus.status as OperationStatus['status'],
+            data: conceptStatus.concept_analysis,
+            error: conceptStatus.error,
+          }
         : defaultStatus,
 
       step2_concept_document: conceptDocStatus
         ? {
-          status: conceptDocStatus.status as OperationStatus['status'],
-          data: conceptDocStatus.concept_document,
-          error: conceptDocStatus.error,
-        }
+            status: conceptDocStatus.status as OperationStatus['status'],
+            data: conceptDocStatus.concept_document,
+            error: conceptDocStatus.error,
+          }
         : defaultStatus,
 
       step3_structure: structureStatus
         ? {
-          status: structureStatus.status as OperationStatus['status'],
-          data: structureStatus.data,
-          error: structureStatus.error,
-        }
+            status: structureStatus.status as OperationStatus['status'],
+            data: structureStatus.data,
+            error: structureStatus.error,
+          }
         : defaultStatus,
 
       step3_ai_template: templateStatus
         ? {
-          status: templateStatus.status as OperationStatus['status'],
-          data: templateStatus.data,
-          error: templateStatus.error,
-        }
+            status: templateStatus.status as OperationStatus['status'],
+            data: templateStatus.data,
+            error: templateStatus.error,
+          }
         : defaultStatus,
 
       step4_draft_feedback: draftFeedbackStatus
         ? {
-          status: draftFeedbackStatus.status as OperationStatus['status'],
-          data: draftFeedbackStatus.data,
-          error: draftFeedbackStatus.error,
-        }
+            status: draftFeedbackStatus.status as OperationStatus['status'],
+            data: draftFeedbackStatus.data,
+            error: draftFeedbackStatus.error,
+          }
         : defaultStatus,
     }
   }

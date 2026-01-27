@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type {
   RFPAnalysis,
@@ -1400,7 +1399,7 @@ export function ProposalWriterPage() {
 
   // Removed unused _handleGenerateTemplate function - was not being called
   /* eslint-disable @typescript-eslint/no-unused-vars */
-  // @ts-ignore
+  // @ts-expect-error: Unused function intentionally kept for future implementation
   const _handleGenerateTemplate = async (
     selectedSections: string[],
     userComments: { [key: string]: string }
@@ -1747,7 +1746,8 @@ export function ProposalWriterPage() {
             status.reference_proposals_analysis.data
           ) {
             setReferenceProposalsAnalysis(
-              (status.reference_proposals_analysis.data || null) as ReferenceProposalsAnalysis | null
+              (status.reference_proposals_analysis.data ||
+                null) as ReferenceProposalsAnalysis | null
             )
           }
 
@@ -1777,7 +1777,7 @@ export function ProposalWriterPage() {
 
   // Helper function to poll analysis status (for Concept analysis)
   const pollAnalysisStatus = async <T,>(
-    statusFn: () => Promise<{ status: string;[key: string]: unknown }>,
+    statusFn: () => Promise<{ status: string; [key: string]: unknown }>,
     onSuccess: (result: T) => void,
     analysisName: string
   ): Promise<void> => {
@@ -1823,7 +1823,9 @@ export function ProposalWriterPage() {
   }
 
   const pollConceptDocumentStatus = async (isRegenerating = false) => {
-    if (!proposalId) return
+    if (!proposalId) {
+      return
+    }
 
     let attempts = 0
     const maxAttempts = 60 // 3 minutes max
@@ -1879,9 +1881,14 @@ export function ProposalWriterPage() {
   )
 
   // Logic to trigger concept document generation - to be wired to "Next" button or similar
-  // @ts-ignore
-  const _triggerConceptDocumentGeneration = async (overrideData?: any) => {
-    if (!proposalId || !conceptAnalysis) return
+  // @ts-expect-error: Unused function intentionally kept for future implementation
+  const _triggerConceptDocumentGeneration = async (overrideData?: {
+    selectedSections?: string[]
+    userComments?: Record<string, string>
+  }) => {
+    if (!proposalId || !conceptAnalysis) {
+      return
+    }
 
     setIsGeneratingDocument(true)
     setGenerationProgressStep(1)
@@ -2395,18 +2402,18 @@ export function ProposalWriterPage() {
         currentStep === 1 && isVectorizingFiles
           ? 'Please wait for document vectorization to complete'
           : currentStep === 1 &&
-            (isUploadingRFP ||
-              isUploadingReference ||
-              isUploadingSupporting ||
-              isUploadingConcept)
+              (isUploadingRFP ||
+                isUploadingReference ||
+                isUploadingSupporting ||
+                isUploadingConcept)
             ? 'Please wait for file uploads to complete'
             : currentStep === 1 &&
-              (!(formData.textInputs['proposal-title'] || '').trim() ||
-                !formData.uploadedFiles['rfp-document'] ||
-                formData.uploadedFiles['rfp-document'].length === 0 ||
-                ((formData.textInputs['initial-concept'] || '').length < 100 &&
-                  (!formData.uploadedFiles['concept-document'] ||
-                    formData.uploadedFiles['concept-document'].length === 0)))
+                (!(formData.textInputs['proposal-title'] || '').trim() ||
+                  !formData.uploadedFiles['rfp-document'] ||
+                  formData.uploadedFiles['rfp-document'].length === 0 ||
+                  ((formData.textInputs['initial-concept'] || '').length < 100 &&
+                    (!formData.uploadedFiles['concept-document'] ||
+                      formData.uploadedFiles['concept-document'].length === 0)))
               ? 'Please provide a title, upload an RFP document, and provide an initial concept'
               : ''
       }
@@ -2479,47 +2486,47 @@ export function ProposalWriterPage() {
         progress={
           isResuming
             ? {
-              step: 1,
-              total: resumingOperations.length,
-              message: 'Resuming Analysis...',
-              description:
-                'We detected an analysis that was in progress. Waiting for it to complete.',
-              steps: resumingOperations,
-            }
+                step: 1,
+                total: resumingOperations.length,
+                message: 'Resuming Analysis...',
+                description:
+                  'We detected an analysis that was in progress. Waiting for it to complete.',
+                steps: resumingOperations,
+              }
             : isPreparingDraft
               ? {
-                step: 1,
-                total: 2,
-                message: 'Preparing Draft for Review...',
-                description:
-                  'Your AI-generated proposal draft is being prepared for the review process. This will only take a moment.',
-                steps: ['Transferring AI-generated content', 'Setting up for analysis'],
-              }
-              : isRegeneratingConcept
-                ? {
                   step: 1,
                   total: 2,
-                  message: 'Regenerating Concept Analysis...',
+                  message: 'Preparing Draft for Review...',
                   description:
-                    'Our AI is re-analyzing your concept note against the RFP requirements. This typically takes 1-2 minutes.',
-                  steps: [
-                    'Analyzing concept note and RFP alignment',
-                    'Generating fit assessment and improvement areas',
-                  ],
+                    'Your AI-generated proposal draft is being prepared for the review process. This will only take a moment.',
+                  steps: ['Transferring AI-generated content', 'Setting up for analysis'],
                 }
-                : isGeneratingDocument
-                  ? {
-                    step: generationProgressStep,
-                    total: 3,
-                    message: 'Generating Enhanced Concept Document...',
+              : isRegeneratingConcept
+                ? {
+                    step: 1,
+                    total: 2,
+                    message: 'Regenerating Concept Analysis...',
                     description:
-                      'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
+                      'Our AI is re-analyzing your concept note against the RFP requirements. This typically takes 1-2 minutes.',
                     steps: [
-                      'Analyzing RFP requirements and selected sections',
-                      'Generating detailed narrative content with examples',
-                      'Finalizing and validating concept document',
+                      'Analyzing concept note and RFP alignment',
+                      'Generating fit assessment and improvement areas',
                     ],
                   }
+                : isGeneratingDocument
+                  ? {
+                      step: generationProgressStep,
+                      total: 3,
+                      message: 'Generating Enhanced Concept Document...',
+                      description:
+                        'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
+                      steps: [
+                        'Analyzing RFP requirements and selected sections',
+                        'Generating detailed narrative content with examples',
+                        'Finalizing and validating concept document',
+                      ],
+                    }
                   : analysisProgress
         }
       />

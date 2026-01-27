@@ -5,4 +5,3 @@ node_modules
 public
 .vite
 coverage
-src/tools/proposal-writer/pages/ProposalWriterPage.tsx

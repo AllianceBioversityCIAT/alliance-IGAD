@@ -112,10 +112,7 @@ export function useProposals() {
   const createMutation = useMutation({
     mutationFn: proposalService.createProposal,
     onSuccess: newProposal => {
-      queryClient.setQueryData(['proposals'], (old: Proposal[] = []) => [
-        newProposal,
-        ...old,
-      ])
+      queryClient.setQueryData(['proposals'], (old: Proposal[] = []) => [newProposal, ...old])
       queryClient.setQueryData(['proposal', newProposal.id], newProposal)
     },
   })
