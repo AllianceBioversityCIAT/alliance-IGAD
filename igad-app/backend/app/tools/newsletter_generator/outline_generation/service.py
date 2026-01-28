@@ -348,9 +348,7 @@ Generate a structured outline with sections and items. Each item should have:
 
         return sections
 
-    def _summarize_content(
-        self, retrieved_content: List[Dict[str, Any]]
-    ) -> str:
+    def _summarize_content(self, retrieved_content: List[Dict[str, Any]]) -> str:
         """Summarize retrieved content for prompt injection."""
         summaries = []
         for i, chunk in enumerate(retrieved_content[:30]):  # Limit to 30 chunks
@@ -459,7 +457,9 @@ Generate a structured outline with sections and items. Each item should have:
         logger.info("📋 Building fallback sections from content")
 
         length_pref = context.get("length_preference", "standard")
-        item_counts = LENGTH_ITEM_COUNTS.get(length_pref, LENGTH_ITEM_COUNTS["standard"])
+        item_counts = LENGTH_ITEM_COUNTS.get(
+            length_pref, LENGTH_ITEM_COUNTS["standard"]
+        )
 
         # Group content by topic
         content_by_topic: Dict[str, List[Dict[str, Any]]] = {}
@@ -494,23 +494,27 @@ Generate a structured outline with sections and items. Each item should have:
                 # Create title from first line or truncate
                 title = content_text.split("\n")[0][:80] or f"Item {i+1}"
 
-                items.append({
-                    "id": f"item-{uuid.uuid4().hex[:8]}",
-                    "section_id": section_id,
-                    "title": title,
-                    "description": content_text[:200],
-                    "content_sources": [chunk.get("chunk_id", "")],
-                    "order": i + 1,
-                    "is_custom": False,
-                    "is_editable": True,
-                })
+                items.append(
+                    {
+                        "id": f"item-{uuid.uuid4().hex[:8]}",
+                        "section_id": section_id,
+                        "title": title,
+                        "description": content_text[:200],
+                        "content_sources": [chunk.get("chunk_id", "")],
+                        "order": i + 1,
+                        "is_custom": False,
+                        "is_editable": True,
+                    }
+                )
 
-            sections.append({
-                "id": section_id,
-                "name": section_def["name"],
-                "order": section_def["order"],
-                "items": items,
-            })
+            sections.append(
+                {
+                    "id": section_id,
+                    "name": section_def["name"],
+                    "order": section_def["order"],
+                    "items": items,
+                }
+            )
 
         return sections
 
@@ -524,10 +528,12 @@ Generate a structured outline with sections and items. Each item should have:
         for section in sections:
             for item in section.get("items", []):
                 if item.get("is_custom", False):
-                    custom_items.append({
-                        **item,
-                        "original_section_id": section.get("id"),
-                    })
+                    custom_items.append(
+                        {
+                            **item,
+                            "original_section_id": section.get("id"),
+                        }
+                    )
 
         return custom_items
 

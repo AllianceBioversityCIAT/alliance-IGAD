@@ -535,6 +535,7 @@ export interface OutlineItem {
   order: number
   is_custom: boolean
   is_editable: boolean
+  included: boolean // Whether to include this item in draft generation (default: true)
   user_notes?: string
 }
 
@@ -602,3 +603,86 @@ export const OUTLINE_ITEM_COUNTS: Record<string, Record<string, number>> = {
     'section-conclusion': 1,
   },
 }
+
+// ==================== STEP 4: DRAFT & PREVIEW ====================
+
+// Draft item reference (from outline)
+export interface DraftItem {
+  id: string
+  title: string
+}
+
+// Draft section with full content
+export interface DraftSection {
+  id: string
+  sectionId: string // Reference to outline section
+  title: string
+  content: string // Full markdown content
+  items: DraftItem[]
+  order: number
+  isEdited: boolean
+}
+
+// Draft metadata
+export interface DraftMetadata {
+  wordCount: number
+  readingTime: string
+}
+
+// User edit tracking
+export interface DraftUserEdits {
+  sectionsEdited: number
+  lastEditedAt?: string
+}
+
+// Draft generation config snapshot
+export interface DraftGenerationConfig {
+  tone_preset: string
+  length_preference: string
+  target_audience: string[]
+}
+
+// Full draft data (Step 4 state)
+export interface DraftData {
+  title: string
+  subtitle?: string
+  sections: DraftSection[]
+  draft_status: 'pending' | 'processing' | 'completed' | 'failed'
+  draft_error?: string
+  generated_at?: string
+  generation_config?: DraftGenerationConfig
+  metadata: DraftMetadata
+  user_edits: DraftUserEdits
+  updated_at?: string
+}
+
+// Export format options
+export type ExportFormat = 'html' | 'markdown' | 'text'
+
+export interface ExportFormatOption {
+  value: ExportFormat
+  label: string
+  description: string
+  icon: string
+}
+
+export const EXPORT_FORMAT_OPTIONS: ExportFormatOption[] = [
+  {
+    value: 'html',
+    label: 'HTML Email',
+    description: 'Styled HTML ready for email clients',
+    icon: 'mail',
+  },
+  {
+    value: 'markdown',
+    label: 'Markdown',
+    description: 'Plain markdown format',
+    icon: 'file-text',
+  },
+  {
+    value: 'text',
+    label: 'Plain Text',
+    description: 'Simple text without formatting',
+    icon: 'file',
+  },
+]

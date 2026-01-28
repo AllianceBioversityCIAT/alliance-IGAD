@@ -176,6 +176,7 @@ IMPORTANT:
     except Exception as e:
         print(f"❌ Error adding Newsletter Outline prompt: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

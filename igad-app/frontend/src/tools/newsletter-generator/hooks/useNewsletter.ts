@@ -17,6 +17,7 @@ interface UseNewsletterReturn {
   isLoading: boolean
   isSaving: boolean
   error: string | null
+  notFound: boolean
   updateConfig: (updates: UpdateNewsletterRequest) => void
   createNewsletter: (title?: string) => Promise<NewsletterConfig | null>
   refreshNewsletter: () => Promise<void>
@@ -33,6 +34,7 @@ export function useNewsletter({
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notFound, setNotFound] = useState(false)
 
   // Ref to store pending updates for debouncing
   const pendingUpdates = useRef<UpdateNewsletterRequest>({})
@@ -46,14 +48,23 @@ export function useNewsletter({
 
     setIsLoading(true)
     setError(null)
+    setNotFound(false)
 
     try {
       const data = await newsletterService.getNewsletter(newsletterCode)
       setNewsletter(data)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load newsletter'
-      setError(message)
-      showError('Error loading newsletter', message)
+    } catch (err: unknown) {
+      // Check if it's a 404 error
+      const axiosError = err as { response?: { status?: number } }
+      if (axiosError?.response?.status === 404) {
+        setNotFound(true)
+        setError('Newsletter not found')
+        // Don't show toast for 404 - we'll handle it in the UI
+      } else {
+        const message = err instanceof Error ? err.message : 'Failed to load newsletter'
+        setError(message)
+        showError('Error loading newsletter', message)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -167,6 +178,7 @@ export function useNewsletter({
     isLoading,
     isSaving,
     error,
+    notFound,
     updateConfig,
     createNewsletter,
     refreshNewsletter,

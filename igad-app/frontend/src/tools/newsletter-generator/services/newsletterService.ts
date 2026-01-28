@@ -5,7 +5,7 @@
  */
 
 import { apiClient } from '@/shared/services/apiClient'
-import type { PublishingSchedule } from '../types/newsletter'
+import type { PublishingSchedule, ExportFormat } from '../types/newsletter'
 
 // Types
 export interface NewsletterConfig {
@@ -102,6 +102,7 @@ export interface OutlineItem {
   order: number
   is_custom: boolean
   is_editable: boolean
+  included: boolean // Whether to include this item in draft generation
   user_notes?: string
 }
 
@@ -148,6 +149,83 @@ export interface AddOutlineItemRequest {
 export interface AddOutlineItemResponse {
   success: boolean
   item: OutlineItem
+}
+
+// Step 4: Draft Types
+export interface DraftItem {
+  id: string
+  title: string
+}
+
+export interface DraftSection {
+  id: string
+  sectionId: string
+  title: string
+  content: string
+  items: DraftItem[]
+  order: number
+  isEdited: boolean
+}
+
+export interface DraftData {
+  title: string
+  subtitle?: string
+  sections: DraftSection[]
+  draft_status: 'pending' | 'processing' | 'completed' | 'failed'
+  draft_error?: string
+  generated_at?: string
+  generation_config?: {
+    tone_preset: string
+    length_preference: string
+    target_audience: string[]
+  }
+  metadata: {
+    wordCount: number
+    readingTime: string
+  }
+  user_edits: {
+    sectionsEdited: number
+    lastEditedAt?: string
+  }
+  updated_at?: string
+}
+
+export interface GenerateDraftResponse {
+  success: boolean
+  draft_status: string
+  title?: string
+  subtitle?: string
+  sections?: DraftSection[]
+  generated_at?: string
+  metadata?: {
+    wordCount: number
+    readingTime: string
+  }
+  draft_error?: string
+}
+
+export interface SaveDraftRequest {
+  title?: string
+  subtitle?: string
+  sections: DraftSection[]
+}
+
+export interface SaveDraftSectionRequest {
+  content: string
+  title?: string
+}
+
+export interface ExportDraftResponse {
+  success: boolean
+  format: string
+  filename: string
+  mime_type: string
+  content: string
+}
+
+export interface AICompleteRequest {
+  prompt: string
+  context?: string
 }
 
 // API Functions
@@ -297,6 +375,76 @@ export const newsletterService = {
     const response = await apiClient.delete(
       `/api/newsletters/${newsletterCode}/outline-item/${itemId}`
     )
+    return response.data
+  },
+
+  // ==================== STEP 4: DRAFT ====================
+
+  /**
+   * Get draft data
+   */
+  async getDraft(newsletterCode: string): Promise<DraftData> {
+    const response = await apiClient.get(`/api/newsletters/${newsletterCode}/draft`)
+    return response.data
+  },
+
+  /**
+   * Trigger AI draft generation
+   */
+  async generateDraft(newsletterCode: string): Promise<GenerateDraftResponse> {
+    const response = await apiClient.post(`/api/newsletters/${newsletterCode}/generate-draft`)
+    return response.data
+  },
+
+  /**
+   * Get draft status (for polling)
+   */
+  async getDraftStatus(newsletterCode: string): Promise<DraftData> {
+    const response = await apiClient.get(`/api/newsletters/${newsletterCode}/draft-status`)
+    return response.data
+  },
+
+  /**
+   * Save draft modifications
+   */
+  async saveDraft(
+    newsletterCode: string,
+    data: SaveDraftRequest
+  ): Promise<{ success: boolean; updated_at: string; wordCount: number }> {
+    const response = await apiClient.put(`/api/newsletters/${newsletterCode}/draft`, data)
+    return response.data
+  },
+
+  /**
+   * Save a single draft section
+   */
+  async saveDraftSection(
+    newsletterCode: string,
+    sectionId: string,
+    data: SaveDraftSectionRequest
+  ): Promise<{ success: boolean; updated_at: string; wordCount: number }> {
+    const response = await apiClient.put(
+      `/api/newsletters/${newsletterCode}/draft/section/${sectionId}`,
+      data
+    )
+    return response.data
+  },
+
+  /**
+   * Export draft in specified format
+   */
+  async exportDraft(newsletterCode: string, format: ExportFormat): Promise<ExportDraftResponse> {
+    const response = await apiClient.post(`/api/newsletters/${newsletterCode}/export`, {
+      format,
+    })
+    return response.data
+  },
+
+  /**
+   * AI autocomplete for inline editing
+   */
+  async aiComplete(data: AICompleteRequest): Promise<{ completion: string }> {
+    const response = await apiClient.post('/api/newsletters/ai-complete', data)
     return response.data
   },
 }

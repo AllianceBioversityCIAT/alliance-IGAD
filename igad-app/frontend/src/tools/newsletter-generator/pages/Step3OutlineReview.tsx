@@ -50,7 +50,7 @@ export function Step3OutlineReview() {
   const { showSuccess, showError } = useToast()
 
   // Newsletter hook for config data
-  const { newsletter, isLoading, isSaving, updateConfig } = useNewsletter({
+  const { newsletter, isLoading, isSaving, notFound } = useNewsletter({
     newsletterCode,
     autoSaveDelay: AUTO_SAVE_DELAY,
   })
@@ -64,6 +64,7 @@ export function Step3OutlineReview() {
   const [isLoadingOutline, setIsLoadingOutline] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSavingOutline, setIsSavingOutline] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
 
   // Polling state
   const [isPolling, setIsPolling] = useState(false)
@@ -99,7 +100,9 @@ export function Step3OutlineReview() {
 
   // Load topics data on mount
   useEffect(() => {
-    if (!newsletterCode) return
+    if (!newsletterCode || notFound) {
+      return
+    }
 
     const loadTopics = async () => {
       try {
@@ -107,7 +110,10 @@ export function Step3OutlineReview() {
         const data = await newsletterService.getTopics(newsletterCode)
         setTopicsData(data)
       } catch {
-        showError('Failed to load content data')
+        // Don't show error if newsletter not found - handled elsewhere
+        if (!notFound) {
+          showError('Failed to load content data')
+        }
       } finally {
         setIsLoadingTopics(false)
       }
@@ -115,11 +121,13 @@ export function Step3OutlineReview() {
 
     loadTopics()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newsletterCode])
+  }, [newsletterCode, notFound])
 
   // Load outline data on mount
   useEffect(() => {
-    if (!newsletterCode) return
+    if (!newsletterCode || notFound) {
+      return
+    }
 
     const loadOutline = async () => {
       try {
@@ -132,12 +140,14 @@ export function Step3OutlineReview() {
           startPolling()
         }
       } catch {
-        // Outline may not exist yet - this is fine
-        setOutlineData({
-          sections: [],
-          outline_status: 'pending',
-          user_modifications: { items_added: 0, items_removed: 0, items_edited: 0 },
-        })
+        // Outline may not exist yet - this is fine (unless newsletter not found)
+        if (!notFound) {
+          setOutlineData({
+            sections: [],
+            outline_status: 'pending',
+            user_modifications: { items_added: 0, items_removed: 0, items_edited: 0 },
+          })
+        }
       } finally {
         setIsLoadingOutline(false)
       }
@@ -145,7 +155,7 @@ export function Step3OutlineReview() {
 
     loadOutline()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newsletterCode])
+  }, [newsletterCode, notFound])
 
   // Polling functions
   const stopPolling = useCallback(() => {
@@ -159,13 +169,17 @@ export function Step3OutlineReview() {
   }, [])
 
   const startPolling = useCallback(() => {
-    if (pollingIntervalRef.current) return
+    if (pollingIntervalRef.current) {
+      return
+    }
 
     setIsPolling(true)
     pollingStartTimeRef.current = Date.now()
 
     pollingIntervalRef.current = setInterval(async () => {
-      if (!newsletterCode) return
+      if (!newsletterCode) {
+        return
+      }
 
       // Check timeout
       if (
@@ -196,9 +210,7 @@ export function Step3OutlineReview() {
           if (status.outline_status === 'completed') {
             showSuccess('Outline generated successfully!')
             // Expand all sections with items
-            const sectionsWithItems = status.sections
-              .filter(s => s.items.length > 0)
-              .map(s => s.id)
+            const sectionsWithItems = status.sections.filter(s => s.items.length > 0).map(s => s.id)
             setExpandedSections(new Set(sectionsWithItems))
           }
         }
@@ -218,8 +230,7 @@ export function Step3OutlineReview() {
   // Check if Step 2 is complete
   const isStep2Complete = useMemo(() => {
     return (
-      topicsData?.retrieval_status === 'completed' &&
-      (topicsData?.total_chunks_retrieved ?? 0) > 0
+      topicsData?.retrieval_status === 'completed' && (topicsData?.total_chunks_retrieved ?? 0) > 0
     )
   }, [topicsData])
 
@@ -234,27 +245,108 @@ export function Step3OutlineReview() {
 
   // Check if has custom items
   const hasCustomItems = useMemo(() => {
-    if (!outlineData?.sections) return false
+    if (!outlineData?.sections) {
+      return false
+    }
     return outlineData.sections.flatMap(s => s.items).some(item => item.is_custom)
   }, [outlineData])
 
-  // Check if can proceed
+  // Check if can proceed - Flexible validation (UX optimized)
+  // Requirements:
+  // 1. Main Content section MUST have at least 1 INCLUDED item (core editorial requirement)
+  // 2. At least 2 sections total with INCLUDED items (ensures newsletter has substance)
+  // 3. All INCLUDED items meet quality standards (title >= 5 chars, description >= 10 chars)
   const canProceed = useMemo(() => {
-    if (!outlineData) return false
+    if (!outlineData) {
+      return false
+    }
 
-    return (
-      outlineData.outline_status === 'completed' &&
-      outlineData.sections.length > 0 &&
-      outlineData.sections.every(s => s.items.length > 0) &&
-      outlineData.sections.flatMap(s => s.items).every(item => {
+    // Must have completed generation
+    if (outlineData.outline_status !== 'completed') {
+      return false
+    }
+
+    // Must have at least some sections
+    if (outlineData.sections.length === 0) {
+      return false
+    }
+
+    // Helper: check if item is included (treat undefined as true for backwards compatibility)
+    const isIncluded = (item: OutlineItem) => item.included !== false
+
+    // Filter sections with INCLUDED items
+    const sectionsWithIncludedItems = outlineData.sections.filter(
+      s => s.items.filter(isIncluded).length > 0
+    )
+
+    // Must have at least 2 sections with included content (ensures substance)
+    if (sectionsWithIncludedItems.length < 2) {
+      return false
+    }
+
+    // Main Content section must have at least one INCLUDED item (core requirement)
+    const mainContentSection = outlineData.sections.find(s => s.id === 'section-main')
+    if (!mainContentSection || mainContentSection.items.filter(isIncluded).length === 0) {
+      return false
+    }
+
+    // All INCLUDED items must meet quality standards
+    return outlineData.sections
+      .flatMap(s => s.items)
+      .filter(isIncluded)
+      .every(item => {
         return item.title.trim().length >= 5 && item.description.trim().length >= 10
       })
-    )
   }, [outlineData])
+
+  // Helper for validation status message
+  const getValidationMessage = useCallback(() => {
+    if (!outlineData || outlineData.outline_status !== 'completed') {
+      return { message: 'Generate outline to proceed', isReady: false }
+    }
+
+    // Helper: check if item is included (treat undefined as true for backwards compatibility)
+    const isIncluded = (item: OutlineItem) => item.included !== false
+
+    const sectionsWithIncludedItems = outlineData.sections.filter(
+      s => s.items.filter(isIncluded).length > 0
+    )
+    const mainContentSection = outlineData.sections.find(s => s.id === 'section-main')
+    const includedMainContentItems = mainContentSection?.items.filter(isIncluded).length ?? 0
+
+    if (includedMainContentItems === 0) {
+      return { message: 'Main Content section needs at least one selected item', isReady: false }
+    }
+
+    if (sectionsWithIncludedItems.length < 2) {
+      return { message: 'Select content in at least one more section', isReady: false }
+    }
+
+    const invalidIncludedItems = outlineData.sections
+      .flatMap(s => s.items)
+      .filter(isIncluded)
+      .filter(item => item.title.trim().length < 5 || item.description.trim().length < 10)
+
+    if (invalidIncludedItems.length > 0) {
+      return {
+        message: `${invalidIncludedItems.length} selected item(s) need longer titles or descriptions`,
+        isReady: false,
+      }
+    }
+
+    // Count total included items
+    const totalIncluded = outlineData.sections.flatMap(s => s.items).filter(isIncluded).length
+
+    return { message: `${totalIncluded} items selected for draft`, isReady: true }
+  }, [outlineData])
+
+  const validationStatus = getValidationMessage()
 
   // Handle generate outline
   const handleGenerateOutline = async () => {
-    if (!newsletterCode || !isStep2Complete) return
+    if (!newsletterCode || !isStep2Complete) {
+      return
+    }
 
     setIsGenerating(true)
 
@@ -311,7 +403,9 @@ export function Step3OutlineReview() {
       const confirmed = window.confirm(
         'Regenerating will create a new outline. Your custom items will be preserved and added back. Continue?'
       )
-      if (!confirmed) return
+      if (!confirmed) {
+        return
+      }
     }
 
     await handleGenerateOutline()
@@ -338,7 +432,9 @@ export function Step3OutlineReview() {
 
   // Save item edit
   const saveItemEdit = async () => {
-    if (!editingItemId || !outlineData || !newsletterCode) return
+    if (!editingItemId || !outlineData || !newsletterCode) {
+      return
+    }
 
     // Validate
     if (editValues.title.trim().length < 5) {
@@ -400,11 +496,15 @@ export function Step3OutlineReview() {
 
   // Remove item
   const handleRemoveItem = async (item: OutlineItem) => {
-    if (!outlineData || !newsletterCode) return
+    if (!outlineData || !newsletterCode) {
+      return
+    }
 
     // Find section
     const section = outlineData.sections.find(s => s.id === item.section_id)
-    if (!section) return
+    if (!section) {
+      return
+    }
 
     // Prevent removing last item
     if (section.items.length <= 1) {
@@ -414,7 +514,9 @@ export function Step3OutlineReview() {
 
     // Confirm
     const confirmed = window.confirm('Remove this item from the outline?')
-    if (!confirmed) return
+    if (!confirmed) {
+      return
+    }
 
     try {
       await newsletterService.removeOutlineItem(newsletterCode, item.id)
@@ -423,9 +525,7 @@ export function Step3OutlineReview() {
       setOutlineData(prev => ({
         ...prev!,
         sections: prev!.sections.map(s =>
-          s.id === item.section_id
-            ? { ...s, items: s.items.filter(i => i.id !== item.id) }
-            : s
+          s.id === item.section_id ? { ...s, items: s.items.filter(i => i.id !== item.id) } : s
         ),
         user_modifications: {
           ...prev!.user_modifications,
@@ -436,6 +536,41 @@ export function Step3OutlineReview() {
       showSuccess('Item removed')
     } catch {
       showError('Failed to remove item')
+    }
+  }
+
+  // Toggle item include/exclude
+  const handleToggleInclude = async (item: OutlineItem) => {
+    if (!outlineData || !newsletterCode) {
+      return
+    }
+
+    const newIncluded = !item.included
+
+    // Update local state immediately for responsiveness
+    const updatedSections = outlineData.sections.map(section => ({
+      ...section,
+      items: section.items.map(i => (i.id === item.id ? { ...i, included: newIncluded } : i)),
+    }))
+
+    setOutlineData(prev => ({
+      ...prev!,
+      sections: updatedSections,
+    }))
+
+    // Save to backend
+    try {
+      setIsSavingOutline(true)
+      await newsletterService.saveOutline(newsletterCode, updatedSections)
+    } catch {
+      // Revert on error
+      setOutlineData(prev => ({
+        ...prev!,
+        sections: outlineData.sections,
+      }))
+      showError('Failed to update item')
+    } finally {
+      setIsSavingOutline(false)
     }
   }
 
@@ -450,7 +585,9 @@ export function Step3OutlineReview() {
 
   // Add new item
   const handleAddItem = async () => {
-    if (!addItemSectionId || !newsletterCode) return
+    if (!addItemSectionId || !newsletterCode) {
+      return
+    }
 
     // Validate
     if (newItemTitle.trim().length < 5) {
@@ -494,12 +631,29 @@ export function Step3OutlineReview() {
     navigate(`/newsletter-generator/${newsletterCode}/step-2`)
   }
 
-  const handleNext = () => {
-    updateConfig({ current_step: 4 })
-    navigate(`/newsletter-generator/${newsletterCode}/step-4`)
+  const handleNext = async () => {
+    if (!newsletterCode || !outlineData) {
+      return
+    }
+
+    setIsNavigating(true)
+
+    try {
+      // Save outline state first (flush any pending changes)
+      await newsletterService.saveOutline(newsletterCode, outlineData.sections)
+
+      // Update newsletter step (wait for completion)
+      await newsletterService.updateNewsletter(newsletterCode, { current_step: 4 })
+
+      // Then navigate
+      navigate(`/newsletter-generator/${newsletterCode}/step-4`)
+    } catch {
+      showError('Failed to save progress. Please try again.')
+      setIsNavigating(false)
+    }
   }
 
-  // Navigation buttons
+  // Navigation buttons with validation feedback
   const navigationButtons = [
     <button
       key="previous"
@@ -510,15 +664,42 @@ export function Step3OutlineReview() {
       <ChevronLeft size={18} />
       Previous
     </button>,
-    <button
-      key="next"
-      className={`${styles.navButton} ${styles.navButtonPrimary}`}
-      onClick={handleNext}
-      disabled={!canProceed || isLoading}
-    >
-      Next
-      <ChevronRight size={18} />
-    </button>,
+    <div key="next-with-validation" className={step3Styles.nextButtonWrapper}>
+      <div className={step3Styles.validationStatus}>
+        {validationStatus.isReady ? (
+          <Check size={14} className={step3Styles.validationSuccess} />
+        ) : (
+          <AlertTriangle size={14} className={step3Styles.validationWarning} />
+        )}
+        <span
+          className={
+            validationStatus.isReady
+              ? step3Styles.validationMessageReady
+              : step3Styles.validationMessagePending
+          }
+        >
+          {validationStatus.message}
+        </span>
+      </div>
+      <button
+        className={`${styles.navButton} ${styles.navButtonPrimary}`}
+        onClick={handleNext}
+        disabled={!canProceed || isLoading || isNavigating}
+        title={!canProceed ? validationStatus.message : 'Proceed to draft generation'}
+      >
+        {isNavigating ? (
+          <>
+            <div className={step3Styles.spinnerSmall} />
+            Saving...
+          </>
+        ) : (
+          <>
+            Next
+            <ChevronRight size={18} />
+          </>
+        )}
+      </button>
+    </div>,
   ]
 
   // Get status display
@@ -527,7 +708,9 @@ export function Step3OutlineReview() {
 
   // Format date
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return null
+    if (!dateStr) {
+      return null
+    }
     try {
       const date = new Date(dateStr)
       return date.toLocaleString('en-US', {
@@ -543,9 +726,38 @@ export function Step3OutlineReview() {
 
   // Get section with items for a specific sectionId
   const getSectionName = (sectionId: string | null) => {
-    if (!sectionId || !outlineData) return ''
+    if (!sectionId || !outlineData) {
+      return ''
+    }
     const section = outlineData.sections.find(s => s.id === sectionId)
     return section?.name || ''
+  }
+
+  // Show not found message if newsletter doesn't exist
+  if (notFound) {
+    return (
+      <NewsletterLayout
+        currentStep={3}
+        completedSteps={[]}
+        navigationButtons={[]}
+        isLoadingNewsletter={false}
+        isLoadingStepData={false}
+      >
+        <div className={step3Styles.step2Warning}>
+          <AlertTriangle size={40} />
+          <p className={step3Styles.step2WarningText}>
+            Newsletter not found. The newsletter you&apos;re looking for doesn&apos;t exist or has
+            been deleted.
+          </p>
+          <button
+            className={step3Styles.step2WarningButton}
+            onClick={() => navigate('/newsletter-generator')}
+          >
+            Go to Newsletter Generator
+          </button>
+        </div>
+      </NewsletterLayout>
+    )
   }
 
   return (
@@ -570,9 +782,9 @@ export function Step3OutlineReview() {
             Outline Review
           </div>
           <p className={styles.infoCardDescription}>
-            Review and customize your newsletter outline. You can edit titles and descriptions,
-            add custom items, or regenerate the outline with AI. The outline will guide the
-            content generation in the next step.
+            Review and customize your newsletter outline. <strong>Main Content is required</strong>,
+            other sections are optional based on your retrieved content. You can edit titles and
+            descriptions, add custom items, or regenerate the outline with AI.
           </p>
         </div>
 
@@ -655,9 +867,7 @@ export function Step3OutlineReview() {
                   {outlineStatus === 'pending' && (
                     <Clock size={20} className={step3Styles.generatorStatusPending} />
                   )}
-                  {outlineStatus === 'processing' && (
-                    <div className={step3Styles.spinner} />
-                  )}
+                  {outlineStatus === 'processing' && <div className={step3Styles.spinner} />}
                   {outlineStatus === 'completed' && (
                     <Check size={20} className={step3Styles.generatorStatusCompleted} />
                   )}
@@ -751,7 +961,8 @@ export function Step3OutlineReview() {
                       />
                       <span className={step3Styles.outlineSectionTitle}>{section.name}</span>
                       <span className={step3Styles.outlineSectionCount}>
-                        {section.items.length} {section.items.length === 1 ? 'item' : 'items'}
+                        {section.items.filter(i => i.included !== false).length} of{' '}
+                        {section.items.length} selected
                       </span>
                     </div>
 
@@ -764,8 +975,23 @@ export function Step3OutlineReview() {
                           </div>
                         ) : (
                           section.items.map(item => (
-                            <div key={item.id} className={step3Styles.outlineItem}>
+                            <div
+                              key={item.id}
+                              className={`${step3Styles.outlineItem} ${
+                                item.included === false ? step3Styles.outlineItemExcluded : ''
+                              }`}
+                            >
                               <div className={step3Styles.outlineItemHeader}>
+                                {/* Checkbox for include/exclude */}
+                                <label className={step3Styles.outlineItemCheckbox}>
+                                  <input
+                                    type="checkbox"
+                                    checked={item.included !== false}
+                                    onChange={() => handleToggleInclude(item)}
+                                    className={step3Styles.outlineItemCheckboxInput}
+                                  />
+                                  <span className={step3Styles.outlineItemCheckboxCustom} />
+                                </label>
                                 <div className={step3Styles.outlineItemContent}>
                                   {/* Title */}
                                   {editingItemId === item.id ? (
@@ -880,10 +1106,7 @@ export function Step3OutlineReview() {
               <h3 className={step3Styles.modalTitle}>
                 Add Item to {getSectionName(addItemSectionId)}
               </h3>
-              <button
-                className={step3Styles.modalClose}
-                onClick={() => setAddItemModalOpen(false)}
-              >
+              <button className={step3Styles.modalClose} onClick={() => setAddItemModalOpen(false)}>
                 <X size={20} />
               </button>
             </div>
