@@ -10,10 +10,8 @@ import { ProposalWriterPage } from '@/tools/proposal-writer/pages/ProposalWriter
 import { NewsletterGeneratorPage } from '@/tools/newsletter-generator/pages/NewsletterGeneratorPage'
 import { Step1Configuration } from '@/tools/newsletter-generator/pages/Step1Configuration'
 import { Step2ContentPlanning } from '@/tools/newsletter-generator/pages/Step2ContentPlanning'
-import {
-  Step3OutlineReview,
-  Step4Drafting,
-} from '@/tools/newsletter-generator/pages/StepPlaceholder'
+import { Step3OutlineReview } from '@/tools/newsletter-generator/pages/Step3OutlineReview'
+import { Step4DraftPreview } from '@/tools/newsletter-generator/pages/Step4DraftPreview'
 import { PromptManagerPage } from '@/tools/admin/pages/PromptManagerPage'
 import { PromptEditorPage } from '@/tools/admin/pages/PromptEditorPage'
 import { SettingsPage } from '@/tools/admin/pages/SettingsPage'
@@ -75,7 +73,7 @@ function App() {
                 <Route path=":newsletterCode/step-1" element={<Step1Configuration />} />
                 <Route path=":newsletterCode/step-2" element={<Step2ContentPlanning />} />
                 <Route path=":newsletterCode/step-3" element={<Step3OutlineReview />} />
-                <Route path=":newsletterCode/step-4" element={<Step4Drafting />} />
+                <Route path=":newsletterCode/step-4" element={<Step4DraftPreview />} />
               </Route>
               <Route
                 path="admin/prompt-manager"

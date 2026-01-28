@@ -522,3 +522,167 @@ export function getRecommendedTopics(targetAudiences: string[], limit = 5): stri
     .slice(0, limit)
     .map(r => r.id)
 }
+
+// ==================== STEP 3: OUTLINE REVIEW ====================
+
+// Outline item (single content item in a section)
+export interface OutlineItem {
+  id: string
+  section_id: string
+  title: string
+  description: string
+  content_sources: string[] // chunk_ids from Step 2 retrieved_content
+  order: number
+  is_custom: boolean
+  is_editable: boolean
+  included: boolean // Whether to include this item in draft generation (default: true)
+  user_notes?: string
+}
+
+// Outline section (group of items)
+export interface OutlineSection {
+  id: string
+  name: string
+  order: number
+  items: OutlineItem[]
+}
+
+// Generation config snapshot
+export interface OutlineGenerationConfig {
+  tone_preset: string
+  length_preference: string
+  target_audience: string[]
+}
+
+// User modification tracking
+export interface OutlineUserModifications {
+  items_added: number
+  items_removed: number
+  items_edited: number
+}
+
+// Full outline data (Step 3 state)
+export interface OutlineData {
+  sections: OutlineSection[]
+  outline_status: 'pending' | 'processing' | 'completed' | 'failed'
+  outline_error?: string
+  generated_at?: string
+  generation_config?: OutlineGenerationConfig
+  user_modifications: OutlineUserModifications
+  updated_at?: string
+}
+
+// Default sections for newsletter outline
+export const DEFAULT_OUTLINE_SECTIONS: Omit<OutlineSection, 'items'>[] = [
+  { id: 'section-intro', name: 'Introduction', order: 1 },
+  { id: 'section-main', name: 'Main Content', order: 2 },
+  { id: 'section-updates', name: 'Updates & News', order: 3 },
+  { id: 'section-opportunities', name: 'Opportunities', order: 4 },
+  { id: 'section-resources', name: 'Resources', order: 5 },
+  { id: 'section-conclusion', name: 'Conclusion', order: 6 },
+]
+
+// Item counts by length preference
+export const OUTLINE_ITEM_COUNTS: Record<string, Record<string, number>> = {
+  quick_read: {
+    'section-intro': 1,
+    'section-main': 2,
+    'section-updates': 1,
+    'section-conclusion': 1,
+  },
+  standard: {
+    'section-intro': 1,
+    'section-main': 4,
+    'section-updates': 2,
+    'section-conclusion': 1,
+  },
+  deep_dive: {
+    'section-intro': 1,
+    'section-main': 6,
+    'section-updates': 3,
+    'section-conclusion': 1,
+  },
+}
+
+// ==================== STEP 4: DRAFT & PREVIEW ====================
+
+// Draft item reference (from outline)
+export interface DraftItem {
+  id: string
+  title: string
+}
+
+// Draft section with full content
+export interface DraftSection {
+  id: string
+  sectionId: string // Reference to outline section
+  title: string
+  content: string // Full markdown content
+  items: DraftItem[]
+  order: number
+  isEdited: boolean
+}
+
+// Draft metadata
+export interface DraftMetadata {
+  wordCount: number
+  readingTime: string
+}
+
+// User edit tracking
+export interface DraftUserEdits {
+  sectionsEdited: number
+  lastEditedAt?: string
+}
+
+// Draft generation config snapshot
+export interface DraftGenerationConfig {
+  tone_preset: string
+  length_preference: string
+  target_audience: string[]
+}
+
+// Full draft data (Step 4 state)
+export interface DraftData {
+  title: string
+  subtitle?: string
+  sections: DraftSection[]
+  draft_status: 'pending' | 'processing' | 'completed' | 'failed'
+  draft_error?: string
+  generated_at?: string
+  generation_config?: DraftGenerationConfig
+  metadata: DraftMetadata
+  user_edits: DraftUserEdits
+  updated_at?: string
+}
+
+// Export format options
+export type ExportFormat = 'html' | 'markdown' | 'text'
+
+export interface ExportFormatOption {
+  value: ExportFormat
+  label: string
+  description: string
+  icon: string
+}
+
+export const EXPORT_FORMAT_OPTIONS: ExportFormatOption[] = [
+  {
+    value: 'html',
+    label: 'HTML Email',
+    description: 'Styled HTML ready for email clients',
+    icon: 'mail',
+  },
+  {
+    value: 'markdown',
+    label: 'Markdown',
+    description: 'Plain markdown format',
+    icon: 'file-text',
+  },
+  {
+    value: 'text',
+    label: 'Plain Text',
+    description: 'Simple text without formatting',
+    icon: 'file',
+  },
+]

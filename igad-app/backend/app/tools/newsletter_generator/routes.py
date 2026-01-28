@@ -137,7 +137,9 @@ def validate_schedule_rule(rule: ScheduleRuleModel) -> List[str]:
         if rule.weekdays:
             for day in rule.weekdays:
                 if day < 0 or day > 6:
-                    errors.append("Weekdays must be between 0 (Sunday) and 6 (Saturday)")
+                    errors.append(
+                        "Weekdays must be between 0 (Sunday) and 6 (Saturday)"
+                    )
                     break
 
     # Validate minute is one of the allowed values
@@ -749,9 +751,7 @@ async def retrieve_content(
         # Assign topic IDs to chunks
         # Distribute evenly across selected topics for now
         for i, chunk in enumerate(chunks):
-            chunk.topic_id = request.selected_types[
-                i % len(request.selected_types)
-            ]
+            chunk.topic_id = request.selected_types[i % len(request.selected_types)]
 
         # Convert chunks to dicts (score must be Decimal for DynamoDB)
         retrieved_content = [
@@ -883,3 +883,1187 @@ async def get_retrieval_status(
         "retrieval_completed_at": topics_item.get("retrieval_completed_at"),
         "retrieval_error": topics_item.get("retrieval_error"),
     }
+
+
+# ==================== STEP 3: OUTLINE ====================
+
+
+class OutlineItemCreate(BaseModel):
+    """Request model for creating a custom outline item."""
+
+    section_id: str = Field(..., min_length=1)
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(default="", max_length=500)
+    user_notes: Optional[str] = Field(None, max_length=1000)
+
+
+class OutlineSectionModel(BaseModel):
+    """Model for an outline section."""
+
+    id: str
+    name: str
+    order: int
+    items: List[Dict[str, Any]]
+
+
+class OutlineSaveRequest(BaseModel):
+    """Request model for saving outline modifications."""
+
+    sections: List[OutlineSectionModel]
+
+
+@router.get("/{newsletter_code}/outline")
+async def get_outline(
+    newsletter_code: str, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Get outline data for a newsletter.
+
+    Returns current outline state including:
+    - sections: array of outline sections with items
+    - outline_status: pending | processing | completed | failed
+    - generation_config: configuration used for generation
+    - user_modifications: tracking of user edits
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Get OUTLINE item
+    outline_item = await db_client.get_item(pk=pk, sk="OUTLINE")
+
+    if not outline_item:
+        return {
+            "sections": [],
+            "outline_status": "pending",
+            "outline_error": None,
+            "generated_at": None,
+            "generation_config": None,
+            "user_modifications": {
+                "items_added": 0,
+                "items_removed": 0,
+                "items_edited": 0,
+            },
+            "updated_at": None,
+        }
+
+    return {
+        "sections": outline_item.get("sections", []),
+        "outline_status": outline_item.get("outline_status", "pending"),
+        "outline_error": outline_item.get("outline_error"),
+        "generated_at": outline_item.get("generated_at"),
+        "generation_config": outline_item.get("generation_config"),
+        "user_modifications": outline_item.get(
+            "user_modifications",
+            {"items_added": 0, "items_removed": 0, "items_edited": 0},
+        ),
+        "updated_at": outline_item.get("updated_at"),
+    }
+
+
+@router.post("/{newsletter_code}/generate-outline")
+async def generate_outline(
+    newsletter_code: str, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Trigger AI outline generation.
+
+    Uses Step 2 retrieved content to generate a structured newsletter outline.
+    This is a synchronous operation that:
+    - Validates Step 2 is complete
+    - Generates outline using Bedrock Claude
+    - Saves result to OUTLINE item
+    - Preserves custom items during regeneration
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Check Step 2 is complete
+    topics_item = await db_client.get_item(pk=pk, sk="TOPICS")
+    if not topics_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Step 2 not started. Please complete content planning first.",
+        )
+
+    retrieval_status = topics_item.get("retrieval_status", "pending")
+    if retrieval_status != "completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Step 2 content retrieval not complete. Status: {retrieval_status}",
+        )
+
+    retrieved_content = topics_item.get("retrieved_content", [])
+    if not retrieved_content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No content retrieved in Step 2. Please retrieve content first.",
+        )
+
+    # Set status to processing
+    now = datetime.utcnow().isoformat()
+    await db_client.update_item(
+        pk=pk,
+        sk="OUTLINE",
+        update_expression="SET outline_status = :status, updated_at = :now",
+        expression_attribute_values={
+            ":status": "processing",
+            ":now": now,
+        },
+    )
+
+    try:
+        # Import and run outline generation service
+        from app.tools.newsletter_generator.outline_generation.service import (
+            OutlineGenerationService,
+        )
+
+        service = OutlineGenerationService()
+        result = service.generate_outline(
+            newsletter_code=newsletter_code,
+            preserve_custom_items=True,
+        )
+
+        logger.info(f"Outline generation completed for {newsletter_code}")
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Outline generation failed for {newsletter_code}: {e}")
+
+        # Update status to failed
+        error_time = datetime.utcnow().isoformat()
+        await db_client.update_item(
+            pk=pk,
+            sk="OUTLINE",
+            update_expression=(
+                "SET outline_status = :status, "
+                "outline_error = :error, updated_at = :now"
+            ),
+            expression_attribute_values={
+                ":status": "failed",
+                ":error": str(e),
+                ":now": error_time,
+            },
+        )
+
+        return {
+            "success": False,
+            "outline_status": "failed",
+            "outline_error": str(e),
+        }
+
+
+@router.get("/{newsletter_code}/outline-status")
+async def get_outline_status(
+    newsletter_code: str, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Get outline generation status for polling.
+
+    Returns current status of outline generation including:
+    - outline_status: pending | processing | completed | failed
+    - sections: array of outline sections (when completed)
+    - outline_error: error message (when failed)
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Get OUTLINE item
+    outline_item = await db_client.get_item(pk=pk, sk="OUTLINE")
+
+    if not outline_item:
+        return {
+            "outline_status": "pending",
+            "sections": [],
+            "outline_error": None,
+            "generated_at": None,
+            "updated_at": None,
+        }
+
+    return {
+        "outline_status": outline_item.get("outline_status", "pending"),
+        "sections": outline_item.get("sections", []),
+        "outline_error": outline_item.get("outline_error"),
+        "generated_at": outline_item.get("generated_at"),
+        "generation_config": outline_item.get("generation_config"),
+        "user_modifications": outline_item.get("user_modifications"),
+        "updated_at": outline_item.get("updated_at"),
+    }
+
+
+@router.put("/{newsletter_code}/outline")
+async def save_outline(
+    newsletter_code: str,
+    request: OutlineSaveRequest,
+    user: Any = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Save outline modifications.
+
+    Updates the outline sections with user edits (titles, descriptions).
+    Tracks modification counts for analytics.
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this newsletter",
+        )
+
+    now = datetime.utcnow().isoformat()
+
+    # Convert sections to dict format
+    sections_data = [s.model_dump() for s in request.sections]
+
+    # Get existing outline to track modifications
+    existing = await db_client.get_item(pk=pk, sk="OUTLINE")
+    existing_mods = existing.get("user_modifications", {}) if existing else {}
+
+    # Count edits (increment items_edited)
+    items_edited = existing_mods.get("items_edited", 0) + 1
+
+    # Update outline
+    await db_client.update_item(
+        pk=pk,
+        sk="OUTLINE",
+        update_expression=(
+            "SET sections = :sections, "
+            "user_modifications.items_edited = :edited, "
+            "updated_at = :now"
+        ),
+        expression_attribute_values={
+            ":sections": sections_data,
+            ":edited": items_edited,
+            ":now": now,
+        },
+    )
+
+    # Update current step in METADATA
+    await db_client.update_item(
+        pk=pk,
+        sk="METADATA",
+        update_expression="SET current_step = :step, updated_at = :now",
+        expression_attribute_values={
+            ":step": 3,
+            ":now": now,
+        },
+    )
+
+    logger.info(f"Saved outline for newsletter {newsletter_code}")
+
+    return {"success": True, "updated_at": now}
+
+
+@router.post("/{newsletter_code}/outline-item")
+async def add_outline_item(
+    newsletter_code: str,
+    request: OutlineItemCreate,
+    user: Any = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Add a custom item to an outline section.
+
+    Creates a new user-defined item with:
+    - is_custom: true (survives regeneration)
+    - is_editable: true
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this newsletter",
+        )
+
+    # Get existing outline
+    outline_item = await db_client.get_item(pk=pk, sk="OUTLINE")
+    if not outline_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Outline not found. Please generate outline first.",
+        )
+
+    sections = outline_item.get("sections", [])
+
+    # Find target section
+    target_section = None
+    target_index = -1
+    for i, section in enumerate(sections):
+        if section.get("id") == request.section_id:
+            target_section = section
+            target_index = i
+            break
+
+    if target_section is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Section {request.section_id} not found",
+        )
+
+    # Create new item
+    now = datetime.utcnow().isoformat()
+    new_item = {
+        "id": f"item-{uuid.uuid4().hex[:8]}",
+        "section_id": request.section_id,
+        "title": request.title,
+        "description": request.description,
+        "content_sources": [],
+        "order": len(target_section.get("items", [])) + 1,
+        "is_custom": True,
+        "is_editable": True,
+        "user_notes": request.user_notes,
+        "created_at": now,
+    }
+
+    # Add item to section
+    if "items" not in sections[target_index]:
+        sections[target_index]["items"] = []
+    sections[target_index]["items"].append(new_item)
+
+    # Update modification counts
+    user_mods = outline_item.get("user_modifications", {})
+    items_added = user_mods.get("items_added", 0) + 1
+
+    # Save updated outline
+    await db_client.update_item(
+        pk=pk,
+        sk="OUTLINE",
+        update_expression=(
+            "SET sections = :sections, "
+            "user_modifications.items_added = :added, "
+            "updated_at = :now"
+        ),
+        expression_attribute_values={
+            ":sections": sections,
+            ":added": items_added,
+            ":now": now,
+        },
+    )
+
+    logger.info(f"Added custom item to {newsletter_code} section {request.section_id}")
+
+    return {"success": True, "item": new_item}
+
+
+@router.delete("/{newsletter_code}/outline-item/{item_id}")
+async def remove_outline_item(
+    newsletter_code: str,
+    item_id: str,
+    user: Any = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Remove an item from the outline.
+
+    Removes the specified item from its section and updates modification counts.
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this newsletter",
+        )
+
+    # Get existing outline
+    outline_item = await db_client.get_item(pk=pk, sk="OUTLINE")
+    if not outline_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Outline not found",
+        )
+
+    sections = outline_item.get("sections", [])
+
+    # Find and remove item
+    item_found = False
+    for section in sections:
+        items = section.get("items", [])
+        for i, item in enumerate(items):
+            if item.get("id") == item_id:
+                items.pop(i)
+                item_found = True
+                break
+        if item_found:
+            break
+
+    if not item_found:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Item {item_id} not found",
+        )
+
+    # Update modification counts
+    now = datetime.utcnow().isoformat()
+    user_mods = outline_item.get("user_modifications", {})
+    items_removed = user_mods.get("items_removed", 0) + 1
+
+    # Save updated outline
+    await db_client.update_item(
+        pk=pk,
+        sk="OUTLINE",
+        update_expression=(
+            "SET sections = :sections, "
+            "user_modifications.items_removed = :removed, "
+            "updated_at = :now"
+        ),
+        expression_attribute_values={
+            ":sections": sections,
+            ":removed": items_removed,
+            ":now": now,
+        },
+    )
+
+    logger.info(f"Removed item {item_id} from {newsletter_code}")
+
+    return {"success": True, "message": f"Item {item_id} removed"}
+
+
+# ==================== STEP 4: DRAFT ====================
+
+
+class DraftSectionModel(BaseModel):
+    """Model for a draft section."""
+
+    id: str
+    sectionId: str
+    title: str
+    content: str
+    items: List[Dict[str, Any]] = Field(default_factory=list)
+    order: int
+    isEdited: bool = False
+
+
+class DraftSaveRequest(BaseModel):
+    """Request model for saving draft modifications."""
+
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
+    sections: List[DraftSectionModel]
+
+
+class DraftSectionUpdateRequest(BaseModel):
+    """Request model for updating a single draft section."""
+
+    content: str
+    title: Optional[str] = None
+
+
+class AICompleteRequest(BaseModel):
+    """Request model for AI autocomplete."""
+
+    prompt: str = Field(..., min_length=1, max_length=2000)
+    context: Optional[str] = Field(None, max_length=5000)
+
+
+class ExportRequest(BaseModel):
+    """Request model for exporting the newsletter."""
+
+    format: str = Field(..., pattern="^(html|markdown|text)$")
+
+
+@router.get("/{newsletter_code}/draft")
+async def get_draft(
+    newsletter_code: str, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Get draft data for a newsletter.
+
+    Returns current draft state including:
+    - title, subtitle: Newsletter header info
+    - sections: array of draft sections with content
+    - draft_status: pending | processing | completed | failed
+    - metadata: word count, reading time
+    - user_edits: tracking of user modifications
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Get DRAFT item
+    draft_item = await db_client.get_item(pk=pk, sk="DRAFT")
+
+    if not draft_item:
+        return {
+            "title": metadata.get("title", "Newsletter Draft"),
+            "subtitle": "",
+            "sections": [],
+            "draft_status": "pending",
+            "draft_error": None,
+            "generated_at": None,
+            "generation_config": None,
+            "metadata": {
+                "wordCount": 0,
+                "readingTime": "0 min",
+            },
+            "user_edits": {
+                "sectionsEdited": 0,
+                "lastEditedAt": None,
+            },
+            "updated_at": None,
+        }
+
+    return {
+        "title": draft_item.get("title", "Newsletter Draft"),
+        "subtitle": draft_item.get("subtitle", ""),
+        "sections": draft_item.get("sections", []),
+        "draft_status": draft_item.get("draft_status", "pending"),
+        "draft_error": draft_item.get("draft_error"),
+        "generated_at": draft_item.get("generated_at"),
+        "generation_config": draft_item.get("generation_config"),
+        "metadata": draft_item.get(
+            "metadata", {"wordCount": 0, "readingTime": "0 min"}
+        ),
+        "user_edits": draft_item.get(
+            "user_edits", {"sectionsEdited": 0, "lastEditedAt": None}
+        ),
+        "updated_at": draft_item.get("updated_at"),
+    }
+
+
+@router.post("/{newsletter_code}/generate-draft")
+async def generate_draft(
+    newsletter_code: str, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Trigger AI draft generation.
+
+    Uses Step 3 outline to generate full newsletter content.
+    This is a synchronous operation that:
+    - Validates Step 3 is complete
+    - Generates draft using Bedrock Claude
+    - Saves result to DRAFT item
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Check Step 3 is complete
+    outline_item = await db_client.get_item(pk=pk, sk="OUTLINE")
+    if not outline_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Step 3 not completed. Please complete outline review first.",
+        )
+
+    outline_status = outline_item.get("outline_status", "pending")
+    if outline_status != "completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Step 3 outline not complete. Status: {outline_status}",
+        )
+
+    outline_sections = outline_item.get("sections", [])
+    sections_with_items = [s for s in outline_sections if s.get("items")]
+    if not sections_with_items:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No outline items found. Please add items in Step 3.",
+        )
+
+    # Set status to processing
+    now = datetime.utcnow().isoformat()
+    await db_client.update_item(
+        pk=pk,
+        sk="DRAFT",
+        update_expression="SET draft_status = :status, updated_at = :now",
+        expression_attribute_values={
+            ":status": "processing",
+            ":now": now,
+        },
+    )
+
+    try:
+        # Import and run draft generation service
+        from app.tools.newsletter_generator.draft_generation.service import (
+            DraftGenerationService,
+        )
+
+        service = DraftGenerationService()
+        result = service.generate_draft(newsletter_code=newsletter_code)
+
+        logger.info(f"Draft generation completed for {newsletter_code}")
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Draft generation failed for {newsletter_code}: {e}")
+
+        # Update status to failed
+        error_time = datetime.utcnow().isoformat()
+        await db_client.update_item(
+            pk=pk,
+            sk="DRAFT",
+            update_expression=(
+                "SET draft_status = :status, " "draft_error = :error, updated_at = :now"
+            ),
+            expression_attribute_values={
+                ":status": "failed",
+                ":error": str(e),
+                ":now": error_time,
+            },
+        )
+
+        return {
+            "success": False,
+            "draft_status": "failed",
+            "draft_error": str(e),
+        }
+
+
+@router.get("/{newsletter_code}/draft-status")
+async def get_draft_status(
+    newsletter_code: str, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Get draft generation status for polling.
+
+    Returns current status of draft generation including:
+    - draft_status: pending | processing | completed | failed
+    - sections: array of draft sections (when completed)
+    - draft_error: error message (when failed)
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Get DRAFT item
+    draft_item = await db_client.get_item(pk=pk, sk="DRAFT")
+
+    if not draft_item:
+        return {
+            "draft_status": "pending",
+            "title": metadata.get("title", "Newsletter Draft"),
+            "sections": [],
+            "draft_error": None,
+            "generated_at": None,
+            "metadata": None,
+            "updated_at": None,
+        }
+
+    return {
+        "draft_status": draft_item.get("draft_status", "pending"),
+        "title": draft_item.get("title", ""),
+        "subtitle": draft_item.get("subtitle", ""),
+        "sections": draft_item.get("sections", []),
+        "draft_error": draft_item.get("draft_error"),
+        "generated_at": draft_item.get("generated_at"),
+        "generation_config": draft_item.get("generation_config"),
+        "metadata": draft_item.get("metadata"),
+        "user_edits": draft_item.get("user_edits"),
+        "updated_at": draft_item.get("updated_at"),
+    }
+
+
+@router.put("/{newsletter_code}/draft")
+async def save_draft(
+    newsletter_code: str,
+    request: DraftSaveRequest,
+    user: Any = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Save draft modifications.
+
+    Updates the draft sections with user edits.
+    Tracks modification counts for analytics.
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this newsletter",
+        )
+
+    now = datetime.utcnow().isoformat()
+
+    # Convert sections to dict format
+    sections_data = [s.model_dump() for s in request.sections]
+
+    # Calculate word count
+    total_words = sum(len(s.get("content", "").split()) for s in sections_data)
+
+    # Get existing draft to track modifications
+    existing = await db_client.get_item(pk=pk, sk="DRAFT")
+    existing_edits = existing.get("user_edits", {}) if existing else {}
+    sections_edited = existing_edits.get("sectionsEdited", 0) + 1
+
+    # Build update expression
+    update_parts = [
+        "#sections = :sections",
+        "metadata.wordCount = :wordCount",
+        "user_edits.sectionsEdited = :edited",
+        "user_edits.lastEditedAt = :now",
+        "updated_at = :now",
+    ]
+    expression_values = {
+        ":sections": sections_data,
+        ":wordCount": total_words,
+        ":edited": sections_edited,
+        ":now": now,
+    }
+    expression_names = {"#sections": "sections"}
+
+    if request.title is not None:
+        update_parts.append("title = :title")
+        expression_values[":title"] = request.title
+
+    if request.subtitle is not None:
+        update_parts.append("subtitle = :subtitle")
+        expression_values[":subtitle"] = request.subtitle
+
+    # Update draft
+    await db_client.update_item(
+        pk=pk,
+        sk="DRAFT",
+        update_expression="SET " + ", ".join(update_parts),
+        expression_attribute_values=expression_values,
+        expression_attribute_names=expression_names,
+    )
+
+    # Update current step in METADATA
+    await db_client.update_item(
+        pk=pk,
+        sk="METADATA",
+        update_expression="SET current_step = :step, updated_at = :now",
+        expression_attribute_values={
+            ":step": 4,
+            ":now": now,
+        },
+    )
+
+    logger.info(f"Saved draft for newsletter {newsletter_code}")
+
+    return {"success": True, "updated_at": now, "wordCount": total_words}
+
+
+@router.put("/{newsletter_code}/draft/section/{section_id}")
+async def save_draft_section(
+    newsletter_code: str,
+    section_id: str,
+    request: DraftSectionUpdateRequest,
+    user: Any = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Save a single draft section.
+
+    Updates only the specified section's content.
+    More efficient than saving the entire draft.
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this newsletter",
+        )
+
+    # Get existing draft
+    draft_item = await db_client.get_item(pk=pk, sk="DRAFT")
+    if not draft_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Draft not found. Please generate draft first.",
+        )
+
+    sections = draft_item.get("sections", [])
+
+    # Find and update the target section
+    section_found = False
+    for i, section in enumerate(sections):
+        if section.get("id") == section_id:
+            sections[i]["content"] = request.content
+            sections[i]["isEdited"] = True
+            if request.title is not None:
+                sections[i]["title"] = request.title
+            section_found = True
+            break
+
+    if not section_found:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Section {section_id} not found",
+        )
+
+    now = datetime.utcnow().isoformat()
+
+    # Calculate new word count
+    total_words = sum(len(s.get("content", "").split()) for s in sections)
+
+    # Update modification tracking
+    existing_edits = draft_item.get("user_edits", {})
+    sections_edited = existing_edits.get("sectionsEdited", 0) + 1
+
+    # Save updated draft
+    await db_client.update_item(
+        pk=pk,
+        sk="DRAFT",
+        update_expression=(
+            "SET #sections = :sections, "
+            "metadata.wordCount = :wordCount, "
+            "user_edits.sectionsEdited = :edited, "
+            "user_edits.lastEditedAt = :now, "
+            "updated_at = :now"
+        ),
+        expression_attribute_values={
+            ":sections": sections,
+            ":wordCount": total_words,
+            ":edited": sections_edited,
+            ":now": now,
+        },
+        expression_attribute_names={"#sections": "sections"},
+    )
+
+    logger.info(f"Saved section {section_id} for {newsletter_code}")
+
+    return {"success": True, "updated_at": now, "wordCount": total_words}
+
+
+@router.post("/{newsletter_code}/export")
+async def export_draft(
+    newsletter_code: str,
+    request: ExportRequest,
+    user: Any = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Export the newsletter draft in the specified format.
+
+    Supported formats:
+    - html: Full HTML email with styling
+    - markdown: Plain markdown
+    - text: Plain text
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Get draft
+    draft_item = await db_client.get_item(pk=pk, sk="DRAFT")
+    if not draft_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Draft not found. Please generate draft first.",
+        )
+
+    draft_status = draft_item.get("draft_status", "pending")
+    if draft_status != "completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Draft not completed. Status: {draft_status}",
+        )
+
+    title = draft_item.get("title", "Newsletter")
+    subtitle = draft_item.get("subtitle", "")
+    sections = draft_item.get("sections", [])
+
+    # Generate export content based on format
+    if request.format == "html":
+        content = _generate_html_export(title, subtitle, sections)
+        filename = f"{newsletter_code}.html"
+        mime_type = "text/html"
+    elif request.format == "markdown":
+        content = _generate_markdown_export(title, subtitle, sections)
+        filename = f"{newsletter_code}.md"
+        mime_type = "text/markdown"
+    else:  # text
+        content = _generate_text_export(title, subtitle, sections)
+        filename = f"{newsletter_code}.txt"
+        mime_type = "text/plain"
+
+    logger.info(f"Exported {newsletter_code} as {request.format}")
+
+    return {
+        "success": True,
+        "format": request.format,
+        "filename": filename,
+        "mime_type": mime_type,
+        "content": content,
+    }
+
+
+def _generate_html_export(
+    title: str, subtitle: str, sections: List[Dict[str, Any]]
+) -> str:
+    """Generate HTML export with email-friendly styling."""
+    sections_html = ""
+    for section in sections:
+        section_title = section.get("title", "")
+        content = section.get("content", "")
+        # Convert markdown to basic HTML
+        content_html = _markdown_to_html(content)
+        sections_html += f"""
+        <div style="margin-bottom: 32px;">
+            <h2 style="color: #166534; font-size: 20px; margin-bottom: 12px;">{section_title}</h2>
+            <div style="color: #374151; line-height: 1.6;">{content_html}</div>
+        </div>
+        """
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+    <div style="background: white; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <header style="text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb;">
+            <h1 style="color: #111827; font-size: 28px; margin: 0 0 8px 0;">{title}</h1>
+            {f'<p style="color: #6b7280; font-size: 16px; margin: 0;">{subtitle}</p>' if subtitle else ''}
+        </header>
+        <main>
+            {sections_html}
+        </main>
+        <footer style="text-align: center; padding-top: 24px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px;">
+            <p>Generated with IGAD Innovation Hub Newsletter Generator</p>
+        </footer>
+    </div>
+</body>
+</html>"""
+
+
+def _generate_markdown_export(
+    title: str, subtitle: str, sections: List[Dict[str, Any]]
+) -> str:
+    """Generate markdown export."""
+    lines = [f"# {title}"]
+    if subtitle:
+        lines.append(f"\n*{subtitle}*")
+    lines.append("\n---\n")
+
+    for section in sections:
+        content = section.get("content", "")
+        lines.append(content)
+        lines.append("\n")
+
+    lines.append("---\n")
+    lines.append("*Generated with IGAD Innovation Hub Newsletter Generator*")
+
+    return "\n".join(lines)
+
+
+def _generate_text_export(
+    title: str, subtitle: str, sections: List[Dict[str, Any]]
+) -> str:
+    """Generate plain text export."""
+    lines = [title.upper(), "=" * len(title)]
+    if subtitle:
+        lines.append(subtitle)
+    lines.append("")
+
+    for section in sections:
+        section_title = section.get("title", "")
+        content = section.get("content", "")
+        # Strip markdown formatting
+        plain_content = _strip_markdown(content)
+        lines.append(section_title.upper())
+        lines.append("-" * len(section_title))
+        lines.append(plain_content)
+        lines.append("")
+
+    lines.append("-" * 40)
+    lines.append("Generated with IGAD Innovation Hub Newsletter Generator")
+
+    return "\n".join(lines)
+
+
+def _markdown_to_html(markdown_text: str) -> str:
+    """Convert basic markdown to HTML."""
+    import re
+
+    html = markdown_text
+
+    # Headers
+    html = re.sub(r"^### (.+)$", r"<h4>\1</h4>", html, flags=re.MULTILINE)
+    html = re.sub(r"^## (.+)$", r"<h3>\1</h3>", html, flags=re.MULTILINE)
+    html = re.sub(r"^# (.+)$", r"<h2>\1</h2>", html, flags=re.MULTILINE)
+
+    # Bold and italic
+    html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html)
+    html = re.sub(r"\*(.+?)\*", r"<em>\1</em>", html)
+
+    # Links
+    html = re.sub(r"\[(.+?)\]\((.+?)\)", r'<a href="\2">\1</a>', html)
+
+    # Paragraphs
+    html = re.sub(r"\n\n", r"</p><p>", html)
+    html = f"<p>{html}</p>"
+
+    return html
+
+
+def _strip_markdown(markdown_text: str) -> str:
+    """Strip markdown formatting to plain text."""
+    import re
+
+    text = markdown_text
+
+    # Remove headers
+    text = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
+
+    # Remove bold/italic
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"\*(.+?)\*", r"\1", text)
+
+    # Convert links to text
+    text = re.sub(r"\[(.+?)\]\(.+?\)", r"\1", text)
+
+    return text
+
+
+@router.post("/ai-complete")
+async def ai_complete(
+    request: AICompleteRequest, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    AI autocomplete for inline editing.
+
+    Receives context and partial text, returns AI-generated completion.
+    Used by the Novel editor for AI-assisted writing.
+    """
+    try:
+        from app.tools.newsletter_generator.draft_generation.service import (
+            DraftGenerationService,
+        )
+
+        service = DraftGenerationService()
+        completion = service.ai_complete(
+            prompt=request.prompt,
+            context=request.context,
+        )
+
+        return {"completion": completion}
+
+    except Exception as e:
+        logger.error(f"AI autocomplete failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="AI completion failed. Please try again.",
+        )

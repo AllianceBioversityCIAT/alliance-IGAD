@@ -139,10 +139,7 @@ export function StepPlaceholder({ stepNumber, stepTitle }: StepPlaceholderProps)
 
 // Step-specific wrappers
 // Note: Step2ContentPlanning is now a full implementation in Step2ContentPlanning.tsx
-
-export function Step3OutlineReview() {
-  return <StepPlaceholder stepNumber={3} stepTitle="Outline Review" />
-}
+// Note: Step3OutlineReview is now a full implementation in Step3OutlineReview.tsx
 
 export function Step4Drafting() {
   return <StepPlaceholder stepNumber={4} stepTitle="Drafting & Export" />
