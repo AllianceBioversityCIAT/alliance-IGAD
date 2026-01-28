@@ -441,14 +441,14 @@ class SimpleConceptAnalyzer:
         try:
             pdf_file = BytesIO(pdf_bytes)
             reader = PdfReader(pdf_file)
-            text = ""
+            text_parts = []
 
             for page in reader.pages:
                 page_text = page.extract_text()
                 if page_text:
-                    text += page_text + "\n"
+                    text_parts.append(page_text)
 
-            return text.strip()
+            return "\n".join(text_parts).strip()
 
         except Exception as e:
             raise Exception(f"PDF extraction failed: {str(e)}")
@@ -473,19 +473,20 @@ class SimpleConceptAnalyzer:
         try:
             docx_file = BytesIO(docx_bytes)
             document = Document(docx_file)
-            text = ""
+            text_parts = []
 
             # Extract from paragraphs
             for paragraph in document.paragraphs:
                 if paragraph.text.strip():
-                    text += paragraph.text + "\n"
+                    text_parts.append(paragraph.text)
 
             # Extract from tables
             for table in document.tables:
                 for row in table.rows:
                     row_text = [cell.text.strip() for cell in row.cells]
-                    text += " | ".join(row_text) + "\n"
+                    text_parts.append(" | ".join(row_text))
 
+            text = "\n".join(text_parts)
             return text.strip() if text.strip() else "[Empty DOCX file]"
 
         except Exception as e:
