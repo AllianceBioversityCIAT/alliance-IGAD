@@ -706,8 +706,17 @@ export function Step3OutlineReview() {
                   onClick={handleRegenerate}
                   disabled={isProcessing}
                 >
-                  <RefreshCw size={16} />
-                  Regenerate Outline
+                  {isProcessing ? (
+                    <>
+                      <div className={step3Styles.spinner} />
+                      Regenerating...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={16} />
+                      Regenerate Outline
+                    </>
+                  )}
                 </button>
               )}
             </div>
