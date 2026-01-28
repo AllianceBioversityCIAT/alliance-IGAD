@@ -5,6 +5,7 @@ Apply all changes from conversation summary:
 2. Convert email templates from Spanish to English
 3. Verify token management system is in place
 """
+
 import sys
 
 import boto3

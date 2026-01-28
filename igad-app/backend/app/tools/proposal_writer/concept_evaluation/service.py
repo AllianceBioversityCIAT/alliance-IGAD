@@ -384,7 +384,9 @@ class SimpleConceptAnalyzer:
         print(
             f"   - Reference proposals: {'✅' if reference_proposals_analysis else '⚠️  (empty)'}"
         )
-        print(f"   - Existing work: {'✅' if existing_work_analysis else '⚠️  (empty)'}")
+        print(
+            f"   - Existing work: {'✅' if existing_work_analysis else '⚠️  (empty)'}"
+        )
         return final_prompt
 
     # ==================== FILE EXTRACTION ====================

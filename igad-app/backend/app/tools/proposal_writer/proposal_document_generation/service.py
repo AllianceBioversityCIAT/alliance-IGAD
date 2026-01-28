@@ -313,7 +313,9 @@ class ProposalDocumentGenerator:
             if placeholder_double_brace_upper in prompt:
                 prompt = prompt.replace(placeholder_double_brace_upper, value_str)
                 replacements_made += 1
-                logger.info(f"✅ Replaced placeholder: {placeholder_double_brace_upper}")
+                logger.info(
+                    f"✅ Replaced placeholder: {placeholder_double_brace_upper}"
+                )
 
         logger.info(f"🔄 Total placeholders replaced: {replacements_made}")
 

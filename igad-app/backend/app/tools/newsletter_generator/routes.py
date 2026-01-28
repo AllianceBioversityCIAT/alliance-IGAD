@@ -137,7 +137,9 @@ def validate_schedule_rule(rule: ScheduleRuleModel) -> List[str]:
         if rule.weekdays:
             for day in rule.weekdays:
                 if day < 0 or day > 6:
-                    errors.append("Weekdays must be between 0 (Sunday) and 6 (Saturday)")
+                    errors.append(
+                        "Weekdays must be between 0 (Sunday) and 6 (Saturday)"
+                    )
                     break
 
     # Validate minute is one of the allowed values
@@ -749,9 +751,7 @@ async def retrieve_content(
         # Assign topic IDs to chunks
         # Distribute evenly across selected topics for now
         for i, chunk in enumerate(chunks):
-            chunk.topic_id = request.selected_types[
-                i % len(request.selected_types)
-            ]
+            chunk.topic_id = request.selected_types[i % len(request.selected_types)]
 
         # Convert chunks to dicts (score must be Decimal for DynamoDB)
         retrieved_content = [

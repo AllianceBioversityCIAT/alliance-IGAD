@@ -1,3 +1,3 @@
-## 2026-01-28 - React Render Optimization
-**Learning:** Defining expensive text processing functions (regex) inside a component's render scope causes unnecessary re-creation and re-execution on every render.
-**Action:** Extract pure helper functions to module scope and use `useMemo` for derived data to ensure stability and performance.
+## 2026-01-28 - Backend Linter Configuration
+**Learning:** `make lint` failed because `flake8` was missing from `requirements-test.txt`. The codebase also had formatting issues (`black`) and a specific `flake8` E202 error.
+**Action:** When working on backend, verify `flake8` is installed. Ran `make format` to fix style and manually fixed E202. Confirmed tests are missing from the repo.

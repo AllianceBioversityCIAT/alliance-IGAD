@@ -4,6 +4,7 @@ Update Cognito User Pool Client token validity settings.
 Based on conversation summary: extend tokens from 1 hour to 24 hours for access/ID tokens
 and 10 years for refresh tokens.
 """
+
 import boto3
 from botocore.exceptions import ClientError
 

@@ -296,7 +296,9 @@ class ProposalTemplateGenerator:
         """
         try:
             # DEBUG: Log incoming selected sections
-            logger.info(f"🔍 DEBUG: Received {len(selected_sections)} selected_sections")
+            logger.info(
+                f"🔍 DEBUG: Received {len(selected_sections)} selected_sections"
+            )
             logger.info(f"🔍 DEBUG: selected_sections = {selected_sections}")
 
             # Unwrap nested structure if present
@@ -532,7 +534,7 @@ class ProposalTemplateGenerator:
         remaining_braces = re.findall(r"\{\{[^}]+\}\}", prompt)
         if remaining_brackets:
             logger.warning(
-                f"⚠️ Unreplaced {'{[...]}' } placeholders: {remaining_brackets[:5]}"
+                f"⚠️ Unreplaced {'{[...]}'} placeholders: {remaining_brackets[:5]}"
             )
         if remaining_braces:
             logger.warning(
