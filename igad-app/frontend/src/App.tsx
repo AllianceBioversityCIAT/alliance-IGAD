@@ -10,10 +10,8 @@ import { ProposalWriterPage } from '@/tools/proposal-writer/pages/ProposalWriter
 import { NewsletterGeneratorPage } from '@/tools/newsletter-generator/pages/NewsletterGeneratorPage'
 import { Step1Configuration } from '@/tools/newsletter-generator/pages/Step1Configuration'
 import { Step2ContentPlanning } from '@/tools/newsletter-generator/pages/Step2ContentPlanning'
-import {
-  Step3OutlineReview,
-  Step4Drafting,
-} from '@/tools/newsletter-generator/pages/StepPlaceholder'
+import { Step3OutlineReview } from '@/tools/newsletter-generator/pages/Step3OutlineReview'
+import { Step4Drafting } from '@/tools/newsletter-generator/pages/StepPlaceholder'
 import { PromptManagerPage } from '@/tools/admin/pages/PromptManagerPage'
 import { PromptEditorPage } from '@/tools/admin/pages/PromptEditorPage'
 import { SettingsPage } from '@/tools/admin/pages/SettingsPage'

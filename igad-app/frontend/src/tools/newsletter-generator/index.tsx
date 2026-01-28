@@ -5,7 +5,8 @@
 export { NewsletterGeneratorPage } from './pages/NewsletterGeneratorPage'
 export { Step1Configuration } from './pages/Step1Configuration'
 export { Step2ContentPlanning } from './pages/Step2ContentPlanning'
-export { Step3OutlineReview, Step4Drafting } from './pages/StepPlaceholder'
+export { Step3OutlineReview } from './pages/Step3OutlineReview'
+export { Step4Drafting } from './pages/StepPlaceholder'
 
 // Components
 export { NewsletterLayout } from './components/NewsletterLayout'

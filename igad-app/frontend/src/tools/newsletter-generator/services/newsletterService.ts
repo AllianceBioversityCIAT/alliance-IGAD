@@ -92,6 +92,64 @@ export interface RetrieveContentResponse {
   retrieval_error?: string
 }
 
+// Step 3: Outline Types
+export interface OutlineItem {
+  id: string
+  section_id: string
+  title: string
+  description: string
+  content_sources: string[]
+  order: number
+  is_custom: boolean
+  is_editable: boolean
+  user_notes?: string
+}
+
+export interface OutlineSection {
+  id: string
+  name: string
+  order: number
+  items: OutlineItem[]
+}
+
+export interface OutlineData {
+  sections: OutlineSection[]
+  outline_status: 'pending' | 'processing' | 'completed' | 'failed'
+  outline_error?: string
+  generated_at?: string
+  generation_config?: {
+    tone_preset: string
+    length_preference: string
+    target_audience: string[]
+  }
+  user_modifications: {
+    items_added: number
+    items_removed: number
+    items_edited: number
+  }
+  updated_at?: string
+}
+
+export interface GenerateOutlineResponse {
+  success: boolean
+  outline_status: string
+  sections?: OutlineSection[]
+  generated_at?: string
+  outline_error?: string
+}
+
+export interface AddOutlineItemRequest {
+  section_id: string
+  title: string
+  description: string
+  user_notes?: string
+}
+
+export interface AddOutlineItemResponse {
+  success: boolean
+  item: OutlineItem
+}
+
 // API Functions
 export const newsletterService = {
   /**
@@ -176,6 +234,69 @@ export const newsletterService = {
    */
   async getRetrievalStatus(newsletterCode: string): Promise<TopicsData> {
     const response = await apiClient.get(`/api/newsletters/${newsletterCode}/retrieval-status`)
+    return response.data
+  },
+
+  // ==================== STEP 3: OUTLINE ====================
+
+  /**
+   * Get outline data
+   */
+  async getOutline(newsletterCode: string): Promise<OutlineData> {
+    const response = await apiClient.get(`/api/newsletters/${newsletterCode}/outline`)
+    return response.data
+  },
+
+  /**
+   * Trigger AI outline generation
+   */
+  async generateOutline(newsletterCode: string): Promise<GenerateOutlineResponse> {
+    const response = await apiClient.post(`/api/newsletters/${newsletterCode}/generate-outline`)
+    return response.data
+  },
+
+  /**
+   * Get outline status (for polling)
+   */
+  async getOutlineStatus(newsletterCode: string): Promise<OutlineData> {
+    const response = await apiClient.get(`/api/newsletters/${newsletterCode}/outline-status`)
+    return response.data
+  },
+
+  /**
+   * Save outline modifications
+   */
+  async saveOutline(
+    newsletterCode: string,
+    sections: OutlineSection[]
+  ): Promise<{ success: boolean; updated_at: string }> {
+    const response = await apiClient.put(`/api/newsletters/${newsletterCode}/outline`, {
+      sections,
+    })
+    return response.data
+  },
+
+  /**
+   * Add custom item to outline section
+   */
+  async addOutlineItem(
+    newsletterCode: string,
+    data: AddOutlineItemRequest
+  ): Promise<AddOutlineItemResponse> {
+    const response = await apiClient.post(`/api/newsletters/${newsletterCode}/outline-item`, data)
+    return response.data
+  },
+
+  /**
+   * Remove item from outline
+   */
+  async removeOutlineItem(
+    newsletterCode: string,
+    itemId: string
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.delete(
+      `/api/newsletters/${newsletterCode}/outline-item/${itemId}`
+    )
     return response.data
   },
 }

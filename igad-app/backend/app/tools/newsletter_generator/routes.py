@@ -883,3 +883,500 @@ async def get_retrieval_status(
         "retrieval_completed_at": topics_item.get("retrieval_completed_at"),
         "retrieval_error": topics_item.get("retrieval_error"),
     }
+
+
+# ==================== STEP 3: OUTLINE ====================
+
+
+class OutlineItemCreate(BaseModel):
+    """Request model for creating a custom outline item."""
+
+    section_id: str = Field(..., min_length=1)
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(default="", max_length=500)
+    user_notes: Optional[str] = Field(None, max_length=1000)
+
+
+class OutlineSectionModel(BaseModel):
+    """Model for an outline section."""
+
+    id: str
+    name: str
+    order: int
+    items: List[Dict[str, Any]]
+
+
+class OutlineSaveRequest(BaseModel):
+    """Request model for saving outline modifications."""
+
+    sections: List[OutlineSectionModel]
+
+
+@router.get("/{newsletter_code}/outline")
+async def get_outline(
+    newsletter_code: str, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Get outline data for a newsletter.
+
+    Returns current outline state including:
+    - sections: array of outline sections with items
+    - outline_status: pending | processing | completed | failed
+    - generation_config: configuration used for generation
+    - user_modifications: tracking of user edits
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Get OUTLINE item
+    outline_item = await db_client.get_item(pk=pk, sk="OUTLINE")
+
+    if not outline_item:
+        return {
+            "sections": [],
+            "outline_status": "pending",
+            "outline_error": None,
+            "generated_at": None,
+            "generation_config": None,
+            "user_modifications": {
+                "items_added": 0,
+                "items_removed": 0,
+                "items_edited": 0,
+            },
+            "updated_at": None,
+        }
+
+    return {
+        "sections": outline_item.get("sections", []),
+        "outline_status": outline_item.get("outline_status", "pending"),
+        "outline_error": outline_item.get("outline_error"),
+        "generated_at": outline_item.get("generated_at"),
+        "generation_config": outline_item.get("generation_config"),
+        "user_modifications": outline_item.get(
+            "user_modifications",
+            {"items_added": 0, "items_removed": 0, "items_edited": 0},
+        ),
+        "updated_at": outline_item.get("updated_at"),
+    }
+
+
+@router.post("/{newsletter_code}/generate-outline")
+async def generate_outline(
+    newsletter_code: str, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Trigger AI outline generation.
+
+    Uses Step 2 retrieved content to generate a structured newsletter outline.
+    This is a synchronous operation that:
+    - Validates Step 2 is complete
+    - Generates outline using Bedrock Claude
+    - Saves result to OUTLINE item
+    - Preserves custom items during regeneration
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Check Step 2 is complete
+    topics_item = await db_client.get_item(pk=pk, sk="TOPICS")
+    if not topics_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Step 2 not started. Please complete content planning first.",
+        )
+
+    retrieval_status = topics_item.get("retrieval_status", "pending")
+    if retrieval_status != "completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Step 2 content retrieval not complete. Status: {retrieval_status}",
+        )
+
+    retrieved_content = topics_item.get("retrieved_content", [])
+    if not retrieved_content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No content retrieved in Step 2. Please retrieve content first.",
+        )
+
+    # Set status to processing
+    now = datetime.utcnow().isoformat()
+    await db_client.update_item(
+        pk=pk,
+        sk="OUTLINE",
+        update_expression="SET outline_status = :status, updated_at = :now",
+        expression_attribute_values={
+            ":status": "processing",
+            ":now": now,
+        },
+    )
+
+    try:
+        # Import and run outline generation service
+        from app.tools.newsletter_generator.outline_generation.service import (
+            OutlineGenerationService,
+        )
+
+        service = OutlineGenerationService()
+        result = service.generate_outline(
+            newsletter_code=newsletter_code,
+            preserve_custom_items=True,
+        )
+
+        logger.info(f"Outline generation completed for {newsletter_code}")
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Outline generation failed for {newsletter_code}: {e}")
+
+        # Update status to failed
+        error_time = datetime.utcnow().isoformat()
+        await db_client.update_item(
+            pk=pk,
+            sk="OUTLINE",
+            update_expression=(
+                "SET outline_status = :status, "
+                "outline_error = :error, updated_at = :now"
+            ),
+            expression_attribute_values={
+                ":status": "failed",
+                ":error": str(e),
+                ":now": error_time,
+            },
+        )
+
+        return {
+            "success": False,
+            "outline_status": "failed",
+            "outline_error": str(e),
+        }
+
+
+@router.get("/{newsletter_code}/outline-status")
+async def get_outline_status(
+    newsletter_code: str, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Get outline generation status for polling.
+
+    Returns current status of outline generation including:
+    - outline_status: pending | processing | completed | failed
+    - sections: array of outline sections (when completed)
+    - outline_error: error message (when failed)
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Get OUTLINE item
+    outline_item = await db_client.get_item(pk=pk, sk="OUTLINE")
+
+    if not outline_item:
+        return {
+            "outline_status": "pending",
+            "sections": [],
+            "outline_error": None,
+            "generated_at": None,
+            "updated_at": None,
+        }
+
+    return {
+        "outline_status": outline_item.get("outline_status", "pending"),
+        "sections": outline_item.get("sections", []),
+        "outline_error": outline_item.get("outline_error"),
+        "generated_at": outline_item.get("generated_at"),
+        "generation_config": outline_item.get("generation_config"),
+        "user_modifications": outline_item.get("user_modifications"),
+        "updated_at": outline_item.get("updated_at"),
+    }
+
+
+@router.put("/{newsletter_code}/outline")
+async def save_outline(
+    newsletter_code: str,
+    request: OutlineSaveRequest,
+    user: Any = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Save outline modifications.
+
+    Updates the outline sections with user edits (titles, descriptions).
+    Tracks modification counts for analytics.
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this newsletter",
+        )
+
+    now = datetime.utcnow().isoformat()
+
+    # Convert sections to dict format
+    sections_data = [s.model_dump() for s in request.sections]
+
+    # Get existing outline to track modifications
+    existing = await db_client.get_item(pk=pk, sk="OUTLINE")
+    existing_mods = existing.get("user_modifications", {}) if existing else {}
+
+    # Count edits (increment items_edited)
+    items_edited = existing_mods.get("items_edited", 0) + 1
+
+    # Update outline
+    await db_client.update_item(
+        pk=pk,
+        sk="OUTLINE",
+        update_expression=(
+            "SET sections = :sections, "
+            "user_modifications.items_edited = :edited, "
+            "updated_at = :now"
+        ),
+        expression_attribute_values={
+            ":sections": sections_data,
+            ":edited": items_edited,
+            ":now": now,
+        },
+    )
+
+    # Update current step in METADATA
+    await db_client.update_item(
+        pk=pk,
+        sk="METADATA",
+        update_expression="SET current_step = :step, updated_at = :now",
+        expression_attribute_values={
+            ":step": 3,
+            ":now": now,
+        },
+    )
+
+    logger.info(f"Saved outline for newsletter {newsletter_code}")
+
+    return {"success": True, "updated_at": now}
+
+
+@router.post("/{newsletter_code}/outline-item")
+async def add_outline_item(
+    newsletter_code: str,
+    request: OutlineItemCreate,
+    user: Any = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Add a custom item to an outline section.
+
+    Creates a new user-defined item with:
+    - is_custom: true (survives regeneration)
+    - is_editable: true
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this newsletter",
+        )
+
+    # Get existing outline
+    outline_item = await db_client.get_item(pk=pk, sk="OUTLINE")
+    if not outline_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Outline not found. Please generate outline first.",
+        )
+
+    sections = outline_item.get("sections", [])
+
+    # Find target section
+    target_section = None
+    target_index = -1
+    for i, section in enumerate(sections):
+        if section.get("id") == request.section_id:
+            target_section = section
+            target_index = i
+            break
+
+    if target_section is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Section {request.section_id} not found",
+        )
+
+    # Create new item
+    now = datetime.utcnow().isoformat()
+    new_item = {
+        "id": f"item-{uuid.uuid4().hex[:8]}",
+        "section_id": request.section_id,
+        "title": request.title,
+        "description": request.description,
+        "content_sources": [],
+        "order": len(target_section.get("items", [])) + 1,
+        "is_custom": True,
+        "is_editable": True,
+        "user_notes": request.user_notes,
+        "created_at": now,
+    }
+
+    # Add item to section
+    if "items" not in sections[target_index]:
+        sections[target_index]["items"] = []
+    sections[target_index]["items"].append(new_item)
+
+    # Update modification counts
+    user_mods = outline_item.get("user_modifications", {})
+    items_added = user_mods.get("items_added", 0) + 1
+
+    # Save updated outline
+    await db_client.update_item(
+        pk=pk,
+        sk="OUTLINE",
+        update_expression=(
+            "SET sections = :sections, "
+            "user_modifications.items_added = :added, "
+            "updated_at = :now"
+        ),
+        expression_attribute_values={
+            ":sections": sections,
+            ":added": items_added,
+            ":now": now,
+        },
+    )
+
+    logger.info(f"Added custom item to {newsletter_code} section {request.section_id}")
+
+    return {"success": True, "item": new_item}
+
+
+@router.delete("/{newsletter_code}/outline-item/{item_id}")
+async def remove_outline_item(
+    newsletter_code: str,
+    item_id: str,
+    user: Any = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Remove an item from the outline.
+
+    Removes the specified item from its section and updates modification counts.
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this newsletter",
+        )
+
+    # Get existing outline
+    outline_item = await db_client.get_item(pk=pk, sk="OUTLINE")
+    if not outline_item:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Outline not found",
+        )
+
+    sections = outline_item.get("sections", [])
+
+    # Find and remove item
+    item_found = False
+    for section in sections:
+        items = section.get("items", [])
+        for i, item in enumerate(items):
+            if item.get("id") == item_id:
+                items.pop(i)
+                item_found = True
+                break
+        if item_found:
+            break
+
+    if not item_found:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Item {item_id} not found",
+        )
+
+    # Update modification counts
+    now = datetime.utcnow().isoformat()
+    user_mods = outline_item.get("user_modifications", {})
+    items_removed = user_mods.get("items_removed", 0) + 1
+
+    # Save updated outline
+    await db_client.update_item(
+        pk=pk,
+        sk="OUTLINE",
+        update_expression=(
+            "SET sections = :sections, "
+            "user_modifications.items_removed = :removed, "
+            "updated_at = :now"
+        ),
+        expression_attribute_values={
+            ":sections": sections,
+            ":removed": items_removed,
+            ":now": now,
+        },
+    )
+
+    logger.info(f"Removed item {item_id} from {newsletter_code}")
+
+    return {"success": True, "message": f"Item {item_id} removed"}
