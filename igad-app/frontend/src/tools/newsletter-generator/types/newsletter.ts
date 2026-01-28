@@ -223,3 +223,302 @@ export const DEFAULT_NEWSLETTER_CONFIG: NewsletterConfig = {
   },
   geographic_focus: '',
 }
+
+// ==================== STEP 2: CONTENT PLANNING ====================
+
+// Information Type Categories
+export type InformationCategory = 'news' | 'insights' | 'opportunities' | 'resources'
+
+// Information Type definition
+export interface InformationType {
+  id: string
+  name: string
+  category: InformationCategory
+  description: string
+  audienceRelevance: Record<string, number> // 0-1 relevance score per audience
+}
+
+// All available information types for newsletter content
+export const INFORMATION_TYPES: InformationType[] = [
+  // NEWS (Blue badges)
+  {
+    id: 'breaking_news',
+    name: 'Breaking News & Updates',
+    category: 'news',
+    description: 'Recent news and updates from IGAD region',
+    audienceRelevance: {
+      myself: 0.5,
+      researchers: 0.6,
+      policy_makers: 0.9,
+      development_partners: 0.8,
+      ag_tech_industry: 0.7,
+      field_staff: 0.5,
+      farmers: 0.4,
+    },
+  },
+  {
+    id: 'policy_updates',
+    name: 'Policy Updates',
+    category: 'news',
+    description: 'Policy changes and regulations',
+    audienceRelevance: {
+      myself: 0.5,
+      researchers: 0.7,
+      policy_makers: 1.0,
+      development_partners: 0.9,
+      ag_tech_industry: 0.6,
+      field_staff: 0.4,
+      farmers: 0.3,
+    },
+  },
+  {
+    id: 'food_security',
+    name: 'Food Security Updates',
+    category: 'news',
+    description: 'Food security and nutrition information',
+    audienceRelevance: {
+      myself: 0.6,
+      researchers: 0.8,
+      policy_makers: 0.9,
+      development_partners: 0.9,
+      ag_tech_industry: 0.5,
+      field_staff: 0.7,
+      farmers: 0.8,
+    },
+  },
+
+  // INSIGHTS (Purple badges)
+  {
+    id: 'research_findings',
+    name: 'Research Findings',
+    category: 'insights',
+    description: 'Scientific research results and studies',
+    audienceRelevance: {
+      myself: 0.6,
+      researchers: 1.0,
+      policy_makers: 0.7,
+      development_partners: 0.6,
+      ag_tech_industry: 0.8,
+      field_staff: 0.3,
+      farmers: 0.2,
+    },
+  },
+  {
+    id: 'technology_innovation',
+    name: 'Technology & Innovation Spotlight',
+    category: 'insights',
+    description: 'Agricultural technology and digital farming',
+    audienceRelevance: {
+      myself: 0.6,
+      researchers: 0.8,
+      policy_makers: 0.5,
+      development_partners: 0.6,
+      ag_tech_industry: 1.0,
+      field_staff: 0.6,
+      farmers: 0.7,
+    },
+  },
+  {
+    id: 'climate_smart',
+    name: 'Climate-Smart Agriculture',
+    category: 'insights',
+    description: 'Climate adaptation and sustainable practices',
+    audienceRelevance: {
+      myself: 0.7,
+      researchers: 0.9,
+      policy_makers: 0.8,
+      development_partners: 0.8,
+      ag_tech_industry: 0.7,
+      field_staff: 0.8,
+      farmers: 0.9,
+    },
+  },
+  {
+    id: 'market_access',
+    name: 'Market Access & Trade',
+    category: 'insights',
+    description: 'Trade and market information',
+    audienceRelevance: {
+      myself: 0.5,
+      researchers: 0.5,
+      policy_makers: 0.8,
+      development_partners: 0.7,
+      ag_tech_industry: 0.9,
+      field_staff: 0.6,
+      farmers: 0.8,
+    },
+  },
+  {
+    id: 'project_updates',
+    name: 'Project Updates & Success Stories',
+    category: 'insights',
+    description: 'Project progress and impact stories',
+    audienceRelevance: {
+      myself: 0.5,
+      researchers: 0.5,
+      policy_makers: 0.6,
+      development_partners: 1.0,
+      ag_tech_industry: 0.5,
+      field_staff: 0.7,
+      farmers: 0.6,
+    },
+  },
+  {
+    id: 'livestock',
+    name: 'Livestock & Animal Health',
+    category: 'insights',
+    description: 'Livestock and veterinary information',
+    audienceRelevance: {
+      myself: 0.5,
+      researchers: 0.7,
+      policy_makers: 0.5,
+      development_partners: 0.5,
+      ag_tech_industry: 0.4,
+      field_staff: 0.9,
+      farmers: 1.0,
+    },
+  },
+
+  // OPPORTUNITIES (Yellow badges)
+  {
+    id: 'funding',
+    name: 'Funding Opportunities',
+    category: 'opportunities',
+    description: 'Grants and funding for projects',
+    audienceRelevance: {
+      myself: 0.6,
+      researchers: 0.9,
+      policy_makers: 0.5,
+      development_partners: 1.0,
+      ag_tech_industry: 0.7,
+      field_staff: 0.4,
+      farmers: 0.3,
+    },
+  },
+  {
+    id: 'events',
+    name: 'Events & Conferences',
+    category: 'opportunities',
+    description: 'Workshops, conferences, and meetings',
+    audienceRelevance: {
+      myself: 0.5,
+      researchers: 0.8,
+      policy_makers: 0.7,
+      development_partners: 0.8,
+      ag_tech_industry: 0.6,
+      field_staff: 0.5,
+      farmers: 0.3,
+    },
+  },
+
+  // RESOURCES (Green badges)
+  {
+    id: 'publications',
+    name: 'Publications & Resources',
+    category: 'resources',
+    description: 'Reports, documents, and guides',
+    audienceRelevance: {
+      myself: 0.5,
+      researchers: 1.0,
+      policy_makers: 0.8,
+      development_partners: 0.7,
+      ag_tech_industry: 0.5,
+      field_staff: 0.4,
+      farmers: 0.2,
+    },
+  },
+]
+
+// Category display configuration
+export const CATEGORY_CONFIG: Record<
+  InformationCategory,
+  { label: string; color: string; bgColor: string }
+> = {
+  news: { label: 'News', color: '#3b82f6', bgColor: '#dbeafe' },
+  insights: { label: 'Insights', color: '#8b5cf6', bgColor: '#ede9fe' },
+  opportunities: { label: 'Opportunities', color: '#f59e0b', bgColor: '#fef3c7' },
+  resources: { label: 'Resources', color: '#10b981', bgColor: '#d1fae5' },
+}
+
+// Retrieved content chunk
+export interface RetrievedChunk {
+  chunk_id: string
+  topic_id: string
+  content: string
+  score: number
+  source_url?: string
+  source_metadata?: Record<string, unknown>
+}
+
+// Retrieval configuration (captured at retrieval time)
+export interface RetrievalConfig {
+  tone_preset: string
+  frequency: string
+  length_preference: string
+  target_audience: string[]
+  geographic_focus: string
+  max_chunks: number
+  days_back: number
+}
+
+// Topics data (Step 2 state)
+export interface TopicsData {
+  selected_types: string[]
+  retrieval_status: 'pending' | 'processing' | 'completed' | 'failed'
+  retrieval_config?: RetrievalConfig
+  retrieved_content: RetrievedChunk[]
+  total_chunks_retrieved: number
+  retrieval_started_at?: string
+  retrieval_completed_at?: string
+  retrieval_error?: string
+}
+
+// Relevance level for display
+export type RelevanceLevel = 'high' | 'medium' | 'low'
+
+// Helper function to calculate relevance level
+export function getRelevanceLevel(
+  topic: InformationType,
+  targetAudiences: string[]
+): RelevanceLevel {
+  if (targetAudiences.length === 0) {
+    return 'medium'
+  }
+
+  const avgRelevance =
+    targetAudiences.reduce((sum, aud) => sum + (topic.audienceRelevance[aud] || 0), 0) /
+    targetAudiences.length
+
+  if (avgRelevance >= 0.8) {
+    return 'high'
+  }
+  if (avgRelevance >= 0.5) {
+    return 'medium'
+  }
+  return 'low'
+}
+
+// Helper function to get recommended topics for audience
+export function getRecommendedTopics(targetAudiences: string[], limit = 5): string[] {
+  if (targetAudiences.length === 0) {
+    return []
+  }
+
+  const recommendations: { id: string; score: number }[] = []
+
+  INFORMATION_TYPES.forEach(topic => {
+    const avgRelevance =
+      targetAudiences.reduce((sum, aud) => sum + (topic.audienceRelevance[aud] || 0), 0) /
+      targetAudiences.length
+
+    if (avgRelevance >= 0.8) {
+      recommendations.push({ id: topic.id, score: avgRelevance })
+    }
+  })
+
+  // Sort by score descending and return top N
+  return recommendations
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(r => r.id)
+}

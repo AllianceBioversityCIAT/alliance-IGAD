@@ -1,0 +1,233 @@
+/* Step2ContentPlanning Styles */
+
+/* Config Change Warning */
+.configWarning {
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  color: #92400e;
+}
+
+.configWarning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.configWarningContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.configWarningTitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.configWarningText {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Retrieve Button */
+.retrieveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 24px;
+  margin-top: 16px;
+  background: #166534;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.retrieveButton:hover:not(:disabled) {
+  background: #14532d;
+}
+
+.retrieveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Content Preview */
+.contentPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contentChunk {
+  padding: 14px 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.chunkHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.chunkBadge {
+  display: inline-flex;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-radius: 12px;
+}
+
+.chunkScore {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.chunkContent {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Formatted content display */
+.chunkMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chunkSource {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.chunkSourceIcon {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.chunkSourceName {
+  font-weight: 500;
+  color: #374151;
+}
+
+.chunkSourceType {
+  display: inline-flex;
+  padding: 2px 6px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.chunkDate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.chunkDateIcon {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.chunkDateText {
+  font-weight: 500;
+}
+
+.chunkTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.4;
+  margin: 0 0 4px 0;
+}
+
+.chunkDescription {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.chunkLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #f0fdf4;
+  color: #166534;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.chunkLink:hover {
+  background: #dcfce7;
+}
+
+.chunkRawContent {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f9fafb;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px dashed #e5e7eb;
+  line-height: 1.5;
+  word-break: break-word;
+  margin-top: 8px;
+}
+
+.moreContent {
+  text-align: center;
+  padding: 12px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .configWarning {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .configWarning svg {
+    align-self: center;
+  }
+
+  .chunkHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

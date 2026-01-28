@@ -8,6 +8,7 @@ MVP Implementation - Step 1: Configuration
 import logging
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -654,5 +655,231 @@ async def get_topics(
     }
 
 
-# Note: POST /retrieve-content endpoint will be added when KIRO implements
-# the Knowledge Base service. For now, Step 2 will just save topic selections.
+class RetrieveContentRequest(BaseModel):
+    """Request model for content retrieval."""
+
+    selected_types: List[str] = Field(..., min_length=1)
+
+
+# Valid topic IDs from Knowledge Base service
+VALID_TOPIC_IDS = [
+    "breaking_news",
+    "policy_updates",
+    "food_security",
+    "research_findings",
+    "technology_innovation",
+    "climate_smart",
+    "market_access",
+    "project_updates",
+    "livestock",
+    "funding",
+    "events",
+    "publications",
+]
+
+
+@router.post("/{newsletter_code}/retrieve-content")
+async def retrieve_content(
+    newsletter_code: str,
+    request: RetrieveContentRequest,
+    user: Any = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Trigger content retrieval from Knowledge Base.
+
+    - Validates newsletter ownership and selected topics
+    - Gets Step 1 configuration for query building
+    - Calls Knowledge Base service to retrieve content
+    - Stores results in TOPICS item
+
+    Note: This is a synchronous implementation since KB retrieval is fast.
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify newsletter exists and user owns it
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Validate topics
+    invalid_topics = [t for t in request.selected_types if t not in VALID_TOPIC_IDS]
+    if invalid_topics:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid topic IDs: {invalid_topics}",
+        )
+
+    now = datetime.utcnow().isoformat()
+
+    # Build config from metadata
+    config = {
+        "tone_preset": metadata.get("tone_preset", "industry_insight"),
+        "frequency": metadata.get("frequency", "weekly"),
+        "length_preference": metadata.get("length_preference", "standard"),
+        "target_audience": metadata.get("target_audience", []),
+        "geographic_focus": metadata.get("geographic_focus", "IGAD region"),
+    }
+
+    try:
+        # Initialize Knowledge Base service
+        from app.shared.ai.knowledge_base_service import KnowledgeBaseService
+
+        kb_service = KnowledgeBaseService()
+
+        # Calculate retrieval parameters
+        retrieval_params = kb_service.calculate_retrieval_params(config)
+
+        # Build query and retrieve content
+        query = kb_service.build_query_from_topics(request.selected_types, config)
+
+        chunks = kb_service.retrieve_content(
+            query=query,
+            max_results=retrieval_params["max_chunks"],
+        )
+
+        # Assign topic IDs to chunks
+        # Distribute evenly across selected topics for now
+        for i, chunk in enumerate(chunks):
+            chunk.topic_id = request.selected_types[
+                i % len(request.selected_types)
+            ]
+
+        # Convert chunks to dicts (score must be Decimal for DynamoDB)
+        retrieved_content = [
+            {
+                "chunk_id": c.chunk_id,
+                "topic_id": c.topic_id,
+                "content": c.content,
+                "score": Decimal(str(c.score)),
+                "source_url": c.source_url,
+                "source_metadata": c.source_metadata,
+            }
+            for c in chunks
+        ]
+
+        completed_at = datetime.utcnow().isoformat()
+
+        # Store in TOPICS item
+        topics_item = {
+            "PK": pk,
+            "SK": "TOPICS",
+            "selected_types": request.selected_types,
+            "retrieval_config": {
+                **config,
+                "max_chunks": retrieval_params["max_chunks"],
+                "days_back": retrieval_params["days_back"],
+            },
+            "retrieval_status": "completed",
+            "retrieval_started_at": now,
+            "retrieval_completed_at": completed_at,
+            "retrieval_error": None,
+            "retrieved_content": retrieved_content,
+            "total_chunks_retrieved": len(retrieved_content),
+            "updated_at": completed_at,
+        }
+
+        await db_client.put_item(topics_item)
+
+        logger.info(
+            f"Retrieved {len(retrieved_content)} chunks for newsletter "
+            f"{newsletter_code}"
+        )
+
+        return {
+            "success": True,
+            "retrieval_status": "completed",
+            "total_chunks_retrieved": len(retrieved_content),
+            "retrieval_started_at": now,
+            "retrieval_completed_at": completed_at,
+        }
+
+    except Exception as e:
+        logger.error(f"Content retrieval failed for {newsletter_code}: {e}")
+
+        # Store failure in TOPICS item
+        topics_item = {
+            "PK": pk,
+            "SK": "TOPICS",
+            "selected_types": request.selected_types,
+            "retrieval_config": config,
+            "retrieval_status": "failed",
+            "retrieval_started_at": now,
+            "retrieval_completed_at": None,
+            "retrieval_error": str(e),
+            "retrieved_content": [],
+            "total_chunks_retrieved": 0,
+            "updated_at": now,
+        }
+
+        await db_client.put_item(topics_item)
+
+        return {
+            "success": False,
+            "retrieval_status": "failed",
+            "retrieval_error": str(e),
+        }
+
+
+@router.get("/{newsletter_code}/retrieval-status")
+async def get_retrieval_status(
+    newsletter_code: str, user: Any = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Get retrieval status for polling.
+
+    Returns current status of content retrieval including:
+    - retrieval_status: pending | processing | completed | failed
+    - retrieval_config: configuration used for retrieval
+    - retrieved_content: array of content chunks
+    - timestamps and error information
+    """
+    pk = f"NEWSLETTER#{newsletter_code}"
+    user_id = user.get("user_id") if user else "anonymous"
+
+    # Verify ownership
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
+        )
+
+    if metadata.get("user_id") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this newsletter",
+        )
+
+    # Get TOPICS item
+    topics_item = await db_client.get_item(pk=pk, sk="TOPICS")
+
+    if not topics_item:
+        return {
+            "retrieval_status": "pending",
+            "selected_types": [],
+            "retrieval_config": None,
+            "retrieved_content": [],
+            "total_chunks_retrieved": 0,
+            "retrieval_started_at": None,
+            "retrieval_completed_at": None,
+            "retrieval_error": None,
+        }
+
+    return {
+        "retrieval_status": topics_item.get("retrieval_status", "pending"),
+        "selected_types": topics_item.get("selected_types", []),
+        "retrieval_config": topics_item.get("retrieval_config"),
+        "retrieved_content": topics_item.get("retrieved_content", []),
+        "total_chunks_retrieved": topics_item.get("total_chunks_retrieved", 0),
+        "retrieval_started_at": topics_item.get("retrieval_started_at"),
+        "retrieval_completed_at": topics_item.get("retrieval_completed_at"),
+        "retrieval_error": topics_item.get("retrieval_error"),
+    }

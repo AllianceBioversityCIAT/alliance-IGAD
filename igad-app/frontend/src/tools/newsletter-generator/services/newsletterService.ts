@@ -53,14 +53,14 @@ export interface UpdateNewsletterRequest {
   current_step?: number
 }
 
-export interface TopicsData {
-  selected_types: string[]
-  retrieval_status: 'pending' | 'processing' | 'completed' | 'failed'
-  retrieved_content: RetrievedChunk[]
-  total_chunks_retrieved: number
-  retrieval_started_at?: string
-  retrieval_completed_at?: string
-  retrieval_error?: string
+export interface RetrievalConfig {
+  tone_preset: string
+  frequency: string
+  length_preference: string
+  target_audience: string[]
+  geographic_focus: string
+  max_chunks: number
+  days_back: number
 }
 
 export interface RetrievedChunk {
@@ -70,6 +70,26 @@ export interface RetrievedChunk {
   score: number
   source_url?: string
   source_metadata?: Record<string, unknown>
+}
+
+export interface TopicsData {
+  selected_types: string[]
+  retrieval_status: 'pending' | 'processing' | 'completed' | 'failed'
+  retrieval_config?: RetrievalConfig
+  retrieved_content: RetrievedChunk[]
+  total_chunks_retrieved: number
+  retrieval_started_at?: string
+  retrieval_completed_at?: string
+  retrieval_error?: string
+}
+
+export interface RetrieveContentResponse {
+  success: boolean
+  retrieval_status: string
+  total_chunks_retrieved?: number
+  retrieval_started_at?: string
+  retrieval_completed_at?: string
+  retrieval_error?: string
 }
 
 // API Functions
@@ -138,5 +158,24 @@ export const newsletterService = {
     return response.data
   },
 
-  // Note: retrieve-content endpoint will be added when KIRO implements Knowledge Base
+  /**
+   * Trigger content retrieval from Knowledge Base (Step 2)
+   */
+  async triggerContentRetrieval(
+    newsletterCode: string,
+    selectedTypes: string[]
+  ): Promise<RetrieveContentResponse> {
+    const response = await apiClient.post(`/api/newsletters/${newsletterCode}/retrieve-content`, {
+      selected_types: selectedTypes,
+    })
+    return response.data
+  },
+
+  /**
+   * Get retrieval status (for polling)
+   */
+  async getRetrievalStatus(newsletterCode: string): Promise<TopicsData> {
+    const response = await apiClient.get(`/api/newsletters/${newsletterCode}/retrieval-status`)
+    return response.data
+  },
 }

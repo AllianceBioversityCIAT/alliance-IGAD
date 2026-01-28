@@ -1,0 +1,137 @@
+/* RetrievalProgress Styles */
+
+.retrievalProgress {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+/* Status Icon */
+.statusIcon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.statusPending {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.statusProcessing {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.statusCompleted {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.statusFailed {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Spinner Animation */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Status Content */
+.statusContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.statusText {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.statusHint {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.statusError {
+  font-size: 13px;
+  color: #dc2626;
+  line-height: 1.4;
+}
+
+/* Retry Buttons */
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.retryButton:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.retryButtonPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #dc2626;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.retryButtonPrimary:hover {
+  background: #b91c1c;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .retrievalProgress {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .statusContent {
+    align-items: center;
+  }
+}

@@ -9,8 +9,8 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { ProposalWriterPage } from '@/tools/proposal-writer/pages/ProposalWriterPage'
 import { NewsletterGeneratorPage } from '@/tools/newsletter-generator/pages/NewsletterGeneratorPage'
 import { Step1Configuration } from '@/tools/newsletter-generator/pages/Step1Configuration'
+import { Step2ContentPlanning } from '@/tools/newsletter-generator/pages/Step2ContentPlanning'
 import {
-  Step2ContentPlanning,
   Step3OutlineReview,
   Step4Drafting,
 } from '@/tools/newsletter-generator/pages/StepPlaceholder'
