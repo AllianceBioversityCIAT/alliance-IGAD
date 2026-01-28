@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   Sparkles,
   Check,
@@ -49,6 +49,125 @@ interface Step3Props extends StepProps {
 // Removed unused PRIORITY_COLORS constant
 
 /**
+ * Helper function to format inline markdown
+ */
+const formatInlineMarkdown = (str: string): string => {
+  let formatted = str
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
+  // Remove inline code backticks
+  formatted = formatted.replace(/`([^`]+)`/g, '$1')
+  return formatted
+}
+
+/**
+ * Helper function to parse markdown content into formatted elements
+ */
+const parseMarkdownContent = (text: string): JSX.Element[] => {
+  const lines = text.split('\n')
+  const elements: JSX.Element[] = []
+  let currentParagraph: string[] = []
+  let inCodeBlock = false
+
+  const flushParagraph = () => {
+    if (currentParagraph.length > 0) {
+      const text = currentParagraph.join(' ')
+      if (text.trim()) {
+        elements.push(
+          <p
+            key={`p-${elements.length}`}
+            className={styles.narrativeParagraph}
+            dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
+          />
+        )
+      }
+      currentParagraph = []
+    }
+  }
+
+  lines.forEach((line, index) => {
+    // Handle code block markers (``` or ```json, ```markdown, etc.)
+    if (line.trim().startsWith('```')) {
+      flushParagraph()
+      inCodeBlock = !inCodeBlock
+      return // Skip the ``` line itself
+    }
+
+    // Skip content inside code blocks
+    if (inCodeBlock) {
+      return
+    }
+
+    // Skip markdown headers like "## Narrative Overview"
+    if (line.startsWith('## ') || line.startsWith('# ')) {
+      flushParagraph()
+      // Don't render headers as they're redundant with the card title
+      return
+    } else if (line.startsWith('### ')) {
+      flushParagraph()
+      elements.push(
+        <h4 key={`h4-${index}`} className={styles.narrativeSubheading}>
+          {line.substring(4)}
+        </h4>
+      )
+    } else if (line.match(/^[*-]\s+/)) {
+      flushParagraph()
+      elements.push(
+        <p
+          key={`li-${index}`}
+          className={styles.narrativeBullet}
+          dangerouslySetInnerHTML={{
+            __html: '• ' + formatInlineMarkdown(line.replace(/^[*-]\s+/, '')),
+          }}
+        />
+      )
+    } else if (line.trim() === '') {
+      flushParagraph()
+    } else {
+      currentParagraph.push(line.trim())
+    }
+  })
+
+  flushParagraph()
+  return elements
+}
+
+/**
+ * Helper function to get first paragraph for preview
+ */
+const getPreviewText = (text: string): string => {
+  const lines = text.split('\n')
+  let inCodeBlock = false
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+
+    // Track code blocks
+    if (trimmed.startsWith('```')) {
+      inCodeBlock = !inCodeBlock
+      continue
+    }
+
+    // Skip content inside code blocks
+    if (inCodeBlock) {
+      continue
+    }
+
+    // Skip headers, bullets, and empty lines
+    if (
+      trimmed &&
+      !trimmed.startsWith('#') &&
+      !trimmed.startsWith('*') &&
+      !trimmed.startsWith('-') &&
+      !trimmed.startsWith('`')
+    ) {
+      return trimmed.length > 200 ? trimmed.substring(0, 200) + '...' : trimmed
+    }
+  }
+  return text.substring(0, 200) + '...'
+}
+
+/**
  * NarrativeOverview Component
  * Displays AI-generated narrative overview of the proposal structure
  * Features collapsible content for better UX with long text
@@ -61,120 +180,23 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
   // Start collapsed by default
   const [isExpanded, setIsExpanded] = useState(false)
 
+  // Memoize parsing operations to avoid recalculation on every render
+  const formattedContent = useMemo(() => {
+    if (!narrativeText) {
+      return null
+    }
+    return parseMarkdownContent(narrativeText)
+  }, [narrativeText])
+
+  const previewText = useMemo(() => {
+    if (!narrativeText) {
+      return ''
+    }
+    return getPreviewText(narrativeText)
+  }, [narrativeText])
+
   if (!narrativeText || narrativeText.trim().length === 0) {
     return null
-  }
-
-  // Parse markdown content into formatted elements
-  const parseMarkdownContent = (text: string): JSX.Element[] => {
-    const lines = text.split('\n')
-    const elements: JSX.Element[] = []
-    let currentParagraph: string[] = []
-    let inCodeBlock = false
-
-    const formatInlineMarkdown = (str: string): string => {
-      let formatted = str
-      formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Remove inline code backticks
-      formatted = formatted.replace(/`([^`]+)`/g, '$1')
-      return formatted
-    }
-
-    const flushParagraph = () => {
-      if (currentParagraph.length > 0) {
-        const text = currentParagraph.join(' ')
-        if (text.trim()) {
-          elements.push(
-            <p
-              key={`p-${elements.length}`}
-              className={styles.narrativeParagraph}
-              dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
-            />
-          )
-        }
-        currentParagraph = []
-      }
-    }
-
-    lines.forEach((line, index) => {
-      // Handle code block markers (``` or ```json, ```markdown, etc.)
-      if (line.trim().startsWith('```')) {
-        flushParagraph()
-        inCodeBlock = !inCodeBlock
-        return // Skip the ``` line itself
-      }
-
-      // Skip content inside code blocks
-      if (inCodeBlock) {
-        return
-      }
-
-      // Skip markdown headers like "## Narrative Overview"
-      if (line.startsWith('## ') || line.startsWith('# ')) {
-        flushParagraph()
-        // Don't render headers as they're redundant with the card title
-        return
-      } else if (line.startsWith('### ')) {
-        flushParagraph()
-        elements.push(
-          <h4 key={`h4-${index}`} className={styles.narrativeSubheading}>
-            {line.substring(4)}
-          </h4>
-        )
-      } else if (line.match(/^[*-]\s+/)) {
-        flushParagraph()
-        elements.push(
-          <p
-            key={`li-${index}`}
-            className={styles.narrativeBullet}
-            dangerouslySetInnerHTML={{
-              __html: '• ' + formatInlineMarkdown(line.replace(/^[*-]\s+/, '')),
-            }}
-          />
-        )
-      } else if (line.trim() === '') {
-        flushParagraph()
-      } else {
-        currentParagraph.push(line.trim())
-      }
-    })
-
-    flushParagraph()
-    return elements
-  }
-
-  // Get first paragraph for preview (skip headers and code blocks)
-  const getPreviewText = (text: string): string => {
-    const lines = text.split('\n')
-    let inCodeBlock = false
-
-    for (const line of lines) {
-      const trimmed = line.trim()
-
-      // Track code blocks
-      if (trimmed.startsWith('```')) {
-        inCodeBlock = !inCodeBlock
-        continue
-      }
-
-      // Skip content inside code blocks
-      if (inCodeBlock) {
-        continue
-      }
-
-      // Skip headers, bullets, and empty lines
-      if (
-        trimmed &&
-        !trimmed.startsWith('#') &&
-        !trimmed.startsWith('*') &&
-        !trimmed.startsWith('-') &&
-        !trimmed.startsWith('`')
-      ) {
-        return trimmed.length > 200 ? trimmed.substring(0, 200) + '...' : trimmed
-      }
-    }
-    return text.substring(0, 200) + '...'
   }
 
   return (
@@ -200,13 +222,11 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
         </button>
       </div>
 
-      {isExpanded && (
-        <div className={styles.narrativeContent}>{parseMarkdownContent(narrativeText)}</div>
-      )}
+      {isExpanded && <div className={styles.narrativeContent}>{formattedContent}</div>}
 
       {!isExpanded && (
         <div className={styles.narrativePreview}>
-          <p className={styles.narrativeParagraph}>{getPreviewText(narrativeText)}</p>
+          <p className={styles.narrativeParagraph}>{previewText}</p>
         </div>
       )}
     </div>
