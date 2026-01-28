@@ -21,14 +21,14 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 // CONSTANTS
 // ============================================================================
 
-/** Maximum file size in bytes (5 MB) - increased from 2MB for larger documents */
-const MAX_FILE_SIZE = 5 * 1024 * 1024
+/** Maximum file size in bytes (10 MB) - increased from 2MB for larger documents */
+const MAX_FILE_SIZE = 10 * 1024 * 1024
 
 /** Maximum number of files per section (Reference Proposals and Existing Work) */
 const MAX_FILES_PER_SECTION = 3
 
-/** Maximum total size for all files in a section (15 MB total = 3 files x 5MB) */
-const MAX_TOTAL_SIZE_PER_SECTION = 15 * 1024 * 1024
+/** Maximum total size for all files in a section (30 MB total = 3 files x 10MB) */
+const MAX_TOTAL_SIZE_PER_SECTION = 30 * 1024 * 1024
 
 /** Allowed file types for concept document */
 const ALLOWED_CONCEPT_TYPES = ['.pdf', '.docx', '.txt']
@@ -1147,11 +1147,11 @@ export function Step1InformationConsolidation({
       if (isTimeout) {
         setReferenceUploadError(
           `⏱️ Upload timed out\n\n` +
-            `Large files may take too long to process.\n\n` +
-            `Solutions:\n` +
-            `• Compress your PDF at: ilovepdf.com/compress_pdf\n` +
-            `• Split into smaller documents\n` +
-            `• Use only the most relevant pages`
+          `Large files may take too long to process.\n\n` +
+          `Solutions:\n` +
+          `• Compress your PDF at: ilovepdf.com/compress_pdf\n` +
+          `• Split into smaller documents\n` +
+          `• Use only the most relevant pages`
         )
       } else {
         setReferenceUploadError(String(errorMsg))
@@ -1354,11 +1354,11 @@ export function Step1InformationConsolidation({
       if (isTimeout) {
         setWorkUploadError(
           `⏱️ Upload timed out\n\n` +
-            `Large files may take too long to process.\n\n` +
-            `Solutions:\n` +
-            `• Compress at: ilovepdf.com/compress_pdf\n` +
-            `• Split into smaller documents\n` +
-            `• Use only the most relevant pages`
+          `Large files may take too long to process.\n\n` +
+          `Solutions:\n` +
+          `• Compress at: ilovepdf.com/compress_pdf\n` +
+          `• Split into smaller documents\n` +
+          `• Use only the most relevant pages`
         )
       } else {
         setWorkUploadError(String(errorMsg))
@@ -1847,7 +1847,7 @@ export function Step1InformationConsolidation({
               Reference Proposals
             </h3>
             <p className={styles.uploadSectionDescription}>
-              Upload successful proposals to this donor or similar calls (max 3 files, 5MB each).
+              Upload successful proposals to this donor or similar calls (max 3 files, 10MB each).
               These help understand donor preferences and winning strategies.
             </p>
           </div>
@@ -1875,7 +1875,7 @@ export function Step1InformationConsolidation({
                   Drop reference proposals here or click to upload
                 </p>
                 <p className={styles.uploadAreaDescription}>
-                  Supports PDF, DOCX files (max 3 files, 5MB each)
+                  Supports PDF, DOCX files (max 3 files, 10MB each)
                 </p>
                 <input
                   type="file"
@@ -2026,7 +2026,7 @@ export function Step1InformationConsolidation({
             <p className={styles.uploadSectionDescription}>
               Describe your organization&apos;s relevant experience, ongoing projects, and previous
               work that relates to this call. You can write text or upload documents (max 3 files,
-              5MB each).
+              10MB each).
             </p>
           </div>
         </div>
@@ -2142,7 +2142,7 @@ export function Step1InformationConsolidation({
                   <FileText className={styles.uploadAreaIcon} size={24} aria-hidden="true" />
                   <p className={styles.uploadAreaTitle}>Drop supporting files here</p>
                   <p className={styles.uploadAreaDescription}>
-                    Supports PDF, DOCX files (max 3 files, 5MB each)
+                    Supports PDF, DOCX files (max 3 files, 10MB each)
                   </p>
                   <input
                     type="file"
