@@ -2,20 +2,20 @@
 
 ## 📋 Overview
 
-Sistema completo de historial para rastrear todas las operaciones en DynamoDB, especialmente diseñado para evitar la pérdida de datos como los prompts 1.1 y 1.2.
+Complete history system to track all operations in DynamoDB, especially designed to prevent data loss like prompts 1.1 and 1.2.
 
-## 🎯 Características
+## 🎯 Features
 
-- ✅ **Rastreo automático** de operaciones CREATE, UPDATE, DELETE, READ
-- ✅ **Estados antes/después** para auditoría completa
-- ✅ **Información de usuario** y timestamp
-- ✅ **API REST** para consultar historial
-- ✅ **Limpieza automática** de registros antiguos
-- ✅ **Decorador simple** para integración fácil
+- ✅ **Automatic tracking** of CREATE, UPDATE, DELETE, READ operations
+- ✅ **Before/after states** for complete auditing
+- ✅ **User information** and timestamp
+- ✅ **REST API** to query history
+- ✅ **Automatic cleanup** of old records
+- ✅ **Simple decorator** for easy integration
 
-## 🏗️ Estructura de Datos
+## 🏗️ Data Structure
 
-### Registro de Historial
+### History Record
 ```json
 {
   "PK": "HISTORY#PROMPT#prompt-id",
@@ -39,33 +39,33 @@ Sistema completo de historial para rastrear todas las operaciones en DynamoDB, e
 }
 ```
 
-## 🚀 Uso Rápido
+## 🚀 Quick Usage
 
-### 1. Con Decorador (Recomendado)
+### 1. With Decorator (Recommended)
 ```python
 from app.shared.database.history_decorator import track_history
 
 @track_history(
     resource_type="PROMPT",
-    get_resource_id=lambda args, kwargs: args[0],  # primer argumento
+    get_resource_id=lambda args, kwargs: args[0],  # first argument
     get_user_id=lambda args, kwargs: kwargs.get("user_id", "system")
 )
 def delete_prompt(prompt_id: str, user_id: str = None):
-    # Tu lógica existente aquí
+    # Your existing logic here
     pass
 ```
 
-### 2. Manual (Para Control Completo)
+### 2. Manual (For Full Control)
 ```python
 from app.shared.database.history_service import history_service
 
-# Antes de la operación
+# Before operation
 before_state = get_current_prompt_state(prompt_id)
 
-# Realizar operación
+# Perform operation
 result = delete_prompt_from_db(prompt_id)
 
-# Registrar en historial
+# Log to history
 history_service.log_operation(
     operation_type="DELETE",
     resource_type="PROMPT",
@@ -78,111 +78,111 @@ history_service.log_operation(
 
 ## 📡 API Endpoints
 
-### Ver Historial de un Recurso
+### View Resource History
 ```bash
 GET /api/history/resource/PROMPT/prompt-1.1?limit=50
 ```
 
-### Ver Operaciones Recientes
+### View Recent Operations
 ```bash
 GET /api/history/recent?resource_type=PROMPT&limit=100
 ```
 
-### Estadísticas
+### Statistics
 ```bash
 GET /api/history/stats
 ```
 
-### Limpiar Historial Antiguo
+### Cleanup Old History
 ```bash
 POST /api/history/cleanup?days_to_keep=90
 ```
 
-## 🔧 Integración en Servicios Existentes
+## 🔧 Integration in Existing Services
 
-### Paso 1: Importar el Decorador
+### Step 1: Import the Decorator
 ```python
 from app.shared.database.history_decorator import track_history
 ```
 
-### Paso 2: Aplicar a Funciones Críticas
+### Step 2: Apply to Critical Functions
 ```python
 @track_history("PROMPT", get_resource_id=lambda args, kwargs: args[0])
 def create_prompt(prompt_id, data):
-    # Código existente sin cambios
+    # Existing code unchanged
     pass
 
 @track_history("PROMPT", get_resource_id=lambda args, kwargs: args[0])
 def update_prompt(prompt_id, updates):
-    # Código existente sin cambios
+    # Existing code unchanged
     pass
 
 @track_history("PROMPT", get_resource_id=lambda args, kwargs: args[0])
 def delete_prompt(prompt_id):
-    # Código existente sin cambios
+    # Existing code unchanged
     pass
 ```
 
-## 🔍 Casos de Uso
+## 🔍 Use Cases
 
-### 1. Investigar Eliminaciones Misteriosas
+### 1. Investigate Mysterious Deletions
 ```python
-# Ver historial de un prompt específico
+# View history of a specific prompt
 history = history_service.get_resource_history("PROMPT", "prompt-1.1")
 
 for record in history:
     if record["operation_type"] == "DELETE":
-        print(f"Eliminado por: {record['user_id']}")
-        print(f"Fecha: {record['timestamp']}")
-        print(f"Estado antes: {record['before_state']}")
+        print(f"Deleted by: {record['user_id']}")
+        print(f"Date: {record['timestamp']}")
+        print(f"State before: {record['before_state']}")
 ```
 
-### 2. Auditoría de Cambios
+### 2. Audit Changes
 ```python
-# Ver todas las operaciones recientes
+# View all recent operations
 recent = history_service.get_recent_operations("PROMPT", limit=100)
 
 for record in recent:
     print(f"{record['timestamp']}: {record['operation_type']} by {record['user_id']}")
 ```
 
-### 3. Recuperar Datos Perdidos
+### 3. Recover Lost Data
 ```python
-# Encontrar el último estado antes de eliminación
+# Find last state before deletion
 history = history_service.get_resource_history("PROMPT", "prompt-1.1")
 delete_record = next(r for r in history if r["operation_type"] == "DELETE")
 last_state = delete_record["before_state"]
 
-# Usar last_state para recrear el prompt
+# Use last_state to recreate the prompt
 ```
 
-## ⚙️ Configuración
+## ⚙️ Configuration
 
-### Variables de Entorno
+### Environment Variables
 ```bash
-TABLE_NAME=igad-testing-main-table  # Tabla principal de DynamoDB
+TABLE_NAME=igad-testing-main-table  # Main DynamoDB table
 ```
 
-### Limpieza Automática (Opcional)
+### Automatic Cleanup (Optional)
 ```python
-# En un cron job o Lambda programado
+# In a cron job or scheduled Lambda
 history_service.cleanup_old_history(days_to_keep=90)
 ```
 
-## 🛡️ Seguridad
+## 🛡️ Security
 
-- **Datos sensibles**: Automáticamente redactados (passwords, tokens, etc.)
-- **Límite de tamaño**: Textos largos se truncan automáticamente
-- **Acceso controlado**: Solo usuarios autorizados pueden ver historial
+- **Sensitive Data**: Automatically redacted (passwords, tokens, etc.)
+- **Size Limit**: Long texts are automatically truncated
+- **Access Control**: Only authorized users can view history
 
-## 📊 Monitoreo
+## 📊 Monitoring
 
-### Dashboard de Estadísticas
+### Statistics Dashboard
 ```bash
 curl GET /api/history/stats
 ```
 
-Respuesta:
+Response:
 ```json
 {
   "total_operations": 1250,
@@ -203,39 +203,39 @@ Respuesta:
 }
 ```
 
-## 🚨 Alertas Recomendadas
+## 🚨 Recommended Alerts
 
-1. **Eliminaciones masivas**: > 10 DELETE en 1 hora
-2. **Usuario sospechoso**: > 100 operaciones por usuario/día
-3. **Fallos frecuentes**: > 5% de operaciones fallidas
+1. **Mass Deletions**: > 10 DELETE in 1 hour
+2. **Suspicious User**: > 100 operations per user/day
+3. **Frequent Failures**: > 5% failed operations
 
-## 🔄 Migración
+## 🔄 Migration
 
-Para servicios existentes:
+For existing services:
 
-1. **Instalar**: Copiar archivos del sistema de historial
-2. **Importar**: Agregar imports necesarios
-3. **Decorar**: Aplicar `@track_history` a funciones críticas
-4. **Probar**: Verificar que el historial se registra correctamente
-5. **Monitorear**: Usar API para verificar funcionamiento
+1. **Install**: Copy history system files
+2. **Import**: Add necessary imports
+3. **Decorate**: Apply `@track_history` to critical functions
+4. **Test**: Verify history is recorded correctly
+5. **Monitor**: Use API to verify operation
 
-## 📝 Ejemplo Completo
+## 📝 Complete Example
 
-Ver `service_with_history.py` para un ejemplo completo de integración.
+See `service_with_history.py` for a complete integration example.
 
 ## ❓ Troubleshooting
 
-### Problema: Historial no se registra
-- Verificar que `TABLE_NAME` esté configurado
-- Verificar permisos de DynamoDB
-- Revisar logs de la aplicación
+### Problem: History not recording
+- Verify `TABLE_NAME` is configured
+- Check DynamoDB permissions
+- Review application logs
 
-### Problema: Demasiados registros de historial
-- Configurar limpieza automática
-- Ajustar `days_to_keep` según necesidades
-- Considerar archivado a S3 para historial muy antiguo
+### Problem: Too many history records
+- Configure automatic cleanup
+- Adjust `days_to_keep` as needed
+- Consider archiving to S3 for very old history
 
-### Problema: Performance impactado
-- El historial se registra de forma asíncrona
-- Si hay problemas, el historial falla silenciosamente sin afectar la operación principal
-- Considerar usar DynamoDB Streams para historial en tiempo real
+### Problem: Performance impact
+- History is recorded asynchronously
+- If issues occur, history fails silently without affecting the main operation
+- Consider using DynamoDB Streams for real-time history

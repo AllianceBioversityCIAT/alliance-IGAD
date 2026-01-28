@@ -12,6 +12,7 @@ import boto3
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 
 from app.database.client import db_client
 from app.middleware.auth_middleware import AuthMiddleware
@@ -379,59 +380,67 @@ async def delete_proposal(proposal_id: str, user=Depends(get_current_user)):
         # Get proposal code for S3 cleanup
         proposal_code = proposal.get("proposalCode", proposal_id)
 
-        print(f"🗑️  Starting cleanup for proposal: {proposal_code}")
+        def _cleanup_resources_sync():
+            print(f"🗑️  Starting cleanup for proposal: {proposal_code}")
 
-        # ========== 1. DELETE S3 VECTORS ==========
-        print("🔄 Deleting vectors from S3 Vectors...")
-        try:
-            from app.shared.vectors.service import VectorEmbeddingsService
+            # ========== 1. DELETE S3 VECTORS ==========
+            print("🔄 Deleting vectors from S3 Vectors...")
+            try:
+                from app.shared.vectors.service import VectorEmbeddingsService
 
-            vector_service = VectorEmbeddingsService()
+                vector_service = VectorEmbeddingsService()
 
-            vector_deleted = vector_service.delete_proposal_vectors(proposal_code)
-            if vector_deleted:
-                print(f"✅ Deleted vectors for {proposal_code}")
-            else:
-                print(f"⚠️  No vectors found or deletion failed for {proposal_code}")
-        except Exception as vector_error:
-            print(f"⚠️  Vector deletion error (non-critical): {str(vector_error)}")
+                vector_deleted = vector_service.delete_proposal_vectors(proposal_code)
+                if vector_deleted:
+                    print(f"✅ Deleted vectors for {proposal_code}")
+                else:
+                    print(
+                        f"⚠️  No vectors found or deletion failed for {proposal_code}"
+                    )
+            except Exception as vector_error:
+                print(
+                    f"⚠️  Vector deletion error (non-critical): {str(vector_error)}"
+                )
 
-        # ========== 2. DELETE S3 FILES ==========
-        print("🔄 Deleting S3 documents...")
-        try:
-            import os
+            # ========== 2. DELETE S3 FILES ==========
+            print("🔄 Deleting S3 documents...")
+            try:
+                import os
 
-            from app.utils.aws_session import get_aws_session
+                from app.utils.aws_session import get_aws_session
 
-            session = get_aws_session()
-            s3_client = session.client("s3")
-            bucket = os.environ.get("PROPOSALS_BUCKET")
+                session = get_aws_session()
+                s3_client = session.client("s3")
+                bucket = os.environ.get("PROPOSALS_BUCKET")
 
-            if bucket:
-                # List all objects under the proposal folder
-                prefix = f"{proposal_code}/"
-                response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+                if bucket:
+                    # List all objects under the proposal folder
+                    prefix = f"{proposal_code}/"
+                    response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
 
-                if "Contents" in response:
-                    objects_to_delete = [
-                        {"Key": obj["Key"]} for obj in response["Contents"]
-                    ]
+                    if "Contents" in response:
+                        objects_to_delete = [
+                            {"Key": obj["Key"]} for obj in response["Contents"]
+                        ]
 
-                    if objects_to_delete:
-                        s3_client.delete_objects(
-                            Bucket=bucket, Delete={"Objects": objects_to_delete}
-                        )
-                        print(
-                            f"✅ Deleted {len(objects_to_delete)} S3 objects for {proposal_code}"
-                        )
+                        if objects_to_delete:
+                            s3_client.delete_objects(
+                                Bucket=bucket, Delete={"Objects": objects_to_delete}
+                            )
+                            print(
+                                f"✅ Deleted {len(objects_to_delete)} S3 objects for {proposal_code}"
+                            )
+                        else:
+                            print(f"ℹ️  No S3 objects found for {proposal_code}")
                     else:
                         print(f"ℹ️  No S3 objects found for {proposal_code}")
                 else:
-                    print(f"ℹ️  No S3 objects found for {proposal_code}")
-            else:
-                print("⚠️  S3 bucket not configured")
-        except Exception as s3_error:
-            print(f"⚠️  S3 deletion error (non-critical): {str(s3_error)}")
+                    print("⚠️  S3 bucket not configured")
+            except Exception as s3_error:
+                print(f"⚠️  S3 deletion error (non-critical): {str(s3_error)}")
+
+        # Run synchronous cleanup in threadpool
+        await run_in_threadpool(_cleanup_resources_sync)
 
         # ========== 3. DELETE DYNAMODB METADATA ==========
         print("🔄 Deleting DynamoDB metadata...")
@@ -743,7 +752,8 @@ async def analyze_rfp(proposal_id: str, user=Depends(get_current_user)):
         print(f"📝 Worker function ARN: {worker_function_arn}")
 
         # Invoke async
-        lambda_client.invoke(
+        await run_in_threadpool(
+            lambda_client.invoke,
             FunctionName=worker_function_arn,
             InvocationType="Event",  # Async invocation
             Payload=json.dumps(
@@ -952,7 +962,8 @@ async def analyze_concept(
         if not worker_function_arn:
             raise Exception("WORKER_FUNCTION_NAME environment variable not set")
 
-        lambda_client.invoke(
+        await run_in_threadpool(
+            lambda_client.invoke,
             FunctionName=worker_function_arn,
             InvocationType="Event",
             Payload=json.dumps(
@@ -1137,7 +1148,8 @@ async def generate_concept_document(
             f"📡 Invoking worker lambda for concept document generation: {proposal_id}"
         )
 
-        lambda_client.invoke(
+        await run_in_threadpool(
+            lambda_client.invoke,
             FunctionName=worker_function,
             InvocationType="Event",  # Asynchronous
             Payload=json.dumps(payload),
@@ -1320,7 +1332,8 @@ async def analyze_step_1(proposal_id: str, user=Depends(get_current_user)):
                 )
 
                 print(f"🚀 Invoking RFP analysis for {proposal_code}")
-                lambda_client.invoke(
+                await run_in_threadpool(
+                    lambda_client.invoke,
                     FunctionName=worker_function_arn,
                     InvocationType="Event",  # Async invocation
                     Payload=json.dumps(
@@ -1473,7 +1486,8 @@ async def analyze_step_2(proposal_id: str, user=Depends(get_current_user)):
                     },
                 )
 
-                lambda_client.invoke(
+                await run_in_threadpool(
+                    lambda_client.invoke,
                     FunctionName=worker_function_name,
                     InvocationType="Event",
                     Payload=json.dumps(
@@ -1522,7 +1536,8 @@ async def analyze_step_2(proposal_id: str, user=Depends(get_current_user)):
                     },
                 )
 
-                lambda_client.invoke(
+                await run_in_threadpool(
+                    lambda_client.invoke,
                     FunctionName=worker_function_name,
                     InvocationType="Event",
                     Payload=json.dumps(
@@ -1875,7 +1890,8 @@ async def analyze_step_3(proposal_id: str, user=Depends(get_current_user)):
         if not worker_function_arn:
             raise Exception("WORKER_FUNCTION_NAME environment variable not set")
 
-        lambda_client.invoke(
+        await run_in_threadpool(
+            lambda_client.invoke,
             FunctionName=worker_function_arn,
             InvocationType="Event",
             Payload=json.dumps(
@@ -2009,7 +2025,8 @@ async def generate_proposal_template(
         from fastapi.responses import StreamingResponse
 
         service = ProposalTemplateGenerator()
-        buffer = service.generate_template(
+        buffer = await run_in_threadpool(
+            service.generate_template,
             proposal_code=proposal_code,
             selected_sections=request.selected_sections or [],
             rfp_analysis=proposal.get("rfp_analysis"),
@@ -2126,7 +2143,8 @@ async def generate_ai_proposal_template(
             f"📡 Invoking worker lambda for proposal template generation: {proposal_code}"
         )
 
-        lambda_client.invoke(
+        await run_in_threadpool(
+            lambda_client.invoke,
             FunctionName=worker_function,
             InvocationType="Event",  # Asynchronous
             Payload=json.dumps(payload),
@@ -2290,7 +2308,8 @@ async def generate_proposal_document(
             f"📡 Invoking worker lambda for proposal document generation: {proposal_code}"
         )
 
-        lambda_client.invoke(
+        await run_in_threadpool(
+            lambda_client.invoke,
             FunctionName=worker_function,
             InvocationType="Event",  # Asynchronous
             Payload=json.dumps(payload),
@@ -2458,21 +2477,24 @@ async def use_generated_template_as_draft(
         if not bucket:
             raise HTTPException(status_code=500, detail="S3 bucket not configured")
 
-        # Convert markdown to DOCX
-        docx_content = markdown_to_docx(template_content)
-
         # Define the draft filename (DOCX format)
         draft_filename = "ai_generated_draft.docx"
         draft_s3_key = f"{proposal_code}/documents/draft_proposal/{draft_filename}"
 
-        # Upload DOCX content to draft location in S3
-        s3_client = boto3.client("s3")
-        s3_client.put_object(
-            Bucket=bucket,
-            Key=draft_s3_key,
-            Body=docx_content,
-            ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        )
+        def _process_and_upload():
+            # Convert markdown to DOCX
+            docx_content = markdown_to_docx(template_content)
+
+            # Upload DOCX content to draft location in S3
+            s3_client = boto3.client("s3")
+            s3_client.put_object(
+                Bucket=bucket,
+                Key=draft_s3_key,
+                Body=docx_content,
+                ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+
+        await run_in_threadpool(_process_and_upload)
 
         print(f"✅ Created AI draft DOCX at: s3://{bucket}/{draft_s3_key}")
 
@@ -2559,7 +2581,8 @@ async def upload_draft_proposal_file(
 
         s3_key = f"{proposal_code}/documents/draft_proposal/{file.filename}"
 
-        s3_client.put_object(
+        await run_in_threadpool(
+            s3_client.put_object,
             Bucket=bucket,
             Key=s3_key,
             Body=BytesIO(file_bytes),
@@ -2622,7 +2645,7 @@ async def delete_draft_proposal(
         s3_key = f"{proposal_code}/documents/draft_proposal/{filename}"
 
         try:
-            s3_client.delete_object(Bucket=bucket, Key=s3_key)
+            await run_in_threadpool(s3_client.delete_object, Bucket=bucket, Key=s3_key)
             print(f"✓ Deleted draft proposal from S3: {s3_key}")
         except Exception as s3_error:
             print(f"⚠️ Warning: Could not delete from S3: {s3_error}")
@@ -2758,7 +2781,8 @@ async def analyze_draft_feedback(
 
         print(f"🚀 Invoking Lambda worker for draft feedback analysis: {proposal_code}")
 
-        lambda_client.invoke(
+        await run_in_threadpool(
+            lambda_client.invoke,
             FunctionName=worker_function_arn,
             InvocationType="Event",  # Async invocation
             Payload=json.dumps(
@@ -2884,9 +2908,13 @@ async def download_draft_proposal(proposal_id: str, user=Depends(get_current_use
         # Download file from S3
         s3_client = boto3.client("s3")
         try:
-            response = s3_client.get_object(Bucket=bucket, Key=draft_s3_key)
-            file_content = response["Body"].read()
-            content_type = response.get("ContentType", "application/octet-stream")
+            def _download_file():
+                response = s3_client.get_object(Bucket=bucket, Key=draft_s3_key)
+                content = response["Body"].read()
+                c_type = response.get("ContentType", "application/octet-stream")
+                return content, c_type
+
+            file_content, content_type = await run_in_threadpool(_download_file)
         except Exception as e:
             raise HTTPException(
                 status_code=404,
@@ -3032,7 +3060,9 @@ async def download_template_as_docx(proposal_id: str, user=Depends(get_current_u
         proposal_title = proposal.get("title", "AI Generated Proposal Draft")
 
         # Convert markdown to DOCX
-        docx_content = markdown_to_docx(template_content, proposal_title)
+        docx_content = await run_in_threadpool(
+            markdown_to_docx, template_content, proposal_title
+        )
 
         # Generate filename
         filename = f"ai_proposal_draft_{proposal_code}_{datetime.now().strftime('%Y-%m-%d')}.docx"

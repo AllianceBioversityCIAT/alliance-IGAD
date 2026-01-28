@@ -1,201 +1,201 @@
-# Proposal Writer - Arquitectura del Sistema
+# Proposal Writer - System Architecture
 
-**Última actualización:** 2025-11-29  
-**Versión:** 2.0
-
----
-
-## 📋 Tabla de Contenidos
-
-1. [Descripción General](#descripción-general)
-2. [Estructura de Directorios](#estructura-de-directorios)
-3. [Flujo de Trabajo](#flujo-de-trabajo)
-4. [Componentes Principales](#componentes-principales)
-5. [Modelos de Datos](#modelos-de-datos)
-6. [Integración con AWS](#integración-con-aws)
-7. [Gestión de Errores](#gestión-de-errores)
-8. [Configuración y Variables](#configuración-y-variables)
+**Last Updated:** 2025-11-29
+**Version:** 2.0
 
 ---
 
-## 🎯 Descripción General
+## 📋 Table of Contents
 
-El **Proposal Writer** es un sistema asistido por IA que guía a los usuarios en la creación de propuestas de proyectos de alta calidad, alineadas con los requisitos de donantes internacionales.
+1. [Overview](#overview)
+2. [Directory Structure](#directory-structure)
+3. [Workflow](#workflow)
+4. [Main Components](#main-components)
+5. [Data Models](#data-models)
+6. [AWS Integration](#aws-integration)
+7. [Error Handling](#error-handling)
+8. [Configuration and Variables](#configuration-and-variables)
 
-### Objetivo
+---
 
-Transformar ideas iniciales de proyectos en propuestas profesionales y competitivas mediante:
+## 🎯 Overview
 
-1. **Análisis de RFP** (Request for Proposal)
-2. **Evaluación de concepto** contra requisitos del donante
-3. **Generación de estructura** de propuesta optimizada
-4. **Creación de documentos** detallados alineados con el donante
+The **Proposal Writer** is an AI-assisted system that guides users in creating high-quality project proposals aligned with international donor requirements.
 
-### Tecnologías Clave
+### Objective
+
+Transform initial project ideas into professional and competitive proposals through:
+
+1. **RFP Analysis** (Request for Proposal)
+2. **Concept Evaluation** against donor requirements
+3. **Optimized Structure Generation**
+4. **Detailed Document Creation** aligned with the donor
+
+### Key Technologies
 
 - **Backend:** FastAPI (Python)
-- **IA:** Amazon Bedrock (Claude 3.7 Sonnet)
-- **Base de datos:** DynamoDB
-- **Almacenamiento:** S3
-- **Procesamiento asíncrono:** AWS Lambda
+- **AI:** Amazon Bedrock (Claude 3.7 Sonnet)
+- **Database:** DynamoDB
+- **Storage:** S3
+- **Async Processing:** AWS Lambda
 - **Frontend:** React + TypeScript
 
 ---
 
-## 📁 Estructura de Directorios
+## 📁 Directory Structure
 
 ```
 proposal_writer/
-├── __init__.py                      # Inicialización del módulo
-├── routes.py                        # Endpoints API REST
+├── __init__.py                      # Module initialization
+├── routes.py                        # REST API Endpoints
 │
-├── rfp_analysis/                    # Módulo 1: Análisis de RFP
+├── rfp_analysis/                    # Module 1: RFP Analysis
 │   ├── __init__.py
-│   ├── config.py                    # Configuración del analizador
-│   └── service.py                   # Lógica de análisis de RFP
+│   ├── config.py                    # Analyzer configuration
+│   └── service.py                   # RFP analysis logic
 │
-├── concept_evaluation/              # Módulo 2: Evaluación de concepto
+├── concept_evaluation/              # Module 2: Concept Evaluation
 │   ├── __init__.py
-│   ├── config.py                    # Configuración del evaluador
-│   └── service.py                   # Lógica de evaluación
+│   ├── config.py                    # Evaluator configuration
+│   └── service.py                   # Evaluation logic
 │
-├── concept_document_generation/     # Módulo 3: Generación de documentos de concepto
+├── concept_document_generation/     # Module 3: Concept Document Generation
 │   ├── __init__.py
-│   ├── config.py                    # Configuración del generador
-│   └── service.py                   # Lógica de generación
+│   ├── config.py                    # Generator configuration
+│   └── service.py                   # Generation logic
 │
-└── workflow/                        # Orquestación asíncrona
+└── workflow/                        # Async Orchestration
     ├── __init__.py
-    └── worker.py                    # Lambda worker para tareas pesadas
+    └── worker.py                    # Lambda worker for heavy tasks
 ```
 
 ---
 
-## 🔄 Flujo de Trabajo
+## 🔄 Workflow
 
-### Visión General del Proceso
+### Process Overview
 
 ```mermaid
 graph TB
-    A[Usuario crea propuesta] --> B[Step 1: Sube RFP PDF]
-    B --> C[Worker Lambda: Analiza RFP]
-    C --> D[Step 2: Sube concepto inicial]
-    D --> E[Worker Lambda: Evalúa concepto]
-    E --> F[Step 2: Usuario selecciona secciones]
-    F --> G[Worker Lambda: Genera outline]
-    G --> H[Step 3: Usuario refina secciones]
-    H --> I[Worker Lambda: Genera documento]
-    I --> J[Step 4: Usuario revisa estructura]
-    J --> K[Step 5: Documento final]
+    A[User creates proposal] --> B[Step 1: Upload RFP PDF]
+    B --> C[Worker Lambda: Analyze RFP]
+    C --> D[Step 2: Upload initial concept]
+    D --> E[Worker Lambda: Evaluate concept]
+    E --> F[Step 2: User selects sections]
+    F --> G[Worker Lambda: Generate outline]
+    G --> H[Step 3: User refines sections]
+    H --> I[Worker Lambda: Generate document]
+    I --> J[Step 4: User reviews structure]
+    J --> K[Step 5: Final document]
 ```
 
-### Paso a Paso Detallado
+### Detailed Step-by-Step
 
-#### **Step 1: Carga de RFP**
+#### **Step 1: RFP Upload**
 
-1. Usuario sube documento PDF del RFP
-2. Archivo se guarda en S3: `proposals/{proposal_id}/rfp_document.pdf`
-3. API invoca Worker Lambda de manera asíncrona
-4. Worker ejecuta `SimpleRFPAnalyzer.analyze_rfp()`
-5. Resultado se guarda en DynamoDB
+1. User uploads RFP PDF document.
+2. File is saved to S3: `proposals/{proposal_id}/rfp_document.pdf`.
+3. API invokes Worker Lambda asynchronously.
+4. Worker executes `SimpleRFPAnalyzer.analyze_rfp()`.
+5. Result is saved to DynamoDB.
 
-**Datos extraídos:**
-- Información del donante
-- Criterios de evaluación
-- Requisitos de elegibilidad
-- Áreas temáticas prioritarias
-- Restricciones geográficas
-- Presupuesto y plazos
-
----
-
-#### **Step 2: Evaluación de Concepto**
-
-1. Usuario sube concepto inicial (TXT, PDF, DOCX)
-2. Archivo se guarda en S3: `proposals/{proposal_id}/initial_concept.*`
-3. Worker Lambda ejecuta `SimpleConceptAnalyzer.analyze_concept()`
-4. El análisis evalúa:
-   - Alineación con prioridades del donante
-   - Fortalezas del concepto
-   - Secciones faltantes o débiles
-5. Usuario selecciona qué secciones quiere desarrollar
-6. Worker genera outline de propuesta con `routes.py: /generate-outline`
-
-**Datos generados:**
-- `fit_assessment`: Nivel de alineación (bajo/moderado/alto)
-- `strong_aspects`: Fortalezas detectadas
-- `sections_needing_elaboration`: 7 secciones críticas con sugerencias
-- `strategic_verdict`: Recomendación general
+**Extracted Data:**
+- Donor information
+- Evaluation criteria
+- Eligibility requirements
+- Priority thematic areas
+- Geographic restrictions
+- Budget and timelines
 
 ---
 
-#### **Step 3: Generación de Documento Detallado**
+#### **Step 2: Concept Evaluation**
 
-1. Usuario confirma secciones seleccionadas (con comentarios opcionales)
-2. Worker Lambda ejecuta `ConceptDocumentGenerator.generate_document()`
-3. El generador:
-   - Carga el proposal outline (Step 2)
-   - Filtra solo las secciones seleccionadas
-   - Enriquece cada sección con guías del outline
-   - Genera contenido narrativo con Claude
-4. Documento se guarda en DynamoDB
+1. User uploads initial concept (TXT, PDF, DOCX).
+2. File is saved to S3: `proposals/{proposal_id}/initial_concept.*`.
+3. Worker Lambda executes `SimpleConceptAnalyzer.analyze_concept()`.
+4. The analysis evaluates:
+   - Alignment with donor priorities
+   - Strengths of the concept
+   - Missing or weak sections
+5. User selects which sections to develop.
+6. Worker generates proposal outline with `routes.py: /generate-outline`.
 
-**Datos generados:**
-- `generated_concept_document`: Markdown completo
-- `sections`: Diccionario con cada sección individual
-
----
-
-#### **Step 4: Estructura de Propuesta**
-
-1. Usuario revisa outline generado
-2. Puede añadir/editar/eliminar secciones
-3. Sistema genera plantilla estructurada
+**Generated Data:**
+- `fit_assessment`: Alignment level (low/moderate/high)
+- `strong_aspects`: Detected strengths
+- `sections_needing_elaboration`: 7 critical sections with suggestions
+- `strategic_verdict`: General recommendation
 
 ---
 
-#### **Step 5: Documento Final**
+#### **Step 3: Detailed Document Generation**
 
-1. Usuario descarga documento completo
-2. Puede exportar a DOCX, PDF
-3. Propuesta lista para revisión y envío
+1. User confirms selected sections (with optional comments).
+2. Worker Lambda executes `ConceptDocumentGenerator.generate_document()`.
+3. The generator:
+   - Loads the proposal outline (Step 2)
+   - Filters only selected sections
+   - Enriches each section with outline guides
+   - Generates narrative content with Claude
+4. Document is saved to DynamoDB.
+
+**Generated Data:**
+- `generated_concept_document`: Complete Markdown
+- `sections`: Dictionary with each individual section
 
 ---
 
-## 🧩 Componentes Principales
+#### **Step 4: Proposal Structure**
 
-### 1. **routes.py** - API REST Endpoints
+1. User reviews generated outline.
+2. Can add/edit/delete sections.
+3. System generates structured template.
 
-**Responsabilidad:** Definir todos los endpoints HTTP para el frontend.
+---
 
-#### Endpoints Principales
+#### **Step 5: Final Document**
 
-| Método | Ruta | Descripción |
+1. User downloads complete document.
+2. Can export to DOCX, PDF.
+3. Proposal ready for review and submission.
+
+---
+
+## 🧩 Main Components
+
+### 1. **routes.py** - REST API Endpoints
+
+**Responsibility:** Define all HTTP endpoints for the frontend.
+
+#### Key Endpoints
+
+| Method | Route | Description |
 |--------|------|-------------|
-| `POST` | `/api/proposals` | Crear nueva propuesta |
-| `GET` | `/api/proposals` | Listar propuestas del usuario |
-| `GET` | `/api/proposals/{id}` | Obtener detalles de propuesta |
-| `PUT` | `/api/proposals/{id}` | Actualizar metadatos |
-| `DELETE` | `/api/proposals/{id}` | Eliminar propuesta |
-| `POST` | `/api/proposals/{id}/analyze-rfp` | Iniciar análisis de RFP |
-| `POST` | `/api/proposals/{id}/analyze-concept` | Iniciar evaluación de concepto |
-| `POST` | `/api/proposals/{id}/generate-outline` | Generar outline de propuesta |
-| `POST` | `/api/proposals/{id}/generate-document` | Generar documento detallado |
-| `GET` | `/api/proposals/{id}/status` | Obtener estado de análisis |
+| `POST` | `/api/proposals` | Create new proposal |
+| `GET` | `/api/proposals` | List user proposals |
+| `GET` | `/api/proposals/{id}` | Get proposal details |
+| `PUT` | `/api/proposals/{id}` | Update metadata |
+| `DELETE` | `/api/proposals/{id}` | Delete proposal |
+| `POST` | `/api/proposals/{id}/analyze-rfp` | Start RFP analysis |
+| `POST` | `/api/proposals/{id}/analyze-concept` | Start concept evaluation |
+| `POST` | `/api/proposals/{id}/generate-outline` | Generate proposal outline |
+| `POST` | `/api/proposals/{id}/generate-document` | Generate detailed document |
+| `GET` | `/api/proposals/{id}/status` | Get analysis status |
 
-#### Funciones Clave
+#### Key Functions
 
 ```python
 @router.post("/{proposal_id}/analyze-rfp")
 async def analyze_rfp_document(proposal_id: str):
     """
-    Invoca Worker Lambda de manera asíncrona para analizar RFP.
+    Invokes Worker Lambda asynchronously to analyze RFP.
     
-    Flujo:
-    1. Valida que exista RFP cargado
-    2. Invoca Lambda: proposal-writer-analysis-worker
-    3. Pasa payload: {"task": "analyze_rfp", "proposal_id": "..."}
-    4. Retorna inmediatamente (status: processing)
+    Flow:
+    1. Validates that RFP is uploaded
+    2. Invokes Lambda: proposal-writer-analysis-worker
+    3. Passes payload: {"task": "analyze_rfp", "proposal_id": "..."}
+    4. Returns immediately (status: processing)
     """
 ```
 
@@ -203,13 +203,13 @@ async def analyze_rfp_document(proposal_id: str):
 @router.post("/{proposal_id}/analyze-concept")
 async def analyze_concept_document(proposal_id: str):
     """
-    Evalúa concepto contra RFP.
+    Evaluates concept against RFP.
     
-    Requiere:
-    - RFP analysis completado
-    - Concepto inicial cargado
+    Requires:
+    - RFP analysis completed
+    - Initial concept uploaded
     
-    Invoca Lambda con task: "analyze_concept"
+    Invokes Lambda with task: "analyze_concept"
     """
 ```
 
@@ -220,13 +220,13 @@ async def generate_proposal_outline(
     body: ConceptEvaluationUpdate
 ):
     """
-    Genera estructura de propuesta basada en secciones seleccionadas.
+    Generates proposal structure based on selected sections.
     
     Input:
-    - selected_sections: Lista de secciones a desarrollar
-    - user_comments: Comentarios adicionales del usuario
+    - selected_sections: List of sections to develop
+    - user_comments: Additional user comments
     
-    Invoca Lambda con task: "generate_outline"
+    Invokes Lambda with task: "generate_outline"
     """
 ```
 
@@ -237,40 +237,40 @@ async def generate_concept_document(
     body: ConceptEvaluationUpdate
 ):
     """
-    Genera documento narrativo completo.
+    Generates complete narrative document.
     
-    Combina:
+    Combines:
     - RFP analysis
-    - Concept evaluation (filtrado)
-    - Proposal outline (enriquecido)
+    - Concept evaluation (filtered)
+    - Proposal outline (enriched)
     
-    Invoca Lambda con task: "generate_document"
+    Invokes Lambda with task: "generate_document"
     """
 ```
 
 ---
 
-### 2. **rfp_analysis/service.py** - Análisis de RFP
+### 2. **rfp_analysis/service.py** - RFP Analysis
 
-**Clase:** `SimpleRFPAnalyzer`
+**Class:** `SimpleRFPAnalyzer`
 
-**Responsabilidad:** Extraer información estructurada de documentos RFP.
+**Responsibility:** Extract structured information from RFP documents.
 
-#### Métodos Principales
+#### Main Methods
 
 ```python
 def analyze_rfp(self, proposal_id: str) -> Dict[str, Any]:
     """
-    Analiza documento RFP y extrae información clave.
+    Analyzes RFP document and extracts key information.
     
     Workflow:
-    1. Cargar propuesta desde DynamoDB
-    2. Descargar PDF desde S3
-    3. Extraer texto con PyPDF2
-    4. Cargar prompt desde DynamoDB
-    5. Invocar Claude vía Bedrock
-    6. Parsear JSON de respuesta
-    7. Guardar análisis en DynamoDB
+    1. Load proposal from DynamoDB
+    2. Download PDF from S3
+    3. Extract text with PyPDF2
+    4. Load prompt from DynamoDB
+    5. Invoke Claude via Bedrock
+    6. Parse response JSON
+    7. Save analysis to DynamoDB
     
     Returns:
         {
@@ -288,9 +288,9 @@ def analyze_rfp(self, proposal_id: str) -> Dict[str, Any]:
 
 #### Prompt System
 
-El prompt se carga dinámicamente desde DynamoDB:
+The prompt is loaded dynamically from DynamoDB:
 
-**Filtro:**
+**Filter:**
 ```python
 FilterExpression=
     Attr("is_active").eq(True) &
@@ -299,31 +299,31 @@ FilterExpression=
     Attr("categories").contains("RFP Analysis")
 ```
 
-**Campos cargados:**
-- `system_prompt`: Rol del agente IA
-- `user_prompt_template`: Instrucciones con placeholders
-- `output_format`: Formato esperado de respuesta
+**Loaded fields:**
+- `system_prompt`: AI Agent Role
+- `user_prompt_template`: Instructions with placeholders
+- `output_format`: Expected response format
 
-#### Configuración Bedrock
+#### Bedrock Configuration
 
 ```python
 response = self.bedrock.invoke_claude(
     system_prompt=prompt_parts['system_prompt'],
     user_prompt=final_prompt,
-    max_tokens=5000,  # Respuesta larga
-    temperature=0.5   # Consistencia alta
+    max_tokens=5000,  # Long response
+    temperature=0.5   # High consistency
 )
 ```
 
 ---
 
-### 3. **concept_evaluation/service.py** - Evaluación de Concepto
+### 3. **concept_evaluation/service.py** - Concept Evaluation
 
-**Clase:** `SimpleConceptAnalyzer`
+**Class:** `SimpleConceptAnalyzer`
 
-**Responsabilidad:** Evaluar alineación del concepto con requisitos RFP.
+**Responsibility:** Evaluate concept alignment with RFP requirements.
 
-#### Métodos Principales
+#### Main Methods
 
 ```python
 def analyze_concept(
@@ -332,16 +332,16 @@ def analyze_concept(
     rfp_analysis: Dict
 ) -> Dict[str, Any]:
     """
-    Evalúa concepto inicial contra análisis RFP.
+    Evaluates initial concept against RFP analysis.
     
     Workflow:
-    1. Cargar concepto desde S3 (TXT/PDF/DOCX)
-    2. Extraer texto según formato
-    3. Cargar prompt de evaluación
-    4. Inyectar contexto (RFP + concepto)
-    5. Invocar Claude
-    6. Parsear evaluación
-    7. Guardar en DynamoDB
+    1. Load concept from S3 (TXT/PDF/DOCX)
+    2. Extract text according to format
+    3. Load evaluation prompt
+    4. Inject context (RFP + concept)
+    5. Invoke Claude
+    6. Parse evaluation
+    7. Save to DynamoDB
     
     Returns:
         {
@@ -352,47 +352,47 @@ def analyze_concept(
                     "geographic_alignment": {...}
                 },
                 "strong_aspects": [
-                    "Aspecto 1 bien desarrollado",
+                    "Well developed Aspect 1",
                     ...
                 ],
                 "sections_needing_elaboration": [
                     {
                         "section": "Theory of Change",
-                        "issue": "Descripción del problema",
+                        "issue": "Problem description",
                         "priority": "Critical",
-                        "suggestions": "Desarrollar..."
+                        "suggestions": "Develop..."
                     },
                     ...
                 ],
-                "strategic_verdict": "Recomendación general"
+                "strategic_verdict": "General recommendation"
             },
             "status": "completed"
         }
     """
 ```
 
-#### Soporte Multi-Formato
+#### Multi-Format Support
 
 ```python
 def _extract_concept_text(self, file_key: str) -> str:
     """
-    Extrae texto del concepto según extensión.
+    Extracts concept text based on extension.
     
-    Soporta:
-    - .txt: Lectura directa
+    Supports:
+    - .txt: Direct read
     - .pdf: PyPDF2
     - .docx: python-docx
     
-    Maneja:
-    - Archivos grandes (límite de caracteres)
-    - Encoding UTF-8
-    - Errores de formato
+    Handles:
+    - Large files (character limit)
+    - UTF-8 Encoding
+    - Format errors
     """
 ```
 
 #### Prompt System
 
-**Filtro DynamoDB:**
+**DynamoDB Filter:**
 ```python
 FilterExpression=
     Attr("is_active").eq(True) &
@@ -401,25 +401,25 @@ FilterExpression=
     Attr("categories").contains("Concept Review")
 ```
 
-**Configuración Bedrock:**
+**Bedrock Configuration:**
 ```python
 response = self.bedrock.invoke_claude(
     system_prompt=prompt_parts['system_prompt'],
     user_prompt=final_prompt,
-    max_tokens=12000,  # Evaluación extensa
+    max_tokens=12000,  # Extensive evaluation
     temperature=0.5
 )
 ```
 
 ---
 
-### 4. **concept_document_generation/service.py** - Generación de Documentos de Concepto
+### 4. **concept_document_generation/service.py** - Concept Document Generation
 
-**Clase:** `ConceptDocumentGenerator`
+**Class:** `ConceptDocumentGenerator`
 
-**Responsabilidad:** Generar documentos narrativos detallados.
+**Responsibility:** Generate detailed narrative documents.
 
-#### Métodos Principales
+#### Main Methods
 
 ```python
 def generate_document(
@@ -430,24 +430,24 @@ def generate_document(
     proposal_outline: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
-    Genera documento narrativo profesional.
+    Generates professional narrative document.
     
     Workflow:
-    1. Cargar prompt de generación
-    2. Cargar proposal outline (si no provisto)
-    3. Filtrar secciones seleccionadas
-    4. Enriquecer con datos del outline
-    5. Preparar contexto completo
-    6. Invocar Claude
-    7. Parsear markdown generado
-    8. Retornar documento estructurado
+    1. Load generation prompt
+    2. Load proposal outline (if not provided)
+    3. Filter selected sections
+    4. Enrich with outline data
+    5. Prepare full context
+    6. Invoke Claude
+    7. Parse generated markdown
+    8. Return structured document
     
     Returns:
         {
-            "generated_concept_document": "# Título\n\n## Sección...",
+            "generated_concept_document": "# Title\n\n## Section...",
             "sections": {
-                "Theory of Change": "Contenido...",
-                "Gender Strategy": "Contenido...",
+                "Theory of Change": "Content...",
+                "Gender Strategy": "Content...",
                 ...
             },
             "status": "completed",
@@ -457,7 +457,7 @@ def generate_document(
     """
 ```
 
-#### Filtrado y Enriquecimiento
+#### Filtering and Enrichment
 
 ```python
 def _filter_selected_sections(
@@ -465,12 +465,12 @@ def _filter_selected_sections(
     concept_evaluation: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
-    Filtra solo secciones marcadas como selected=True.
+    Filters only sections marked as selected=True.
     
-    Importante:
-    - Reduce tamaño del prompt significativamente
-    - Evita timeouts de Bedrock
-    - Mejora relevancia de respuesta
+    Important:
+    - Significantly reduces prompt size
+    - Avoids Bedrock timeouts
+    - Improves response relevance
     """
 
 def _enrich_with_outline(
@@ -479,87 +479,87 @@ def _enrich_with_outline(
     proposal_outline: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
-    Enriquece secciones con datos del outline.
+    Enriches sections with outline data.
     
-    Agrega a cada sección:
+    Adds to each section:
     - recommended_word_count: "800-1000 words"
-    - purpose: "Explicar el propósito..."
-    - content_guidance: "Debe incluir..."
-    - guiding_questions: ["¿Pregunta 1?", ...]
+    - purpose: "Explain the purpose..."
+    - content_guidance: "Must include..."
+    - guiding_questions: ["Question 1?", ...]
     
-    Optimiza:
-    - content_guidance largo (>1000 chars) se resume
+    Optimizes:
+    - Long content_guidance (>1000 chars) is summarized
     """
 ```
 
-#### Configuración Bedrock
+#### Bedrock Configuration
 
 ```python
 response = self.bedrock.invoke_claude(
     system_prompt=prompt_parts['system_prompt'],
     user_prompt=final_prompt,
-    max_tokens=12000,  # Documentos largos
-    temperature=0.7    # Creatividad moderada
+    max_tokens=12000,  # Long documents
+    temperature=0.7    # Moderate creativity
 )
 ```
 
 **Timeout Management:**
 ```python
-# Implementado en worker.py con reintentos exponenciales
+# Implemented in worker.py with exponential retries
 max_retries = 3
-base_delay = 30  # segundos
+base_delay = 30  # seconds
 ```
 
 ---
 
 ### 5. **workflow/worker.py** - Worker Lambda
 
-**Responsabilidad:** Orquestar tareas asíncronas pesadas.
+**Responsibility:** Orchestrate heavy asynchronous tasks.
 
-#### Handler Principal
+#### Main Handler
 
 ```python
 def lambda_handler(event, context):
     """
-    Lambda handler para procesamiento asíncrono.
+    Lambda handler for async processing.
     
-    Tareas soportadas:
-    - analyze_rfp: Analizar documento RFP
-    - analyze_concept: Evaluar concepto inicial
-    - generate_outline: Crear estructura de propuesta
-    - generate_document: Generar documento narrativo
+    Supported tasks:
+    - analyze_rfp: Analyze RFP document
+    - analyze_concept: Evaluate initial concept
+    - generate_outline: Create proposal structure
+    - generate_document: Generate narrative document
     
-    Timeout: 15 minutos
+    Timeout: 15 minutes
     Memory: 1024 MB
     """
 ```
 
-#### Funciones de Orquestación
+#### Orchestration Functions
 
 ```python
 def _handle_rfp_analysis(proposal_id: str) -> Dict[str, Any]:
     """
-    Ejecuta análisis de RFP con retry logic.
+    Executes RFP analysis with retry logic.
     
     Workflow:
     1. Set status: processing
-    2. Ejecutar SimpleRFPAnalyzer.analyze_rfp()
-    3. Guardar resultado en DynamoDB
+    2. Execute SimpleRFPAnalyzer.analyze_rfp()
+    3. Save result to DynamoDB
     4. Set status: completed
-    5. En caso de error: Set status: failed
+    5. On error: Set status: failed
     
-    Reintentos: 3 intentos con backoff exponencial
+    Retries: 3 attempts with exponential backoff
     """
 
 def _handle_concept_analysis(proposal_id: str) -> Dict[str, Any]:
     """
-    Ejecuta evaluación de concepto.
+    Executes concept evaluation.
     
-    Requiere:
-    - RFP analysis completado
-    - Concepto inicial cargado
+    Requires:
+    - RFP analysis completed
+    - Initial concept uploaded
     
-    Similar workflow a RFP analysis
+    Similar workflow to RFP analysis
     """
 
 def _handle_outline_generation(
@@ -568,13 +568,13 @@ def _handle_outline_generation(
     user_comments: Dict
 ) -> Dict[str, Any]:
     """
-    Genera outline de propuesta.
+    Generates proposal outline.
     
-    Input especial:
-    - selected_sections: Secciones marcadas para desarrollar
-    - user_comments: Comentarios del usuario por sección
+    Special Input:
+    - selected_sections: Sections marked to develop
+    - user_comments: User comments per section
     
-    Output guardado en: PROPOSAL#{id}#OUTLINE
+    Output saved in: PROPOSAL#{id}#OUTLINE
     """
 
 def _handle_concept_document_generation(
@@ -583,40 +583,40 @@ def _handle_concept_document_generation(
     user_comments: Dict
 ) -> Dict[str, Any]:
     """
-    Genera documento narrativo completo.
+    Generates complete narrative document.
     
-    Combina:
+    Combines:
     - RFP analysis
-    - Concept evaluation (filtrado)
+    - Concept evaluation (filtered)
     - Proposal outline
     - User comments
     
-    Retry logic con timeouts extendidos
+    Retry logic with extended timeouts
     """
 ```
 
-#### Gestión de Estado DynamoDB
+#### DynamoDB State Management
 
 ```python
 def _set_processing_status(proposal_id: str, analysis_type: str):
-    """Marca análisis como 'processing' con timestamp"""
+    """Marks analysis as 'processing' with timestamp"""
 
 def _set_completed_status(
     proposal_id: str, 
     analysis_type: str, 
     result: Dict
 ):
-    """Marca análisis como 'completed' y guarda resultado"""
+    """Marks analysis as 'completed' and saves result"""
 
 def _set_failed_status(
     proposal_id: str, 
     analysis_type: str, 
     error_message: str
 ):
-    """Marca análisis como 'failed' con mensaje de error"""
+    """Marks analysis as 'failed' with error message"""
 ```
 
-#### Retry Logic con Backoff Exponencial
+#### Retry Logic with Exponential Backoff
 
 ```python
 def _retry_with_exponential_backoff(
@@ -626,26 +626,26 @@ def _retry_with_exponential_backoff(
     max_delay=300
 ):
     """
-    Reintenta función con delays crecientes.
+    Retries function with increasing delays.
     
     Delays:
-    - Intento 1: 30 segundos
-    - Intento 2: 60 segundos
-    - Intento 3: 120 segundos
+    - Attempt 1: 30 seconds
+    - Attempt 2: 60 seconds
+    - Attempt 3: 120 seconds
     
-    Usado para:
-    - Llamadas a Bedrock (timeouts)
-    - Operaciones DynamoDB (throttling)
+    Used for:
+    - Bedrock calls (timeouts)
+    - DynamoDB operations (throttling)
     """
 ```
 
 ---
 
-## 📊 Modelos de Datos
+## 📊 Data Models
 
-### Estructura de Propuesta en DynamoDB
+### DynamoDB Proposal Structure
 
-#### Item Principal: `PROPOSAL#{id}#METADATA`
+#### Main Item: `PROPOSAL#{id}#METADATA`
 
 ```json
 {
@@ -679,7 +679,7 @@ def _retry_with_exponential_backoff(
 }
 ```
 
-#### Item RFP Analysis: `PROPOSAL#{id}#RFP_ANALYSIS`
+#### RFP Analysis Item: `PROPOSAL#{id}#RFP_ANALYSIS`
 
 ```json
 {
@@ -724,7 +724,7 @@ def _retry_with_exponential_backoff(
 }
 ```
 
-#### Item Concept Evaluation: `PROPOSAL#{id}#CONCEPT_ANALYSIS`
+#### Concept Evaluation Item: `PROPOSAL#{id}#CONCEPT_ANALYSIS`
 
 ```json
 {
@@ -782,7 +782,7 @@ def _retry_with_exponential_backoff(
 }
 ```
 
-#### Item Proposal Outline: `PROPOSAL#{id}#OUTLINE`
+#### Proposal Outline Item: `PROPOSAL#{id}#OUTLINE`
 
 ```json
 {
@@ -836,7 +836,7 @@ def _retry_with_exponential_backoff(
 }
 ```
 
-#### Item Concept Document: `PROPOSAL#{id}#CONCEPT_DOCUMENT_V2`
+#### Concept Document Item: `PROPOSAL#{id}#CONCEPT_DOCUMENT_V2`
 
 ```json
 {
@@ -858,13 +858,13 @@ def _retry_with_exponential_backoff(
 
 ---
 
-## 🔌 Integración con AWS
+## 🔌 AWS Integration
 
 ### Amazon Bedrock
 
-**Servicio:** Claude 3.7 Sonnet (`us.anthropic.claude-3-7-sonnet-20250219-v1:0`)
+**Service:** Claude 3.7 Sonnet (`us.anthropic.claude-3-7-sonnet-20250219-v1:0`)
 
-**Ubicación:** `app/shared/ai/bedrock_service.py`
+**Location:** `app/shared/ai/bedrock_service.py`
 
 ```python
 class BedrockService:
@@ -876,33 +876,33 @@ class BedrockService:
         temperature: float = 0.7
     ) -> str:
         """
-        Invoca Claude vía Bedrock.
+        Invokes Claude via Bedrock.
         
-        Timeout: 600 segundos (10 minutos)
-        Retry: Automático con boto3
+        Timeout: 600 seconds (10 minutes)
+        Retry: Automatic with boto3
         
         Returns:
-            Texto de respuesta parseado
+            Parsed response text
         """
 ```
 
-**Configuración por Servicio:**
+**Configuration per Service:**
 
-| Servicio | max_tokens | temperature | Tiempo estimado |
+| Service | max_tokens | temperature | Estimated Time |
 |----------|------------|-------------|----------------|
-| RFP Analysis | 5,000 | 0.5 | 30-60 seg |
-| Concept Evaluation | 12,000 | 0.5 | 60-90 seg |
-| Outline Generation | 8,000 | 0.7 | 45-75 seg |
+| RFP Analysis | 5,000 | 0.5 | 30-60 sec |
+| Concept Evaluation | 12,000 | 0.5 | 60-90 sec |
+| Outline Generation | 8,000 | 0.7 | 45-75 sec |
 | Document Generation | 12,000 | 0.7 | 2-5 min |
 
 ### DynamoDB
 
-**Tabla:** `igad-testing-main-table`
+**Table:** `igad-testing-main-table`
 
-**Patrón de Acceso:**
+**Access Pattern:**
 
 ```
-Single-Table Design con GSI
+Single-Table Design with GSI
 
 PK = PROPOSAL#{proposal_id}
 SK = METADATA | RFP_ANALYSIS | CONCEPT_ANALYSIS | OUTLINE | CONCEPT_DOCUMENT_V2
@@ -912,10 +912,10 @@ PK = USER#{user_id}
 SK = PROPOSAL#{created_at}
 ```
 
-**Operaciones:**
+**Operations:**
 
 ```python
-# Crear propuesta
+# Create proposal
 db_client.put_item_sync(
     pk=f"PROPOSAL#{proposal_code}",
     sk="METADATA",
@@ -924,20 +924,20 @@ db_client.put_item_sync(
     item={...}
 )
 
-# Obtener propuesta
+# Get proposal
 proposal = db_client.get_item_sync(
     pk=f"PROPOSAL#{proposal_id}",
     sk="METADATA"
 )
 
-# Listar propuestas del usuario
+# List user proposals
 proposals = db_client.query_items(
     pk=f"USER#{user_id}",
     index_name="GSI1",
-    scan_index_forward=False  # Más recientes primero
+    scan_index_forward=False  # Newest first
 )
 
-# Actualizar análisis
+# Update analysis
 db_client.update_item_sync(
     pk=f"PROPOSAL#{proposal_id}",
     sk="METADATA",
@@ -945,7 +945,7 @@ db_client.update_item_sync(
     expression_attribute_values={":status": "completed"}
 )
 
-# Guardar análisis
+# Save analysis
 db_client.put_item_sync(
     pk=f"PROPOSAL#{proposal_id}",
     sk="RFP_ANALYSIS",
@@ -957,21 +957,21 @@ db_client.put_item_sync(
 
 **Bucket:** `igad-testing-proposals`
 
-**Estructura:**
+**Structure:**
 
 ```
 proposals/
   └── {proposal_id}/
-      ├── rfp_document.pdf              # RFP original
-      ├── initial_concept.txt            # Concepto inicial
-      ├── initial_concept.pdf            # Alternativa PDF
-      ├── initial_concept.docx           # Alternativa DOCX
-      └── generated_documents/           # Documentos generados
+      ├── rfp_document.pdf              # Original RFP
+      ├── initial_concept.txt            # Initial Concept
+      ├── initial_concept.pdf            # PDF Alternative
+      ├── initial_concept.docx           # DOCX Alternative
+      └── generated_documents/           # Generated Documents
           ├── concept_document_v1.docx
           └── proposal_outline.pdf
 ```
 
-**Operaciones:**
+**Operations:**
 
 ```python
 # Upload file
@@ -989,11 +989,11 @@ response = s3.get_object(
 )
 content = response['Body'].read()
 
-# Generate presigned URL (descarga directa)
+# Generate presigned URL (direct download)
 url = s3.generate_presigned_url(
     'get_object',
     Params={'Bucket': bucket, 'Key': file_key},
-    ExpiresIn=3600  # 1 hora
+    ExpiresIn=3600  # 1 hour
 )
 ```
 
@@ -1001,27 +1001,27 @@ url = s3.generate_presigned_url(
 
 **Worker Lambda:** `proposal-writer-analysis-worker`
 
-**Configuración:**
+**Configuration:**
 - Runtime: Python 3.11
 - Memory: 1024 MB
-- Timeout: 900 segundos (15 minutos)
+- Timeout: 900 seconds (15 minutes)
 - Concurrency: 10
 
-**Variables de Entorno:**
+**Environment Variables:**
 ```
 TABLE_NAME=igad-testing-main-table
 PROPOSALS_BUCKET=igad-testing-proposals
 AWS_REGION=us-east-1
 ```
 
-**Invocación desde API:**
+**Invocation from API:**
 
 ```python
 lambda_client = boto3.client('lambda')
 
 response = lambda_client.invoke(
     FunctionName='proposal-writer-analysis-worker',
-    InvocationType='Event',  # Asíncrono
+    InvocationType='Event',  # Async
     Payload=json.dumps({
         "task": "analyze_rfp",
         "proposal_id": "PROP-20251129-A1B2"
@@ -1031,9 +1031,9 @@ response = lambda_client.invoke(
 
 ---
 
-## ⚠️ Gestión de Errores
+## ⚠️ Error Handling
 
-### Estrategia de Reintentos
+### Retry Strategy
 
 **Worker Lambda:**
 
@@ -1045,14 +1045,14 @@ def _retry_with_exponential_backoff(
     max_delay=300
 ):
     """
-    Patrón de reintentos para operaciones pesadas.
+    Retry pattern for heavy operations.
     
     Delays:
     - Retry 1: 30s
     - Retry 2: 60s
     - Retry 3: 120s
     
-    Casos de uso:
+    Use cases:
     - Bedrock timeouts
     - DynamoDB throttling
     - S3 transient errors
@@ -1067,19 +1067,19 @@ def _retry_with_exponential_backoff(
             time.sleep(delay)
 ```
 
-### Estados de Error
+### Error States
 
-**En DynamoDB:**
+**In DynamoDB:**
 
 ```python
-# Error en análisis RFP
+# RFP Analysis Error
 {
     "analysis_status_rfp": "failed",
     "rfp_analysis_error": "Bedrock timeout after 600s",
     "rfp_analysis_failed_at": "2025-11-29T10:35:00Z"
 }
 
-# Error en generación de documento
+# Document Generation Error
 {
     "concept_document_status": "failed",
     "concept_document_error": "Max retries exceeded (3/3)",
@@ -1087,9 +1087,9 @@ def _retry_with_exponential_backoff(
 }
 ```
 
-### Logs Estructurados
+### Structured Logs
 
-**Formato:**
+**Format:**
 
 ```python
 logger.info("=" * 80)
@@ -1104,16 +1104,16 @@ logger.error(traceback.format_exc())
 
 **CloudWatch:**
 
-Todos los logs se envían a CloudWatch Logs con grupos:
+All logs sent to CloudWatch Logs groups:
 
 - `/aws/lambda/proposal-writer-analysis-worker`
 - `/aws/lambda/igad-testing-api`
 
 ---
 
-## ⚙️ Configuración y Variables
+## ⚙️ Configuration and Variables
 
-### Variables de Entorno
+### Environment Variables
 
 **Backend API (`igad-app/backend/.env`):**
 
@@ -1142,7 +1142,7 @@ RFP_ANALYSIS_SETTINGS = {
     "table_name": os.environ.get("TABLE_NAME"),
     "max_tokens": 5000,
     "temperature": 0.5,
-    "timeout": 600  # 10 minutos
+    "timeout": 600  # 10 minutes
 }
 ```
 
@@ -1164,17 +1164,17 @@ CONCEPT_DOCUMENT_GENERATION_SETTINGS = {
     "table_name": os.environ.get("TABLE_NAME"),
     "max_tokens": 12000,
     "temperature": 0.7,
-    "timeout": 900  # 15 minutos
+    "timeout": 900  # 15 minutes
 }
 ```
 
 ---
 
-## 📈 Métricas y Monitoreo
+## 📈 Metrics and Monitoring
 
 ### CloudWatch Metrics
 
-**Métricas clave:**
+**Key Metrics:**
 
 - Lambda invocations
 - Lambda duration
@@ -1183,9 +1183,9 @@ CONCEPT_DOCUMENT_GENERATION_SETTINGS = {
 - S3 GET/PUT requests
 - Bedrock invocation latency
 
-### Logs de Debugging
+### Debugging Logs
 
-**Ejemplo de log completo:**
+**Example full log:**
 
 ```
 ================================
@@ -1215,35 +1215,35 @@ CONCEPT_DOCUMENT_GENERATION_SETTINGS = {
 
 ---
 
-## 🚀 Mejoras Futuras
+## 🚀 Future Improvements
 
-### En Desarrollo
+### In Development
 
-1. **Streaming de respuestas** para feedback en tiempo real
-2. **Chunking de documentos** grandes para evitar timeouts
-3. **Cache de análisis** RFP para propuestas similares
-4. **Versioning** de documentos generados
-5. **Colaboración multi-usuario** en propuestas
+1. **Streaming responses** for real-time feedback
+2. **Chunking** for large documents to avoid timeouts
+3. **RFP Analysis Cache** for similar proposals
+4. **Versioning** of generated documents
+5. **Multi-user collaboration** on proposals
 
-### Optimizaciones Planificadas
+### Planned Optimizations
 
-1. Reducir tamaño de prompts con técnicas de compresión
-2. Implementar prompt caching en Bedrock
-3. Paralelizar análisis de secciones independientes
-4. Pre-entrenar modelos con prompts frecuentes
+1. Reduce prompt size with compression techniques
+2. Implement prompt caching in Bedrock
+3. Parallelize analysis of independent sections
+4. Pre-train models with frequent prompts
 
 ---
 
-## 📞 Soporte
+**Support:**
 
-**Desarrolladores:**
+**Developers:**
 - Backend: Juan Cadavid
-- Frontend: Equipo Alliance
+- Frontend: Alliance Team
 
-**Documentación adicional:**
-- `SESSION_2025-11-28_TIMEOUT_AND_PROMPT_FIX.md`: Soluciones a timeouts
-- `STEP_RESTRUCTURE_PLAN.md`: Plan de reestructuración frontend
+**Additional Documentation:**
+- `SESSION_2025-11-28_TIMEOUT_AND_PROMPT_FIX.md`: Timeout solutions
+- `STEP_RESTRUCTURE_PLAN.md`: Frontend restructuring plan
 
 ---
 
-**Fin del documento** 🎯
+**End of document** 🎯
