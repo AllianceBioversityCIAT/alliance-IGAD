@@ -10,12 +10,12 @@
  * For DOCX: Returns original (compression not effective)
  *
  * @param file - Original file
- * @param maxSizeMB - Maximum size in MB (default 2MB)
+ * @param maxSizeMB - Maximum size in MB (default 10MB)
  * @returns Compressed file or original if already small enough
  */
 export async function compressFileIfNeeded(
   file: File,
-  maxSizeMB: number = 2
+  maxSizeMB: number = 10
 ): Promise<{ file: File; wasCompressed: boolean; originalSize: number; newSize: number }> {
   const maxSizeBytes = maxSizeMB * 1024 * 1024
   const originalSize = file.size
