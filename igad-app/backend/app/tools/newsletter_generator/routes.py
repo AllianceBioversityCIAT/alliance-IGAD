@@ -1422,7 +1422,7 @@ class AICompleteRequest(BaseModel):
 class ExportRequest(BaseModel):
     """Request model for exporting the newsletter."""
 
-    format: str = Field(..., pattern="^(html|markdown|text)$")
+    format: str = Field(..., pattern="^(html|markdown|text|pdf|blog)$")
 
 
 @router.get("/{newsletter_code}/draft")
@@ -1892,6 +1892,14 @@ async def export_draft(
         content = _generate_markdown_export(title, subtitle, sections)
         filename = f"{newsletter_code}.md"
         mime_type = "text/markdown"
+    elif request.format == "pdf":
+        content = _generate_pdf_export(title, subtitle, sections)
+        filename = f"{newsletter_code}.pdf"
+        mime_type = "application/pdf"
+    elif request.format == "blog":
+        content = _generate_blog_export(title, subtitle, sections)
+        filename = f"{newsletter_code}-blog.html"
+        mime_type = "text/html"
     else:  # text
         content = _generate_text_export(title, subtitle, sections)
         filename = f"{newsletter_code}.txt"
@@ -2036,6 +2044,230 @@ def _strip_markdown(markdown_text: str) -> str:
     text = re.sub(r"\[(.+?)\]\(.+?\)", r"\1", text)
 
     return text
+
+
+def _generate_pdf_export(
+    title: str, subtitle: str, sections: List[Dict[str, Any]]
+) -> str:
+    """
+    Generate PDF export.
+
+    Uses base64-encoded HTML-to-PDF approach for Lambda compatibility.
+    Returns base64-encoded PDF content.
+    """
+    import base64
+
+    try:
+        # Try using weasyprint if available
+        from weasyprint import HTML
+
+        html_content = _generate_html_export(title, subtitle, sections)
+        pdf_bytes = HTML(string=html_content).write_pdf()
+        return base64.b64encode(pdf_bytes).decode("utf-8")
+    except ImportError:
+        # Fallback: Return HTML with print-friendly styling
+        # The frontend will handle printing to PDF
+        logger.warning("WeasyPrint not available, falling back to print-friendly HTML")
+        return _generate_print_html_export(title, subtitle, sections)
+
+
+def _generate_print_html_export(
+    title: str, subtitle: str, sections: List[Dict[str, Any]]
+) -> str:
+    """Generate print-friendly HTML for PDF conversion."""
+    sections_html = ""
+    for section in sections:
+        section_title = section.get("title", "")
+        content = section.get("content", "")
+        content_html = _markdown_to_html(content)
+        sections_html += f"""
+        <section class="newsletter-section">
+            <h2>{section_title}</h2>
+            <div class="section-content">{content_html}</div>
+        </section>
+        """
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{title}</title>
+    <style>
+        @page {{
+            size: A4;
+            margin: 2cm;
+        }}
+        body {{
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+        }}
+        header {{
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #166534;
+        }}
+        h1 {{
+            color: #111;
+            font-size: 24pt;
+            margin: 0 0 10px 0;
+        }}
+        .subtitle {{
+            color: #666;
+            font-size: 14pt;
+            font-style: italic;
+        }}
+        .newsletter-section {{
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }}
+        h2 {{
+            color: #166534;
+            font-size: 16pt;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+        }}
+        h3 {{
+            color: #374151;
+            font-size: 14pt;
+        }}
+        p {{
+            margin: 0 0 12px 0;
+        }}
+        a {{
+            color: #166534;
+            text-decoration: underline;
+        }}
+        footer {{
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 10pt;
+            color: #999;
+        }}
+        @media print {{
+            body {{
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{title}</h1>
+        {f'<p class="subtitle">{subtitle}</p>' if subtitle else ''}
+    </header>
+    <main>
+        {sections_html}
+    </main>
+    <footer>
+        <p>Generated with IGAD Innovation Hub Newsletter Generator</p>
+    </footer>
+</body>
+</html>"""
+
+
+def _generate_blog_export(
+    title: str, subtitle: str, sections: List[Dict[str, Any]]
+) -> str:
+    """
+    Generate clean blog/web HTML export.
+
+    Uses semantic HTML with minimal styling suitable for CMS embedding.
+    """
+    sections_html = ""
+    for section in sections:
+        section_title = section.get("title", "")
+        content = section.get("content", "")
+        content_html = _markdown_to_html(content)
+        sections_html += f"""
+    <section class="newsletter-section">
+        <h2>{section_title}</h2>
+        {content_html}
+    </section>
+"""
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <meta name="description" content="{subtitle if subtitle else title}">
+    <style>
+        /* Minimal base styles - customize for your site */
+        .newsletter-container {{
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+        }}
+        .newsletter-header {{
+            margin-bottom: 2em;
+        }}
+        .newsletter-header h1 {{
+            font-size: 2.5em;
+            margin: 0 0 0.25em 0;
+            color: #111;
+        }}
+        .newsletter-subtitle {{
+            font-size: 1.25em;
+            color: #666;
+            margin: 0;
+        }}
+        .newsletter-section {{
+            margin-bottom: 2em;
+        }}
+        .newsletter-section h2 {{
+            font-size: 1.5em;
+            color: #166534;
+            margin: 0 0 0.5em 0;
+        }}
+        .newsletter-section h3 {{
+            font-size: 1.25em;
+            color: #374151;
+        }}
+        .newsletter-section p {{
+            margin: 0 0 1em 0;
+        }}
+        .newsletter-section a {{
+            color: #166534;
+        }}
+        .newsletter-footer {{
+            margin-top: 3em;
+            padding-top: 1em;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.875em;
+            color: #6b7280;
+        }}
+    </style>
+</head>
+<body>
+<article class="newsletter-container">
+    <header class="newsletter-header">
+        <h1>{title}</h1>
+        {f'<p class="newsletter-subtitle">{subtitle}</p>' if subtitle else ''}
+    </header>
+
+    <div class="newsletter-content">
+{sections_html}
+    </div>
+
+    <footer class="newsletter-footer">
+        <p>Published by IGAD Innovation Hub</p>
+    </footer>
+</article>
+</body>
+</html>"""
 
 
 @router.post("/ai-complete")

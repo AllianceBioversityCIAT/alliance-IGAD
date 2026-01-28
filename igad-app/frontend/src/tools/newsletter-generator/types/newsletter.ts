@@ -657,7 +657,7 @@ export interface DraftData {
 }
 
 // Export format options
-export type ExportFormat = 'html' | 'markdown' | 'text'
+export type ExportFormat = 'html' | 'markdown' | 'text' | 'pdf' | 'blog'
 
 export interface ExportFormatOption {
   value: ExportFormat
@@ -668,15 +668,27 @@ export interface ExportFormatOption {
 
 export const EXPORT_FORMAT_OPTIONS: ExportFormatOption[] = [
   {
+    value: 'pdf',
+    label: 'PDF Document',
+    description: 'Print-ready PDF format',
+    icon: 'file-down',
+  },
+  {
     value: 'html',
-    label: 'HTML Email',
+    label: 'Email HTML',
     description: 'Styled HTML ready for email clients',
     icon: 'mail',
   },
   {
+    value: 'blog',
+    label: 'Blog / Web Page',
+    description: 'Clean HTML for web publishing',
+    icon: 'globe',
+  },
+  {
     value: 'markdown',
     label: 'Markdown',
-    description: 'Plain markdown format',
+    description: 'Plain markdown for CMS/GitHub',
     icon: 'file-text',
   },
   {
