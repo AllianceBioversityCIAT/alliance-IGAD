@@ -49,6 +49,16 @@ export const SCHEDULE_PRESETS: Record<string, ScheduleRule> = {
   },
 }
 
+// Step completion status detail
+export interface StepCompletionStatus {
+  completed: boolean
+  status?: string
+  has_title?: boolean
+  has_audience?: boolean
+  has_tone_preset?: boolean
+  has_sections?: boolean
+}
+
 export interface Newsletter {
   id: string
   newsletterCode: string
@@ -71,6 +81,10 @@ export interface Newsletter {
   current_step: number
   created_at: string
   updated_at: string
+
+  // Backend-computed step completion (survives page refresh)
+  completed_steps?: number[] // Array of completed step numbers [1, 2, 3]
+  step_completion?: Record<string, StepCompletionStatus> // Detailed status per step
 }
 
 export type NewsletterStatus = 'draft' | 'processing' | 'completed' | 'exported'

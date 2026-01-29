@@ -90,6 +90,120 @@ def generate_proposal_code() -> str:
     return f"PROP-{date_str}-{random_suffix}"
 
 
+def _compute_completed_steps(proposal: Dict[str, Any]) -> List[int]:
+    """
+    Compute which steps are completed based on actual data presence.
+
+    This provides a persistent, backend-computed completion status that
+    survives page refreshes, browser changes, and localStorage clearing.
+    """
+    completed = []
+
+    # Step 1: Has documents - RFP AND (concept OR reference proposals)
+    uploaded_files = proposal.get("uploaded_files", {})
+    has_rfp = bool(uploaded_files.get("rfp-document"))
+    has_concept_file = bool(uploaded_files.get("concept-document"))
+    text_inputs = proposal.get("text_inputs", {})
+    has_concept_text = len(text_inputs.get("initial-concept", "")) >= 100
+    has_concept = has_concept_file or has_concept_text
+    has_refs = bool(uploaded_files.get("reference-proposals"))
+
+    # Step 1 is complete if we have RFP AND (concept OR references)
+    # Also check metadata for analysis status to infer completion
+    rfp_analysis = proposal.get("metadata", {}).get("rfp_analysis")
+    concept_analysis = proposal.get("metadata", {}).get("concept_analysis")
+
+    if has_rfp and (has_concept or has_refs):
+        completed.append(1)
+    # Infer from downstream data if analyses exist
+    elif rfp_analysis or concept_analysis:
+        completed.append(1)
+
+    # Step 2: Analyses complete
+    # Check metadata for analysis status
+    metadata = proposal.get("metadata", {})
+    rfp_analysis_status = metadata.get("rfp_analysis_status", "pending")
+    concept_analysis_status = metadata.get("concept_analysis_status", "pending")
+
+    # Also check if concept_document exists (generated in step 2)
+    has_concept_document = bool(metadata.get("concept_document"))
+
+    if rfp_analysis_status == "completed" and concept_analysis_status == "completed":
+        completed.append(2)
+    elif has_concept_document:
+        # Infer step 2 completion from concept document existence
+        completed.append(2)
+        if 1 not in completed:
+            completed.insert(0, 1)
+
+    # Step 3: Template generated
+    template_status = metadata.get("template_generation_status", "pending")
+    has_proposal_template = bool(metadata.get("proposal_template"))
+    has_generated_content = bool(metadata.get("generated_proposal_content"))
+
+    if template_status == "completed" or has_proposal_template or has_generated_content:
+        completed.append(3)
+        # Ensure previous steps are marked
+        if 1 not in completed:
+            completed.insert(0, 1)
+        if 2 not in completed:
+            completed.insert(1, 2)
+
+    # Step 4: Draft feedback complete
+    feedback_status = metadata.get("draft_feedback_status", "pending")
+    has_draft_feedback = bool(metadata.get("draft_feedback_analysis"))
+
+    if feedback_status == "completed" or has_draft_feedback:
+        completed.append(4)
+        # Ensure previous steps are marked
+        for step in [1, 2, 3]:
+            if step not in completed:
+                completed.insert(step - 1, step)
+
+    return sorted(list(set(completed)))
+
+
+def _compute_step_completion(proposal: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Compute detailed step completion status for each step.
+
+    Returns a dictionary with detailed status information for each step.
+    """
+    uploaded_files = proposal.get("uploaded_files", {})
+    text_inputs = proposal.get("text_inputs", {})
+    metadata = proposal.get("metadata", {})
+    completed_steps = _compute_completed_steps(proposal)
+
+    return {
+        "step_1": {
+            "completed": 1 in completed_steps,
+            "has_rfp": bool(uploaded_files.get("rfp-document")),
+            "has_concept": bool(
+                uploaded_files.get("concept-document")
+                or len(text_inputs.get("initial-concept", "")) >= 100
+            ),
+            "has_references": bool(uploaded_files.get("reference-proposals")),
+        },
+        "step_2": {
+            "completed": 2 in completed_steps,
+            "rfp_analysis_status": metadata.get("rfp_analysis_status", "pending"),
+            "concept_analysis_status": metadata.get("concept_analysis_status", "pending"),
+            "has_concept_document": bool(metadata.get("concept_document")),
+        },
+        "step_3": {
+            "completed": 3 in completed_steps,
+            "template_status": metadata.get("template_generation_status", "pending"),
+            "has_template": bool(metadata.get("proposal_template")),
+            "has_generated_content": bool(metadata.get("generated_proposal_content")),
+        },
+        "step_4": {
+            "completed": 4 in completed_steps,
+            "feedback_status": metadata.get("draft_feedback_status", "pending"),
+            "has_feedback": bool(metadata.get("draft_feedback_analysis")),
+        },
+    }
+
+
 @router.post("")
 async def create_proposal(proposal: ProposalCreate, user=Depends(get_current_user)):
     """Create a new proposal - only one draft allowed per user"""
@@ -110,11 +224,19 @@ async def create_proposal(proposal: ProposalCreate, user=Depends(get_current_use
 
         # If draft exists, return it instead of creating new one
         if existing_draft:
+            # Compute step completion for existing draft
+            completed_steps = _compute_completed_steps(existing_draft)
+            step_completion = _compute_step_completion(existing_draft)
+
             response_proposal = {
                 k: v
                 for k, v in existing_draft.items()
                 if k not in ["PK", "SK", "GSI1PK", "GSI1SK"]
             }
+            # Add computed completion fields
+            response_proposal["completed_steps"] = completed_steps
+            response_proposal["step_completion"] = step_completion
+
             return {
                 "proposal": response_proposal,
                 "message": "Returning existing draft proposal",
@@ -154,6 +276,34 @@ async def create_proposal(proposal: ProposalCreate, user=Depends(get_current_use
             k: v
             for k, v in new_proposal.items()
             if k not in ["PK", "SK", "GSI1PK", "GSI1SK"]
+        }
+
+        # Add computed completion fields for new proposal
+        response_proposal["completed_steps"] = []
+        response_proposal["step_completion"] = {
+            "step_1": {
+                "completed": False,
+                "has_rfp": False,
+                "has_concept": False,
+                "has_references": False,
+            },
+            "step_2": {
+                "completed": False,
+                "rfp_analysis_status": "pending",
+                "concept_analysis_status": "pending",
+                "has_concept_document": False,
+            },
+            "step_3": {
+                "completed": False,
+                "template_status": "pending",
+                "has_template": False,
+                "has_generated_content": False,
+            },
+            "step_4": {
+                "completed": False,
+                "feedback_status": "pending",
+                "has_feedback": False,
+            },
         }
 
         return {"proposal": response_proposal}
@@ -241,12 +391,20 @@ async def get_proposal(proposal_id: str, user=Depends(get_current_user)):
         if proposal.get("user_id") != user_id:
             raise HTTPException(status_code=403, detail="Access denied")
 
+        # Compute step completion
+        completed_steps = _compute_completed_steps(proposal)
+        step_completion = _compute_step_completion(proposal)
+
         # Remove DynamoDB keys from response
         response_proposal = {
             k: v
             for k, v in proposal.items()
             if k not in ["PK", "SK", "GSI1PK", "GSI1SK"]
         }
+
+        # Add computed completion fields
+        response_proposal["completed_steps"] = completed_steps
+        response_proposal["step_completion"] = step_completion
 
         return response_proposal
     except HTTPException:

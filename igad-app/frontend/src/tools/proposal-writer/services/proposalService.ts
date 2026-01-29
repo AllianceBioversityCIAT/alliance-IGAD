@@ -5,6 +5,7 @@ import type {
   StructureWorkplanAnalysis,
   DraftFeedbackAnalysis,
   ConceptDocument,
+  ProposalStepCompletionStatus,
 } from '../types/analysis'
 
 export interface Proposal {
@@ -39,6 +40,9 @@ export interface Proposal {
   draft_feedback_analysis?: DraftFeedbackAnalysis // Draft feedback analysis data from Step 4
   draft_is_ai_generated?: boolean // Flag indicating if draft was AI-generated (Step 3 → Step 4)
   draft_source?: 'uploaded' | 'ai_generated' // Source of the draft
+  // Backend-computed step completion (survives page refresh)
+  completed_steps?: number[] // Array of completed step numbers [1, 2, 3]
+  step_completion?: Record<string, ProposalStepCompletionStatus> // Detailed status per step
 }
 
 export interface ProposalSection {

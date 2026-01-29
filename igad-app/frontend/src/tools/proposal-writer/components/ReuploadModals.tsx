@@ -411,8 +411,9 @@ export function ReuploadProgressModal({
             {stages.map((stage, index) => (
               <div
                 key={stage}
-                className={`${styles.progressStage} ${currentStageIndex >= index || isComplete ? styles.progressStageActive : ''
-                  } ${hasError && currentStageIndex === index ? styles.progressStageError : ''}`}
+                className={`${styles.progressStage} ${
+                  currentStageIndex >= index || isComplete ? styles.progressStageActive : ''
+                } ${hasError && currentStageIndex === index ? styles.progressStageError : ''}`}
               >
                 <div className={styles.stageIconWrapper}>{renderStageIcon(stage, index)}</div>
                 <span className={styles.stageLabel}>

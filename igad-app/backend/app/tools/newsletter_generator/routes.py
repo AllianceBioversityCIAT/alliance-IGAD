@@ -112,6 +112,113 @@ VALID_AUDIENCE_OPTIONS = [
 # ==================== HELPERS ====================
 
 
+def _compute_completed_steps(newsletter: Dict[str, Any]) -> List[int]:
+    """
+    Compute which steps are completed based on actual data presence.
+
+    This provides a persistent, backend-computed completion status that
+    survives page refreshes and browser changes.
+    """
+    completed = []
+
+    # Step 1: Configuration - requires title and basic config set
+    # Check if configuration_completed flag exists OR has meaningful config
+    has_title = bool(newsletter.get("title"))
+    has_audience = bool(newsletter.get("target_audience"))
+    has_tone = newsletter.get("tone_preset") is not None
+    # Step 1 is complete if we have basic config OR current_step > 1
+    if (has_title and (has_audience or has_tone)) or newsletter.get("current_step", 1) > 1:
+        completed.append(1)
+
+    # Step 2: Content Planning - check TOPICS data
+    # We need to check if retrieval was completed
+    topics_status = newsletter.get("retrieval_status")
+    if topics_status == "completed" or newsletter.get("content_plan_status") == "completed":
+        completed.append(2)
+
+    # Step 3: Outline - check if outline was generated
+    outline_status = newsletter.get("outline_status")
+    has_sections = bool(newsletter.get("sections") or newsletter.get("outline", {}).get("sections"))
+    if outline_status == "completed" and has_sections:
+        completed.append(3)
+
+    # Step 4: Draft - check if draft was generated
+    draft_status = newsletter.get("draft_status")
+    has_draft_sections = bool(
+        newsletter.get("draft_sections") or newsletter.get("draft", {}).get("sections")
+    )
+    if draft_status == "completed" and has_draft_sections:
+        completed.append(4)
+
+    return completed
+
+
+def _compute_step_completion(newsletter: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Compute detailed step completion status for each step.
+
+    Returns a dictionary with detailed status information for each step.
+    """
+    return {
+        "step_1": {
+            "completed": 1 in _compute_completed_steps(newsletter),
+            "has_title": bool(newsletter.get("title")),
+            "has_audience": bool(newsletter.get("target_audience")),
+            "has_tone_preset": newsletter.get("tone_preset") is not None,
+        },
+        "step_2": {
+            "completed": 2 in _compute_completed_steps(newsletter),
+            "status": newsletter.get("retrieval_status", "pending"),
+        },
+        "step_3": {
+            "completed": 3 in _compute_completed_steps(newsletter),
+            "status": newsletter.get("outline_status", "pending"),
+            "has_sections": bool(
+                newsletter.get("sections") or newsletter.get("outline", {}).get("sections")
+            ),
+        },
+        "step_4": {
+            "completed": 4 in _compute_completed_steps(newsletter),
+            "status": newsletter.get("draft_status", "pending"),
+            "has_sections": bool(
+                newsletter.get("draft_sections") or newsletter.get("draft", {}).get("sections")
+            ),
+        },
+    }
+
+
+async def _get_newsletter_with_step_data(pk: str) -> Dict[str, Any]:
+    """
+    Get newsletter metadata along with step completion data from related items.
+
+    This fetches METADATA, TOPICS, OUTLINE, and DRAFT items to compute completion status.
+    """
+    # Fetch all related items in parallel
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        return {}
+
+    topics = await db_client.get_item(pk=pk, sk="TOPICS")
+    outline = await db_client.get_item(pk=pk, sk="OUTLINE")
+    draft = await db_client.get_item(pk=pk, sk="DRAFT")
+
+    # Merge step-related data for completion calculation
+    merged = {**metadata}
+    if topics:
+        merged["retrieval_status"] = topics.get("retrieval_status")
+        merged["content_plan_status"] = (
+            "completed" if topics.get("retrieval_status") == "completed" else "pending"
+        )
+    if outline:
+        merged["outline_status"] = outline.get("outline_status")
+        merged["outline"] = {"sections": outline.get("sections", [])}
+    if draft:
+        merged["draft_status"] = draft.get("draft_status")
+        merged["draft"] = {"sections": draft.get("sections", [])}
+
+    return merged
+
+
 def generate_newsletter_code() -> str:
     """Generate unique code: NL-YYYYMMDD-XXXX"""
     now = datetime.utcnow()
@@ -243,6 +350,12 @@ async def create_newsletter(
                 }
             ],
         }
+        # Get step data for completion calculation
+        pk = f"NEWSLETTER#{existing.get('newsletterCode')}"
+        merged_data = await _get_newsletter_with_step_data(pk)
+        completed_steps = _compute_completed_steps(merged_data) if merged_data else []
+        step_completion = _compute_step_completion(merged_data) if merged_data else {}
+
         return {
             "id": existing.get("id"),
             "newsletterCode": existing.get("newsletterCode"),
@@ -258,6 +371,8 @@ async def create_newsletter(
             "schedule": existing_schedule,
             "geographic_focus": existing.get("geographic_focus", ""),
             "current_step": existing.get("current_step", 1),
+            "completed_steps": completed_steps,  # NEW: Backend-computed completion
+            "step_completion": step_completion,  # NEW: Detailed step status
             "created_at": existing.get("created_at"),
             "updated_at": existing.get("updated_at"),
             "existing": True,  # Flag to indicate this is an existing newsletter
@@ -326,6 +441,13 @@ async def create_newsletter(
         "schedule": default_schedule,
         "geographic_focus": "",
         "current_step": 1,
+        "completed_steps": [],  # NEW: New newsletters have no completed steps
+        "step_completion": {  # NEW: Initial step completion status
+            "step_1": {"completed": False, "has_title": True, "has_audience": False, "has_tone_preset": True},
+            "step_2": {"completed": False, "status": "pending"},
+            "step_3": {"completed": False, "status": "pending", "has_sections": False},
+            "step_4": {"completed": False, "status": "pending", "has_sections": False},
+        },
         "created_at": now,
         "updated_at": now,
     }
@@ -340,11 +462,14 @@ async def get_newsletter(
 
     - Verifies user owns the newsletter
     - Returns full newsletter object including all step data
+    - Includes computed completed_steps and step_completion for progress tracking
     """
     pk = f"NEWSLETTER#{newsletter_code}"
-    item = await db_client.get_item(pk=pk, sk="METADATA")
 
-    if not item:
+    # Get newsletter with step data for completion calculation
+    merged_data = await _get_newsletter_with_step_data(pk)
+
+    if not merged_data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
         )
@@ -353,15 +478,15 @@ async def get_newsletter(
     user_id = user.get("user_id") if user else "anonymous"
 
     # Verify ownership
-    if item.get("user_id") != user_id:
+    if merged_data.get("user_id") != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this newsletter",
         )
 
     # Default schedule for items without schedule
-    item_schedule = item.get("schedule") or {
-        "conceptualFrequency": item.get("frequency", "weekly"),
+    item_schedule = merged_data.get("schedule") or {
+        "conceptualFrequency": merged_data.get("frequency", "weekly"),
         "scheduleRules": [
             {
                 "intervalType": "weeks",
@@ -373,23 +498,29 @@ async def get_newsletter(
         ],
     }
 
+    # Compute step completion
+    completed_steps = _compute_completed_steps(merged_data)
+    step_completion = _compute_step_completion(merged_data)
+
     return {
-        "id": item.get("id"),
-        "newsletterCode": item.get("newsletterCode"),
-        "title": item.get("title", "Newsletter Draft"),
-        "status": item.get("status", "draft"),
-        "target_audience": item.get("target_audience", []),
-        "tone_professional": item.get("tone_professional", 50),
-        "tone_technical": item.get("tone_technical", 50),
-        "tone_preset": item.get("tone_preset", "industry_insight"),
-        "format_type": item.get("format_type", "email"),
-        "length_preference": item.get("length_preference", "standard"),
-        "frequency": item.get("frequency", "weekly"),
+        "id": merged_data.get("id"),
+        "newsletterCode": merged_data.get("newsletterCode"),
+        "title": merged_data.get("title", "Newsletter Draft"),
+        "status": merged_data.get("status", "draft"),
+        "target_audience": merged_data.get("target_audience", []),
+        "tone_professional": merged_data.get("tone_professional", 50),
+        "tone_technical": merged_data.get("tone_technical", 50),
+        "tone_preset": merged_data.get("tone_preset", "industry_insight"),
+        "format_type": merged_data.get("format_type", "email"),
+        "length_preference": merged_data.get("length_preference", "standard"),
+        "frequency": merged_data.get("frequency", "weekly"),
         "schedule": item_schedule,
-        "geographic_focus": item.get("geographic_focus", ""),
-        "current_step": item.get("current_step", 1),
-        "created_at": item.get("created_at"),
-        "updated_at": item.get("updated_at"),
+        "geographic_focus": merged_data.get("geographic_focus", ""),
+        "current_step": merged_data.get("current_step", 1),
+        "completed_steps": completed_steps,  # NEW: Backend-computed completion
+        "step_completion": step_completion,  # NEW: Detailed step status
+        "created_at": merged_data.get("created_at"),
+        "updated_at": merged_data.get("updated_at"),
     }
 
 

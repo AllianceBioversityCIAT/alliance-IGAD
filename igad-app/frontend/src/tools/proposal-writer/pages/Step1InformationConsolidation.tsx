@@ -1147,11 +1147,11 @@ export function Step1InformationConsolidation({
       if (isTimeout) {
         setReferenceUploadError(
           `⏱️ Upload timed out\n\n` +
-          `Large files may take too long to process.\n\n` +
-          `Solutions:\n` +
-          `• Compress your PDF at: ilovepdf.com/compress_pdf\n` +
-          `• Split into smaller documents\n` +
-          `• Use only the most relevant pages`
+            `Large files may take too long to process.\n\n` +
+            `Solutions:\n` +
+            `• Compress your PDF at: ilovepdf.com/compress_pdf\n` +
+            `• Split into smaller documents\n` +
+            `• Use only the most relevant pages`
         )
       } else {
         setReferenceUploadError(String(errorMsg))
@@ -1354,11 +1354,11 @@ export function Step1InformationConsolidation({
       if (isTimeout) {
         setWorkUploadError(
           `⏱️ Upload timed out\n\n` +
-          `Large files may take too long to process.\n\n` +
-          `Solutions:\n` +
-          `• Compress at: ilovepdf.com/compress_pdf\n` +
-          `• Split into smaller documents\n` +
-          `• Use only the most relevant pages`
+            `Large files may take too long to process.\n\n` +
+            `Solutions:\n` +
+            `• Compress at: ilovepdf.com/compress_pdf\n` +
+            `• Split into smaller documents\n` +
+            `• Use only the most relevant pages`
         )
       } else {
         setWorkUploadError(String(errorMsg))
