@@ -88,6 +88,12 @@ Resources:
               Resource: '*'
             - Effect: Allow
               Action:
+                - bedrock:Retrieve
+                - bedrock:RetrieveAndGenerate
+              Resource:
+                - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/NPDZSLKCYX'
+            - Effect: Allow
+              Action:
                 - s3vectors:PutVectors
                 - s3vectors:QueryVectors
                 - s3vectors:GetVectors
