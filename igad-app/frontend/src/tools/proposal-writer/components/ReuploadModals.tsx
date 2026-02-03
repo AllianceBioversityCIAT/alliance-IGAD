@@ -45,7 +45,7 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
 ]
-const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 const STAGE_CONFIG: Record<ReuploadStage, { label: string; icon: 'loader' | 'check' | 'error' }> = {
   idle: { label: 'Preparing...', icon: 'loader' },
@@ -75,7 +75,7 @@ function validateFile(file: File): { valid: boolean; error?: string } {
   if (file.size > MAX_FILE_SIZE) {
     return {
       valid: false,
-      error: `File size exceeds 2MB limit. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+      error: `File size exceeds 10MB limit. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
     }
   }
 
@@ -282,7 +282,7 @@ export function ConceptReuploadModal({ isOpen, onClose, onFileSelect }: ConceptR
               <p className={styles.dropZoneSubtext}>or click to browse</p>
               <div className={styles.fileRequirements}>
                 <span>Supported: PDF, DOCX, TXT</span>
-                <span>Max size: 2MB</span>
+                <span>Max size: 10MB</span>
               </div>
             </div>
           ) : (

@@ -138,3 +138,29 @@ export interface ProposalTemplate {
   }>
   [key: string]: unknown // Allow for additional dynamic properties
 }
+
+// Step Completion Status Types (for backend-computed progress)
+export interface ProposalStepCompletionStatus {
+  completed: boolean
+  // Step 1 specific
+  has_rfp?: boolean
+  has_concept?: boolean
+  has_references?: boolean
+  // Step 2 specific
+  rfp_analysis_status?: string
+  concept_analysis_status?: string
+  has_concept_document?: boolean
+  // Step 3 specific
+  template_status?: string
+  has_template?: boolean
+  has_generated_content?: boolean
+  // Step 4 specific
+  feedback_status?: string
+  has_feedback?: boolean
+}
+
+// Proposal with computed step completion
+export interface ProposalWithCompletion {
+  completed_steps?: number[]
+  step_completion?: Record<string, ProposalStepCompletionStatus>
+}

@@ -26,10 +26,6 @@ aws-credentials.json
 specs/cost/
 
 # Temporary and Debug Files
-test_*.js
-test_*.py
-*_test.js
-*_test.py
 debug_*.js
 debug_*.py
 

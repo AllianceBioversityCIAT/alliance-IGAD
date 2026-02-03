@@ -7,6 +7,16 @@
 import { apiClient } from '@/shared/services/apiClient'
 import type { PublishingSchedule, ExportFormat } from '../types/newsletter'
 
+// Step completion status interface
+export interface StepCompletionStatus {
+  completed: boolean
+  status?: string
+  has_title?: boolean
+  has_audience?: boolean
+  has_tone_preset?: boolean
+  has_sections?: boolean
+}
+
 // Types
 export interface NewsletterConfig {
   id: string
@@ -25,6 +35,9 @@ export interface NewsletterConfig {
   current_step: number
   created_at: string
   updated_at: string
+  // Backend-computed step completion (survives page refresh)
+  completed_steps?: number[] // Array of completed step numbers [1, 2, 3]
+  step_completion?: Record<string, StepCompletionStatus> // Detailed status per step
 }
 
 export interface NewsletterListItem {

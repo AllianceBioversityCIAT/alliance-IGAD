@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """
 Add Newsletter Generator Step 4 - Draft Generation Prompt to DynamoDB
+
+Uses the Prompts Manager schema:
+- PK: prompt#{uuid}
+- SK: version#{version}
 """
 
+import uuid
 from datetime import datetime, timezone
 
 import boto3
@@ -15,11 +20,15 @@ def add_newsletter_draft_prompt():
     dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
     table = dynamodb.Table("igad-testing-main-table")
 
+    # Generate unique ID for the prompt (Prompts Manager format)
+    prompt_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+
     # Newsletter Draft Generation Prompt
     prompt_data = {
-        "PK": "PROMPT#newsletter_generator_step-4_draft",
-        "SK": "newsletter_generator#step-4#step-4#draft_generation",
-        "prompt_text": "",  # Legacy field
+        "PK": f"prompt#{prompt_id}",
+        "SK": "version#1",
+        "id": prompt_id,
         "name": "Newsletter Draft Generation",
         "description": "Generates complete, publication-ready newsletter content from an outline. Transforms outline items into full sections with consistent tone and formatting.",
         "system_prompt": """You are an expert newsletter writer specializing in agricultural development and food security content for the IGAD (Intergovernmental Authority on Development) region in East Africa.
@@ -136,19 +145,35 @@ IMPORTANT:
         "route": "step-4",
         "sub_section": "step-4",
         "categories": ["draft_generation"],
-        "version": "1.0",
-        "status": "published",
+        "tags": ["newsletter", "draft", "generation", "ai"],
+        "version": 1,
         "is_active": True,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": "system",
+        "updated_by": "system",
+        "created_at": now,
+        "updated_at": now,
+        "comments_count": 0,
     }
 
     try:
+        # Delete old prompt with incorrect schema if it exists
+        try:
+            table.delete_item(
+                Key={
+                    "PK": "PROMPT#newsletter_generator_step-4_draft",
+                    "SK": "newsletter_generator#step-4#step-4#draft_generation",
+                }
+            )
+            print("🗑️ Deleted old prompt with incorrect schema")
+        except Exception:
+            pass  # Ignore if doesn't exist
+
         # Add prompt to DynamoDB
         table.put_item(Item=prompt_data)
         print("✅ Successfully added Newsletter Draft Generation prompt to DynamoDB")
         print(f"   PK: {prompt_data['PK']}")
         print(f"   SK: {prompt_data['SK']}")
+        print(f"   ID: {prompt_id}")
         print(f"   Name: {prompt_data['name']}")
         print(f"   Section: {prompt_data['section']}")
         print(f"   Route: {prompt_data['route']}")

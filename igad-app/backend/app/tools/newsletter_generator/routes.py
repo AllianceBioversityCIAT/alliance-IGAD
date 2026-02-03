@@ -112,6 +112,113 @@ VALID_AUDIENCE_OPTIONS = [
 # ==================== HELPERS ====================
 
 
+def _compute_completed_steps(newsletter: Dict[str, Any]) -> List[int]:
+    """
+    Compute which steps are completed based on actual data presence.
+
+    This provides a persistent, backend-computed completion status that
+    survives page refreshes and browser changes.
+    """
+    completed = []
+
+    # Step 1: Configuration - requires title and basic config set
+    # Check if configuration_completed flag exists OR has meaningful config
+    has_title = bool(newsletter.get("title"))
+    has_audience = bool(newsletter.get("target_audience"))
+    has_tone = newsletter.get("tone_preset") is not None
+    # Step 1 is complete if we have basic config OR current_step > 1
+    if (has_title and (has_audience or has_tone)) or newsletter.get("current_step", 1) > 1:
+        completed.append(1)
+
+    # Step 2: Content Planning - check TOPICS data
+    # We need to check if retrieval was completed
+    topics_status = newsletter.get("retrieval_status")
+    if topics_status == "completed" or newsletter.get("content_plan_status") == "completed":
+        completed.append(2)
+
+    # Step 3: Outline - check if outline was generated
+    outline_status = newsletter.get("outline_status")
+    has_sections = bool(newsletter.get("sections") or newsletter.get("outline", {}).get("sections"))
+    if outline_status == "completed" and has_sections:
+        completed.append(3)
+
+    # Step 4: Draft - check if draft was generated
+    draft_status = newsletter.get("draft_status")
+    has_draft_sections = bool(
+        newsletter.get("draft_sections") or newsletter.get("draft", {}).get("sections")
+    )
+    if draft_status == "completed" and has_draft_sections:
+        completed.append(4)
+
+    return completed
+
+
+def _compute_step_completion(newsletter: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Compute detailed step completion status for each step.
+
+    Returns a dictionary with detailed status information for each step.
+    """
+    return {
+        "step_1": {
+            "completed": 1 in _compute_completed_steps(newsletter),
+            "has_title": bool(newsletter.get("title")),
+            "has_audience": bool(newsletter.get("target_audience")),
+            "has_tone_preset": newsletter.get("tone_preset") is not None,
+        },
+        "step_2": {
+            "completed": 2 in _compute_completed_steps(newsletter),
+            "status": newsletter.get("retrieval_status", "pending"),
+        },
+        "step_3": {
+            "completed": 3 in _compute_completed_steps(newsletter),
+            "status": newsletter.get("outline_status", "pending"),
+            "has_sections": bool(
+                newsletter.get("sections") or newsletter.get("outline", {}).get("sections")
+            ),
+        },
+        "step_4": {
+            "completed": 4 in _compute_completed_steps(newsletter),
+            "status": newsletter.get("draft_status", "pending"),
+            "has_sections": bool(
+                newsletter.get("draft_sections") or newsletter.get("draft", {}).get("sections")
+            ),
+        },
+    }
+
+
+async def _get_newsletter_with_step_data(pk: str) -> Dict[str, Any]:
+    """
+    Get newsletter metadata along with step completion data from related items.
+
+    This fetches METADATA, TOPICS, OUTLINE, and DRAFT items to compute completion status.
+    """
+    # Fetch all related items in parallel
+    metadata = await db_client.get_item(pk=pk, sk="METADATA")
+    if not metadata:
+        return {}
+
+    topics = await db_client.get_item(pk=pk, sk="TOPICS")
+    outline = await db_client.get_item(pk=pk, sk="OUTLINE")
+    draft = await db_client.get_item(pk=pk, sk="DRAFT")
+
+    # Merge step-related data for completion calculation
+    merged = {**metadata}
+    if topics:
+        merged["retrieval_status"] = topics.get("retrieval_status")
+        merged["content_plan_status"] = (
+            "completed" if topics.get("retrieval_status") == "completed" else "pending"
+        )
+    if outline:
+        merged["outline_status"] = outline.get("outline_status")
+        merged["outline"] = {"sections": outline.get("sections", [])}
+    if draft:
+        merged["draft_status"] = draft.get("draft_status")
+        merged["draft"] = {"sections": draft.get("sections", [])}
+
+    return merged
+
+
 def generate_newsletter_code() -> str:
     """Generate unique code: NL-YYYYMMDD-XXXX"""
     now = datetime.utcnow()
@@ -243,6 +350,12 @@ async def create_newsletter(
                 }
             ],
         }
+        # Get step data for completion calculation
+        pk = f"NEWSLETTER#{existing.get('newsletterCode')}"
+        merged_data = await _get_newsletter_with_step_data(pk)
+        completed_steps = _compute_completed_steps(merged_data) if merged_data else []
+        step_completion = _compute_step_completion(merged_data) if merged_data else {}
+
         return {
             "id": existing.get("id"),
             "newsletterCode": existing.get("newsletterCode"),
@@ -258,6 +371,8 @@ async def create_newsletter(
             "schedule": existing_schedule,
             "geographic_focus": existing.get("geographic_focus", ""),
             "current_step": existing.get("current_step", 1),
+            "completed_steps": completed_steps,  # NEW: Backend-computed completion
+            "step_completion": step_completion,  # NEW: Detailed step status
             "created_at": existing.get("created_at"),
             "updated_at": existing.get("updated_at"),
             "existing": True,  # Flag to indicate this is an existing newsletter
@@ -326,6 +441,13 @@ async def create_newsletter(
         "schedule": default_schedule,
         "geographic_focus": "",
         "current_step": 1,
+        "completed_steps": [],  # NEW: New newsletters have no completed steps
+        "step_completion": {  # NEW: Initial step completion status
+            "step_1": {"completed": False, "has_title": True, "has_audience": False, "has_tone_preset": True},
+            "step_2": {"completed": False, "status": "pending"},
+            "step_3": {"completed": False, "status": "pending", "has_sections": False},
+            "step_4": {"completed": False, "status": "pending", "has_sections": False},
+        },
         "created_at": now,
         "updated_at": now,
     }
@@ -340,11 +462,14 @@ async def get_newsletter(
 
     - Verifies user owns the newsletter
     - Returns full newsletter object including all step data
+    - Includes computed completed_steps and step_completion for progress tracking
     """
     pk = f"NEWSLETTER#{newsletter_code}"
-    item = await db_client.get_item(pk=pk, sk="METADATA")
 
-    if not item:
+    # Get newsletter with step data for completion calculation
+    merged_data = await _get_newsletter_with_step_data(pk)
+
+    if not merged_data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Newsletter not found"
         )
@@ -353,15 +478,15 @@ async def get_newsletter(
     user_id = user.get("user_id") if user else "anonymous"
 
     # Verify ownership
-    if item.get("user_id") != user_id:
+    if merged_data.get("user_id") != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this newsletter",
         )
 
     # Default schedule for items without schedule
-    item_schedule = item.get("schedule") or {
-        "conceptualFrequency": item.get("frequency", "weekly"),
+    item_schedule = merged_data.get("schedule") or {
+        "conceptualFrequency": merged_data.get("frequency", "weekly"),
         "scheduleRules": [
             {
                 "intervalType": "weeks",
@@ -373,23 +498,29 @@ async def get_newsletter(
         ],
     }
 
+    # Compute step completion
+    completed_steps = _compute_completed_steps(merged_data)
+    step_completion = _compute_step_completion(merged_data)
+
     return {
-        "id": item.get("id"),
-        "newsletterCode": item.get("newsletterCode"),
-        "title": item.get("title", "Newsletter Draft"),
-        "status": item.get("status", "draft"),
-        "target_audience": item.get("target_audience", []),
-        "tone_professional": item.get("tone_professional", 50),
-        "tone_technical": item.get("tone_technical", 50),
-        "tone_preset": item.get("tone_preset", "industry_insight"),
-        "format_type": item.get("format_type", "email"),
-        "length_preference": item.get("length_preference", "standard"),
-        "frequency": item.get("frequency", "weekly"),
+        "id": merged_data.get("id"),
+        "newsletterCode": merged_data.get("newsletterCode"),
+        "title": merged_data.get("title", "Newsletter Draft"),
+        "status": merged_data.get("status", "draft"),
+        "target_audience": merged_data.get("target_audience", []),
+        "tone_professional": merged_data.get("tone_professional", 50),
+        "tone_technical": merged_data.get("tone_technical", 50),
+        "tone_preset": merged_data.get("tone_preset", "industry_insight"),
+        "format_type": merged_data.get("format_type", "email"),
+        "length_preference": merged_data.get("length_preference", "standard"),
+        "frequency": merged_data.get("frequency", "weekly"),
         "schedule": item_schedule,
-        "geographic_focus": item.get("geographic_focus", ""),
-        "current_step": item.get("current_step", 1),
-        "created_at": item.get("created_at"),
-        "updated_at": item.get("updated_at"),
+        "geographic_focus": merged_data.get("geographic_focus", ""),
+        "current_step": merged_data.get("current_step", 1),
+        "completed_steps": completed_steps,  # NEW: Backend-computed completion
+        "step_completion": step_completion,  # NEW: Detailed step status
+        "created_at": merged_data.get("created_at"),
+        "updated_at": merged_data.get("updated_at"),
     }
 
 
@@ -1422,7 +1553,7 @@ class AICompleteRequest(BaseModel):
 class ExportRequest(BaseModel):
     """Request model for exporting the newsletter."""
 
-    format: str = Field(..., pattern="^(html|markdown|text)$")
+    format: str = Field(..., pattern="^(html|markdown|text|pdf|blog)$")
 
 
 @router.get("/{newsletter_code}/draft")
@@ -1892,6 +2023,14 @@ async def export_draft(
         content = _generate_markdown_export(title, subtitle, sections)
         filename = f"{newsletter_code}.md"
         mime_type = "text/markdown"
+    elif request.format == "pdf":
+        content = _generate_pdf_export(title, subtitle, sections)
+        filename = f"{newsletter_code}.pdf"
+        mime_type = "application/pdf"
+    elif request.format == "blog":
+        content = _generate_blog_export(title, subtitle, sections)
+        filename = f"{newsletter_code}-blog.html"
+        mime_type = "text/html"
     else:  # text
         content = _generate_text_export(title, subtitle, sections)
         filename = f"{newsletter_code}.txt"
@@ -2036,6 +2175,230 @@ def _strip_markdown(markdown_text: str) -> str:
     text = re.sub(r"\[(.+?)\]\(.+?\)", r"\1", text)
 
     return text
+
+
+def _generate_pdf_export(
+    title: str, subtitle: str, sections: List[Dict[str, Any]]
+) -> str:
+    """
+    Generate PDF export.
+
+    Uses base64-encoded HTML-to-PDF approach for Lambda compatibility.
+    Returns base64-encoded PDF content.
+    """
+    import base64
+
+    try:
+        # Try using weasyprint if available
+        from weasyprint import HTML
+
+        html_content = _generate_html_export(title, subtitle, sections)
+        pdf_bytes = HTML(string=html_content).write_pdf()
+        return base64.b64encode(pdf_bytes).decode("utf-8")
+    except ImportError:
+        # Fallback: Return HTML with print-friendly styling
+        # The frontend will handle printing to PDF
+        logger.warning("WeasyPrint not available, falling back to print-friendly HTML")
+        return _generate_print_html_export(title, subtitle, sections)
+
+
+def _generate_print_html_export(
+    title: str, subtitle: str, sections: List[Dict[str, Any]]
+) -> str:
+    """Generate print-friendly HTML for PDF conversion."""
+    sections_html = ""
+    for section in sections:
+        section_title = section.get("title", "")
+        content = section.get("content", "")
+        content_html = _markdown_to_html(content)
+        sections_html += f"""
+        <section class="newsletter-section">
+            <h2>{section_title}</h2>
+            <div class="section-content">{content_html}</div>
+        </section>
+        """
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{title}</title>
+    <style>
+        @page {{
+            size: A4;
+            margin: 2cm;
+        }}
+        body {{
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+        }}
+        header {{
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #166534;
+        }}
+        h1 {{
+            color: #111;
+            font-size: 24pt;
+            margin: 0 0 10px 0;
+        }}
+        .subtitle {{
+            color: #666;
+            font-size: 14pt;
+            font-style: italic;
+        }}
+        .newsletter-section {{
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }}
+        h2 {{
+            color: #166534;
+            font-size: 16pt;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+        }}
+        h3 {{
+            color: #374151;
+            font-size: 14pt;
+        }}
+        p {{
+            margin: 0 0 12px 0;
+        }}
+        a {{
+            color: #166534;
+            text-decoration: underline;
+        }}
+        footer {{
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 10pt;
+            color: #999;
+        }}
+        @media print {{
+            body {{
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{title}</h1>
+        {f'<p class="subtitle">{subtitle}</p>' if subtitle else ''}
+    </header>
+    <main>
+        {sections_html}
+    </main>
+    <footer>
+        <p>Generated with IGAD Innovation Hub Newsletter Generator</p>
+    </footer>
+</body>
+</html>"""
+
+
+def _generate_blog_export(
+    title: str, subtitle: str, sections: List[Dict[str, Any]]
+) -> str:
+    """
+    Generate clean blog/web HTML export.
+
+    Uses semantic HTML with minimal styling suitable for CMS embedding.
+    """
+    sections_html = ""
+    for section in sections:
+        section_title = section.get("title", "")
+        content = section.get("content", "")
+        content_html = _markdown_to_html(content)
+        sections_html += f"""
+    <section class="newsletter-section">
+        <h2>{section_title}</h2>
+        {content_html}
+    </section>
+"""
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <meta name="description" content="{subtitle if subtitle else title}">
+    <style>
+        /* Minimal base styles - customize for your site */
+        .newsletter-container {{
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+        }}
+        .newsletter-header {{
+            margin-bottom: 2em;
+        }}
+        .newsletter-header h1 {{
+            font-size: 2.5em;
+            margin: 0 0 0.25em 0;
+            color: #111;
+        }}
+        .newsletter-subtitle {{
+            font-size: 1.25em;
+            color: #666;
+            margin: 0;
+        }}
+        .newsletter-section {{
+            margin-bottom: 2em;
+        }}
+        .newsletter-section h2 {{
+            font-size: 1.5em;
+            color: #166534;
+            margin: 0 0 0.5em 0;
+        }}
+        .newsletter-section h3 {{
+            font-size: 1.25em;
+            color: #374151;
+        }}
+        .newsletter-section p {{
+            margin: 0 0 1em 0;
+        }}
+        .newsletter-section a {{
+            color: #166534;
+        }}
+        .newsletter-footer {{
+            margin-top: 3em;
+            padding-top: 1em;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.875em;
+            color: #6b7280;
+        }}
+    </style>
+</head>
+<body>
+<article class="newsletter-container">
+    <header class="newsletter-header">
+        <h1>{title}</h1>
+        {f'<p class="newsletter-subtitle">{subtitle}</p>' if subtitle else ''}
+    </header>
+
+    <div class="newsletter-content">
+{sections_html}
+    </div>
+
+    <footer class="newsletter-footer">
+        <p>Published by IGAD Innovation Hub</p>
+    </footer>
+</article>
+</body>
+</html>"""
 
 
 @router.post("/ai-complete")

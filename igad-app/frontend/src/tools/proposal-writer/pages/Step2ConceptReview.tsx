@@ -373,7 +373,7 @@ function StrongAspectsCard({ strongAspects }: { strongAspects: string[] }) {
       <div className={styles.sectionHeader}>
         <Award className={styles.sectionIcon} size={24} />
         <div>
-          <h2 className={styles.sectionTitle}>Strong Aspects of Your Proposal</h2>
+          <h2 className={styles.sectionTitle}>Strong Aspects of Your Concept</h2>
           <p className={styles.sectionSubtitle}>Key strengths identified in your initial concept</p>
         </div>
       </div>

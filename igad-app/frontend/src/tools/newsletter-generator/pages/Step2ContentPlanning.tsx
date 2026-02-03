@@ -24,6 +24,7 @@ import { RetrievalProgress } from '../components/RetrievalProgress'
 import { useNewsletter } from '../hooks/useNewsletter'
 import { newsletterService, type TopicsData } from '../services/newsletterService'
 import { useToast } from '@/shared/hooks/useToast'
+import { getEffectiveCompletedSteps } from '@/shared/hooks/useStepCompletion'
 import { DEFAULT_NEWSLETTER_CONFIG, INFORMATION_TYPES, CATEGORY_CONFIG } from '../types/newsletter'
 import styles from './newsletterGenerator.module.css'
 import step2Styles from './Step2ContentPlanning.module.css'
@@ -342,11 +343,11 @@ export function Step2ContentPlanning() {
     )
   }, [topicsData, newsletter])
 
-  // Calculate completed steps
-  const completedSteps: number[] = []
-  if (newsletter?.current_step && newsletter.current_step > 1) {
-    completedSteps.push(1)
-  }
+  // Use backend-computed completed steps (survives page refresh)
+  const completedSteps = getEffectiveCompletedSteps(
+    newsletter?.completed_steps,
+    newsletter?.current_step ?? 1
+  )
 
   // Check if can proceed
   const canProceed = useMemo(() => {

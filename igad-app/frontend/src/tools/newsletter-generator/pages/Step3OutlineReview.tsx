@@ -31,6 +31,7 @@ import {
   type OutlineItem,
 } from '../services/newsletterService'
 import { useToast } from '@/shared/hooks/useToast'
+import { getEffectiveCompletedSteps } from '@/shared/hooks/useStepCompletion'
 import {
   DEFAULT_NEWSLETTER_CONFIG,
   INFORMATION_TYPES,
@@ -234,14 +235,11 @@ export function Step3OutlineReview() {
     )
   }, [topicsData])
 
-  // Calculate completed steps
-  const completedSteps: number[] = []
-  if (newsletter?.current_step && newsletter.current_step > 1) {
-    completedSteps.push(1)
-  }
-  if (newsletter?.current_step && newsletter.current_step > 2) {
-    completedSteps.push(2)
-  }
+  // Use backend-computed completed steps (survives page refresh)
+  const completedSteps = getEffectiveCompletedSteps(
+    newsletter?.completed_steps,
+    newsletter?.current_step ?? 1
+  )
 
   // Check if has custom items
   const hasCustomItems = useMemo(() => {

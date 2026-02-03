@@ -49,6 +49,16 @@ export const SCHEDULE_PRESETS: Record<string, ScheduleRule> = {
   },
 }
 
+// Step completion status detail
+export interface StepCompletionStatus {
+  completed: boolean
+  status?: string
+  has_title?: boolean
+  has_audience?: boolean
+  has_tone_preset?: boolean
+  has_sections?: boolean
+}
+
 export interface Newsletter {
   id: string
   newsletterCode: string
@@ -71,6 +81,10 @@ export interface Newsletter {
   current_step: number
   created_at: string
   updated_at: string
+
+  // Backend-computed step completion (survives page refresh)
+  completed_steps?: number[] // Array of completed step numbers [1, 2, 3]
+  step_completion?: Record<string, StepCompletionStatus> // Detailed status per step
 }
 
 export type NewsletterStatus = 'draft' | 'processing' | 'completed' | 'exported'
@@ -657,7 +671,7 @@ export interface DraftData {
 }
 
 // Export format options
-export type ExportFormat = 'html' | 'markdown' | 'text'
+export type ExportFormat = 'html' | 'markdown' | 'text' | 'pdf' | 'blog'
 
 export interface ExportFormatOption {
   value: ExportFormat
@@ -668,15 +682,27 @@ export interface ExportFormatOption {
 
 export const EXPORT_FORMAT_OPTIONS: ExportFormatOption[] = [
   {
+    value: 'pdf',
+    label: 'PDF Document',
+    description: 'Print-ready PDF format',
+    icon: 'file-down',
+  },
+  {
     value: 'html',
-    label: 'HTML Email',
+    label: 'Email HTML',
     description: 'Styled HTML ready for email clients',
     icon: 'mail',
   },
   {
+    value: 'blog',
+    label: 'Blog / Web Page',
+    description: 'Clean HTML for web publishing',
+    icon: 'globe',
+  },
+  {
     value: 'markdown',
     label: 'Markdown',
-    description: 'Plain markdown format',
+    description: 'Plain markdown for CMS/GitHub',
     icon: 'file-text',
   },
   {

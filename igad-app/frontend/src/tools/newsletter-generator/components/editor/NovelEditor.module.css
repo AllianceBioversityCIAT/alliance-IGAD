@@ -1,0 +1,289 @@
+/* NovelEditor Styles */
+
+.editorContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.novelEditor {
+  min-height: 200px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.novelEditor:focus-within {
+  border-color: #166534;
+  box-shadow: 0 0 0 2px rgba(22, 101, 52, 0.1);
+}
+
+.editorContent {
+  min-height: 200px;
+  padding: 16px;
+  outline: none;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #111827;
+}
+
+/* Placeholder */
+.editorContent[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  font-style: italic;
+}
+
+/* Typography inside editor */
+.editorContent h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+  color: #111827;
+}
+
+.editorContent h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+  color: #111827;
+}
+
+.editorContent h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.5rem;
+  color: #111827;
+}
+
+.editorContent p {
+  margin: 0 0 0.75rem;
+}
+
+.editorContent ul,
+.editorContent ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.editorContent li {
+  margin: 0.25rem 0;
+}
+
+.editorContent strong {
+  font-weight: 600;
+}
+
+.editorContent em {
+  font-style: italic;
+}
+
+.editorContent a {
+  color: #166534;
+  text-decoration: underline;
+}
+
+.editorContent a:hover {
+  color: #14532d;
+}
+
+.editorContent blockquote {
+  border-left: 3px solid #166534;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #4b5563;
+  font-style: italic;
+}
+
+.editorContent code {
+  background: #f3f4f6;
+  padding: 0.125rem 0.25rem;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875em;
+}
+
+.editorContent pre {
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.editorContent pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.editorContent hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.5rem 0;
+}
+
+/* Hint bar */
+.editorHint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.hintItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hintItem kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 2px 6px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #374151;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Novel editor internal overrides */
+:global(.novel-editor) {
+  font-family: inherit;
+}
+
+:global(.novel-editor .ProseMirror) {
+  min-height: 200px;
+  padding: 16px;
+  outline: none;
+}
+
+:global(.novel-editor .ProseMirror p.is-editor-empty:first-child::before) {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Command menu */
+.commandMenu {
+  position: absolute;
+  z-index: 50;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  max-height: 300px;
+  overflow-y: auto;
+  min-width: 200px;
+}
+
+.commandEmpty {
+  padding: 12px 16px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.commandItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.commandItem:hover,
+.commandItem[aria-selected="true"] {
+  background: #f0fdf4;
+}
+
+.commandIcon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 6px;
+  color: #166534;
+  flex-shrink: 0;
+}
+
+.commandText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.commandTitle {
+  font-weight: 500;
+  color: #111827;
+  font-size: 14px;
+}
+
+.commandDescription {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* AI completion loading */
+:global(.novel-ai-loading) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border-radius: 6px;
+  color: #166534;
+  font-size: 13px;
+}
+
+:global(.novel-ai-loading::before) {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(22, 101, 52, 0.3);
+  border-top-color: #166534;
+  border-radius: 50%;
+  animation: novelSpin 0.8s linear infinite;
+}
+
+@keyframes novelSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .editorHint {
+    gap: 12px;
+    font-size: 11px;
+  }
+
+  .hintItem kbd {
+    padding: 1px 4px;
+    font-size: 10px;
+  }
+}

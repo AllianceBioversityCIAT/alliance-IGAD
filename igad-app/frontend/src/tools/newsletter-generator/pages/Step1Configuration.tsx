@@ -7,6 +7,7 @@ import { ToneSelector } from '../components/ToneSelector'
 import { LengthSelector } from '../components/LengthSelector'
 import { PublishingStrategy } from '../components/PublishingStrategy'
 import { useNewsletter } from '../hooks/useNewsletter'
+import { getEffectiveCompletedSteps } from '@/shared/hooks/useStepCompletion'
 import {
   AUDIENCE_OPTIONS,
   FORMAT_OPTIONS,
@@ -40,8 +41,11 @@ export function Step1Configuration() {
   const schedule = newsletter?.schedule ?? DEFAULT_NEWSLETTER_CONFIG.schedule
   const geographicFocus = newsletter?.geographic_focus ?? DEFAULT_NEWSLETTER_CONFIG.geographic_focus
 
-  // Calculate completed steps (for now, step 1 is complete if audience is selected)
-  const completedSteps = newsletter?.current_step && newsletter.current_step > 1 ? [1] : []
+  // Use backend-computed completed steps (survives page refresh)
+  const completedSteps = getEffectiveCompletedSteps(
+    newsletter?.completed_steps,
+    newsletter?.current_step ?? 1
+  )
 
   // Handlers
   const handleAudienceChange = (selectedValues: string[]) => {

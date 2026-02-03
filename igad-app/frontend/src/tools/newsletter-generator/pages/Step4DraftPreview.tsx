@@ -32,6 +32,8 @@ import {
   Save,
   Mail,
   File,
+  FileDown,
+  Globe,
 } from 'lucide-react'
 import { NewsletterLayout } from '../components/NewsletterLayout'
 import { useNewsletter } from '../hooks/useNewsletter'
@@ -42,6 +44,7 @@ import {
   type OutlineData,
 } from '../services/newsletterService'
 import { useToast } from '@/shared/hooks/useToast'
+import { getEffectiveCompletedSteps } from '@/shared/hooks/useStepCompletion'
 import {
   DEFAULT_NEWSLETTER_CONFIG,
   LENGTH_OPTIONS,
@@ -264,17 +267,11 @@ export function Step4DraftPreview() {
     )
   }, [outlineData])
 
-  // Calculate completed steps
-  const completedSteps: number[] = []
-  if (newsletter?.current_step && newsletter.current_step > 1) {
-    completedSteps.push(1)
-  }
-  if (newsletter?.current_step && newsletter.current_step > 2) {
-    completedSteps.push(2)
-  }
-  if (newsletter?.current_step && newsletter.current_step > 3) {
-    completedSteps.push(3)
-  }
+  // Use backend-computed completed steps (survives page refresh)
+  const completedSteps = getEffectiveCompletedSteps(
+    newsletter?.completed_steps,
+    newsletter?.current_step ?? 1
+  )
 
   // Check if can export
   const canExport = useMemo(() => {
@@ -433,18 +430,58 @@ export function Step4DraftPreview() {
       const result = await newsletterService.exportDraft(newsletterCode, format)
 
       if (result.success) {
-        // Create and download file
-        const blob = new Blob([result.content], { type: result.mime_type })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = result.filename
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
-
-        showSuccess(`Newsletter exported as ${format.toUpperCase()}`)
+        // Handle PDF export specially
+        if (format === 'pdf') {
+          // Check if content is base64-encoded PDF or HTML
+          if (result.content.startsWith('<!DOCTYPE') || result.content.startsWith('<html')) {
+            // HTML fallback - open in new window and trigger print dialog
+            const printWindow = window.open('', '_blank')
+            if (printWindow) {
+              printWindow.document.write(result.content)
+              printWindow.document.close()
+              // Wait for content to load then trigger print
+              printWindow.onload = () => {
+                printWindow.print()
+              }
+              // If onload doesn't fire (content already loaded), trigger print after short delay
+              setTimeout(() => {
+                if (!printWindow.closed) {
+                  printWindow.print()
+                }
+              }, 500)
+            }
+            showSuccess('Print dialog opened - save as PDF')
+          } else {
+            // Base64-encoded PDF - decode and download
+            const binaryString = atob(result.content)
+            const bytes = new Uint8Array(binaryString.length)
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i)
+            }
+            const blob = new Blob([bytes], { type: 'application/pdf' })
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = result.filename
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+            showSuccess('Newsletter exported as PDF')
+          }
+        } else {
+          // Standard file download for other formats
+          const blob = new Blob([result.content], { type: result.mime_type })
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = result.filename
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+          showSuccess(`Newsletter exported as ${format.toUpperCase()}`)
+        }
       } else {
         showError('Failed to export newsletter')
       }
@@ -498,7 +535,9 @@ export function Step4DraftPreview() {
               className={step4Styles.exportOption}
               onClick={() => handleExport(option.value)}
             >
+              {option.value === 'pdf' && <FileDown size={16} />}
               {option.value === 'html' && <Mail size={16} />}
+              {option.value === 'blog' && <Globe size={16} />}
               {option.value === 'markdown' && <FileText size={16} />}
               {option.value === 'text' && <File size={16} />}
               <div className={step4Styles.exportOptionText}>

@@ -434,6 +434,8 @@ export function ProposalWriterPage() {
 
   // Track if step completion data has been loaded for this session
   const stepCompletionLoadedRef = useRef(false)
+  // Track if backend-computed completed_steps were loaded (to prefer over local calculation)
+  const backendCompletedStepsLoadedRef = useRef(false)
 
   // Loading state for step data (used by Step 4 to show skeleton)
   const [isLoadingStepData, setIsLoadingStepData] = useState(true)
@@ -461,21 +463,24 @@ export function ProposalWriterPage() {
         const proposal = await proposalService.getProposal(proposalId)
 
         if (proposal) {
+          // Load backend-computed completed_steps (survives page refresh)
+          if (proposal.completed_steps && proposal.completed_steps.length > 0) {
+            setCompletedSteps(proposal.completed_steps)
+            backendCompletedStepsLoadedRef.current = true
+          }
+
           // Load structure workplan analysis (Step 3 completion)
           if (proposal.structure_workplan_analysis) {
-            // Removed console.log'✅ Loaded structure_workplan_analysis for Step 3 completion')
             setStructureWorkplanAnalysis(proposal.structure_workplan_analysis)
           }
 
           // Load draft feedback analysis (Step 4 completion)
           if (proposal.draft_feedback_analysis) {
-            // Removed console.log'✅ Loaded draft_feedback_analysis for Step 4 completion')
             setDraftFeedbackAnalysis(proposal.draft_feedback_analysis)
           }
 
           // Load proposal template generated flag
           if (proposal.proposal_template_generated) {
-            // Removed console.log'✅ Loaded proposal_template_generated for Step 3 completion')
             setProposalTemplate({
               generated: true,
               timestamp: proposal.proposal_template_generated,
@@ -484,7 +489,6 @@ export function ProposalWriterPage() {
             proposal.structure_workplan_completed_at &&
             proposal.structure_workplan_analysis
           ) {
-            // Removed console.log'✅ Using structure_workplan_completed_at as fallback for Step 3')
             setProposalTemplate({
               generated: true,
               timestamp: proposal.structure_workplan_completed_at,
@@ -493,14 +497,12 @@ export function ProposalWriterPage() {
 
           // Load concept document (Step 2 completion)
           if (proposal.concept_document_v2) {
-            // Removed console.log'✅ Loaded concept_document_v2 for Step 2 completion')
             setConceptDocument(proposal.concept_document_v2)
           }
 
           // Load uploaded draft files
           const draftFiles = proposal.uploaded_files?.['draft-proposal'] || []
           if (draftFiles.length > 0) {
-            // Removed console.log'✅ Loaded draft-proposal files:', draftFiles)
             setFormData(prev => ({
               ...prev,
               uploadedFiles: {
@@ -517,7 +519,6 @@ export function ProposalWriterPage() {
 
           // Load proposal status
           if (proposal.status) {
-            // Removed console.log'✅ Loaded proposal status:', proposal.status)
             setProposalStatus(proposal.status)
           }
         }
@@ -755,8 +756,11 @@ export function ProposalWriterPage() {
   ])
 
   // Calculate completed steps based on available data AND analyses
-  // This ensures steps are only marked complete when their analyses exist
-  // Invalidation cascade will clear analyses, causing steps to be unmarked
+  // This provides real-time updates during the session and acts as a fallback
+  // when backend-computed completed_steps are not available.
+  // Invalidation cascade will clear analyses, causing steps to be unmarked.
+  // NOTE: Backend-computed completed_steps are loaded first and take precedence
+  // on initial load, but this effect handles real-time updates during the session.
   useEffect(() => {
     const completed: number[] = []
 
