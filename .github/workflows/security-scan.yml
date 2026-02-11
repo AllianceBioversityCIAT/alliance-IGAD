@@ -6,7 +6,6 @@ on:
       - main
       - dev
       - staging
-      - staging-security-scanning
   pull_request:
     branches:
       - main
