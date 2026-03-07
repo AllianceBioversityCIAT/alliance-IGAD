@@ -1,0 +1,301 @@
+.nav {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0px 40px 1px;
+  width: 100%;
+  height: 65px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow:
+    0px 1px 3px rgba(0, 0, 0, 0.1),
+    0px 1px 2px -1px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.navInner {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 64px;
+  max-width: 1582px;
+  margin: 0 auto;
+}
+
+.logoLink {
+  text-decoration: none;
+}
+
+.logoImage {
+  height: 56px;
+  width: auto;
+}
+
+.navButtons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Dashboard */
+.dashboardLink {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.dashboardLinkActive {
+  background: #dcfce7;
+}
+
+.dashboardLabel {
+  font-family: Arial;
+  font-size: 14px;
+  line-height: 20px;
+  color: #364153;
+  font-weight: normal;
+}
+
+.dashboardLabelActive {
+  color: #016630;
+  font-weight: 600;
+}
+
+/* Guide */
+.guideButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+  text-decoration: none;
+}
+
+.guideButtonActive {
+  background: #dcfce7;
+}
+
+/* Notifications */
+.notificationButton {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border-radius: 8px;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 20px;
+  height: 20px;
+  background: #fb2c36;
+  border-radius: 8px;
+}
+
+.notificationBadgeText {
+  font-family: Arial;
+  font-size: 12px;
+  line-height: 16px;
+  color: #ffffff;
+}
+
+/* Settings */
+.settingsWrapper {
+  position: relative;
+}
+
+.settingsButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Dropdown Panel */
+.dropdownPanel {
+  position: absolute;
+  right: 0px;
+  top: 44px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0px 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0px 2px 4px -2px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  z-index: 210;
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.settingsDropdown {
+  width: 160px;
+}
+
+.userDropdown {
+  width: 200px;
+}
+
+/* Dropdown Links & Buttons */
+.dropdownLink {
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: Arial;
+  color: #374151;
+  width: 100%;
+  text-decoration: none;
+  display: block;
+  font-weight: normal;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dropdownLinkActive {
+  background: #dcfce7;
+  color: #016630;
+  font-weight: 600;
+}
+
+.dropdownLinkNoBorder {
+  border-bottom: none;
+}
+
+.dropdownButtonDisabled {
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: not-allowed;
+  font-size: 14px;
+  font-family: Arial;
+  color: #374151;
+  width: 100%;
+  opacity: 0.5;
+}
+
+.dropdownButtonDisabledBorder {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+/* User */
+.userWrapper {
+  position: relative;
+}
+
+.userButton {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.userAvatar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 32px;
+  height: 32px;
+  background: #000000;
+  border-radius: 50%;
+}
+
+.userEmail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 200px;
+}
+
+.userEmailText {
+  font-family: Arial;
+  font-size: 14px;
+  line-height: 20px;
+  color: #364153;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* User dropdown info */
+.userInfoSection {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.userInfoEmail {
+  font-size: 14px;
+  font-family: Arial;
+  color: #374151;
+  font-weight: bold;
+  max-width: 168px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userInfoStatus {
+  font-size: 12px;
+  font-family: Arial;
+  color: #6b7280;
+}
+
+.logoutButton {
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: Arial;
+  color: #dc2626;
+  width: 100%;
+}
+
+.loginLink {
+  padding: 12px 16px;
+  text-decoration: none;
+  font-size: 14px;
+  font-family: Arial;
+  color: #374151;
+  width: 100%;
+  display: block;
+}

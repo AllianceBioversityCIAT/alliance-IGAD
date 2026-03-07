@@ -1,58 +1,42 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { authService } from '@/shared/services/authService'
 import { useAdmin } from '@/tools/admin/hooks/useAdmin'
-
-const DropdownSkeleton = () => (
-  <div
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '8px',
-    }}
-  >
-    {[1, 2, 3].map(item => (
-      <div
-        key={item}
-        style={{
-          height: '40px',
-          background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
-          backgroundSize: '200% 100%',
-          animation: 'shimmer 1.5s infinite',
-          borderRadius: '4px',
-          margin: '4px 0',
-        }}
-      />
-    ))}
-  </div>
-)
+import styles from './Navigation.module.css'
 
 export function Navigation() {
   const location = useLocation()
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
-  const [isLoadingDropdown, setIsLoadingDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const userDropdownRef = useRef<HTMLDivElement>(null)
+  const settingsItemsRef = useRef<(HTMLElement | null)[]>([])
+  const userItemsRef = useRef<(HTMLElement | null)[]>([])
 
   const userEmail = authService.getUserEmail()
   const isAuthenticated = authService.isAuthenticated()
   const { isAdmin } = useAdmin()
 
-  // Handle dropdown toggle with loading
   const handleSettingsDropdownToggle = () => {
-    if (!showSettingsDropdown) {
-      setIsLoadingDropdown(true)
-      setShowSettingsDropdown(true)
-      // Simulate loading time
-      setTimeout(() => {
-        setIsLoadingDropdown(false)
-      }, 300)
-    } else {
-      setShowSettingsDropdown(false)
-      setIsLoadingDropdown(false)
-    }
+    setShowSettingsDropdown(prev => !prev)
   }
+
+  // Auto-focus first item on dropdown open
+  useEffect(() => {
+    if (showSettingsDropdown) {
+      requestAnimationFrame(() => {
+        settingsItemsRef.current[0]?.focus()
+      })
+    }
+  }, [showSettingsDropdown])
+
+  useEffect(() => {
+    if (showUserDropdown) {
+      requestAnimationFrame(() => {
+        userItemsRef.current[0]?.focus()
+      })
+    }
+  }, [showUserDropdown])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -70,77 +54,60 @@ export function Navigation() {
     }
   }, [])
 
+  const handleDropdownKeyDown = useCallback(
+    (
+      e: React.KeyboardEvent,
+      itemsRef: React.MutableRefObject<(HTMLElement | null)[]>,
+      setShow: React.Dispatch<React.SetStateAction<boolean>>
+    ) => {
+      const items = itemsRef.current.filter(Boolean) as HTMLElement[]
+      const currentIndex = items.indexOf(e.target as HTMLElement)
+
+      switch (e.key) {
+        case 'ArrowDown': {
+          e.preventDefault()
+          const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0
+          items[next]?.focus()
+          break
+        }
+        case 'ArrowUp': {
+          e.preventDefault()
+          const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1
+          items[prev]?.focus()
+          break
+        }
+        case 'Escape':
+          e.preventDefault()
+          setShow(false)
+          break
+      }
+    },
+    []
+  )
+
+  const pathname = location.pathname
+
   return (
-    <nav
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: '0px 40px 1px',
-        width: '100%',
-        height: '65px',
-        background: '#FFFFFF',
-        borderBottom: '1px solid #E5E7EB',
-        boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 200,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: '100%',
-          height: '64px',
-          maxWidth: '1582px',
-          margin: '0 auto',
-        }}
-      >
+    <nav className={styles.nav}>
+      <div className={styles.navInner}>
         {/* IGAD Logo */}
-        <Link to="/" style={{ textDecoration: 'none' }}>
-          <img
-            src="/igad-navbar-logo.svg"
-            alt="IGAD Innovation Hub"
-            style={{
-              height: '56px',
-              width: 'auto',
-            }}
-          />
+        <Link to="/" className={styles.logoLink}>
+          <img src="/igad-navbar-logo.svg" alt="IGAD Innovation Hub" className={styles.logoImage} />
         </Link>
 
         {/* Navigation Buttons */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-          }}
-        >
+        <div className={styles.navButtons}>
           {/* Dashboard Button */}
           <Link
             to="/dashboard"
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              background: location.pathname === '/dashboard' ? '#DCFCE7' : 'transparent',
-              transition: 'background 0.2s ease',
-            }}
+            className={`${styles.dashboardLink} ${pathname === '/dashboard' ? styles.dashboardLinkActive : ''}`}
           >
             <svg
               width="16"
               height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke={location.pathname === '/dashboard' ? '#016630' : '#364153'}
+              stroke={pathname === '/dashboard' ? '#016630' : '#364153'}
               strokeWidth="1.33"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -151,13 +118,7 @@ export function Navigation() {
               <rect x="3" y="14" width="7" height="7" />
             </svg>
             <span
-              style={{
-                fontFamily: 'Arial',
-                fontSize: '14px',
-                lineHeight: '20px',
-                color: location.pathname === '/dashboard' ? '#016630' : '#364153',
-                fontWeight: location.pathname === '/dashboard' ? '600' : 'normal',
-              }}
+              className={`${styles.dashboardLabel} ${pathname === '/dashboard' ? styles.dashboardLabelActive : ''}`}
             >
               Dashboard
             </span>
@@ -167,24 +128,14 @@ export function Navigation() {
           <Link
             to="/guide"
             title="Watch Tutorial"
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              width: '36px',
-              height: '36px',
-              background: location.pathname === '/guide' ? '#DCFCE7' : 'transparent',
-              borderRadius: '8px',
-              transition: 'background 0.2s ease',
-              textDecoration: 'none',
-            }}
+            className={`${styles.guideButton} ${pathname === '/guide' ? styles.guideButtonActive : ''}`}
           >
             <svg
               width="16"
               height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke={location.pathname === '/guide' ? '#016630' : '#364153'}
+              stroke={pathname === '/guide' ? '#016630' : '#364153'}
               strokeWidth="1.33"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -192,26 +143,13 @@ export function Navigation() {
               <circle cx="12" cy="12" r="10" />
               <polygon
                 points="10 8 16 12 10 16 10 8"
-                fill={location.pathname === '/guide' ? '#016630' : '#364153'}
+                fill={pathname === '/guide' ? '#016630' : '#364153'}
               />
             </svg>
           </Link>
 
           {/* Notifications Button - Disabled */}
-          <div
-            style={{
-              position: 'relative',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              width: '36px',
-              height: '36px',
-              background: 'transparent',
-              borderRadius: '8px',
-              opacity: 0.5,
-              cursor: 'not-allowed',
-            }}
-          >
+          <div className={styles.notificationButton}>
             <svg
               width="16"
               height="16"
@@ -225,50 +163,14 @@ export function Navigation() {
               <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
               <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
             </svg>
-            {/* Notification Badge */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '-4px',
-                right: '-4px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                width: '20px',
-                height: '20px',
-                background: '#FB2C36',
-                borderRadius: '8px',
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: 'Arial',
-                  fontSize: '12px',
-                  lineHeight: '16px',
-                  color: '#FFFFFF',
-                }}
-              >
-                2
-              </span>
+            <div className={styles.notificationBadge}>
+              <span className={styles.notificationBadgeText}>2</span>
             </div>
           </div>
 
           {/* Settings Button */}
-          <div ref={dropdownRef} style={{ position: 'relative' }}>
-            <button
-              onClick={handleSettingsDropdownToggle}
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                width: '36px',
-                height: '36px',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
-            >
+          <div ref={dropdownRef} className={styles.settingsWrapper}>
+            <button onClick={handleSettingsDropdownToggle} className={styles.settingsButton}>
               <svg
                 width="16"
                 height="16"
@@ -287,176 +189,91 @@ export function Navigation() {
             {/* Settings Dropdown */}
             {showSettingsDropdown && (
               <div
-                style={{
-                  position: 'absolute',
-                  width: '160px',
-                  right: '0px',
-                  top: '44px',
-                  background: '#FFFFFF',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  boxShadow:
-                    '0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
-                  zIndex: 210,
-                  padding: '4px 0',
-                }}
+                className={`${styles.dropdownPanel} ${styles.settingsDropdown}`}
+                role="menu"
+                onKeyDown={e => handleDropdownKeyDown(e, settingsItemsRef, setShowSettingsDropdown)}
               >
-                {isLoadingDropdown ? (
-                  <DropdownSkeleton />
-                ) : (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                    }}
-                  >
-                    {/* Admin-only links */}
-                    {isAdmin && (
-                      <>
-                        {/* Settings */}
-                        <Link
-                          to="/admin/settings"
-                          style={{
-                            padding: '12px 16px',
-                            background:
-                              location.pathname === '/admin/settings' ? '#DCFCE7' : 'transparent',
-                            border: 'none',
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontFamily: 'Arial',
-                            color: location.pathname === '/admin/settings' ? '#016630' : '#374151',
-                            width: '100%',
-                            borderBottom: '1px solid #F3F4F6',
-                            textDecoration: 'none',
-                            display: 'block',
-                            fontWeight: location.pathname === '/admin/settings' ? '600' : 'normal',
-                          }}
-                          onClick={() => setShowSettingsDropdown(false)}
-                        >
-                          Settings
-                        </Link>
+                {(() => {
+                  let itemIndex = 0
+                  return (
+                    <>
+                      {/* Admin-only links */}
+                      {isAdmin && (
+                        <>
+                          <Link
+                            to="/admin/settings"
+                            className={`${styles.dropdownLink} ${pathname === '/admin/settings' ? styles.dropdownLinkActive : ''}`}
+                            onClick={() => setShowSettingsDropdown(false)}
+                            role="menuitem"
+                            ref={el => {
+                              settingsItemsRef.current[0] = el
+                            }}
+                          >
+                            Settings
+                          </Link>
+                          <Link
+                            to="/admin/prompt-manager"
+                            className={`${styles.dropdownLink} ${styles.dropdownLinkNoBorder} ${pathname === '/admin/prompt-manager' ? styles.dropdownLinkActive : ''}`}
+                            onClick={() => setShowSettingsDropdown(false)}
+                            role="menuitem"
+                            ref={el => {
+                              settingsItemsRef.current[1] = el
+                            }}
+                          >
+                            Prompt Manager
+                          </Link>
+                        </>
+                      )}
 
-                        {/* Prompt Manager */}
-                        <Link
-                          to="/admin/prompt-manager"
-                          style={{
-                            padding: '12px 16px',
-                            background:
-                              location.pathname === '/admin/prompt-manager'
-                                ? '#DCFCE7'
-                                : 'transparent',
-                            border: 'none',
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontFamily: 'Arial',
-                            color:
-                              location.pathname === '/admin/prompt-manager' ? '#016630' : '#374151',
-                            width: '100%',
-                            textDecoration: 'none',
-                            display: 'block',
-                            fontWeight:
-                              location.pathname === '/admin/prompt-manager' ? '600' : 'normal',
-                          }}
-                          onClick={() => setShowSettingsDropdown(false)}
-                        >
-                          Prompt Manager
-                        </Link>
-                      </>
-                    )}
+                      {/* API Configuration */}
+                      <button
+                        className={styles.dropdownButtonDisabled}
+                        disabled
+                        role="menuitem"
+                        ref={el => {
+                          settingsItemsRef.current[isAdmin ? 2 : itemIndex++] = el
+                        }}
+                      >
+                        API Configuration
+                      </button>
 
-                    {/* API Configuration */}
-                    <button
-                      style={{
-                        padding: '12px 16px',
-                        background: 'transparent',
-                        border: 'none',
-                        textAlign: 'left',
-                        cursor: 'not-allowed',
-                        fontSize: '14px',
-                        fontFamily: 'Arial',
-                        color: '#374151',
-                        width: '100%',
-                        opacity: 0.5,
-                      }}
-                      disabled
-                    >
-                      API Configuration
-                    </button>
+                      {/* Language */}
+                      <button
+                        className={`${styles.dropdownButtonDisabled} ${styles.dropdownButtonDisabledBorder}`}
+                        disabled
+                        role="menuitem"
+                        ref={el => {
+                          settingsItemsRef.current[isAdmin ? 3 : itemIndex++] = el
+                        }}
+                      >
+                        Language
+                      </button>
 
-                    {/* Language */}
-                    <button
-                      style={{
-                        padding: '12px 16px',
-                        background: 'transparent',
-                        border: 'none',
-                        textAlign: 'left',
-                        cursor: 'not-allowed',
-                        fontSize: '14px',
-                        fontFamily: 'Arial',
-                        color: '#374151',
-                        width: '100%',
-                        borderBottom: '1px solid #F3F4F6',
-                        opacity: 0.5,
-                      }}
-                      disabled
-                    >
-                      Language
-                    </button>
-
-                    {/* Help & Support */}
-                    <button
-                      style={{
-                        padding: '12px 16px',
-                        background: 'transparent',
-                        border: 'none',
-                        textAlign: 'left',
-                        cursor: 'not-allowed',
-                        fontSize: '14px',
-                        fontFamily: 'Arial',
-                        color: '#374151',
-                        width: '100%',
-                        opacity: 0.5,
-                      }}
-                      disabled
-                    >
-                      Help & Support
-                    </button>
-                  </div>
-                )}
+                      {/* Help & Support */}
+                      <button
+                        className={styles.dropdownButtonDisabled}
+                        disabled
+                        role="menuitem"
+                        ref={el => {
+                          settingsItemsRef.current[isAdmin ? 4 : itemIndex++] = el
+                        }}
+                      >
+                        Help & Support
+                      </button>
+                    </>
+                  )
+                })()}
               </div>
             )}
           </div>
 
           {/* User Account Button */}
-          <div ref={userDropdownRef} style={{ position: 'relative' }}>
+          <div ref={userDropdownRef} className={styles.userWrapper}>
             <button
               onClick={() => setShowUserDropdown(!showUserDropdown)}
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '16px',
-                padding: '6px 12px',
-                borderRadius: '8px',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-              }}
+              className={styles.userButton}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  width: '32px',
-                  height: '32px',
-                  background: '#000000',
-                  borderRadius: '50%',
-                }}
-              >
+              <div className={styles.userAvatar}>
                 <svg
                   width="16"
                   height="16"
@@ -471,25 +288,9 @@ export function Navigation() {
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  maxWidth: '200px',
-                }}
-              >
+              <div className={styles.userEmail}>
                 <span
-                  style={{
-                    fontFamily: 'Arial',
-                    fontSize: '14px',
-                    lineHeight: '20px',
-                    color: '#364153',
-                    maxWidth: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
+                  className={styles.userEmailText}
                   title={isAuthenticated && userEmail ? userEmail : 'Login'}
                 >
                   {isAuthenticated && userEmail ? userEmail : 'Login'}
@@ -500,96 +301,41 @@ export function Navigation() {
             {/* User Dropdown */}
             {showUserDropdown && (
               <div
-                style={{
-                  position: 'absolute',
-                  width: '200px',
-                  right: '0px',
-                  top: '44px',
-                  background: '#FFFFFF',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  boxShadow:
-                    '0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
-                  zIndex: 210,
-                  padding: '4px 0',
-                }}
+                className={`${styles.dropdownPanel} ${styles.userDropdown}`}
+                role="menu"
+                onKeyDown={e => handleDropdownKeyDown(e, userItemsRef, setShowUserDropdown)}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-                >
-                  {isAuthenticated ? (
-                    <>
-                      {/* User Info */}
-                      <div
-                        style={{
-                          padding: '12px 16px',
-                          borderBottom: '1px solid #F3F4F6',
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: '14px',
-                            fontFamily: 'Arial',
-                            color: '#374151',
-                            fontWeight: 'bold',
-                            maxWidth: '168px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                          title={userEmail || ''}
-                        >
-                          {userEmail}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: '12px',
-                            fontFamily: 'Arial',
-                            color: '#6B7280',
-                          }}
-                        >
-                          Authenticated
-                        </div>
+                {isAuthenticated ? (
+                  <>
+                    <div className={styles.userInfoSection}>
+                      <div className={styles.userInfoEmail} title={userEmail || ''}>
+                        {userEmail}
                       </div>
-
-                      {/* Logout */}
-                      <button
-                        onClick={() => authService.logout()}
-                        style={{
-                          padding: '12px 16px',
-                          background: 'transparent',
-                          border: 'none',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          fontFamily: 'Arial',
-                          color: '#DC2626',
-                          width: '100%',
-                        }}
-                      >
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <Link
-                      to="/login"
-                      style={{
-                        padding: '12px 16px',
-                        textDecoration: 'none',
-                        fontSize: '14px',
-                        fontFamily: 'Arial',
-                        color: '#374151',
-                        width: '100%',
-                        display: 'block',
+                      <div className={styles.userInfoStatus}>Authenticated</div>
+                    </div>
+                    <button
+                      onClick={() => authService.logout()}
+                      className={styles.logoutButton}
+                      role="menuitem"
+                      ref={el => {
+                        userItemsRef.current[0] = el
                       }}
                     >
-                      Login
-                    </Link>
-                  )}
-                </div>
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    to="/login"
+                    className={styles.loginLink}
+                    role="menuitem"
+                    ref={el => {
+                      userItemsRef.current[0] = el
+                    }}
+                  >
+                    Login
+                  </Link>
+                )}
               </div>
             )}
           </div>

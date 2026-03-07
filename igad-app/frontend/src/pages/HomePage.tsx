@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -35,20 +35,35 @@ export function HomePage() {
   // Responsive icon sizing: 24px (mobile) -> 28px (tablet) -> 32px (desktop)
   const iconSize = useResponsiveIconSize()
 
-  // Scroll to top when page loads
+  // Scroll to top and preload hero image when page loads
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    const link = document.createElement('link')
+    link.rel = 'preload'
+    link.as = 'image'
+    link.href = '/hero-background.webp'
+    link.fetchPriority = 'high'
+    document.head.appendChild(link)
+    return () => {
+      document.head.removeChild(link)
+    }
   }, [])
 
-  const handleLaunchProposalWriter = () => {
-    // Clear any existing draft from localStorage to start fresh
+  const handleLaunchProposalWriter = useCallback(() => {
     localStorage.removeItem('draft_proposal_id')
     localStorage.removeItem('draft_proposal_code')
     localStorage.removeItem('draft_form_data')
     localStorage.removeItem('draft_rfp_analysis')
-
     navigate('/proposal-writer/step-1')
-  }
+  }, [navigate])
+
+  const handleCardKeyDown = useCallback((e: React.KeyboardEvent, action: () => void) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      action()
+    }
+  }, [])
 
   return (
     <div className={styles.container}>
@@ -64,6 +79,7 @@ export function HomePage() {
               alt="IGAD Innovation Hub"
               className={styles.heroLogo}
               loading="eager"
+              fetchPriority="high"
             />
             <p className={styles.tagline}>PEACE, PROSPERITY AND REGIONAL INTEGRATION</p>
           </div>
@@ -98,7 +114,14 @@ export function HomePage() {
           {/* Tools Grid */}
           <div className={styles.toolsGrid} role="list">
             {/* Tool Card: Proposal Writer (Available) */}
-            <article className={`${styles.toolCard} ${styles.toolCardAvailable}`} role="listitem">
+            <article
+              className={`${styles.toolCard} ${styles.toolCardAvailable}`}
+              role="listitem"
+              tabIndex={0}
+              style={{ cursor: 'pointer' }}
+              onClick={handleLaunchProposalWriter}
+              onKeyDown={e => handleCardKeyDown(e, handleLaunchProposalWriter)}
+            >
               <span
                 className={`${styles.badge} ${styles.badgeAvailable}`}
                 aria-label="Status: Available"
@@ -126,7 +149,14 @@ export function HomePage() {
             </article>
 
             {/* Tool Card: Newsletter Generator (Available) */}
-            <article className={`${styles.toolCard} ${styles.toolCardAvailable}`} role="listitem">
+            <article
+              className={`${styles.toolCard} ${styles.toolCardAvailable}`}
+              role="listitem"
+              tabIndex={0}
+              style={{ cursor: 'pointer' }}
+              onClick={() => navigate('/newsletter-generator')}
+              onKeyDown={e => handleCardKeyDown(e, () => navigate('/newsletter-generator'))}
+            >
               <span
                 className={`${styles.badge} ${styles.badgeAvailable}`}
                 aria-label="Status: Available"

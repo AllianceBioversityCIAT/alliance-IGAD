@@ -2,6 +2,9 @@
 
 Guidelines for AI agents working in the React/TypeScript frontend.
 
+> **Parent Guidelines:** [`../AGENTS.md`](../AGENTS.md)
+> **Skills to use:** Be proactive in loading `react-doctor`, `tailwind-design-system`, `shadcn-ui`, and `vercel-react-best-practices` depending on the task.
+
 ## Quick Reference
 
 ```bash

@@ -91,7 +91,10 @@ export function LoginPage() {
       authService.setToken(response.access_token, response.refresh_token, data.rememberMe)
       authService.setUserEmail(normalizedEmail, data.rememberMe)
 
-      // Navigate to dashboard
+      // Pre-fetch user info with the new token so useAuth() finds it cached
+      authService.getCurrentUser()
+
+      // Navigate to home
       navigate('/')
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed')
@@ -128,7 +131,7 @@ export function LoginPage() {
             <div className={styles.formContainer}>
               {/* IGAD Logo */}
               <div>
-                <img src="/logologin.png" alt="IGAD Innovation Hub" className={styles.logo} />
+                <img src="/logologin.webp" alt="IGAD Innovation Hub" className={styles.logo} />
               </div>
 
               {/* Form Content */}

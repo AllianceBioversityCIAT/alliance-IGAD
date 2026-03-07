@@ -16,7 +16,7 @@
   flex: 1;
   min-width: 0;
   padding: 40px 20px;
-  background-image: url(/textura.png);
+  background-image: url(/textura.webp);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -256,7 +256,7 @@
 .backgroundImage {
   width: 100%;
   height: 100%;
-  background-image: url(/fondologin.png);
+  background-image: url(/fondologin.webp);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -268,7 +268,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url(/transparencia.png);
+  background-image: url(/transparencia.webp);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

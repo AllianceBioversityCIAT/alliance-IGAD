@@ -36,7 +36,7 @@
   max-width: 1562px;
   margin: 16px auto 0;
   min-height: 250px;
-  background-image: url('/hero-background.png');
+  background-image: url('/hero-background.webp');
   background-size: cover;
   background-position: 55% center;
   background-repeat: no-repeat;
@@ -95,7 +95,7 @@
   text-align: left;
   margin: 0;
   text-transform: uppercase;
-  letter-spacing: 0.2px;
+  letter-spacing: 1.5px;
 }
 
 /* Hero Content: Title + Subtitle */
@@ -206,8 +206,8 @@
 
 /* Card hover effects */
 .toolCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 /* Available card styling */
@@ -222,12 +222,12 @@
 /* Disabled card styling */
 .toolCardDisabled {
   opacity: 0.75;
-  border: 2.03385px solid #e5e7eb;
+  border: 2px dashed #e5e7eb;
 }
 
 .toolCardDisabled:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 /* ===================================
@@ -257,9 +257,9 @@
 }
 
 .badgeComingSoon {
-  background: #f3f4f6;
-  border: 1.01693px solid #e5e7eb;
-  color: #4a5565;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
 }
 
 /* Icon Container - Mobile-first with fluid sizing */
@@ -298,7 +298,7 @@
   font-family: inherit;
   font-weight: 400;
   font-size: 14px;
-  line-height: 22px;
+  line-height: 24px;
   color: #4a5565;
   margin: 0 0 16px 0;
   flex: 1;
@@ -338,6 +338,28 @@
 
 .toolButtonAvailable:hover {
   opacity: 0.9;
+}
+
+.toolButtonAvailable:focus-visible {
+  outline: 2px solid #016630;
+  outline-offset: 2px;
+}
+
+.toolButtonDisabled:focus-visible {
+  outline: 2px solid #016630;
+  outline-offset: 2px;
+}
+
+/* Available card focus-visible ring */
+.toolCardAvailable:focus-visible {
+  outline: 2px solid #016630;
+  outline-offset: 2px;
+}
+
+/* Available card focus-within ring */
+.toolCardAvailable:focus-within {
+  border-color: #b9f8cf;
+  box-shadow: 0 0 0 2px rgba(1, 102, 48, 0.15);
 }
 
 .toolButtonDisabled {
@@ -440,16 +462,18 @@
   font-size: 14px;
   line-height: 20px;
   color: #dcfce7;
-  text-decoration: none;
+  text-decoration: underline transparent;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    text-decoration-color 0.2s ease;
 }
 
 .footerLink:hover {
   color: #ffffff;
-  text-decoration: underline;
+  text-decoration-color: #ffffff;
 }
 
 .footerLinkDisabled {
@@ -569,7 +593,7 @@
   .tagline {
     font-size: 12px;
     line-height: 18px;
-    letter-spacing: 0.3px;
+    letter-spacing: 1.8px;
   }
 
   .heroContent {
@@ -629,7 +653,7 @@
 
   .toolDescription {
     font-size: 15px;
-    line-height: 24px;
+    line-height: 26px;
     margin: 0 0 20px 0;
   }
 
@@ -707,7 +731,7 @@
   .tagline {
     font-size: 13px;
     line-height: 20px;
-    letter-spacing: 0.3px;
+    letter-spacing: 2px;
   }
 
   .heroContent {
@@ -769,7 +793,7 @@
 
   .toolDescription {
     font-size: 16.2708px;
-    line-height: 26px;
+    line-height: 28px;
     margin: 0 0 24px 0;
   }
 
@@ -852,7 +876,7 @@
   .tagline {
     font-size: 16px;
     line-height: 24px;
-    letter-spacing: 0.5px;
+    letter-spacing: 2.5px;
   }
 
   .title {
@@ -1100,6 +1124,27 @@
 /* ===================================
    PRINT STYLES
    =================================== */
+
+/* ===================================
+   REDUCED MOTION
+   =================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .toolCard,
+  .toolButton,
+  .iconContainer,
+  .socialLink,
+  .footerLink,
+  .footerLogoLink {
+    transition: none;
+  }
+
+  .toolCard:hover,
+  .toolCardDisabled:hover,
+  .socialLink:hover {
+    transform: none;
+  }
+}
 
 @media print {
   .heroSection {

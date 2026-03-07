@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+> **Parent Context:** [`../CLAUDE.md`](../CLAUDE.md)
+> **Child Guidelines:** [`./AGENTS.md`](./AGENTS.md), [`frontend/CLAUDE.md`](./frontend/CLAUDE.md), [`backend/CLAUDE.md`](./backend/CLAUDE.md)
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

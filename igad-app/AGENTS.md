@@ -2,7 +2,8 @@
 
 Guidelines for AI coding agents working in the IGAD Innovation Hub repository.
 
-> **See also:** Detailed guidelines in [`backend/AGENTS.md`](./backend/AGENTS.md) and [`frontend/AGENTS.md`](./frontend/AGENTS.md)
+> **Parent Guidelines:** [`../AGENTS.md`](../AGENTS.md) (Global skills available to use)
+> **See also (Children):** Detailed guidelines in [`backend/AGENTS.md`](./backend/AGENTS.md) and [`frontend/AGENTS.md`](./frontend/AGENTS.md)
 
 ## Project Overview
 

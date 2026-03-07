@@ -2,7 +2,8 @@
 
 Guidelines for AI agents working in the Python FastAPI backend.
 
-> **See also:** Detailed guidelines in [`app/tools/AGENTS.md`](./app/tools/AGENTS.md) for feature modules
+> **Parent Guidelines:** [`../AGENTS.md`](../AGENTS.md)
+> **See also (Children):** Detailed guidelines in [`app/tools/AGENTS.md`](./app/tools/AGENTS.md) for feature modules
 
 ---
 

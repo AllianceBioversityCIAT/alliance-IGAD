@@ -95,7 +95,7 @@ export function ForgotPasswordPage() {
         <div className={styles.formContainer}>
           {/* IGAD Logo */}
           <div>
-            <img src="/logologin.png" alt="IGAD Innovation Hub" className={styles.logo} />
+            <img src="/logologin.webp" alt="IGAD Innovation Hub" className={styles.logo} />
           </div>
 
           {/* Form Content */}

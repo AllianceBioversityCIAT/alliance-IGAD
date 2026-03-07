@@ -33,7 +33,7 @@ export function GuidePage() {
         <div className={styles.contentWrapper}>
           {/* Logo */}
           <Link to="/" className={styles.logoLink}>
-            <img src="/logologin.png" alt="IGAD Innovation Hub" className={styles.logo} />
+            <img src="/logologin.webp" alt="IGAD Innovation Hub" className={styles.logo} />
           </Link>
 
           {/* Hero Section */}
@@ -54,7 +54,7 @@ export function GuidePage() {
             <video
               className={styles.video}
               controls
-              poster="/hero-background.png"
+              poster="/hero-background.webp"
               preload="metadata"
             >
               <source src={VIDEO_URL} type="video/mp4" />

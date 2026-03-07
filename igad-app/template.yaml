@@ -159,6 +159,12 @@ Resources:
             RestApiId: !Ref ApiGateway
             Path: /{proxy+}
             Method: ANY
+        # Keep Lambda warm — ping every 5 minutes to avoid cold starts
+        WarmUpEvent:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Input: '{"httpMethod":"GET","path":"/api/health","resource":"/api/{proxy+}","pathParameters":{"proxy":"health"},"requestContext":{"stage":"prod","httpMethod":"GET","path":"/api/health"},"headers":{},"queryStringParameters":null}'
 
   # RFP Analysis Worker Lambda (async background processing)
   AnalysisWorkerFunction:
