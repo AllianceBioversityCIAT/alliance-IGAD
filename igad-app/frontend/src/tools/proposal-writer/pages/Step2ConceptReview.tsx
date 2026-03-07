@@ -3,6 +3,7 @@
 // ============================================================================
 // React Core
 import { useState, useEffect, useCallback } from 'react'
+import DOMPurify from 'dompurify'
 
 // External Libraries - Icons
 import {
@@ -699,7 +700,7 @@ function UpdatedConceptDocumentCard({
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
     formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
-    return formatted
+    return DOMPurify.sanitize(formatted)
   }
 
   const parseMarkdownToReact = (markdown: string): JSX.Element[] => {

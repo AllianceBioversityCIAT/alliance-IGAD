@@ -55,7 +55,14 @@ export function ConfirmationModal({
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div
+      className={styles.overlay}
+      onClick={onClose}
+      onKeyDown={e => e.key === 'Escape' && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <button onClick={onClose} className={styles.closeButton}>
           <X size={20} />

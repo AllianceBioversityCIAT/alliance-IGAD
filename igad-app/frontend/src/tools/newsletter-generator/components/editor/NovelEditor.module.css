@@ -214,7 +214,7 @@
 }
 
 .commandItem:hover,
-.commandItem[aria-selected="true"] {
+.commandItem[aria-selected='true'] {
   background: #f0fdf4;
 }
 

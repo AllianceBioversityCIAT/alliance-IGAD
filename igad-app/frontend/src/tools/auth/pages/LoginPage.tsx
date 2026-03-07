@@ -165,8 +165,11 @@ export function LoginPage() {
 
                   {/* Email Field */}
                   <div className={styles.fieldGroup}>
-                    <label className={styles.label}>Email address</label>
+                    <label htmlFor="login-email" className={styles.label}>
+                      Email address
+                    </label>
                     <input
+                      id="login-email"
                       type="email"
                       placeholder="you@organization.org"
                       autoComplete="email"
@@ -188,9 +191,12 @@ export function LoginPage() {
 
                   {/* Password Field */}
                   <div className={styles.fieldGroup}>
-                    <label className={styles.label}>Password</label>
+                    <label htmlFor="login-password" className={styles.label}>
+                      Password
+                    </label>
                     <div className={styles.passwordField}>
                       <input
+                        id="login-password"
                         type={showPassword ? 'text' : 'password'}
                         placeholder="Enter your password"
                         {...register('password', {

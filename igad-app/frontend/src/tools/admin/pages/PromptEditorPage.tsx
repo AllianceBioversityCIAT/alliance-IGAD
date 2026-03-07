@@ -80,7 +80,7 @@ export function PromptEditorPage() {
     return baseData
   }
 
-  const [formData, setFormData] = useState(getInitialFormData())
+  const [formData, setFormData] = useState(() => getInitialFormData())
 
   const fetchPrompt = useCallback(
     async (promptId: string) => {

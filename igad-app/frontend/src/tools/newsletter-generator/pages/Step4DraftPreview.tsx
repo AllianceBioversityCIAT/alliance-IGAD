@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import DOMPurify from 'dompurify'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ChevronLeft,
@@ -597,7 +598,7 @@ export function Step4DraftPreview() {
     html = html.replace(/\n\n/g, '</p><p>')
     html = html.replace(/\n/g, '<br />')
 
-    return `<p>${html}</p>`
+    return DOMPurify.sanitize(`<p>${html}</p>`)
   }
 
   return (

@@ -47,8 +47,11 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
   return (
     <div className={styles.container}>
       <div className={styles.filterGroup}>
-        <label className={styles.label}>Search</label>
+        <label htmlFor="filter-search" className={styles.label}>
+          Search
+        </label>
         <input
+          id="filter-search"
           type="text"
           placeholder="Search in name, content, route, tags..."
           value={filters.search || ''}
@@ -58,8 +61,11 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
       </div>
 
       <div className={styles.filterGroup}>
-        <label className={styles.label}>Section</label>
+        <label htmlFor="filter-section" className={styles.label}>
+          Section
+        </label>
         <select
+          id="filter-section"
           value={filters.section || 'all'}
           onChange={e => handleSectionChange(e.target.value)}
           className={styles.select}
@@ -74,8 +80,11 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
       </div>
 
       <div className={styles.filterGroup}>
-        <label className={styles.label}>Sub-section</label>
+        <label htmlFor="filter-subsection" className={styles.label}>
+          Sub-section
+        </label>
         <input
+          id="filter-subsection"
           type="text"
           placeholder="Filter by sub-section..."
           value={filters.sub_section || ''}
@@ -85,8 +94,11 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
       </div>
 
       <div className={styles.filterGroup}>
-        <label className={styles.label}>Category</label>
+        <label htmlFor="filter-category" className={styles.label}>
+          Category
+        </label>
         <select
+          id="filter-category"
           value={filters.category || 'all'}
           onChange={e =>
             onChange({
@@ -106,8 +118,11 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
       </div>
 
       <div className={styles.filterGroup}>
-        <label className={styles.label}>Route</label>
+        <label htmlFor="filter-route" className={styles.label}>
+          Route
+        </label>
         <input
+          id="filter-route"
           type="text"
           placeholder="Filter by route..."
           value={filters.route || ''}
@@ -117,8 +132,11 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
       </div>
 
       <div className={styles.filterGroup}>
-        <label className={styles.label}>Active Status</label>
+        <label htmlFor="filter-active" className={styles.label}>
+          Active Status
+        </label>
         <select
+          id="filter-active"
           value={filters.is_active === undefined ? 'all' : filters.is_active.toString()}
           onChange={e => handleActiveChange(e.target.value)}
           className={styles.select}
@@ -130,8 +148,11 @@ export function PromptFilters({ filters, onChange }: PromptFiltersProps) {
       </div>
 
       <div className={styles.filterGroup}>
-        <label className={styles.label}>Tag</label>
+        <label htmlFor="filter-tag" className={styles.label}>
+          Tag
+        </label>
         <input
+          id="filter-tag"
           type="text"
           placeholder="Filter by tag..."
           value={filters.tag || ''}

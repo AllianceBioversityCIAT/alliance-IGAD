@@ -44,7 +44,7 @@ Usage:
 
 EXISTING_WORK_ANALYSIS_SETTINGS = {
     # ==================== AI Model Configuration ====================
-    "model": "us.anthropic.claude-3-5-haiku-20241022-v1:0",  # Claude 3.5 Haiku (fast)
+    "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",  # Claude Haiku 4.5 (fast)
     "max_tokens": 8000,  # Maximum tokens for response (~6,000 words)
     "temperature": 0.2,  # Low temperature for consistent pattern identification
     "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)

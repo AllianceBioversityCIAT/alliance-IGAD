@@ -293,7 +293,9 @@
   gap: 8px;
   padding: 16px;
   border-bottom: 1px solid #f3f4f6;
-  transition: opacity 0.2s ease, background 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
 }
 
 .outlineItem:last-child {
@@ -546,7 +548,9 @@
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .modalHeader {
@@ -613,7 +617,9 @@
   border-radius: 8px;
   font-size: 14px;
   color: #111827;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .modalInput:focus {
@@ -631,7 +637,9 @@
   font-family: inherit;
   min-height: 80px;
   resize: vertical;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .modalTextarea:focus {

@@ -204,5 +204,3 @@ export function parseApiError(error: unknown): { title: string; message: string 
 
   return { title, message }
 }
-
-export default globalToast

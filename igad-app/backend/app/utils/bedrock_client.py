@@ -14,7 +14,7 @@ class BedrockClient:
     def __init__(self, region_name: str = "us-east-1"):
         session = get_aws_session()
         self.client = session.client("bedrock-runtime", region_name=region_name)
-        self.model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
+        self.model_id = "us.anthropic.claude-sonnet-4-20250514-v1:0"
 
     def generate_content(
         self,
@@ -23,7 +23,7 @@ class BedrockClient:
         temperature: float = 0.7,
         system_prompt: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Generate content using Claude 3 Sonnet"""
+        """Generate content using Claude Sonnet 4"""
         try:
             start_time = time.time()
 

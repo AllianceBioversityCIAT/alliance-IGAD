@@ -114,7 +114,14 @@ export function ReuploadConfirmationModal({
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div
+      className={styles.modalOverlay}
+      onClick={onClose}
+      onKeyDown={e => e.key === 'Escape' && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Replace Concept Document"
+    >
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose} aria-label="Close modal">
           <X size={20} />
@@ -242,7 +249,14 @@ export function ConceptReuploadModal({ isOpen, onClose, onFileSelect }: ConceptR
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div
+      className={styles.modalOverlay}
+      onClick={onClose}
+      onKeyDown={e => e.key === 'Escape' && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Upload New Concept Document"
+    >
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose} aria-label="Close modal">
           <X size={20} />
@@ -376,7 +390,12 @@ export function ReuploadProgressModal({
   }
 
   return (
-    <div className={styles.modalOverlay}>
+    <div
+      className={styles.modalOverlay}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Re-upload Progress"
+    >
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         {/* Only show close button if complete or error */}
         {(isComplete || hasError) && (
@@ -473,7 +492,14 @@ export function RegenerateConfirmationModal({
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div
+      className={styles.modalOverlay}
+      onClick={onClose}
+      onKeyDown={e => e.key === 'Escape' && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Regenerate Concept Analysis"
+    >
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose} aria-label="Close modal">
           <X size={20} />

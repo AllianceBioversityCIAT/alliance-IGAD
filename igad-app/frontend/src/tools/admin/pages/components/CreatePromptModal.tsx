@@ -72,6 +72,8 @@ const SECTION_DESCRIPTIONS = {
   [ProposalSection.APPENDICES]: 'Generate supporting documentation and appendices',
 }
 
+const DEFAULT_CONTEXT: NonNullable<CreatePromptModalProps['contextData']> = {}
+
 export function CreatePromptModal({
   isOpen,
   onClose,
@@ -80,7 +82,7 @@ export function CreatePromptModal({
   mode = 'create',
   initialData = undefined,
   onHistory,
-  contextData = {},
+  contextData = DEFAULT_CONTEXT,
 }: CreatePromptModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [tagInput, setTagInput] = useState('')
@@ -135,13 +137,13 @@ export function CreatePromptModal({
 
   const handleNext = () => {
     if (currentStep < 3) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(prev => prev + 1)
     }
   }
 
   const handlePrevious = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(prev => prev - 1)
     }
   }
 

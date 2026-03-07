@@ -135,8 +135,11 @@ export function ForgotPasswordPage() {
               /* Email Form */
               <form onSubmit={handleEmailSubmit(onEmailSubmit)} className={styles.form}>
                 <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Email address</label>
+                  <label htmlFor="forgot-email" className={styles.label}>
+                    Email address
+                  </label>
                   <input
+                    id="forgot-email"
                     type="email"
                     placeholder="you@organization.org"
                     autoComplete="email"
@@ -182,8 +185,11 @@ export function ForgotPasswordPage() {
               /* Reset Password Form */
               <form onSubmit={handleResetSubmit(onResetSubmit)} className={styles.form}>
                 <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Reset Code</label>
+                  <label htmlFor="reset-code" className={styles.label}>
+                    Reset Code
+                  </label>
                   <input
+                    id="reset-code"
                     type="text"
                     placeholder="Enter the code from your email"
                     {...registerReset('code', {
@@ -197,9 +203,12 @@ export function ForgotPasswordPage() {
                 </div>
 
                 <div className={styles.fieldGroup}>
-                  <label className={styles.label}>New Password</label>
+                  <label htmlFor="reset-new-password" className={styles.label}>
+                    New Password
+                  </label>
                   <div className={styles.passwordField}>
                     <input
+                      id="reset-new-password"
                       type={showNewPassword ? 'text' : 'password'}
                       placeholder="Enter your new password"
                       {...registerReset('newPassword', {
@@ -230,9 +239,12 @@ export function ForgotPasswordPage() {
                 </div>
 
                 <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Confirm Password</label>
+                  <label htmlFor="reset-confirm-password" className={styles.label}>
+                    Confirm Password
+                  </label>
                   <div className={styles.passwordField}>
                     <input
+                      id="reset-confirm-password"
                       type={showConfirmPassword ? 'text' : 'password'}
                       placeholder="Confirm your new password"
                       {...registerReset('confirmPassword', {

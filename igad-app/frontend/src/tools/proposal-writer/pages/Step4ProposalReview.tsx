@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import DOMPurify from 'dompurify'
 import { useToast } from '@/shared/hooks/useToast'
 import { useConfirmation } from '@/shared/hooks/useConfirmation'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
@@ -65,6 +66,8 @@ interface DraftFeedbackAnalysis {
     needs_improvement_count: number
   }
 }
+
+const EMPTY_FILES: string[] = []
 
 interface Step4Props extends StepProps {
   proposalId?: string
@@ -542,6 +545,27 @@ interface SummaryStatsProps {
   }
 }
 
+function ChartTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean
+  payload?: Array<{ payload: { name: string; count: number; value: number } }>
+}) {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload
+    return (
+      <div className={styles.chartTooltip}>
+        <p className={styles.tooltipLabel}>{data.name}</p>
+        <p className={styles.tooltipValue}>
+          {data.count} sections ({Math.round(data.value)}%)
+        </p>
+      </div>
+    )
+  }
+  return null
+}
+
 function SummaryStats({ stats }: SummaryStatsProps) {
   const total = stats.excellent_count + stats.good_count + stats.needs_improvement_count
 
@@ -568,28 +592,6 @@ function SummaryStats({ stats }: SummaryStatsProps) {
     },
   ]
 
-  // Custom tooltip component
-  const CustomTooltip = ({
-    active,
-    payload,
-  }: {
-    active?: boolean
-    payload?: Array<{ payload: { name: string; count: number; value: number } }>
-  }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <div className={styles.chartTooltip}>
-          <p className={styles.tooltipLabel}>{data.name}</p>
-          <p className={styles.tooltipValue}>
-            {data.count} sections ({Math.round(data.value)}%)
-          </p>
-        </div>
-      )
-    }
-    return null
-  }
-
   return (
     <div className={styles.summaryStatsEnhanced}>
       {/* Radial Bar Chart */}
@@ -615,7 +617,7 @@ function SummaryStats({ stats }: SummaryStatsProps) {
                 animationEasing="ease-out"
               />
               <Tooltip
-                content={<CustomTooltip />}
+                content={<ChartTooltip />}
                 cursor={{ fill: 'transparent' }}
                 position={{ x: 10, y: -10 }}
                 wrapperStyle={{ zIndex: 100 }}
@@ -847,7 +849,7 @@ function RefinedProposalDocumentCard({
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
     formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
-    return formatted
+    return DOMPurify.sanitize(formatted)
   }
 
   // Parse markdown to React elements
@@ -1099,7 +1101,7 @@ function RefinedProposalDocumentCard({
 export function Step4ProposalReview({
   proposalId,
   isLoading = false,
-  uploadedDraftFiles = [],
+  uploadedDraftFiles = EMPTY_FILES,
   draftFeedbackAnalysis,
   onFeedbackAnalyzed,
   onFilesChanged,

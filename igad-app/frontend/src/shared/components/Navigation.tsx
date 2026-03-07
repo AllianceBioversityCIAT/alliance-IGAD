@@ -3,6 +3,30 @@ import { useState, useEffect, useRef } from 'react'
 import { authService } from '@/shared/services/authService'
 import { useAdmin } from '@/tools/admin/hooks/useAdmin'
 
+const DropdownSkeleton = () => (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      padding: '8px',
+    }}
+  >
+    {[1, 2, 3].map(item => (
+      <div
+        key={item}
+        style={{
+          height: '40px',
+          background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 1.5s infinite',
+          borderRadius: '4px',
+          margin: '4px 0',
+        }}
+      />
+    ))}
+  </div>
+)
+
 export function Navigation() {
   const location = useLocation()
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
@@ -14,31 +38,6 @@ export function Navigation() {
   const userEmail = authService.getUserEmail()
   const isAuthenticated = authService.isAuthenticated()
   const { isAdmin } = useAdmin()
-
-  // Skeleton component for dropdown loading
-  const DropdownSkeleton = () => (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '8px',
-      }}
-    >
-      {[1, 2, 3].map(item => (
-        <div
-          key={item}
-          style={{
-            height: '40px',
-            background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
-            backgroundSize: '200% 100%',
-            animation: 'shimmer 1.5s infinite',
-            borderRadius: '4px',
-            margin: '4px 0',
-          }}
-        />
-      ))}
-    </div>
-  )
 
   // Handle dropdown toggle with loading
   const handleSettingsDropdownToggle = () => {

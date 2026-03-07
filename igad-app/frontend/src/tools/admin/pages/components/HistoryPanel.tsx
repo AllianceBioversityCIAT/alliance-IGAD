@@ -156,7 +156,14 @@ export function HistoryPanel({ promptId, isOpen, onClose }: HistoryPanelProps) {
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div
+      className={styles.overlay}
+      onClick={onClose}
+      onKeyDown={e => e.key === 'Escape' && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Change History"
+    >
       <div className={styles.panel} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.title}>

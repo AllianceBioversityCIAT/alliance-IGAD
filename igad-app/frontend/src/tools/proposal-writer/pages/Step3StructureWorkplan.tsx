@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import DOMPurify from 'dompurify'
 import {
   Sparkles,
   Check,
@@ -78,7 +79,7 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
       formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
       // Remove inline code backticks
       formatted = formatted.replace(/`([^`]+)`/g, '$1')
-      return formatted
+      return DOMPurify.sanitize(formatted)
     }
 
     const flushParagraph = () => {
