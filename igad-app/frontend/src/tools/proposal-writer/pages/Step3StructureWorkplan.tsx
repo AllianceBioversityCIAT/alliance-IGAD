@@ -470,7 +470,9 @@ export function Step3StructureWorkplan({
     }
 
     let attempts = 0
+    let consecutiveErrors = 0
     const maxAttempts = 120 // 6 minutes max (3 second intervals)
+    const maxConsecutiveErrors = 5
 
     // Mark polling as active
     isPollingRef.current = true
@@ -485,6 +487,7 @@ export function Step3StructureWorkplan({
       attempts++
       try {
         const status = await proposalService.getProposalTemplateStatus(proposalId)
+        consecutiveErrors = 0 // Reset on success
 
         if (status.status === 'completed' && status.data) {
           const content = status.data.generated_proposal
@@ -527,13 +530,20 @@ export function Step3StructureWorkplan({
             pollingTimeoutRef.current = setTimeout(poll, 3000)
           }
         }
-      } catch (error) {
-        setGenerationError('Failed to check generation status')
-        setGenerationStatus('failed')
-        setIsGenerating(false)
-        setStep3ProgressConfig(null)
-        setStep3CompletedStep(0)
-        isPollingRef.current = false
+      } catch {
+        consecutiveErrors++
+        // Only fail after multiple consecutive network errors
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          setGenerationError('Connection lost. Please check your network and retry.')
+          setGenerationStatus('failed')
+          setIsGenerating(false)
+          setStep3ProgressConfig(null)
+          setStep3CompletedStep(0)
+          isPollingRef.current = false
+        } else if (isPollingRef.current) {
+          // Retry after a slightly longer delay on error
+          pollingTimeoutRef.current = setTimeout(poll, 5000)
+        }
       }
     }
 

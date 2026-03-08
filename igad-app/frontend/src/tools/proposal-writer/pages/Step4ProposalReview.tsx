@@ -1186,6 +1186,7 @@ export function Step4ProposalReview({
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const pollingStartTimeRef = useRef<number>(0)
   const isPollingActiveRef = useRef<boolean>(false)
+  const consecutiveErrorsRef = useRef<number>(0)
   const hasAutoSelectedRef = useRef<boolean>(false)
   // Ref so the mount effect can always call the latest pollAnalysisStatus
   const pollAnalysisStatusRef = useRef<() => Promise<void>>(async () => {})
@@ -1394,6 +1395,9 @@ export function Step4ProposalReview({
         return
       }
 
+      // Reset consecutive errors on successful poll
+      consecutiveErrorsRef.current = 0
+
       // Update progress
       const elapsedTime = Date.now() - pollingStartTimeRef.current
 
@@ -1447,12 +1451,19 @@ export function Step4ProposalReview({
         setStep4CompletedStep(0)
         showError('Timeout', 'Analysis timed out. Please try again.')
       }
-    } catch (error) {
-      // Stop polling on error to prevent resource exhaustion
-      isPollingActiveRef.current = false
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current)
-        pollingRef.current = null
+    } catch {
+      // Tolerate transient network errors - only stop after 5+ consecutive failures
+      consecutiveErrorsRef.current++
+      if (consecutiveErrorsRef.current >= 5) {
+        isPollingActiveRef.current = false
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current)
+          pollingRef.current = null
+        }
+        setIsAnalyzing(false)
+        setStep4ProgressConfig(null)
+        setStep4CompletedStep(0)
+        showError('Connection Lost', 'Unable to check analysis status. Please check your network and retry.')
       }
     }
   }, [proposalId, onFeedbackAnalyzed, showSuccess, showError])
@@ -2455,12 +2466,15 @@ export function Step4ProposalReview({
               // Still processing - progress bar animates automatically via requestAnimationFrame
             }
           } catch (err) {
-            if (isGenerationActiveRef.current) {
+            consecutiveErrorsRef.current++
+            // Only fail after 5+ consecutive network errors
+            if (consecutiveErrorsRef.current >= 5 && isGenerationActiveRef.current) {
               clearInterval(generationIntervalRef.current!)
               generationIntervalRef.current = null
               isGenerationActiveRef.current = false
-              reject(err)
+              reject(new Error('Connection lost. Please check your network and retry.'))
             }
+            // Otherwise silently retry on next interval
           }
         }, POLLING_INTERVAL)
       })
