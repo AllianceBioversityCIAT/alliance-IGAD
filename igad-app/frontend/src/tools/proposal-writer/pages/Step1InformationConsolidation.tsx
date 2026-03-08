@@ -2,7 +2,17 @@
 // IMPORTS
 // ============================================================================
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { FileText, AlertTriangle, Files, Briefcase, Lightbulb, Loader2 } from 'lucide-react'
+import {
+  FileText,
+  AlertTriangle,
+  Files,
+  Briefcase,
+  Lightbulb,
+  Loader2,
+  CheckCircle2,
+  Circle,
+  RefreshCw,
+} from 'lucide-react'
 import { useProposal } from '@/tools/proposal-writer/hooks/useProposal'
 import { useToast } from '@/shared/hooks/useToast'
 import { StepProps } from './stepConfig'
@@ -35,6 +45,9 @@ const ALLOWED_CONCEPT_TYPES = ['.pdf', '.docx', '.txt']
 
 /** Polling interval for vectorization status (in milliseconds) */
 const VECTORIZATION_POLL_INTERVAL = 3000
+
+/** Maximum time to wait for vectorization before considering it stale (5 minutes) */
+const VECTORIZATION_TIMEOUT_MS = 5 * 60 * 1000
 
 // ============================================================================
 // TYPES
@@ -163,8 +176,13 @@ export function Step1InformationConsolidation({
   // STATE - Data Loading
   // ============================================================================
 
-  /** Internal loading state to track actual data loading in component */
-  const [isLoadingData, setIsLoadingData] = useState(true)
+  /** Internal loading state to track actual data loading in component.
+   *  Starts as false if formData already has uploaded files (e.g., returning from Step 2)
+   *  to avoid showing the skeleton unnecessarily. */
+  const hasExistingFiles = Object.values(formData.uploadedFiles).some(
+    files => files && files.length > 0
+  )
+  const [isLoadingData, setIsLoadingData] = useState(!hasExistingFiles)
 
   // ============================================================================
   // STATE - RFP Upload
@@ -184,6 +202,8 @@ export function Step1InformationConsolidation({
   /** Track if files are being dragged over upload area */
   const [isDraggingRFP, setIsDraggingRFP] = useState(false)
   const [isDraggingConcept, setIsDraggingConcept] = useState(false)
+  /** Track if title field has been touched (for validation) */
+  const [titleTouched, setTitleTouched] = useState(false)
 
   // ============================================================================
   // STATE - Concept Document
@@ -287,7 +307,14 @@ export function Step1InformationConsolidation({
     }
 
     const loadDocuments = async () => {
-      setIsLoadingData(true)
+      // Only show skeleton on first load (no existing files in state)
+      // When returning from another step, files are already in formData
+      const alreadyHasFiles = Object.values(formData.uploadedFiles).some(
+        files => files && files.length > 0
+      )
+      if (!alreadyHasFiles) {
+        setIsLoadingData(true)
+      }
 
       try {
         // Load uploaded documents from backend (source of truth)
@@ -312,6 +339,7 @@ export function Step1InformationConsolidation({
     }
 
     loadDocuments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposalId, setFormData])
 
   /**
@@ -398,11 +426,32 @@ export function Step1InformationConsolidation({
       const response = await proposalService.getVectorizationStatus(proposalId)
 
       if (response.success) {
-        setVectorizationStatus(response.vectorization_status)
-        setHasVectorizingFiles(response.has_pending)
+        const vecStatus = { ...response.vectorization_status }
+        const now = Date.now()
 
-        // If all completed, stop polling
-        if (response.all_completed) {
+        // Detect stale vectorizations stuck in pending/processing
+        let hasStale = false
+        for (const [filename, fileStatus] of Object.entries(vecStatus)) {
+          if (fileStatus.status === 'pending' || fileStatus.status === 'processing') {
+            if (fileStatus.started_at) {
+              const elapsed = now - new Date(fileStatus.started_at).getTime()
+              if (elapsed > VECTORIZATION_TIMEOUT_MS) {
+                hasStale = true
+                vecStatus[filename] = {
+                  ...fileStatus,
+                  status: 'failed',
+                  error: 'Vectorization timed out. Please delete and re-upload the file.',
+                }
+              }
+            }
+          }
+        }
+
+        setVectorizationStatus(vecStatus)
+        setHasVectorizingFiles(response.has_pending && !hasStale)
+
+        // If all completed or all stale, stop polling
+        if (response.all_completed || hasStale) {
           if (vectorizationPollRef.current) {
             clearInterval(vectorizationPollRef.current)
             vectorizationPollRef.current = null
@@ -410,7 +459,7 @@ export function Step1InformationConsolidation({
         }
       }
     } catch (error) {
-      // Removed console.error
+      // Silently handle polling errors
     }
   }, [proposalId])
 
@@ -1377,6 +1426,29 @@ export function Step1InformationConsolidation({
     setFileToDelete({ filename, type: 'supporting' })
   }
 
+  const handleRetryVectorization = async (filename: string) => {
+    if (!proposalId) {
+      return
+    }
+    try {
+      setVectorizationStatus(prev => ({
+        ...prev,
+        [filename]: { ...prev[filename], status: 'pending' as const, error: undefined },
+      }))
+      await proposalService.retryVectorization(proposalId, filename)
+      pollVectorizationStatus()
+    } catch {
+      setVectorizationStatus(prev => ({
+        ...prev,
+        [filename]: {
+          ...prev[filename],
+          status: 'failed' as const,
+          error: 'Failed to trigger retry',
+        },
+      }))
+    }
+  }
+
   /**
    * Save existing work text to backend
    */
@@ -1655,24 +1727,35 @@ export function Step1InformationConsolidation({
       {/* ===== Validation Status Card ===== */}
       {!validationStatus.isValid && (
         <div className={styles.progressCard}>
-          <div className={styles.completionText}>
-            <strong>{3 - validationStatus.missingFields.length}</strong> of <strong>3</strong>{' '}
-            required fields completed
+          <div className={styles.progressCardHeader}>
+            <div className={styles.progressCardInfo}>
+              <div className={styles.completionText}>
+                <strong>{3 - validationStatus.missingFields.length}</strong> of <strong>3</strong>{' '}
+                required fields completed
+              </div>
+              {validationStatus.missingFields.length > 0 && (
+                <p className={styles.missingFieldsText}>
+                  Missing: {validationStatus.missingFields.join(', ')}
+                </p>
+              )}
+            </div>
           </div>
-          {validationStatus.missingFields.length > 0 && (
-            <p className={styles.missingFieldsText}>
-              Missing: {validationStatus.missingFields.join(', ')}
-            </p>
-          )}
+          <div className={styles.progressCardBar}>
+            <div
+              className={styles.progressCardFill}
+              style={{ width: `${((3 - validationStatus.missingFields.length) / 3) * 100}%` }}
+            />
+          </div>
         </div>
       )}
 
       {/* ===== Success Message ===== */}
       {validationStatus.isValid && (
         <div className={styles.nextStepsCard}>
-          <div className={styles.nextStepsTitle}>✓ All required fields complete</div>
+          <div className={styles.nextStepsTitle}>&#10003; All required fields complete</div>
           <p className={styles.nextStepsDescription}>
-            You can now click &quot;Analyze &amp; Continue&quot; to proceed to the next step
+            Click &quot;Analyze &amp; Continue&quot; below to proceed. This will analyze your
+            documents (~2-3 minutes).
           </p>
         </div>
       )}
@@ -1681,15 +1764,26 @@ export function Step1InformationConsolidation({
       <div className={styles.titleField}>
         <label className={styles.titleLabel}>
           Title<span className={styles.requiredAsterisk}>*</span>
+          <span className={styles.fieldStatusIcon}>
+            {validationStatus.hasTitle ? (
+              <CheckCircle2 size={16} color="#00a63e" />
+            ) : (
+              <Circle size={16} color="#d1d5db" />
+            )}
+          </span>
         </label>
         <input
           type="text"
           placeholder="Write the title"
           value={formData.textInputs['proposal-title'] || ''}
           onChange={e => handleTextChange('proposal-title', e.target.value)}
-          className={styles.titleInput}
+          onBlur={() => setTitleTouched(true)}
+          className={`${styles.titleInput} ${titleTouched && !validationStatus.hasTitle ? styles.titleInputError : ''}`}
           aria-label="Proposal title"
         />
+        {!validationStatus.hasTitle && !titleTouched && (
+          <span className={styles.titleHelper}>Give your proposal a descriptive title</span>
+        )}
       </div>
 
       {/* ===== RFP Upload Section ===== */}
@@ -1699,6 +1793,13 @@ export function Step1InformationConsolidation({
           <div className={styles.uploadSectionInfo}>
             <h3 id="rfp-section-title" className={styles.uploadSectionTitle}>
               RFP / Call for Proposals<span className={styles.requiredAsterisk}>*</span>
+              <span className={styles.fieldStatusIcon}>
+                {validationStatus.hasRFP ? (
+                  <CheckCircle2 size={16} color="#00a63e" />
+                ) : (
+                  <Circle size={16} color="#d1d5db" />
+                )}
+              </span>
             </h3>
             <p className={styles.uploadSectionDescription}>
               Upload the official Request for Proposals document. This is essential for
@@ -1935,10 +2036,25 @@ export function Step1InformationConsolidation({
                             )}
                           </span>
                         ) : vectorizationFailed ? (
-                          <span className={styles.fileStatus} style={{ color: '#dc2626' }}>
-                            <AlertTriangle size={12} />
-                            Vectorization failed
-                          </span>
+                          <>
+                            <span
+                              className={styles.fileStatus}
+                              style={{ color: '#dc2626' }}
+                              title={fileVecStatus?.error || 'Vectorization failed'}
+                            >
+                              <AlertTriangle size={12} />
+                              Vectorization failed
+                            </span>
+                            <button
+                              type="button"
+                              className={styles.retryButton}
+                              onClick={() => handleRetryVectorization(filename)}
+                              title="Retry vectorization"
+                            >
+                              <RefreshCw size={12} />
+                              Retry
+                            </button>
+                          </>
                         ) : (
                           <span className={styles.fileStatus}>
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -2058,7 +2174,15 @@ export function Step1InformationConsolidation({
             <span className={styles.textAreaHint}>
               Please provide more detail (minimum 50 characters)
             </span>
-            <span className={styles.textAreaCount}>
+            <span
+              className={`${styles.textAreaCount} ${
+                (formData.textInputs['existing-work'] || '').length < 50
+                  ? styles.textAreaCountRed
+                  : (formData.textInputs['existing-work'] || '').length <= 100
+                    ? styles.textAreaCountYellow
+                    : styles.textAreaCountGreen
+              }`}
+            >
               {(formData.textInputs['existing-work'] || '').length} characters
             </span>
           </div>
@@ -2202,10 +2326,25 @@ export function Step1InformationConsolidation({
                               )}
                             </span>
                           ) : vectorizationFailed ? (
-                            <span className={styles.fileStatus} style={{ color: '#dc2626' }}>
-                              <AlertTriangle size={12} />
-                              Vectorization failed
-                            </span>
+                            <>
+                              <span
+                                className={styles.fileStatus}
+                                style={{ color: '#dc2626' }}
+                                title={fileVecStatus?.error || 'Vectorization failed'}
+                              >
+                                <AlertTriangle size={12} />
+                                Vectorization failed
+                              </span>
+                              <button
+                                type="button"
+                                className={styles.retryButton}
+                                onClick={() => handleRetryVectorization(filename)}
+                                title="Retry vectorization"
+                              >
+                                <RefreshCw size={12} />
+                                Retry
+                              </button>
+                            </>
                           ) : (
                             <span className={styles.fileStatus}>
                               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -2282,6 +2421,13 @@ export function Step1InformationConsolidation({
           <div className={styles.uploadSectionInfo}>
             <h3 id="concept-section-title" className={styles.uploadSectionTitle}>
               Initial Concept or Direction<span className={styles.requiredAsterisk}>*</span>
+              <span className={styles.fieldStatusIcon}>
+                {validationStatus.hasConcept ? (
+                  <CheckCircle2 size={16} color="#00a63e" />
+                ) : (
+                  <Circle size={16} color="#d1d5db" />
+                )}
+              </span>
             </h3>
             <p className={styles.uploadSectionDescription}>
               Outline your initial ideas, approach, or hypothesis for this proposal. You can write
@@ -2317,7 +2463,15 @@ export function Step1InformationConsolidation({
             <span className={styles.textAreaHint}>
               Please provide more detail about your concept (minimum 100 characters)
             </span>
-            <span className={styles.textAreaCount}>
+            <span
+              className={`${styles.textAreaCount} ${
+                (formData.textInputs['initial-concept'] || '').length < 100
+                  ? styles.textAreaCountRed
+                  : (formData.textInputs['initial-concept'] || '').length <= 200
+                    ? styles.textAreaCountYellow
+                    : styles.textAreaCountGreen
+              }`}
+            >
               {(formData.textInputs['initial-concept'] || '').length} characters
             </span>
           </div>

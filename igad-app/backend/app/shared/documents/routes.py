@@ -1204,38 +1204,36 @@ async def save_work_text(
             },
         )
 
-        # Chunk text if it's too long (>1000 chars)
-        text_chunks = chunk_text(work_text, chunk_size=1000, overlap=200)
+        # Chunk text for vectorization
+        text_chunks = chunk_text(work_text, chunk_size=2000, overlap=200)
         print(f"Created {len(text_chunks)} chunks for work text")
 
-        # Store in S3 Vectors (each chunk as separate vector)
+        # Store in S3 Vectors using batch processing
         from app.shared.vectors.service import VectorEmbeddingsService
 
         vector_service = VectorEmbeddingsService()
 
-        vector_result = True
-        for idx, chunk in enumerate(text_chunks):
-            chunk_metadata = {
-                "organization": organization,
-                "project_type": project_type,
-                "region": region,
-                "document_name": "existing_work_text",
-                "chunk_index": str(idx),
-                "total_chunks": str(len(text_chunks)),
+        chunks_data = [
+            {
+                "text": chunk,
+                "metadata": {
+                    "organization": organization,
+                    "project_type": project_type,
+                    "region": region,
+                    "document_name": "existing_work_text",
+                    "chunk_index": str(idx),
+                    "total_chunks": str(len(text_chunks)),
+                },
             }
+            for idx, chunk in enumerate(text_chunks)
+        ]
 
-            result = vector_service.insert_existing_work(
-                proposal_id=f"{proposal_id}-work-chunk-{idx}",
-                text=chunk,
-                metadata=chunk_metadata,
+        try:
+            vector_service.insert_existing_work_batch(
+                proposal_id=proposal_code, chunks=chunks_data
             )
-
-            if not result:
-                vector_result = False
-                print(f"Warning: Vector storage failed for work text chunk {idx}")
-
-        if not vector_result:
-            print("Warning: Vector storage failed for work text")
+        except Exception as vec_err:
+            print(f"Warning: Vector storage failed for work text: {vec_err}")
 
         # Update DynamoDB text_inputs
         await db_client.update_item(
@@ -1430,6 +1428,153 @@ async def list_documents(proposal_id: str, user=Depends(get_current_user)):
         traceback.print_exc()
         raise HTTPException(
             status_code=500, detail=f"Failed to list documents: {str(e)}"
+        )
+
+
+@router.post("/retry-vectorization/{filename:path}")
+async def retry_vectorization(
+    proposal_id: str, filename: str, user=Depends(get_current_user)
+):
+    """
+    Retry vectorization for a failed document.
+
+    Re-triggers the Lambda worker for an already-uploaded file
+    that failed vectorization (due to cold start timeout, etc.).
+    The file must already exist in S3 and in the proposal's uploaded_files.
+    """
+    try:
+        # Get proposal
+        all_proposals = await db_client.query_items(
+            pk=f"USER#{user.get('user_id')}", index_name="GSI1"
+        )
+
+        proposal = None
+        for p in all_proposals:
+            if p.get("id") == proposal_id:
+                proposal = p
+                break
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        proposal_code = proposal.get("proposalCode")
+
+        # Determine document type from uploaded_files
+        uploaded_files = proposal.get("uploaded_files", {})
+        reference_files = uploaded_files.get("reference-proposals", [])
+        supporting_files = uploaded_files.get("supporting-docs", [])
+
+        if filename in reference_files:
+            document_type = "reference"
+            s3_key = f"{proposal_code}/documents/references/{filename}"
+        elif filename in supporting_files:
+            document_type = "supporting"
+            s3_key = f"{proposal_code}/documents/supporting/{filename}"
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail=f"File '{filename}' not found in proposal documents",
+            )
+
+        # Verify file exists in S3
+        session = get_aws_session()
+        s3_client = session.client("s3")
+        bucket = os.environ.get("PROPOSALS_BUCKET")
+
+        try:
+            s3_client.head_object(Bucket=bucket, Key=s3_key)
+        except Exception:
+            raise HTTPException(
+                status_code=404,
+                detail=f"File not found in storage: {filename}",
+            )
+
+        # Get existing metadata from vectorization_status
+        vectorization_status = proposal.get("vectorization_status", {})
+        file_status = vectorization_status.get(filename, {})
+
+        # Build metadata from existing status or defaults
+        metadata = file_status.get("metadata", {})
+
+        # Reset vectorization status to pending
+        vectorization_status[filename] = {
+            "status": "pending",
+            "started_at": datetime.utcnow().isoformat(),
+            "chunks_processed": 0,
+            "total_chunks": 0,
+            "metadata": metadata,
+        }
+
+        await db_client.update_item(
+            pk=f"PROPOSAL#{proposal_code}",
+            sk="METADATA",
+            update_expression="SET vectorization_status = :vec_status, updated_at = :updated",
+            expression_attribute_values={
+                ":vec_status": vectorization_status,
+                ":updated": datetime.utcnow().isoformat(),
+            },
+        )
+
+        # Delete any existing vectors for this document before retrying
+        try:
+            from app.shared.vectors.service import VectorEmbeddingsService
+
+            vector_service = VectorEmbeddingsService()
+            index_name = (
+                "reference-proposals-index"
+                if document_type == "reference"
+                else "existing-work-index"
+            )
+            vector_service.delete_vectors_by_document_name(
+                document_name=filename, index_name=index_name
+            )
+        except Exception as vec_err:
+            print(f"Warning: Could not clean up old vectors: {vec_err}")
+
+        # Trigger async vectorization via Lambda
+        import json
+
+        import boto3
+
+        lambda_client = boto3.client("lambda")
+
+        worker_event = {
+            "proposal_id": proposal_id,
+            "proposal_code": proposal_code,
+            "analysis_type": "vectorize_document",
+            "document_type": document_type,
+            "filename": filename,
+            "s3_key": s3_key,
+            "metadata": metadata,
+        }
+
+        lambda_function_name = os.environ.get(
+            "WORKER_FUNCTION_NAME", "proposal-writer-worker"
+        )
+
+        lambda_client.invoke(
+            FunctionName=lambda_function_name,
+            InvocationType="Event",
+            Payload=json.dumps(worker_event),
+        )
+
+        return {
+            "success": True,
+            "message": f"Vectorization retry triggered for {filename}",
+            "filename": filename,
+            "vectorization_status": "pending",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Retry vectorization error: {str(e)}")
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retry vectorization: {str(e)}",
         )
 
 

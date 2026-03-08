@@ -562,6 +562,38 @@ def _set_failed_status(
                 ":updated": datetime.utcnow().isoformat(),
             },
         )
+    elif analysis_type == "vectorize_document":
+        # Update per-file vectorization status to failed
+        # Need proposal_code and filename from the event context
+        # Since _set_failed_status only receives proposal_id (which is proposal_code
+        # for vectorization), we update all pending/processing files to failed
+        proposal = db_client.get_item_sync(
+            pk=f"PROPOSAL#{proposal_id}",
+            sk="METADATA",
+        )
+        if proposal:
+            vectorization_status = proposal.get("vectorization_status", {})
+            updated = False
+            for filename, file_status in vectorization_status.items():
+                if file_status.get("status") in ("pending", "processing"):
+                    vectorization_status[filename] = {
+                        "status": "failed",
+                        "error": error_msg,
+                        "failed_at": datetime.utcnow().isoformat(),
+                        "chunks_processed": file_status.get("chunks_processed", 0),
+                        "total_chunks": file_status.get("total_chunks", 0),
+                    }
+                    updated = True
+            if updated:
+                db_client.update_item_sync(
+                    pk=f"PROPOSAL#{proposal_id}",
+                    sk="METADATA",
+                    update_expression="SET vectorization_status = :vec_status, updated_at = :updated",
+                    expression_attribute_values={
+                        ":vec_status": vectorization_status,
+                        ":updated": datetime.utcnow().isoformat(),
+                    },
+                )
 
 
 def _update_retry_status(
@@ -1270,11 +1302,11 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
         logger.info(f"   Extracted {len(extracted_text)} characters")
 
         # Chunk text
-        text_chunks = chunk_text(extracted_text, chunk_size=1000, overlap=200)
+        text_chunks = chunk_text(extracted_text, chunk_size=2000, overlap=200)
         total_chunks = len(text_chunks)
         logger.info(f"   Created {total_chunks} chunks")
 
-        # Update status with total chunks
+        # Update status to processing
         _update_vectorization_status(
             proposal_code,
             filename,
@@ -1283,52 +1315,50 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
             total_chunks=total_chunks,
         )
 
-        # Vectorize each chunk
+        # Batch vectorize all chunks at once
         vector_service = VectorEmbeddingsService()
 
-        logger.info(f"🔄 Starting vectorization for {total_chunks} chunks...")
+        logger.info(f"🔄 Starting batch vectorization for {total_chunks} chunks...")
 
-        for idx, chunk in enumerate(text_chunks):
-            if document_type == "reference":
-                chunk_metadata = {
-                    "donor": metadata.get("donor", ""),
-                    "sector": metadata.get("sector", ""),
-                    "year": metadata.get("year", ""),
-                    "status": metadata.get("status", ""),
-                    "document_name": filename,
-                    "chunk_index": str(idx),
-                    "total_chunks": str(total_chunks),
+        if document_type == "reference":
+            chunks_data = [
+                {
+                    "text": chunk,
+                    "metadata": {
+                        "donor": metadata.get("donor", ""),
+                        "sector": metadata.get("sector", ""),
+                        "year": metadata.get("year", ""),
+                        "status": metadata.get("status", ""),
+                        "document_name": filename,
+                        "chunk_index": str(idx),
+                        "total_chunks": str(total_chunks),
+                    },
                 }
-                result = vector_service.insert_reference_proposal(
-                    proposal_id=proposal_code, text=chunk, metadata=chunk_metadata
-                )
-            else:  # supporting
-                chunk_metadata = {
-                    "organization": metadata.get("organization", ""),
-                    "project_type": metadata.get("project_type", ""),
-                    "region": metadata.get("region", ""),
-                    "document_name": filename,
-                    "chunk_index": str(idx),
-                    "total_chunks": str(total_chunks),
+                for idx, chunk in enumerate(text_chunks)
+            ]
+            vector_service.insert_reference_proposals_batch(
+                proposal_id=proposal_code, chunks=chunks_data
+            )
+        else:  # supporting
+            chunks_data = [
+                {
+                    "text": chunk,
+                    "metadata": {
+                        "organization": metadata.get("organization", ""),
+                        "project_type": metadata.get("project_type", ""),
+                        "region": metadata.get("region", ""),
+                        "document_name": filename,
+                        "chunk_index": str(idx),
+                        "total_chunks": str(total_chunks),
+                    },
                 }
-                result = vector_service.insert_existing_work(
-                    proposal_id=proposal_code, text=chunk, metadata=chunk_metadata
-                )
+                for idx, chunk in enumerate(text_chunks)
+            ]
+            vector_service.insert_existing_work_batch(
+                proposal_id=proposal_code, chunks=chunks_data
+            )
 
-            if not result:
-                raise Exception(f"Vector storage failed for chunk {idx}")
-
-            logger.info(f"   ✅ Chunk {idx + 1}/{total_chunks} vectorized")
-
-            # Update progress every 5 chunks or on last chunk
-            if (idx + 1) % 5 == 0 or idx == total_chunks - 1:
-                _update_vectorization_status(
-                    proposal_code,
-                    filename,
-                    "processing",
-                    chunks_processed=idx + 1,
-                    total_chunks=total_chunks,
-                )
+        logger.info(f"   ✅ All {total_chunks} chunks vectorized in batch")
 
         # Mark as completed
         _update_vectorization_status(

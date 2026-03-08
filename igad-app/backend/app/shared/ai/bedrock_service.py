@@ -69,7 +69,7 @@ class BedrockService:
 
         # Use cross-region inference profile for Claude Sonnet 4
         # This supports on-demand throughput
-        self.model_id = "us.anthropic.claude-sonnet-4-20250514-v1:0"
+        self.model_id = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
         self.max_tokens = 4000
         self.temperature = 0.7
 

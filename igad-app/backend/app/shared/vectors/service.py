@@ -1,9 +1,12 @@
 """Vector Embeddings Service for S3 Vectors"""
 
 import json
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional
 
 import boto3
+from botocore.exceptions import ClientError
 
 
 class VectorEmbeddingsService:
@@ -21,6 +24,123 @@ class VectorEmbeddingsService:
             modelId=self.model_id, body=json.dumps({"inputText": text})
         )
         return json.loads(response["body"].read())["embedding"]
+
+    def _generate_embedding_with_retry(
+        self, text: str, max_retries: int = 3
+    ) -> List[float]:
+        """Generate embedding with exponential backoff on throttling"""
+        for attempt in range(max_retries):
+            try:
+                return self.generate_embedding(text)
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "ThrottlingException" and attempt < max_retries - 1:
+                    wait_time = (2 ** attempt) * 0.5
+                    print(f"Throttled, retrying in {wait_time}s (attempt {attempt + 1})")
+                    time.sleep(wait_time)
+                else:
+                    raise
+
+    def generate_embeddings_batch(
+        self, texts: List[str], max_workers: int = 5
+    ) -> List[List[float]]:
+        """Generate embeddings in parallel using ThreadPoolExecutor"""
+        embeddings = [None] * len(texts)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_idx = {
+                executor.submit(self._generate_embedding_with_retry, text): idx
+                for idx, text in enumerate(texts)
+            }
+            for future in as_completed(future_to_idx):
+                idx = future_to_idx[future]
+                embeddings[idx] = future.result()
+
+        return embeddings
+
+    def insert_reference_proposals_batch(
+        self, proposal_id: str, chunks: List[Dict[str, Any]]
+    ) -> bool:
+        """Batch insert reference proposal vectors with parallel embeddings"""
+        try:
+            texts = [c["text"] for c in chunks]
+            print(f"Generating {len(texts)} embeddings in parallel...")
+            embeddings = self.generate_embeddings_batch(texts)
+
+            # Build vectors and insert in batches of 25
+            vectors = []
+            for i, chunk in enumerate(chunks):
+                metadata = chunk["metadata"]
+                key = "|".join([
+                    proposal_id,
+                    metadata.get("donor", ""),
+                    metadata.get("sector", ""),
+                    metadata.get("year", ""),
+                    metadata.get("document_name", ""),
+                    metadata.get("chunk_index", "0"),
+                    metadata.get("total_chunks", "1"),
+                ])
+                vectors.append({
+                    "key": key,
+                    "data": {"float32": embeddings[i]},
+                    "metadata": {},
+                })
+
+            batch_size = 25
+            for start in range(0, len(vectors), batch_size):
+                batch = vectors[start : start + batch_size]
+                self.s3vectors.put_vectors(
+                    vectorBucketName=self.bucket_name,
+                    indexName="reference-proposals-index",
+                    vectors=batch,
+                )
+                print(f"Inserted batch {start // batch_size + 1} ({len(batch)} vectors)")
+
+            return True
+        except Exception as e:
+            print(f"Error in batch insert reference proposals: {e}")
+            raise
+
+    def insert_existing_work_batch(
+        self, proposal_id: str, chunks: List[Dict[str, Any]]
+    ) -> bool:
+        """Batch insert existing work vectors with parallel embeddings"""
+        try:
+            texts = [c["text"] for c in chunks]
+            print(f"Generating {len(texts)} embeddings in parallel...")
+            embeddings = self.generate_embeddings_batch(texts)
+
+            vectors = []
+            for i, chunk in enumerate(chunks):
+                metadata = chunk["metadata"]
+                key = "|".join([
+                    proposal_id,
+                    metadata.get("organization", ""),
+                    metadata.get("project_type", ""),
+                    metadata.get("region", ""),
+                    metadata.get("document_name", ""),
+                    metadata.get("chunk_index", "0"),
+                    metadata.get("total_chunks", "1"),
+                ])
+                vectors.append({
+                    "key": key,
+                    "data": {"float32": embeddings[i]},
+                    "metadata": {},
+                })
+
+            batch_size = 25
+            for start in range(0, len(vectors), batch_size):
+                batch = vectors[start : start + batch_size]
+                self.s3vectors.put_vectors(
+                    vectorBucketName=self.bucket_name,
+                    indexName="existing-work-index",
+                    vectors=batch,
+                )
+                print(f"Inserted batch {start // batch_size + 1} ({len(batch)} vectors)")
+
+            return True
+        except Exception as e:
+            print(f"Error in batch insert existing work: {e}")
+            raise
 
     def insert_reference_proposal(
         self, proposal_id: str, text: str, metadata: Dict[str, str]
@@ -55,8 +175,8 @@ class VectorEmbeddingsService:
             )
             return True
         except Exception as e:
-            print(f"Error: {e}")
-            return False
+            print(f"Error inserting reference proposal vector: {e}")
+            raise
 
     def insert_existing_work(
         self, proposal_id: str, text: str, metadata: Dict[str, str]
@@ -97,8 +217,8 @@ class VectorEmbeddingsService:
             )
             return True
         except Exception as e:
-            print(f"Error: {e}")
-            return False
+            print(f"Error inserting existing work vector: {e}")
+            raise
 
     def search_similar_proposals(
         self, query_text: str, top_k: int = 5, filters: Optional[Dict[str, str]] = None

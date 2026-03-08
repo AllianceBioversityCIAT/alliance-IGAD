@@ -14,7 +14,7 @@ class BedrockClient:
     def __init__(self, region_name: str = "us-east-1"):
         session = get_aws_session()
         self.client = session.client("bedrock-runtime", region_name=region_name)
-        self.model_id = "us.anthropic.claude-sonnet-4-20250514-v1:0"
+        self.model_id = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
     def generate_content(
         self,

@@ -15,7 +15,6 @@
     "lint:check": "eslint src --ext ts,tsx",
     "docs-check": "eslint src --ext ts,tsx --rule 'jsdoc/require-description: error'",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
-    "prepare": "husky install",
     "generate-favicon": "node scripts/generate-favicon.js"
   },
   "dependencies": {
@@ -53,8 +52,6 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.24",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.6",
     "postcss": "^8.4.31",
     "prettier": "^3.0.3",
     "sharp": "^0.34.5",
@@ -62,11 +59,5 @@
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
     "vitest": "^0.34.6"
-  },
-  "lint-staged": {
-    "src/**/*.{ts,tsx}": [
-      "eslint --fix",
-      "git add"
-    ]
   }
 }

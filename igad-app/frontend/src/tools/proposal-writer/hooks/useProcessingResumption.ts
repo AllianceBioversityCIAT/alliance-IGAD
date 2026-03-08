@@ -9,8 +9,14 @@ import type {
 } from '../types/analysis'
 
 // Polling configuration
-const POLLING_INTERVAL = 3000 // 3 seconds
 const MAX_POLLING_ATTEMPTS = 100 // ~5 minutes max
+
+/** Dynamic polling interval with exponential backoff */
+const getPollingInterval = (attempts: number): number => {
+  if (attempts < 5) return 2000   // First 5 polls: every 2s
+  if (attempts < 10) return 3000  // Next 5 polls: every 3s
+  return 5000                      // After 10 polls: every 5s
+}
 
 // Operation names for display
 const OPERATION_NAMES: Record<keyof AllProcessingStatus, string> = {
@@ -55,7 +61,7 @@ export interface UseProcessingResumptionResult {
 }
 
 type PollingState = {
-  intervalId: NodeJS.Timeout
+  timeoutId: NodeJS.Timeout
   attempts: number
 }
 
@@ -83,20 +89,20 @@ export function useProcessingResumption(
   const pollingStatesRef = useRef<Map<keyof AllProcessingStatus, PollingState>>(new Map())
   const hasCheckedRef = useRef(false)
 
-  // Clean up a specific polling interval
+  // Clean up a specific polling timeout
   const stopPolling = useCallback((operationKey: keyof AllProcessingStatus) => {
     const state = pollingStatesRef.current.get(operationKey)
     if (state) {
-      clearInterval(state.intervalId)
+      clearTimeout(state.timeoutId)
       pollingStatesRef.current.delete(operationKey)
     }
     setResumingOperations(prev => prev.filter(op => op !== OPERATION_NAMES[operationKey]))
   }, [])
 
-  // Clean up all polling intervals
+  // Clean up all polling timeouts
   const stopAllPolling = useCallback(() => {
     pollingStatesRef.current.forEach(state => {
-      clearInterval(state.intervalId)
+      clearTimeout(state.timeoutId)
     })
     pollingStatesRef.current.clear()
     setResumingOperations([])
@@ -236,7 +242,7 @@ export function useProcessingResumption(
       const operationName = OPERATION_NAMES[operationKey]
       setResumingOperations(prev => [...prev, operationName])
 
-      const intervalId = setInterval(async () => {
+      const poll = async () => {
         const state = pollingStatesRef.current.get(operationKey)
         if (!state) {
           return
@@ -257,17 +263,24 @@ export function useProcessingResumption(
           if (status.status === 'completed' && status.data) {
             stopPolling(operationKey)
             handleOperationComplete(operationKey, status.data)
+            return
           } else if (status.status === 'failed') {
             stopPolling(operationKey)
             onOperationError?.(operationName, status.error || 'Operation failed')
+            return
           }
-          // If still processing, continue polling
+          // If still processing, schedule next poll with dynamic interval
         } catch {
           // Network error - continue polling, it might recover
         }
-      }, POLLING_INTERVAL)
 
-      pollingStatesRef.current.set(operationKey, { intervalId, attempts: 0 })
+        const nextInterval = getPollingInterval(state.attempts)
+        state.timeoutId = setTimeout(poll, nextInterval)
+      }
+
+      // Start first poll after initial interval
+      const timeoutId = setTimeout(poll, getPollingInterval(0))
+      pollingStatesRef.current.set(operationKey, { timeoutId, attempts: 0 })
     },
     [getStatusChecker, handleOperationComplete, onOperationError, stopPolling]
   )

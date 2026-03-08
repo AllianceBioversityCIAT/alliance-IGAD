@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import DOMPurify from 'dompurify'
 import {
   Sparkles,
@@ -13,18 +13,11 @@ import {
   Loader2,
   AlertTriangle,
 } from 'lucide-react'
-import {
-  Document,
-  Packer,
-  Paragraph,
-  HeadingLevel,
-  TextRun,
-  AlignmentType,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
-  BorderStyle,
+import type {
+  Paragraph as DocxParagraph,
+  TextRun as DocxTextRun,
+  Table as DocxTable,
+  TableRow as DocxTableRow,
 } from 'docx'
 import styles from './step3-structure.module.css'
 import { StepProps } from './stepConfig'
@@ -49,6 +42,121 @@ interface Step3Props extends StepProps {
 
 // Removed unused PRIORITY_COLORS constant
 
+// ─── Module-scope pure helpers ────────────────────────────────────────────────
+
+function formatInlineMarkdown(str: string): string {
+  let formatted = str
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
+  // Remove inline code backticks
+  formatted = formatted.replace(/`([^`]+)`/g, '$1')
+  return DOMPurify.sanitize(formatted)
+}
+
+function parseMarkdownContent(text: string): JSX.Element[] {
+  const lines = text.split('\n')
+  const elements: JSX.Element[] = []
+  let currentParagraph: string[] = []
+  let inCodeBlock = false
+
+  const flushParagraph = () => {
+    if (currentParagraph.length > 0) {
+      const paragraphText = currentParagraph.join(' ')
+      if (paragraphText.trim()) {
+        elements.push(
+          <p
+            key={`p-${elements.length}`}
+            className={styles.narrativeParagraph}
+            dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(paragraphText) }}
+          />
+        )
+      }
+      currentParagraph = []
+    }
+  }
+
+  lines.forEach((line, index) => {
+    // Handle code block markers (``` or ```json, ```markdown, etc.)
+    if (line.trim().startsWith('```')) {
+      flushParagraph()
+      inCodeBlock = !inCodeBlock
+      return // Skip the ``` line itself
+    }
+
+    // Skip content inside code blocks
+    if (inCodeBlock) {
+      return
+    }
+
+    // Skip markdown headers like "## Narrative Overview"
+    if (line.startsWith('## ') || line.startsWith('# ')) {
+      flushParagraph()
+      // Don't render headers as they're redundant with the card title
+      return
+    } else if (line.startsWith('### ')) {
+      flushParagraph()
+      elements.push(
+        <h4 key={`h4-${index}`} className={styles.narrativeSubheading}>
+          {line.substring(4)}
+        </h4>
+      )
+    } else if (line.match(/^[*-]\s+/)) {
+      flushParagraph()
+      elements.push(
+        <p
+          key={`li-${index}`}
+          className={styles.narrativeBullet}
+          dangerouslySetInnerHTML={{
+            __html: '• ' + formatInlineMarkdown(line.replace(/^[*-]\s+/, '')),
+          }}
+        />
+      )
+    } else if (line.trim() === '') {
+      flushParagraph()
+    } else {
+      currentParagraph.push(line.trim())
+    }
+  })
+
+  flushParagraph()
+  return elements
+}
+
+// Get first paragraph for preview (skip headers and code blocks)
+function getPreviewText(text: string): string {
+  const lines = text.split('\n')
+  let inCodeBlock = false
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+
+    // Track code blocks
+    if (trimmed.startsWith('```')) {
+      inCodeBlock = !inCodeBlock
+      continue
+    }
+
+    // Skip content inside code blocks
+    if (inCodeBlock) {
+      continue
+    }
+
+    // Skip headers, bullets, and empty lines
+    if (
+      trimmed &&
+      !trimmed.startsWith('#') &&
+      !trimmed.startsWith('*') &&
+      !trimmed.startsWith('-') &&
+      !trimmed.startsWith('`')
+    ) {
+      return trimmed.length > 200 ? trimmed.substring(0, 200) + '...' : trimmed
+    }
+  }
+  return text.substring(0, 200) + '...'
+}
+
+// ─── NarrativeOverview ────────────────────────────────────────────────────────
+
 /**
  * NarrativeOverview Component
  * Displays AI-generated narrative overview of the proposal structure
@@ -62,120 +170,11 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
   // Start collapsed by default
   const [isExpanded, setIsExpanded] = useState(false)
 
+  const parsedContent = useMemo(() => parseMarkdownContent(narrativeText || ''), [narrativeText])
+  const previewText = useMemo(() => getPreviewText(narrativeText || ''), [narrativeText])
+
   if (!narrativeText || narrativeText.trim().length === 0) {
     return null
-  }
-
-  // Parse markdown content into formatted elements
-  const parseMarkdownContent = (text: string): JSX.Element[] => {
-    const lines = text.split('\n')
-    const elements: JSX.Element[] = []
-    let currentParagraph: string[] = []
-    let inCodeBlock = false
-
-    const formatInlineMarkdown = (str: string): string => {
-      let formatted = str
-      formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Remove inline code backticks
-      formatted = formatted.replace(/`([^`]+)`/g, '$1')
-      return DOMPurify.sanitize(formatted)
-    }
-
-    const flushParagraph = () => {
-      if (currentParagraph.length > 0) {
-        const text = currentParagraph.join(' ')
-        if (text.trim()) {
-          elements.push(
-            <p
-              key={`p-${elements.length}`}
-              className={styles.narrativeParagraph}
-              dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
-            />
-          )
-        }
-        currentParagraph = []
-      }
-    }
-
-    lines.forEach((line, index) => {
-      // Handle code block markers (``` or ```json, ```markdown, etc.)
-      if (line.trim().startsWith('```')) {
-        flushParagraph()
-        inCodeBlock = !inCodeBlock
-        return // Skip the ``` line itself
-      }
-
-      // Skip content inside code blocks
-      if (inCodeBlock) {
-        return
-      }
-
-      // Skip markdown headers like "## Narrative Overview"
-      if (line.startsWith('## ') || line.startsWith('# ')) {
-        flushParagraph()
-        // Don't render headers as they're redundant with the card title
-        return
-      } else if (line.startsWith('### ')) {
-        flushParagraph()
-        elements.push(
-          <h4 key={`h4-${index}`} className={styles.narrativeSubheading}>
-            {line.substring(4)}
-          </h4>
-        )
-      } else if (line.match(/^[*-]\s+/)) {
-        flushParagraph()
-        elements.push(
-          <p
-            key={`li-${index}`}
-            className={styles.narrativeBullet}
-            dangerouslySetInnerHTML={{
-              __html: '• ' + formatInlineMarkdown(line.replace(/^[*-]\s+/, '')),
-            }}
-          />
-        )
-      } else if (line.trim() === '') {
-        flushParagraph()
-      } else {
-        currentParagraph.push(line.trim())
-      }
-    })
-
-    flushParagraph()
-    return elements
-  }
-
-  // Get first paragraph for preview (skip headers and code blocks)
-  const getPreviewText = (text: string): string => {
-    const lines = text.split('\n')
-    let inCodeBlock = false
-
-    for (const line of lines) {
-      const trimmed = line.trim()
-
-      // Track code blocks
-      if (trimmed.startsWith('```')) {
-        inCodeBlock = !inCodeBlock
-        continue
-      }
-
-      // Skip content inside code blocks
-      if (inCodeBlock) {
-        continue
-      }
-
-      // Skip headers, bullets, and empty lines
-      if (
-        trimmed &&
-        !trimmed.startsWith('#') &&
-        !trimmed.startsWith('*') &&
-        !trimmed.startsWith('-') &&
-        !trimmed.startsWith('`')
-      ) {
-        return trimmed.length > 200 ? trimmed.substring(0, 200) + '...' : trimmed
-      }
-    }
-    return text.substring(0, 200) + '...'
   }
 
   return (
@@ -190,10 +189,12 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
             </p>
           </div>
         </div>
+        {/* U2 — aria-expanded on narrative expand button */}
         <button
           type="button"
           className={styles.expandButton}
           onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
           style={{ marginLeft: 'auto' }}
         >
           {isExpanded ? 'Collapse' : 'Expand'}
@@ -201,13 +202,11 @@ function NarrativeOverview({ narrativeText }: NarrativeOverviewProps) {
         </button>
       </div>
 
-      {isExpanded && (
-        <div className={styles.narrativeContent}>{parseMarkdownContent(narrativeText)}</div>
-      )}
+      {isExpanded && <div className={styles.narrativeContent}>{parsedContent}</div>}
 
       {!isExpanded && (
         <div className={styles.narrativePreview}>
-          <p className={styles.narrativeParagraph}>{getPreviewText(narrativeText)}</p>
+          <p className={styles.narrativeParagraph}>{previewText}</p>
         </div>
       )}
     </div>
@@ -303,11 +302,8 @@ export function Step3StructureWorkplan({
   // Toast notifications
   const { showError } = useToast()
 
-  // Combine mandatory and outline sections
-  const allSections = [
-    ...(structureWorkplanAnalysis?.proposal_mandatory || []),
-    ...(structureWorkplanAnalysis?.proposal_outline || []),
-  ]
+  // P11 — isDownloading state near other useState declarations
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const [selectedSections, setSelectedSections] = useState<string[]>(initialSelectedSections || [])
   const [expandedSections, setExpandedSections] = useState<string[]>([])
@@ -324,6 +320,34 @@ export function Step3StructureWorkplan({
   const [lastGeneratedSections, setLastGeneratedSections] = useState<string[]>(
     initialSelectedSections || []
   )
+
+  // P4 — allSections with useMemo
+  const allSections = useMemo(
+    () => [
+      ...(structureWorkplanAnalysis?.proposal_mandatory || []),
+      ...(structureWorkplanAnalysis?.proposal_outline || []),
+    ],
+    [structureWorkplanAnalysis?.proposal_mandatory, structureWorkplanAnalysis?.proposal_outline]
+  )
+
+  // P5 — mandatory titles Set precomputed with useMemo
+  const mandatoryTitles = useMemo(
+    () => new Set(structureWorkplanAnalysis?.proposal_mandatory?.map(s => s.section_title) ?? []),
+    [structureWorkplanAnalysis?.proposal_mandatory]
+  )
+
+  // P9 — sectionsChanged as useMemo boolean (replaces useCallback)
+  const sectionsChanged = useMemo(() => {
+    if (generationStatus !== 'completed') {
+      return false
+    }
+    if (selectedSections.length !== lastGeneratedSections.length) {
+      return true
+    }
+    const sortedCurrent = [...selectedSections].sort()
+    const sortedLast = [...lastGeneratedSections].sort()
+    return !sortedCurrent.every((s, i) => s === sortedLast[i])
+  }, [selectedSections, lastGeneratedSections, generationStatus])
 
   // Ref for polling timeout to allow cleanup
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -397,6 +421,7 @@ export function Step3StructureWorkplan({
     const prevSections = prevInitialSectionsRef.current
     const isFirstLoad = prevSections === null
     const prevSectionsList = prevSections ?? []
+
     const parentChanged =
       isFirstLoad ||
       prevSectionsList.length !== initialSelectedSections.length ||
@@ -417,19 +442,6 @@ export function Step3StructureWorkplan({
       onSelectedSectionsChange(selectedSections)
     }
   }, [selectedSections, hasInitialized, onSelectedSectionsChange])
-
-  // Check if sections have changed since last generation (to show regenerate option)
-  const sectionsChangedSinceGeneration = useCallback(() => {
-    if (generationStatus !== 'completed') {
-      return false
-    }
-    if (selectedSections.length !== lastGeneratedSections.length) {
-      return true
-    }
-    const sortedCurrent = [...selectedSections].sort()
-    const sortedLast = [...lastGeneratedSections].sort()
-    return !sortedCurrent.every((s, i) => s === sortedLast[i])
-  }, [selectedSections, lastGeneratedSections, generationStatus])
 
   const toggleSection = (sectionName: string) => {
     setSelectedSections(prev =>
@@ -589,268 +601,7 @@ export function Step3StructureWorkplan({
     }
   }
 
-  // Download generated proposal as DOCX
-  const [isDownloading, setIsDownloading] = useState(false)
-
-  /**
-   * Parse inline formatting (bold, italic) into TextRun array
-   */
-  const parseInlineFormatting = useCallback((text: string): TextRun[] => {
-    const runs: TextRun[] = []
-    // Match **bold** and *italic* patterns
-    const regex = /(\*\*[^*]+\*\*|\*[^*]+\*)/g
-    let lastIndex = 0
-    let match
-
-    while ((match = regex.exec(text)) !== null) {
-      // Add text before the match
-      if (match.index > lastIndex) {
-        runs.push(new TextRun({ text: text.slice(lastIndex, match.index) }))
-      }
-
-      const matchedText = match[0]
-      if (matchedText.startsWith('**') && matchedText.endsWith('**')) {
-        runs.push(new TextRun({ text: matchedText.slice(2, -2), bold: true }))
-      } else if (matchedText.startsWith('*') && matchedText.endsWith('*')) {
-        runs.push(new TextRun({ text: matchedText.slice(1, -1), italics: true }))
-      }
-
-      lastIndex = regex.lastIndex
-    }
-
-    // Add remaining text
-    if (lastIndex < text.length) {
-      runs.push(new TextRun({ text: text.slice(lastIndex) }))
-    }
-
-    return runs.length > 0 ? runs : [new TextRun({ text })]
-  }, [])
-
-  /**
-   * Convert markdown content to docx Paragraph/Table array
-   */
-  const markdownToParagraphs = useCallback(
-    (markdown: string): (Paragraph | Table)[] => {
-      const elements: (Paragraph | Table)[] = []
-      const lines = markdown.split('\n')
-      let tableRows: string[][] = []
-      let tableHeaders: string[] = []
-      let inTable = false
-
-      // Helper to check if line is a table row
-      const isTableRow = (line: string): boolean => {
-        const trimmed = line.trim()
-        return trimmed.includes('|') && (trimmed.startsWith('|') || trimmed.split('|').length >= 2)
-      }
-
-      // Helper to check if line is table separator
-      const isTableSeparator = (line: string): boolean => {
-        const trimmed = line.trim()
-        return /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(trimmed)
-      }
-
-      // Helper to parse table row into cells
-      const parseTableRowCells = (line: string): string[] => {
-        return line
-          .split('|')
-          .map(cell => cell.trim())
-          .filter((_, index, arr) => {
-            if (index === 0 && arr[0] === '') {
-              return false
-            }
-            if (index === arr.length - 1 && arr[arr.length - 1] === '') {
-              return false
-            }
-            return true
-          })
-      }
-
-      // Helper to flush table to elements
-      const flushTable = () => {
-        if (tableHeaders.length > 0 || tableRows.length > 0) {
-          const rows: TableRow[] = []
-
-          // Add header row
-          if (tableHeaders.length > 0) {
-            rows.push(
-              new TableRow({
-                tableHeader: true,
-                children: tableHeaders.map(
-                  header =>
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: header,
-                              bold: true,
-                              size: 22,
-                            }),
-                          ],
-                        }),
-                      ],
-                      shading: { fill: 'F3F4F6' },
-                    })
-                ),
-              })
-            )
-          }
-
-          // Add data rows
-          tableRows.forEach(row => {
-            rows.push(
-              new TableRow({
-                children: row.map(
-                  cell =>
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: parseInlineFormatting(cell),
-                        }),
-                      ],
-                    })
-                ),
-              })
-            )
-          })
-
-          // Create table with borders
-          elements.push(
-            new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE },
-              rows,
-              borders: {
-                top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-                bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-                left: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-                right: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-                insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-                insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-              },
-            })
-          )
-
-          // Add spacing after table
-          elements.push(new Paragraph({ text: '', spacing: { after: 200 } }))
-
-          tableHeaders = []
-          tableRows = []
-          inTable = false
-        }
-      }
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]
-        const trimmedLine = line.trim()
-
-        // Check for table rows
-        if (isTableRow(trimmedLine)) {
-          if (isTableSeparator(trimmedLine)) {
-            inTable = true
-            continue
-          }
-
-          if (!inTable && tableHeaders.length === 0) {
-            tableHeaders = parseTableRowCells(trimmedLine)
-          } else {
-            inTable = true
-            tableRows.push(parseTableRowCells(trimmedLine))
-          }
-          continue
-        }
-
-        // Flush table if we hit a non-table line
-        if (inTable || tableHeaders.length > 0) {
-          flushTable()
-        }
-
-        // Skip empty lines but add spacing
-        if (!trimmedLine) {
-          continue
-        }
-
-        // Headers
-        if (trimmedLine.startsWith('#### ')) {
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(trimmedLine.slice(5)),
-              heading: HeadingLevel.HEADING_4,
-              spacing: { before: 200, after: 100 },
-            })
-          )
-        } else if (trimmedLine.startsWith('### ')) {
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(trimmedLine.slice(4)),
-              heading: HeadingLevel.HEADING_3,
-              spacing: { before: 240, after: 120 },
-            })
-          )
-        } else if (trimmedLine.startsWith('## ')) {
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(trimmedLine.slice(3)),
-              heading: HeadingLevel.HEADING_2,
-              spacing: { before: 280, after: 140 },
-            })
-          )
-        } else if (trimmedLine.startsWith('# ')) {
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(trimmedLine.slice(2)),
-              heading: HeadingLevel.HEADING_1,
-              spacing: { before: 320, after: 160 },
-            })
-          )
-        }
-        // Bullet points
-        else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-          elements.push(
-            new Paragraph({
-              children: [
-                new TextRun({ text: '• ' }),
-                ...parseInlineFormatting(trimmedLine.slice(2)),
-              ],
-              spacing: { before: 60, after: 60 },
-              indent: { left: 720 },
-            })
-          )
-        }
-        // Numbered lists
-        else if (/^\d+\.\s/.test(trimmedLine)) {
-          const match = trimmedLine.match(/^(\d+\.)\s(.*)$/)
-          if (match) {
-            elements.push(
-              new Paragraph({
-                children: [
-                  new TextRun({ text: match[1] + ' ' }),
-                  ...parseInlineFormatting(match[2]),
-                ],
-                spacing: { before: 60, after: 60 },
-                indent: { left: 720 },
-              })
-            )
-          }
-        }
-        // Regular paragraphs
-        else {
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(trimmedLine),
-              spacing: { before: 120, after: 120 },
-            })
-          )
-        }
-      }
-
-      // Flush any remaining table
-      flushTable()
-
-      return elements
-    },
-    [parseInlineFormatting]
-  )
-
+  // P1 — Download generated proposal as DOCX (dynamic import)
   const handleDownloadGeneratedProposal = async () => {
     if (!generatedProposal) {
       return
@@ -858,14 +609,273 @@ export function Step3StructureWorkplan({
 
     setIsDownloading(true)
     try {
+      // Dynamic import — docx is only loaded when the user clicks download
+      const {
+        Document,
+        Packer,
+        Paragraph,
+        HeadingLevel,
+        TextRun,
+        AlignmentType,
+        Table,
+        TableRow,
+        TableCell,
+        WidthType,
+        BorderStyle,
+      } = await import('docx')
+
+      // ── Inline helpers that depend on the dynamic import ──────────────────
+
+      /**
+       * Parse inline formatting (bold, italic) into TextRun array
+       */
+      const parseInlineFormattingLocal = (text: string): InstanceType<typeof DocxTextRun>[] => {
+        const runs: InstanceType<typeof DocxTextRun>[] = []
+        const regex = /(\*\*[^*]+\*\*|\*[^*]+\*)/g
+        let lastIndex = 0
+        let match
+
+        while ((match = regex.exec(text)) !== null) {
+          if (match.index > lastIndex) {
+            runs.push(new TextRun({ text: text.slice(lastIndex, match.index) }))
+          }
+
+          const matchedText = match[0]
+          if (matchedText.startsWith('**') && matchedText.endsWith('**')) {
+            runs.push(new TextRun({ text: matchedText.slice(2, -2), bold: true }))
+          } else if (matchedText.startsWith('*') && matchedText.endsWith('*')) {
+            runs.push(new TextRun({ text: matchedText.slice(1, -1), italics: true }))
+          }
+
+          lastIndex = regex.lastIndex
+        }
+
+        if (lastIndex < text.length) {
+          runs.push(new TextRun({ text: text.slice(lastIndex) }))
+        }
+
+        return runs.length > 0 ? runs : [new TextRun({ text })]
+      }
+
+      /**
+       * Convert markdown content to docx Paragraph/Table array
+       */
+      const markdownToParagraphsLocal = (
+        markdown: string
+      ): (InstanceType<typeof DocxParagraph> | InstanceType<typeof DocxTable>)[] => {
+        const elements: (InstanceType<typeof DocxParagraph> | InstanceType<typeof DocxTable>)[] = []
+        const lines = markdown.split('\n')
+        let tableRows: string[][] = []
+        let tableHeaders: string[] = []
+        let inTable = false
+
+        const isTableRow = (line: string): boolean => {
+          const trimmed = line.trim()
+          return (
+            trimmed.includes('|') && (trimmed.startsWith('|') || trimmed.split('|').length >= 2)
+          )
+        }
+
+        const isTableSeparator = (line: string): boolean => {
+          const trimmed = line.trim()
+          return /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(trimmed)
+        }
+
+        const parseTableRowCells = (line: string): string[] => {
+          return line
+            .split('|')
+            .map(cell => cell.trim())
+            .filter((_, index, arr) => {
+              if (index === 0 && arr[0] === '') {
+                return false
+              }
+              if (index === arr.length - 1 && arr[arr.length - 1] === '') {
+                return false
+              }
+              return true
+            })
+        }
+
+        const flushTable = () => {
+          if (tableHeaders.length > 0 || tableRows.length > 0) {
+            const rows: InstanceType<typeof DocxTableRow>[] = []
+
+            if (tableHeaders.length > 0) {
+              rows.push(
+                new TableRow({
+                  tableHeader: true,
+                  children: tableHeaders.map(
+                    header =>
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: header,
+                                bold: true,
+                                size: 22,
+                              }),
+                            ],
+                          }),
+                        ],
+                        shading: { fill: 'F3F4F6' },
+                      })
+                  ),
+                })
+              )
+            }
+
+            tableRows.forEach(row => {
+              rows.push(
+                new TableRow({
+                  children: row.map(
+                    cell =>
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: parseInlineFormattingLocal(cell),
+                          }),
+                        ],
+                      })
+                  ),
+                })
+              )
+            })
+
+            elements.push(
+              new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                rows,
+                borders: {
+                  top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                  bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                  left: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                  right: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                  insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                  insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                },
+              })
+            )
+
+            elements.push(new Paragraph({ text: '', spacing: { after: 200 } }))
+
+            tableHeaders = []
+            tableRows = []
+            inTable = false
+          }
+        }
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i]
+          const trimmedLine = line.trim()
+
+          if (isTableRow(trimmedLine)) {
+            if (isTableSeparator(trimmedLine)) {
+              inTable = true
+              continue
+            }
+
+            if (!inTable && tableHeaders.length === 0) {
+              tableHeaders = parseTableRowCells(trimmedLine)
+            } else {
+              inTable = true
+              tableRows.push(parseTableRowCells(trimmedLine))
+            }
+            continue
+          }
+
+          if (inTable || tableHeaders.length > 0) {
+            flushTable()
+          }
+
+          if (!trimmedLine) {
+            continue
+          }
+
+          if (trimmedLine.startsWith('#### ')) {
+            elements.push(
+              new Paragraph({
+                children: parseInlineFormattingLocal(trimmedLine.slice(5)),
+                heading: HeadingLevel.HEADING_4,
+                spacing: { before: 200, after: 100 },
+              })
+            )
+          } else if (trimmedLine.startsWith('### ')) {
+            elements.push(
+              new Paragraph({
+                children: parseInlineFormattingLocal(trimmedLine.slice(4)),
+                heading: HeadingLevel.HEADING_3,
+                spacing: { before: 240, after: 120 },
+              })
+            )
+          } else if (trimmedLine.startsWith('## ')) {
+            elements.push(
+              new Paragraph({
+                children: parseInlineFormattingLocal(trimmedLine.slice(3)),
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 280, after: 140 },
+              })
+            )
+          } else if (trimmedLine.startsWith('# ')) {
+            elements.push(
+              new Paragraph({
+                children: parseInlineFormattingLocal(trimmedLine.slice(2)),
+                heading: HeadingLevel.HEADING_1,
+                spacing: { before: 320, after: 160 },
+              })
+            )
+          } else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+            elements.push(
+              new Paragraph({
+                children: [
+                  new TextRun({ text: '• ' }),
+                  ...parseInlineFormattingLocal(trimmedLine.slice(2)),
+                ],
+                spacing: { before: 60, after: 60 },
+                indent: { left: 720 },
+              })
+            )
+          } else if (/^\d+\.\s/.test(trimmedLine)) {
+            const listMatch = trimmedLine.match(/^(\d+\.)\s(.*)$/)
+            if (listMatch) {
+              elements.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: listMatch[1] + ' ' }),
+                    ...parseInlineFormattingLocal(listMatch[2]),
+                  ],
+                  spacing: { before: 60, after: 60 },
+                  indent: { left: 720 },
+                })
+              )
+            }
+          } else {
+            elements.push(
+              new Paragraph({
+                children: parseInlineFormattingLocal(trimmedLine),
+                spacing: { before: 120, after: 120 },
+              })
+            )
+          }
+        }
+
+        flushTable()
+
+        return elements
+      }
+
+      // ── Build document ─────────────────────────────────────────────────────
+
       const currentDate = new Date().toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       })
 
-      // Build document paragraphs
-      const documentParagraphs: (Paragraph | Table)[] = []
+      const documentParagraphs: (
+        | InstanceType<typeof DocxParagraph>
+        | InstanceType<typeof DocxTable>
+      )[] = []
 
       // Add title
       documentParagraphs.push(
@@ -930,7 +940,7 @@ export function Step3StructureWorkplan({
       )
 
       // Add content sections
-      const contentSections = markdownToParagraphs(generatedProposal)
+      const contentSections = markdownToParagraphsLocal(generatedProposal)
       documentParagraphs.push(...contentSections)
 
       // Add footer separator
@@ -1047,101 +1057,127 @@ export function Step3StructureWorkplan({
             </div>
 
             <div className={styles.sectionsList}>
-              {allSections.map((section, index) => {
-                const isSelected = selectedSections.includes(section.section_title)
-                const isExpanded = expandedSections.includes(section.section_title)
-                const isMandatory = structureWorkplanAnalysis?.proposal_mandatory?.some(
-                  s => s.section_title === section.section_title
-                )
+              {/* U6 — Empty state for allSections */}
+              {allSections.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <FileText size={48} />
+                  <p>
+                    No sections were identified in the analysis. Please go back and re-run the
+                    analysis.
+                  </p>
+                </div>
+              ) : (
+                allSections.map(section => {
+                  const isSelected = selectedSections.includes(section.section_title)
+                  const isExpanded = expandedSections.includes(section.section_title)
+                  // P5 — use Set lookup instead of .some()
+                  const isMandatory = mandatoryTitles.has(section.section_title)
 
-                return (
-                  <div key={index} className={styles.sectionItem}>
-                    <div className={styles.sectionItemHeader}>
-                      <div className={styles.sectionItemHeaderLeft}>
-                        <div
-                          className={`${styles.checkbox} ${isSelected ? styles.checkboxChecked : ''}`}
-                          onClick={() => toggleSection(section.section_title)}
+                  return (
+                    // U4 — key by section_title instead of index
+                    <div key={section.section_title} className={styles.sectionItem}>
+                      <div className={styles.sectionItemHeader}>
+                        <div className={styles.sectionItemHeaderLeft}>
+                          {/* U1 — custom checkbox accessibility */}
+                          <div
+                            className={`${styles.checkbox} ${isSelected ? styles.checkboxChecked : ''}`}
+                            role="checkbox"
+                            aria-checked={isSelected}
+                            tabIndex={0}
+                            aria-label={`Toggle ${section.section_title}`}
+                            onClick={() => toggleSection(section.section_title)}
+                            onKeyDown={e => {
+                              if (e.key === ' ' || e.key === 'Enter') {
+                                e.preventDefault()
+                                toggleSection(section.section_title)
+                              }
+                            }}
+                          >
+                            {isSelected && <Check size={14} color="white" />}
+                          </div>
+                          <div className={styles.sectionItemInfo}>
+                            <h3 className={styles.sectionItemTitle}>{section.section_title}</h3>
+                            {isMandatory && (
+                              <span
+                                className={styles.badge}
+                                style={{
+                                  backgroundColor: '#FFE2E2',
+                                  border: '1px solid #FFC9C9',
+                                  color: '#9F0712',
+                                }}
+                              >
+                                Mandatory
+                              </span>
+                            )}
+                            {section.recommended_word_count && (
+                              <span
+                                className={styles.badge}
+                                style={{
+                                  backgroundColor: '#F3F4F6',
+                                  border: '1px solid #E5E7EB',
+                                  color: '#6B7280',
+                                }}
+                              >
+                                {section.recommended_word_count}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {/* U3 — section expand button aria attributes */}
+                        <button
+                          type="button"
+                          className={styles.expandButton}
+                          onClick={() => toggleExpansion(section.section_title)}
+                          aria-expanded={isExpanded}
+                          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} details for ${section.section_title}`}
                         >
-                          {isSelected && <Check size={14} color="white" />}
-                        </div>
-                        <div className={styles.sectionItemInfo}>
-                          <h3 className={styles.sectionItemTitle}>{section.section_title}</h3>
-                          {isMandatory && (
-                            <span
-                              className={styles.badge}
-                              style={{
-                                backgroundColor: '#FFE2E2',
-                                border: '1px solid #FFC9C9',
-                                color: '#9F0712',
-                              }}
-                            >
-                              Mandatory
-                            </span>
-                          )}
-                          {section.recommended_word_count && (
-                            <span
-                              className={styles.badge}
-                              style={{
-                                backgroundColor: '#F3F4F6',
-                                border: '1px solid #E5E7EB',
-                                color: '#6B7280',
-                              }}
-                            >
-                              {section.recommended_word_count}
-                            </span>
-                          )}
-                        </div>
+                          {isExpanded ? 'See less' : 'See more'}
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        className={styles.expandButton}
-                        onClick={() => toggleExpansion(section.section_title)}
-                      >
-                        {isExpanded ? 'See less' : 'See more'}
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </button>
+
+                      {isExpanded && (
+                        <div className={styles.sectionItemContent}>
+                          {section.purpose && (
+                            <div className={styles.detailsSection}>
+                              <Info className={styles.subsectionIcon} size={16} />
+                              <div>
+                                <h4 className={styles.subsectionTitle}>Purpose</h4>
+                                <p className={styles.subsectionText}>{section.purpose}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {section.content_guidance && (
+                            <div className={styles.detailsSection}>
+                              <BookOpen className={styles.subsectionIcon} size={16} />
+                              <div>
+                                <h4 className={styles.subsectionTitle}>Content Guidance</h4>
+                                <p className={styles.subsectionText}>{section.content_guidance}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {section.guiding_questions && section.guiding_questions.length > 0 && (
+                            <div className={styles.suggestionsSection}>
+                              <Lightbulb className={styles.subsectionIcon} size={16} />
+                              <div>
+                                <h4 className={styles.subsectionTitle}>Guiding Questions</h4>
+                                <ul className={styles.suggestionsList}>
+                                  {/* U5 — key by question string instead of index */}
+                                  {section.guiding_questions.map(question => (
+                                    <li key={question}>{question}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-
-                    {isExpanded && (
-                      <div className={styles.sectionItemContent}>
-                        {section.purpose && (
-                          <div className={styles.detailsSection}>
-                            <Info className={styles.subsectionIcon} size={16} />
-                            <div>
-                              <h4 className={styles.subsectionTitle}>Purpose</h4>
-                              <p className={styles.subsectionText}>{section.purpose}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {section.content_guidance && (
-                          <div className={styles.detailsSection}>
-                            <BookOpen className={styles.subsectionIcon} size={16} />
-                            <div>
-                              <h4 className={styles.subsectionTitle}>Content Guidance</h4>
-                              <p className={styles.subsectionText}>{section.content_guidance}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {section.guiding_questions && section.guiding_questions.length > 0 && (
-                          <div className={styles.suggestionsSection}>
-                            <Lightbulb className={styles.subsectionIcon} size={16} />
-                            <div>
-                              <h4 className={styles.subsectionTitle}>Guiding Questions</h4>
-                              <ul className={styles.suggestionsList}>
-                                {section.guiding_questions.map((question, idx) => (
-                                  <li key={idx}>{question}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+                  )
+                })
+              )}
             </div>
           </div>
         </div>
@@ -1159,9 +1195,9 @@ export function Step3StructureWorkplan({
             </div>
           </div>
 
-          {/* Generating State */}
+          {/* U7 — Generating state with role="status" and aria-live */}
           {isGenerating && generationStatus === 'processing' && (
-            <div className={styles.generatingState}>
+            <div className={styles.generatingState} role="status" aria-live="polite">
               <div className={styles.generatingSpinner}>
                 <Loader2 className={styles.spinnerIcon} size={24} />
               </div>
@@ -1189,9 +1225,9 @@ export function Step3StructureWorkplan({
             </div>
           )}
 
-          {/* Error State */}
+          {/* U8 — Error state with role="alert" */}
           {generationStatus === 'failed' && generationError && (
-            <div className={styles.errorState}>
+            <div className={styles.errorState} role="alert">
               <p className={styles.errorText}>{generationError}</p>
               <button
                 type="button"
@@ -1204,78 +1240,76 @@ export function Step3StructureWorkplan({
           )}
 
           {/* Success State - Show Generated Content */}
-          {generationStatus === 'completed' &&
-            generatedProposal &&
-            !sectionsChangedSinceGeneration() && (
-              <div className={styles.successState}>
-                <div className={styles.successHeader}>
-                  <Check className={styles.successIcon} size={20} />
-                  <span>Proposal draft generated successfully!</span>
-                </div>
-                <div className={styles.generatedPreview}>
-                  <div className={styles.previewContent}>
-                    {generatedProposal.slice(0, 500)}
-                    {generatedProposal.length > 500 && '...'}
-                  </div>
-                </div>
-                <div className={styles.downloadActions}>
-                  <button
-                    type="button"
-                    className={styles.downloadButton}
-                    onClick={handleDownloadGeneratedProposal}
-                    disabled={isDownloading}
-                  >
-                    <Download size={16} />
-                    {isDownloading ? 'Downloading...' : 'Download Full Draft (DOCX)'}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.regenerateButton}
-                    onClick={e => handleGenerateTemplate(e)}
-                    disabled={isDownloading}
-                  >
-                    <Sparkles size={16} />
-                    Regenerate
-                  </button>
+          {generationStatus === 'completed' && generatedProposal && !sectionsChanged && (
+            <div className={styles.successState}>
+              <div className={styles.successHeader}>
+                <Check className={styles.successIcon} size={20} />
+                <span>Proposal draft generated successfully!</span>
+              </div>
+              <div className={styles.generatedPreview}>
+                <div className={styles.previewContent}>
+                  {generatedProposal.slice(0, 500)}
+                  {generatedProposal.length > 500 && '...'}
                 </div>
               </div>
-            )}
-
-          {/* Sections Changed State - Show Warning and Regenerate */}
-          {generationStatus === 'completed' &&
-            generatedProposal &&
-            sectionsChangedSinceGeneration() && (
-              <div className={styles.sectionsChangedState}>
-                <div className={styles.warningHeader}>
-                  <AlertTriangle className={styles.warningIcon} size={20} />
-                  <span>Selected sections have changed</span>
-                </div>
-                <p className={styles.warningText}>
-                  You have modified the selected sections since the last draft was generated. Please
-                  regenerate the proposal to include your updated selection.
-                </p>
+              <div className={styles.downloadActions}>
+                {/* U9 — download button aria-busy */}
                 <button
                   type="button"
-                  className={styles.generateButton}
+                  className={styles.downloadButton}
+                  onClick={handleDownloadGeneratedProposal}
+                  disabled={isDownloading}
+                  aria-busy={isDownloading}
+                >
+                  <Download size={16} />
+                  {isDownloading ? 'Downloading...' : 'Download Full Draft (DOCX)'}
+                </button>
+                <button
+                  type="button"
+                  className={styles.regenerateButton}
                   onClick={e => handleGenerateTemplate(e)}
-                  disabled={isGenerating || selectedSections.length === 0}
+                  disabled={isDownloading}
                 >
                   <Sparkles size={16} />
-                  Regenerate AI Proposal Draft ({selectedSections.length} sections)
+                  Regenerate
                 </button>
-                <div className={styles.previousDraftNote}>
-                  <span>Previous draft is still available: </span>
-                  <button
-                    type="button"
-                    className={styles.linkButton}
-                    onClick={handleDownloadGeneratedProposal}
-                    disabled={isDownloading}
-                  >
-                    {isDownloading ? 'Downloading...' : 'Download Previous Draft (DOCX)'}
-                  </button>
-                </div>
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Sections Changed State - Show Warning and Regenerate */}
+          {generationStatus === 'completed' && generatedProposal && sectionsChanged && (
+            <div className={styles.sectionsChangedState}>
+              <div className={styles.warningHeader}>
+                <AlertTriangle className={styles.warningIcon} size={20} />
+                <span>Selected sections have changed</span>
+              </div>
+              <p className={styles.warningText}>
+                You have modified the selected sections since the last draft was generated. Please
+                regenerate the proposal to include your updated selection.
+              </p>
+              <button
+                type="button"
+                className={styles.generateButton}
+                onClick={e => handleGenerateTemplate(e)}
+                disabled={isGenerating || selectedSections.length === 0}
+              >
+                <Sparkles size={16} />
+                Regenerate AI Proposal Draft ({selectedSections.length} sections)
+              </button>
+              <div className={styles.previousDraftNote}>
+                <span>Previous draft is still available: </span>
+                <button
+                  type="button"
+                  className={styles.linkButton}
+                  onClick={handleDownloadGeneratedProposal}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? 'Downloading...' : 'Download Previous Draft (DOCX)'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Initial State - Show Generate Button */}
           {generationStatus === 'idle' && (

@@ -167,6 +167,23 @@
   overflow: visible;
 }
 
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 48px 24px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.emptyState p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 400px;
+}
+
 /* ========================================
    SECTION ITEM
    ======================================== */
@@ -398,14 +415,19 @@
    NARRATIVE OVERVIEW STYLES
    ======================================== */
 
-.narrativeContent {
+/* Shared base for both narrative display variants */
+.narrativeContent,
+.narrativePreview {
   background: #f9fafb;
   border-radius: 10px;
   padding: 20px 24px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.narrativeContent {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  animation: fadeIn 0.3s ease-in-out;
 }
 
 .narrativeParagraph {
@@ -459,11 +481,7 @@
 }
 
 .narrativePreview {
-  background: #f9fafb;
-  border-radius: 10px;
-  padding: 20px 24px;
   position: relative;
-  animation: fadeIn 0.3s ease-in-out;
 }
 
 .narrativePreview::after {
@@ -476,28 +494,6 @@
   background: linear-gradient(to bottom, transparent, #f9fafb);
   border-radius: 0 0 10px 10px;
   pointer-events: none;
-}
-
-/* ========================================
-   SCROLLBAR STYLING
-   ======================================== */
-
-.sectionsList::-webkit-scrollbar {
-  width: 8px;
-}
-
-.sectionsList::-webkit-scrollbar-track {
-  background: #f3f4f6;
-  border-radius: 4px;
-}
-
-.sectionsList::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 4px;
-}
-
-.sectionsList::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
 }
 
 /* ========================================

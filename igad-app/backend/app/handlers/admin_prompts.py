@@ -67,6 +67,8 @@ async def get_prompts(
             limit=100,
             offset=0,
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting prompts: {e}")
         raise HTTPException(
@@ -89,6 +91,8 @@ async def debug_prompts(
             limit=100,
             offset=0,
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting prompts: {e}")
         raise HTTPException(
@@ -121,6 +125,8 @@ async def list_prompts(
             limit=limit,
             offset=offset,
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error listing prompts: {e}")
         raise HTTPException(
@@ -156,6 +162,8 @@ async def get_prompt(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found"
             )
         return prompt
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -177,6 +185,8 @@ async def create_prompt(
         # Business logic errors (like duplicates)
         logger.error(f"Validation error creating prompt: {e}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating prompt: {e}")
         raise HTTPException(
@@ -203,6 +213,8 @@ async def update_prompt(
         else:
             # Business logic errors (like duplicates)
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error updating prompt {prompt_id}: {e}")
         raise HTTPException(
@@ -230,6 +242,8 @@ async def delete_prompt(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found"
             )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error deleting prompt {prompt_id}: {e}")
         raise HTTPException(
@@ -246,6 +260,8 @@ async def preview_prompt(
     """Preview a prompt using Bedrock (no persistence)"""
     try:
         return await bedrock_service.preview_prompt(preview_data)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error previewing prompt: {e}")
         raise HTTPException(
@@ -300,6 +316,8 @@ async def toggle_prompt_active(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Prompt not found"
             )
         return prompt
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -328,6 +346,8 @@ async def add_comment(
             current_user["email"],
             current_user["email"],  # Use email as both user_id and user_name
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error adding comment to prompt {prompt_id}: {e}")
         raise HTTPException(
@@ -359,6 +379,8 @@ async def get_prompt_history(
     """Get change history for a prompt"""
     try:
         return await prompt_service.get_prompt_history(prompt_id)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting history for prompt {prompt_id}: {e}")
         raise HTTPException(

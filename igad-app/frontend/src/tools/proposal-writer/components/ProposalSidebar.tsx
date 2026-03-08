@@ -8,6 +8,8 @@ interface ProposalSidebarProps {
   isLoading?: boolean
   /** Step from which invalidation occurred (null if no invalidation) */
   lastModifiedStep?: number | null
+  /** Number of completed required fields in Step 1 (0-3) */
+  step1CompletedFields?: number
 }
 
 /**
@@ -53,6 +55,7 @@ export function ProposalSidebar({
   completedSteps,
   isLoading = false,
   lastModifiedStep = null,
+  step1CompletedFields,
 }: ProposalSidebarProps) {
   // Show skeleton while loading
   if (isLoading) {
@@ -158,6 +161,9 @@ export function ProposalSidebar({
                     {step.title}
                   </span>
                   {isInvalidated && <span className={styles.invalidatedHint}>Needs update</span>}
+                  {step.id === 1 && isActive && step1CompletedFields !== undefined && (
+                    <span className={styles.microProgress}>{step1CompletedFields}/3 items</span>
+                  )}
                 </div>
               </div>
             )

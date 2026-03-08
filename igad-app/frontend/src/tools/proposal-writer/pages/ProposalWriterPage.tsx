@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import type {
   RFPAnalysis,
   ConceptAnalysis,
@@ -23,6 +23,7 @@ import { useProcessingResumption } from '@/tools/proposal-writer/hooks/useProces
 import { authService } from '@/shared/services/authService'
 import { proposalService } from '../services/proposalService'
 import { useToast } from '@/shared/components/ui/ToastContainer'
+import { StepErrorBoundary } from '../components/StepErrorBoundary'
 import styles from './proposalWriter.module.css'
 
 export function ProposalWriterPage() {
@@ -131,6 +132,8 @@ export function ProposalWriterPage() {
   const [localStorageLoaded, setLocalStorageLoaded] = useState(false)
   // Flag to track intentional document clearing (to prevent auto-reload from DynamoDB)
   const intentionalDocumentClearRef = useRef(false)
+  // Loading state for step data (used by Step 4 skeleton and useProcessingResumption guard)
+  const [isLoadingStepData, setIsLoadingStepData] = useState(true)
 
   const { createProposal, isCreating, deleteProposal, isDeleting } = useProposals()
   const { saveProposalId, saveProposalCode, saveFormData, saveRfpAnalysis, loadDraft, clearDraft } =
@@ -141,7 +144,7 @@ export function ProposalWriterPage() {
   // ========================================
   const { isResuming, resumingOperations } = useProcessingResumption({
     proposalId,
-    enabled: !!proposalId && !isCreating && localStorageLoaded,
+    enabled: !!proposalId && !isCreating && localStorageLoaded && !isLoadingStepData,
 
     onRfpAnalysisComplete: data => {
       setRfpAnalysis(data)
@@ -437,150 +440,105 @@ export function ProposalWriterPage() {
   // Track if backend-computed completed_steps were loaded (to prefer over local calculation)
   const backendCompletedStepsLoadedRef = useRef(false)
 
-  // Loading state for step data (used by Step 4 to show skeleton)
-  const [isLoadingStepData, setIsLoadingStepData] = useState(true)
+  // Note: isLoadingStepData is declared earlier (before useProcessingResumption)
 
-  // Load step completion data from DynamoDB on initial mount (always runs regardless of localStorage)
-  // This ensures Step 3 and Step 4 checkmarks show correctly when loading from dashboard
+  // Consolidated: Load all proposal data from DynamoDB in a single API call
+  // Merges step completion data + formData loading to avoid duplicate getProposal calls
   useEffect(() => {
-    const loadStepCompletionData = async () => {
+    const loadProposalData = async () => {
+      // Wait until localStorage loading is complete
+      if (!localStorageLoaded) {
+        return
+      }
+
       if (!proposalId) {
         setIsLoadingStepData(false)
         return
       }
 
-      // Only run once per session
-      if (stepCompletionLoadedRef.current) {
+      // Only run once per session (both refs guard against re-execution)
+      if (stepCompletionLoadedRef.current && formDataLoadedFromDB.current) {
         setIsLoadingStepData(false)
         return
       }
-      stepCompletionLoadedRef.current = true
 
       try {
         setIsLoadingStepData(true)
-        // Removed console.log'🔄 Loading step completion data from DynamoDB...')
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
         const proposal = await proposalService.getProposal(proposalId)
 
         if (proposal) {
-          // Load backend-computed completed_steps (survives page refresh)
-          if (proposal.completed_steps && proposal.completed_steps.length > 0) {
-            setCompletedSteps(proposal.completed_steps)
-            backendCompletedStepsLoadedRef.current = true
+          // === Step completion data ===
+          if (!stepCompletionLoadedRef.current) {
+            stepCompletionLoadedRef.current = true
+
+            // Load backend-computed completed_steps (survives page refresh)
+            if (proposal.completed_steps && proposal.completed_steps.length > 0) {
+              setCompletedSteps(proposal.completed_steps)
+              backendCompletedStepsLoadedRef.current = true
+            }
+
+            // Load uploaded draft files
+            const draftFiles = proposal.uploaded_files?.['draft-proposal'] || []
+            if (draftFiles.length > 0) {
+              setFormData(prev => ({
+                ...prev,
+                uploadedFiles: {
+                  ...prev.uploadedFiles,
+                  'draft-proposal': draftFiles,
+                },
+              }))
+            }
+
+            // Load draft_is_ai_generated flag
+            if (proposal.draft_is_ai_generated) {
+              setDraftIsAiGenerated(true)
+            }
+
+            // Load proposal status
+            if (proposal.status) {
+              setProposalStatus(proposal.status)
+            }
           }
 
-          // Load structure workplan analysis (Step 3 completion)
-          if (proposal.structure_workplan_analysis) {
-            setStructureWorkplanAnalysis(proposal.structure_workplan_analysis)
-          }
+          // === Form data from DynamoDB ===
+          if (!formDataLoadedFromDB.current) {
+            formDataLoadedFromDB.current = true
 
-          // Load draft feedback analysis (Step 4 completion)
-          if (proposal.draft_feedback_analysis) {
-            setDraftFeedbackAnalysis(proposal.draft_feedback_analysis)
-          }
+            // Map DynamoDB documents field to formData uploadedFiles structure
+            const uploadedFiles: { [key: string]: (string | File)[] } = {}
 
-          // Load proposal template generated flag
-          if (proposal.proposal_template_generated) {
-            setProposalTemplate({
-              generated: true,
-              timestamp: proposal.proposal_template_generated,
-            })
-          } else if (
-            proposal.structure_workplan_completed_at &&
-            proposal.structure_workplan_analysis
-          ) {
-            setProposalTemplate({
-              generated: true,
-              timestamp: proposal.structure_workplan_completed_at,
-            })
-          }
+            if (proposal.documents) {
+              uploadedFiles['rfp-document'] = proposal.documents.rfp_documents || []
+              uploadedFiles['concept-document'] = proposal.documents.concept_documents || []
+              uploadedFiles['reference-proposals'] = proposal.documents.reference_documents || []
+              uploadedFiles['supporting-docs'] = proposal.documents.supporting_documents || []
+            } else if (proposal.uploaded_files) {
+              // Fallback to uploaded_files if documents field doesn't exist
+              Object.assign(uploadedFiles, proposal.uploaded_files)
+            }
 
-          // Load concept document (Step 2 completion)
-          if (proposal.concept_document_v2) {
-            setConceptDocument(proposal.concept_document_v2)
-          }
-
-          // Load uploaded draft files
-          const draftFiles = proposal.uploaded_files?.['draft-proposal'] || []
-          if (draftFiles.length > 0) {
             setFormData(prev => ({
-              ...prev,
-              uploadedFiles: {
-                ...prev.uploadedFiles,
-                'draft-proposal': draftFiles,
-              },
+              textInputs: proposal.text_inputs || {},
+              uploadedFiles: { ...uploadedFiles, ...prev.uploadedFiles },
             }))
           }
 
-          // Load draft_is_ai_generated flag
-          if (proposal.draft_is_ai_generated) {
-            setDraftIsAiGenerated(true)
+          // === Shared analysis data (loaded by both, deduplicated with guards) ===
+
+          // Structure workplan analysis (Step 3)
+          if (proposal.structure_workplan_analysis && !structureWorkplanAnalysis) {
+            setStructureWorkplanAnalysis(proposal.structure_workplan_analysis)
           }
 
-          // Load proposal status
-          if (proposal.status) {
-            setProposalStatus(proposal.status)
-          }
-        }
-      } catch (error) {
-        // Removed console.log'⚠️ Error loading step completion data:', error)
-      } finally {
-        setIsLoadingStepData(false)
-      }
-    }
-
-    loadStepCompletionData()
-  }, [proposalId])
-
-  // Load formData from DynamoDB if localStorage is empty
-  useEffect(() => {
-    const loadFormDataFromDynamoDB = async () => {
-      // Wait until localStorage loading is complete (effect will re-run when localStorageLoaded changes)
-      if (!localStorageLoaded) {
-        return
-      }
-
-      if (!proposalId || formDataLoadedFromDB.current) {
-        return
-      }
-
-      try {
-        const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
-        const proposal = await proposalService.getProposal(proposalId)
-
-        if (proposal) {
-          // Map DynamoDB documents field to formData uploadedFiles structure
-          // DynamoDB stores documents in a separate 'documents' field with arrays like:
-          // documents: { rfp_documents: [...], concept_documents: [...], ... }
-          const uploadedFiles: { [key: string]: (string | File)[] } = {}
-
-          if (proposal.documents) {
-            uploadedFiles['rfp-document'] = proposal.documents.rfp_documents || []
-            uploadedFiles['concept-document'] = proposal.documents.concept_documents || []
-            uploadedFiles['reference-proposals'] = proposal.documents.reference_documents || []
-            uploadedFiles['supporting-docs'] = proposal.documents.supporting_documents || []
-          } else if (proposal.uploaded_files) {
-            // Fallback to uploaded_files if documents field doesn't exist
-            Object.assign(uploadedFiles, proposal.uploaded_files)
+          // Draft feedback analysis (Step 4)
+          if (proposal.draft_feedback_analysis && !draftFeedbackAnalysis) {
+            setDraftFeedbackAnalysis(proposal.draft_feedback_analysis)
           }
 
-          setFormData({
-            textInputs: proposal.text_inputs || {},
-            uploadedFiles: uploadedFiles,
-          })
-          formDataLoadedFromDB.current = true
-
-          // Load concept_document_v2 from DynamoDB for step completion tracking
-          if (proposal.concept_document_v2 && !conceptDocument) {
-            // Removed console.log'📄 Loading concept_document_v2 from DynamoDB on initial mount')
-            setConceptDocument(proposal.concept_document_v2)
-          }
-
-          // Load proposal_template_generated flag from DynamoDB for step completion tracking
-          // Also check structure_workplan_completed_at as fallback for older proposals
+          // Proposal template generated flag
           if (!proposalTemplate) {
             if (proposal.proposal_template_generated) {
-              // Removed console.log'📄 Loading proposal_template_generated from DynamoDB on initial mount')
               setProposalTemplate({
                 generated: true,
                 timestamp: proposal.proposal_template_generated,
@@ -589,7 +547,6 @@ export function ProposalWriterPage() {
               proposal.structure_workplan_completed_at &&
               proposal.structure_workplan_analysis
             ) {
-              // Fallback: If structure workplan is completed, mark Step 3 as done
               setProposalTemplate({
                 generated: true,
                 timestamp: proposal.structure_workplan_completed_at,
@@ -597,27 +554,22 @@ export function ProposalWriterPage() {
             }
           }
 
-          // Also load structure workplan analysis if available
-          if (proposal.structure_workplan_analysis && !structureWorkplanAnalysis) {
-            // Removed console.log'📄 Loading structure_workplan_analysis from DynamoDB on initial mount')
-            setStructureWorkplanAnalysis(proposal.structure_workplan_analysis)
-          }
-
-          // Also load draft feedback analysis if available (Step 4)
-          if (proposal.draft_feedback_analysis && !draftFeedbackAnalysis) {
-            // Removed console.log'📄 Loading draft_feedback_analysis from DynamoDB on initial mount')
-            setDraftFeedbackAnalysis(proposal.draft_feedback_analysis)
+          // Concept document (Step 2)
+          if (proposal.concept_document_v2 && !conceptDocument) {
+            setConceptDocument(proposal.concept_document_v2)
           }
         } else {
           formDataLoadedFromDB.current = true
         }
       } catch (error) {
-        // This is not a critical error - the form will still work with empty values
+        // Not critical - form works with empty values, step data uses localStorage fallback
         formDataLoadedFromDB.current = true
+      } finally {
+        setIsLoadingStepData(false)
       }
     }
 
-    loadFormDataFromDynamoDB()
+    loadProposalData()
   }, [
     proposalId,
     localStorageLoaded,
@@ -2078,68 +2030,52 @@ export function ProposalWriterPage() {
     }
   }
 
-  const renderCurrentStep = () => {
-    const stepProps = {
-      formData,
-      setFormData,
-      proposalId,
-      rfpAnalysis: rfpAnalysis || undefined,
-      conceptAnalysis: conceptAnalysis || undefined,
-      onConceptEvaluationChange: handleConceptEvaluationChange,
-      conceptDocument: conceptDocument || undefined,
-      conceptEvaluationData,
-      // Upload state setters for Step 1
-      setIsUploadingRFP,
-      setIsUploadingReference,
-      setIsUploadingSupporting,
-      setIsUploadingConcept,
-      // Vectorization state setter for Step 1
-      setIsVectorizingFiles,
-    }
+  // Compute Step 1 completed fields count for sidebar micro-progress
+  const step1CompletedFields = useMemo(() => {
+    let count = 0
+    if ((formData.textInputs['proposal-title'] || '').trim().length > 0) count++
+    if ((formData.uploadedFiles['rfp-document'] || []).length > 0) count++
+    if (
+      (formData.textInputs['initial-concept'] || '').length >= 100 ||
+      (formData.uploadedFiles['concept-document'] || []).length > 0
+    ) count++
+    return count
+  }, [formData])
 
+  // Stable callbacks for Step 1 document changes (2.3)
+  const handleRfpDocumentChanged = useCallback(() => {
+    invalidateFromStep(1)
+  }, [invalidateFromStep])
+
+  const handleConceptDocumentChanged = useCallback(() => {
+    invalidateFromStep(1)
+  }, [invalidateFromStep])
+
+  // Memoize step props to prevent unnecessary re-renders (2.2)
+  const stepProps = useMemo(() => ({
+    formData,
+    setFormData,
+    proposalId,
+    rfpAnalysis: rfpAnalysis || undefined,
+    conceptAnalysis: conceptAnalysis || undefined,
+    onConceptEvaluationChange: handleConceptEvaluationChange,
+    conceptDocument: conceptDocument || undefined,
+    conceptEvaluationData,
+    setIsUploadingRFP,
+    setIsUploadingReference,
+    setIsUploadingSupporting,
+    setIsUploadingConcept,
+    setIsVectorizingFiles,
+  }), [formData, proposalId, rfpAnalysis, conceptAnalysis, handleConceptEvaluationChange, conceptDocument, conceptEvaluationData])
+
+  const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:
         return (
           <Step1InformationConsolidation
             {...stepProps}
-            rfpAnalysis={rfpAnalysis || undefined}
-            onRfpDocumentChanged={() => {
-              // Removed console.log'🔄 RFP Document changed - invalidating all downstream analyses')
-              // Clear all analyses that depend on RFP
-              setRfpAnalysis(null)
-              setConceptAnalysis(null)
-              setConceptDocument(null)
-              setStructureWorkplanAnalysis(null)
-              setProposalTemplate(null)
-              setConceptEvaluationData(null)
-              setDraftFeedbackAnalysis(null)
-              // Clear localStorage
-              if (proposalId) {
-                localStorage.removeItem(`proposal_rfp_analysis_${proposalId}`)
-                localStorage.removeItem(`proposal_concept_analysis_${proposalId}`)
-                localStorage.removeItem(`proposal_concept_document_${proposalId}`)
-                localStorage.removeItem(`proposal_structure_workplan_${proposalId}`)
-                localStorage.removeItem(`proposal_template_${proposalId}`)
-                localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
-              }
-            }}
-            onConceptDocumentChanged={() => {
-              // Removed console.log'🔄 Concept Document changed - invalidating downstream analyses')
-              // Clear analyses that depend on concept
-              setConceptAnalysis(null)
-              setConceptDocument(null)
-              setStructureWorkplanAnalysis(null)
-              setProposalTemplate(null)
-              setConceptEvaluationData(null)
-              // Clear localStorage
-              if (proposalId) {
-                localStorage.removeItem(`proposal_concept_analysis_${proposalId}`)
-                localStorage.removeItem(`proposal_concept_document_${proposalId}`)
-                localStorage.removeItem(`proposal_structure_workplan_${proposalId}`)
-                localStorage.removeItem(`proposal_template_${proposalId}`)
-                localStorage.removeItem(`proposal_concept_evaluation_${proposalId}`)
-              }
-            }}
+            onRfpDocumentChanged={handleRfpDocumentChanged}
+            onConceptDocumentChanged={handleConceptDocumentChanged}
           />
         )
       case 2: {
@@ -2554,8 +2490,11 @@ export function ProposalWriterPage() {
         isLoadingStepData={isLoadingStepData}
         onNavigateAway={handleNavigateAway}
         lastModifiedStep={lastModifiedStep}
+        step1CompletedFields={step1CompletedFields}
       >
-        {renderCurrentStep()}
+        <StepErrorBoundary>
+          {renderCurrentStep()}
+        </StepErrorBoundary>
       </ProposalLayout>
     </>
   )

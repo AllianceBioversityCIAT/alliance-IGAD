@@ -261,3 +261,71 @@ async def test_delete_proposal_success():
             proposal_id
         )
         mock_s3.delete_objects.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_generate_proposal_code():
+    from app.tools.proposal_writer.routes import generate_proposal_code
+    code = generate_proposal_code()
+    assert code.startswith("PROP-")
+    assert len(code.split("-")) == 3
+
+def test_compute_completed_steps():
+    from app.tools.proposal_writer.routes import _compute_completed_steps
+    proposal = {"metadata": {"rfp_analysis": {"test": "ok"}, "concept_analysis": {"test": "ok"}, "structure_workplan": {"test": "ok"}, "rfp_analysis_status": "completed", "concept_analysis_status": "completed", "structure_workplan_status": "completed", "proposal_template_status": "completed", "proposal_template": {"content": "ok"}}}
+    steps = _compute_completed_steps(proposal)
+    assert 1 in steps
+    assert 2 in steps
+    assert 3 in steps
+    assert 4 not in steps
+
+def test_compute_step_completion():
+    from app.tools.proposal_writer.routes import _compute_step_completion
+    proposal = {"metadata": {"rfp_analysis": {"test": "ok"}, "concept_analysis": {"test": "ok"}, "structure_workplan": {"test": "ok"}, "rfp_analysis_status": "completed", "concept_analysis_status": "completed", "structure_workplan_status": "completed", "proposal_template_status": "completed", "proposal_template": {"content": "ok"}}}
+    status = _compute_step_completion(proposal)
+    assert status["step_1"]["completed"] is True
+    assert status["step_2"]["completed"] is True
+    assert status["step_3"]["completed"] is True
+    assert status["step_4"]["completed"] is False
+
+@pytest.mark.asyncio
+async def test_analyze_rfp_success():
+    from app.tools.proposal_writer.routes import analyze_rfp
+    proposal_id = "PROP-123"
+    with patch("app.tools.proposal_writer.routes.get_proposal") as mock_get_proposal, \
+         patch("app.tools.proposal_writer.routes.db_client") as mock_db, \
+         patch("app.tools.proposal_writer.routes.lambda_client") as mock_lambda, \
+         patch.dict("os.environ", {"WORKER_FUNCTION_NAME": "test-worker"}):
+         
+         mock_get_proposal.return_value = {"PK": "PROPOSAL#PROP-123", "SK": "METADATA", "proposalCode": "PROP-123"}
+         mock_db.update_item = AsyncMock()
+         mock_db.get_item = AsyncMock(return_value={"user_id": MOCK_USER["user_id"], "proposalCode": "PROP-123"})
+         mock_lambda.invoke.return_value = {"StatusCode": 202}
+         
+         response = await analyze_rfp(proposal_id, MOCK_USER)
+         assert response["status"] == "processing"
+         assert "RFP analysis started" in response["message"]
+         mock_db.update_item.assert_called_once()
+         mock_lambda.invoke.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_get_analysis_status_processing():
+    from app.tools.proposal_writer.routes import get_analysis_status
+    proposal_id = "PROP-123"
+    with patch("app.tools.proposal_writer.routes.get_proposal") as mock_get_proposal, \
+         patch("app.tools.proposal_writer.routes.db_client") as mock_db:
+         
+         mock_db.get_item = AsyncMock(return_value={"PK": "PROPOSAL#PROP-123", "SK": "METADATA", "analysis_status_rfp": "processing", "user_id": MOCK_USER["user_id"]})
+         response = await get_analysis_status(proposal_id, MOCK_USER)
+         assert response["status"] == "processing"
+
+@pytest.mark.asyncio
+async def test_get_analysis_status_completed():
+    from app.tools.proposal_writer.routes import get_analysis_status
+    proposal_id = "PROP-123"
+    with patch("app.tools.proposal_writer.routes.get_proposal") as mock_get_proposal, \
+         patch("app.tools.proposal_writer.routes.db_client") as mock_db:
+         
+         mock_db.get_item = AsyncMock(return_value={"PK": "PROPOSAL#PROP-123", "SK": "METADATA", "analysis_status_rfp": "completed", "rfp_analysis": {"result": "success"}, "user_id": MOCK_USER["user_id"]})
+         response = await get_analysis_status(proposal_id, MOCK_USER)
+         assert response["status"] == "completed"
+         assert response["rfp_analysis"] == {"result": "success"}

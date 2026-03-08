@@ -101,6 +101,15 @@
   box-shadow: 0 0 0 2px rgba(0, 166, 62, 0.1);
 }
 
+.titleInputError {
+  border-color: #dc2626;
+}
+
+.titleInputError:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+}
+
 /* Progress Card */
 .progressCard {
   background: #eff6ff;
@@ -340,9 +349,9 @@
 }
 
 .uploadArea.uploadAreaDragging {
-  border-color: #00a63e;
-  background: #f0fdf4;
-  box-shadow: 0 0 0 3px rgba(0, 166, 62, 0.1);
+  border-color: #155dfc;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(21, 93, 252, 0.15);
 }
 
 .uploadAreaSmall {
@@ -365,9 +374,9 @@
 }
 
 .uploadAreaSmall.uploadAreaDragging {
-  border-color: #00a63e;
-  background: #f0fdf4;
-  box-shadow: 0 0 0 3px rgba(0, 166, 62, 0.1);
+  border-color: #155dfc;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(21, 93, 252, 0.15);
 }
 
 .uploadAreaIcon {
@@ -683,6 +692,30 @@
 }
 
 .deleteFileButtonCompact:active {
+  transform: scale(0.95);
+}
+
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.retryButton:hover {
+  background: #e0f2fe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.retryButton:active {
   transform: scale(0.95);
 }
 
@@ -1008,8 +1041,19 @@
 
 .textAreaCount {
   font-size: 13px;
-  color: #00a63e;
   font-weight: 500;
+}
+
+.textAreaCountRed {
+  color: #dc2626;
+}
+
+.textAreaCountYellow {
+  color: #d97706;
+}
+
+.textAreaCountGreen {
+  color: #00a63e;
 }
 
 .saveButton {
@@ -1250,6 +1294,44 @@
 
 .textAreaDisabled::placeholder {
   color: #d1d5db !important;
+}
+
+/* File entrance animation */
+.uploadedFileCard {
+  animation: fileSlideIn 0.3s ease-out;
+}
+
+@keyframes fileSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Upload button enhanced */
+.uploadButton {
+  padding: 12px 28px;
+  font-size: 15px;
+}
+
+/* Validation status indicator */
+.fieldStatusIcon {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* Title helper text */
+.titleHelper {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+  line-height: 16px;
 }
 
 /* Responsive Design */

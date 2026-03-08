@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================================================
 // React Core
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import DOMPurify from 'dompurify'
 
 // External Libraries - Icons
@@ -23,20 +23,8 @@ import {
   RefreshCw,
 } from 'lucide-react'
 
-// Document generation
-import {
-  Document,
-  Packer,
-  Paragraph,
-  HeadingLevel,
-  TextRun,
-  AlignmentType,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
-  BorderStyle,
-} from 'docx'
+// Document generation - types only (runtime import is dynamic in handleDownloadDocument)
+import type { Paragraph as ParagraphType, Table as TableType } from 'docx'
 
 // Local Imports
 import { StepProps } from './stepConfig'
@@ -201,7 +189,7 @@ function useSelectedSections(
     selectedSections: string[]
     userComments?: { [key: string]: string }
   }) => void,
-  userComments?: { [key: string]: string }
+  userCommentsRef?: React.RefObject<{ [key: string]: string }>
 ): [string[], React.Dispatch<React.SetStateAction<string[]>>] {
   // Initialize selected sections from saved data OR default to Critical priority sections
   const [selectedSections, setSelectedSections] = useState<string[]>(() => {
@@ -241,24 +229,23 @@ function useSelectedSections(
 
     setSelectedSections(prev => {
       const filtered = prev.filter(sectionName => validSectionNames.includes(sectionName))
-      // Only update if something was actually filtered out
       if (filtered.length !== prev.length) {
-        // Removed console.log`🔄 Filtered selectedSections: ${prev.length} -> ${filtered.length}`)
         return filtered
       }
       return prev
     })
   }, [conceptAnalysis?.sections_needing_elaboration])
 
-  // Notify parent component whenever selections or comments change
+  // Notify parent only when selections change (comments use ref to avoid re-renders)
   useEffect(() => {
     if (onConceptEvaluationChange) {
+      const comments = userCommentsRef?.current || {}
       onConceptEvaluationChange({
         selectedSections,
-        userComments: Object.keys(userComments || {}).length > 0 ? userComments : undefined,
+        userComments: Object.keys(comments).length > 0 ? comments : undefined,
       })
     }
-  }, [selectedSections, userComments, onConceptEvaluationChange])
+  }, [selectedSections, onConceptEvaluationChange, userCommentsRef])
 
   return [selectedSections, setSelectedSections]
 }
@@ -299,6 +286,260 @@ function getPriorityColor(priority: 'Critical' | 'Recommended' | 'Optional'): Pr
 }
 
 // ============================================================================
+// MODULE-LEVEL UTILITIES
+// ============================================================================
+
+/**
+ * Format inline markdown (bold, italic, code) to sanitized HTML
+ */
+function formatInlineMarkdown(text: string): string {
+  let formatted = text
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
+  formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
+  return DOMPurify.sanitize(formatted)
+}
+
+/**
+ * Extract content from various possible concept document structures
+ */
+function extractDocumentContent(
+  doc: import('../types/analysis').ConceptDocument | null | undefined
+): string {
+  if (!doc) {
+    return ''
+  }
+  if (typeof doc === 'string') {
+    return doc
+  }
+  if (doc.generated_concept_document) {
+    return doc.generated_concept_document
+  }
+  if (doc.content) {
+    return doc.content
+  }
+  if (doc.document) {
+    return doc.document
+  }
+
+  if (doc.proposal_outline && Array.isArray(doc.proposal_outline)) {
+    return doc.proposal_outline
+      .map(
+        (section: {
+          section_title?: string
+          purpose?: string
+          recommended_word_count?: string
+          guiding_questions?: string[]
+        }) => {
+          const title = section.section_title || ''
+          const purpose = section.purpose || ''
+          const wordCount = section.recommended_word_count || ''
+          const questions = Array.isArray(section.guiding_questions)
+            ? section.guiding_questions.map((q: string) => `- ${q}`).join('\n')
+            : ''
+          return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
+        }
+      )
+      .join('\n\n')
+  }
+
+  if (doc.sections && typeof doc.sections === 'object') {
+    return Object.entries(doc.sections)
+      .map(([key, value]) => `## ${key}\n\n${value}`)
+      .join('\n\n')
+  }
+
+  return JSON.stringify(doc, null, 2)
+}
+
+/**
+ * Check if a line is a markdown table row
+ */
+function isTableRow(line: string): boolean {
+  const trimmed = line.trim()
+  return trimmed.includes('|') && (trimmed.startsWith('|') || trimmed.split('|').length >= 2)
+}
+
+/**
+ * Check if a line is a table separator row
+ */
+function isTableSeparator(line: string): boolean {
+  const trimmed = line.trim()
+  return /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(trimmed)
+}
+
+/**
+ * Parse a table row into cells
+ */
+function parseTableCells(line: string): string[] {
+  return line
+    .split('|')
+    .map(cell => cell.trim())
+    .filter((_, index, arr) => {
+      if (index === 0 && arr[0] === '') {
+        return false
+      }
+      if (index === arr.length - 1 && arr[arr.length - 1] === '') {
+        return false
+      }
+      return true
+    })
+}
+
+/**
+ * Parse markdown string into React elements for display
+ */
+function parseMarkdownToReact(markdown: string, cssStyles: Record<string, string>): JSX.Element[] {
+  const lines = markdown.split('\n')
+  const elements: JSX.Element[] = []
+  let currentList: string[] = []
+  let currentParagraph: string[] = []
+  let currentTable: string[][] = []
+  let tableHeaders: string[] = []
+  let inTable = false
+
+  const flushList = () => {
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key={`ul-${elements.length}`} className={cssStyles.markdownList}>
+          {currentList.map((item, i) => (
+            <li key={i} dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(item) }} />
+          ))}
+        </ul>
+      )
+      currentList = []
+    }
+  }
+
+  const flushParagraph = () => {
+    if (currentParagraph.length > 0) {
+      const text = currentParagraph.join(' ')
+      if (text.trim()) {
+        elements.push(
+          <p
+            key={`p-${elements.length}`}
+            className={cssStyles.markdownParagraph}
+            dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
+          />
+        )
+      }
+      currentParagraph = []
+    }
+  }
+
+  const flushTable = () => {
+    if (tableHeaders.length > 0 || currentTable.length > 0) {
+      elements.push(
+        <div key={`table-wrapper-${elements.length}`} className={cssStyles.tableWrapper}>
+          <table className={cssStyles.markdownTable}>
+            {tableHeaders.length > 0 && (
+              <thead>
+                <tr>
+                  {tableHeaders.map((header, i) => (
+                    <th
+                      key={i}
+                      dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(header.trim()) }}
+                    />
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {currentTable.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row.map((cell, cellIndex) => (
+                    <td
+                      key={cellIndex}
+                      dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(cell.trim()) }}
+                    />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+      tableHeaders = []
+      currentTable = []
+      inTable = false
+    }
+  }
+
+  lines.forEach((line, index) => {
+    if (isTableRow(line)) {
+      flushList()
+      flushParagraph()
+
+      if (isTableSeparator(line)) {
+        inTable = true
+        return
+      }
+
+      if (!inTable && tableHeaders.length === 0) {
+        tableHeaders = parseTableCells(line)
+      } else {
+        inTable = true
+        currentTable.push(parseTableCells(line))
+      }
+      return
+    }
+
+    if (inTable || tableHeaders.length > 0) {
+      flushTable()
+    }
+
+    if (line.startsWith('#### ')) {
+      flushList()
+      flushParagraph()
+      elements.push(
+        <h4 key={`h4-${index}`} className={cssStyles.markdownH4}>
+          {line.substring(5)}
+        </h4>
+      )
+    } else if (line.startsWith('### ')) {
+      flushList()
+      flushParagraph()
+      elements.push(
+        <h3 key={`h3-${index}`} className={cssStyles.markdownH3}>
+          {line.substring(4)}
+        </h3>
+      )
+    } else if (line.startsWith('## ')) {
+      flushList()
+      flushParagraph()
+      elements.push(
+        <h2 key={`h2-${index}`} className={cssStyles.markdownH2}>
+          {line.substring(3)}
+        </h2>
+      )
+    } else if (line.startsWith('# ')) {
+      flushList()
+      flushParagraph()
+      elements.push(
+        <h1 key={`h1-${index}`} className={cssStyles.markdownH1}>
+          {line.substring(2)}
+        </h1>
+      )
+    } else if (line.match(/^[*-]\s+/)) {
+      flushParagraph()
+      currentList.push(line.replace(/^[*-]\s+/, ''))
+    } else if (line.trim() === '') {
+      flushList()
+      flushParagraph()
+    } else {
+      flushList()
+      currentParagraph.push(line)
+    }
+  })
+
+  flushTable()
+  flushList()
+  flushParagraph()
+
+  return elements
+}
+
+// ============================================================================
 // SUB-COMPONENTS
 // ============================================================================
 
@@ -321,7 +562,12 @@ function EmptyState() {
         </p>
       </div>
       <div className={styles.emptyState}>
-        <p>Complete Step 1 to see your concept analysis</p>
+        <FileText size={48} className={styles.emptyStateIcon} />
+        <h3 className={styles.emptyStateTitle}>Concept analysis not available yet</h3>
+        <p className={styles.emptyStateText}>
+          Upload your RFP and concept documents in Step 1, then run the analysis to see your concept
+          review here.
+        </p>
       </div>
     </div>
   )
@@ -429,6 +675,16 @@ function SectionItem({
           <div
             className={`${styles.checkbox} ${isSelected ? styles.checkboxChecked : ''}`}
             onClick={onToggleSelection}
+            onKeyDown={e => {
+              if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault()
+                onToggleSelection()
+              }
+            }}
+            role="checkbox"
+            aria-checked={isSelected}
+            aria-label={`Select ${section.section}`}
+            tabIndex={0}
           >
             {isSelected && <Check size={14} color="white" />}
           </div>
@@ -586,9 +842,9 @@ function SectionsNeedingElaborationCard({
 
         {/* List of sections */}
         <div className={styles.sectionsList}>
-          {sections.map((section, index) => (
+          {sections.map(section => (
             <SectionItem
-              key={index}
+              key={section.section}
               section={section}
               isSelected={selectedSections.includes(section.section)}
               isExpanded={expandedSections.includes(section.section)}
@@ -627,14 +883,8 @@ function StrategicVerdict({ verdict }: { verdict?: string }) {
  */
 interface UpdatedConceptDocumentCardProps {
   conceptDocument: import('../types/analysis').ConceptDocument
-  proposalId?: string
-  onRegenerateDocument?: (
-    selectedSections: string[],
-    userComments: { [key: string]: string }
-  ) => void
-  onRegenerateAnalysis?: () => void | Promise<void>
+  onRegenerateAnalysis?: () => void
   selectedSections: string[]
-  userComments: { [key: string]: string }
   isDownloading: boolean
   onDownload: () => void
   onReuploadClick: () => void
@@ -642,250 +892,17 @@ interface UpdatedConceptDocumentCardProps {
 
 function UpdatedConceptDocumentCard({
   conceptDocument,
-  proposalId,
-  onRegenerateDocument: _onRegenerateDocument,
   onRegenerateAnalysis,
   selectedSections,
-  userComments: _userComments,
   isDownloading,
   onDownload,
   onReuploadClick,
 }: UpdatedConceptDocumentCardProps) {
-  const { showError } = useToast()
-  const [isRegenerating, setIsRegenerating] = useState(false)
-
-  // "Regenerate" button: re-runs entire concept analysis (Fit Assessment, Strong Aspects, Sections)
-  // and clears the concept document so user can generate a new one
-  const handleRegenerate = async () => {
-    if (!proposalId || !onRegenerateAnalysis) {
-      showError('Unable to regenerate', 'Unable to regenerate analysis. Please try again.')
-      return
-    }
-
-    setIsRegenerating(true)
-    try {
-      await onRegenerateAnalysis()
-    } catch (error) {
-      // Removed console.errorRegeneration error:', error)
-      showError('Regeneration failed', 'Error regenerating analysis. Please try again.')
-    } finally {
-      setIsRegenerating(false)
-    }
-  }
-
-  // Extract and parse document content
-  const extractDocumentContent = (
-    doc: import('../types/analysis').ConceptDocument | null | undefined
-  ): string => {
-    if (!doc) {
-      return ''
-    }
-    if (typeof doc === 'string') {
-      return doc
-    }
-    if (doc.generated_concept_document) {
-      return doc.generated_concept_document
-    }
-    if (doc.content) {
-      return doc.content
-    }
-    if (doc.document) {
-      return doc.document
-    }
-    return JSON.stringify(doc, null, 2)
-  }
-
-  const formatInlineMarkdown = (text: string): string => {
-    let formatted = text
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>')
-    formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>')
-    return DOMPurify.sanitize(formatted)
-  }
-
-  const parseMarkdownToReact = (markdown: string): JSX.Element[] => {
-    const lines = markdown.split('\n')
-    const elements: JSX.Element[] = []
-    let currentList: string[] = []
-    let currentParagraph: string[] = []
-    let currentTable: string[][] = []
-    let tableHeaders: string[] = []
-    let inTable = false
-
-    const flushList = () => {
-      if (currentList.length > 0) {
-        elements.push(
-          <ul key={`ul-${elements.length}`} className={styles.markdownList}>
-            {currentList.map((item, i) => (
-              <li key={i} dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(item) }} />
-            ))}
-          </ul>
-        )
-        currentList = []
-      }
-    }
-
-    const flushParagraph = () => {
-      if (currentParagraph.length > 0) {
-        const text = currentParagraph.join(' ')
-        if (text.trim()) {
-          elements.push(
-            <p
-              key={`p-${elements.length}`}
-              className={styles.markdownParagraph}
-              dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
-            />
-          )
-        }
-        currentParagraph = []
-      }
-    }
-
-    const flushTable = () => {
-      if (tableHeaders.length > 0 || currentTable.length > 0) {
-        elements.push(
-          <div key={`table-wrapper-${elements.length}`} className={styles.tableWrapper}>
-            <table className={styles.markdownTable}>
-              {tableHeaders.length > 0 && (
-                <thead>
-                  <tr>
-                    {tableHeaders.map((header, i) => (
-                      <th
-                        key={i}
-                        dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(header.trim()) }}
-                      />
-                    ))}
-                  </tr>
-                </thead>
-              )}
-              <tbody>
-                {currentTable.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    {row.map((cell, cellIndex) => (
-                      <td
-                        key={cellIndex}
-                        dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(cell.trim()) }}
-                      />
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )
-        tableHeaders = []
-        currentTable = []
-        inTable = false
-      }
-    }
-
-    // Check if a line is a table row (starts and ends with |, or has | separators)
-    const isTableRow = (line: string): boolean => {
-      const trimmed = line.trim()
-      return trimmed.includes('|') && (trimmed.startsWith('|') || trimmed.split('|').length >= 2)
-    }
-
-    // Check if a line is the separator row (| --- | --- |)
-    const isTableSeparator = (line: string): boolean => {
-      const trimmed = line.trim()
-      return /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(trimmed)
-    }
-
-    // Parse table row into cells
-    const parseTableRow = (line: string): string[] => {
-      return line
-        .split('|')
-        .map(cell => cell.trim())
-        .filter((_, index, arr) => {
-          // Remove empty first/last cells from | at beginning/end
-          if (index === 0 && arr[0] === '') {
-            return false
-          }
-          if (index === arr.length - 1 && arr[arr.length - 1] === '') {
-            return false
-          }
-          return true
-        })
-    }
-
-    lines.forEach((line, index) => {
-      // Check for table rows
-      if (isTableRow(line)) {
-        flushList()
-        flushParagraph()
-
-        if (isTableSeparator(line)) {
-          // This is the separator row, skip it (headers already captured)
-          inTable = true
-          return
-        }
-
-        if (!inTable && tableHeaders.length === 0) {
-          // First row of table = headers
-          tableHeaders = parseTableRow(line)
-        } else {
-          // Data row
-          inTable = true
-          currentTable.push(parseTableRow(line))
-        }
-        return
-      }
-
-      // If we were in a table and hit a non-table line, flush the table
-      if (inTable || tableHeaders.length > 0) {
-        flushTable()
-      }
-
-      if (line.startsWith('#### ')) {
-        flushList()
-        flushParagraph()
-        elements.push(
-          <h4 key={`h4-${index}`} className={styles.markdownH4}>
-            {line.substring(5)}
-          </h4>
-        )
-      } else if (line.startsWith('### ')) {
-        flushList()
-        flushParagraph()
-        elements.push(
-          <h3 key={`h3-${index}`} className={styles.markdownH3}>
-            {line.substring(4)}
-          </h3>
-        )
-      } else if (line.startsWith('## ')) {
-        flushList()
-        flushParagraph()
-        elements.push(
-          <h2 key={`h2-${index}`} className={styles.markdownH2}>
-            {line.substring(3)}
-          </h2>
-        )
-      } else if (line.startsWith('# ')) {
-        flushList()
-        flushParagraph()
-        elements.push(
-          <h1 key={`h1-${index}`} className={styles.markdownH1}>
-            {line.substring(2)}
-          </h1>
-        )
-      } else if (line.match(/^[*-]\s+/)) {
-        flushParagraph()
-        currentList.push(line.replace(/^[*-]\s+/, ''))
-      } else if (line.trim() === '') {
-        flushList()
-        flushParagraph()
-      } else {
-        flushList()
-        currentParagraph.push(line)
-      }
-    })
-
-    flushTable()
-    flushList()
-    flushParagraph()
-
-    return elements
-  }
+  // Memoize parsed markdown to avoid re-parsing on every render
+  const renderedContent = useMemo(
+    () => parseMarkdownToReact(extractDocumentContent(conceptDocument), styles),
+    [conceptDocument]
+  )
 
   return (
     <div className={styles.documentCard}>
@@ -902,9 +919,7 @@ function UpdatedConceptDocumentCard({
       </div>
 
       <div className={styles.documentContent}>
-        <div className={styles.markdownContent}>
-          {parseMarkdownToReact(extractDocumentContent(conceptDocument))}
-        </div>
+        <div className={styles.markdownContent}>{renderedContent}</div>
       </div>
 
       <div className={styles.buttonGroup}>
@@ -929,20 +944,11 @@ function UpdatedConceptDocumentCard({
 
         <button
           className={styles.regenerateButton}
-          onClick={handleRegenerate}
-          disabled={isRegenerating || selectedSections.length === 0}
+          onClick={onRegenerateAnalysis}
+          disabled={selectedSections.length === 0}
         >
-          {isRegenerating ? (
-            <>
-              <div className={styles.spinner}></div>
-              Regenerating...
-            </>
-          ) : (
-            <>
-              <Sparkles size={16} />
-              Regenerate
-            </>
-          )}
+          <Sparkles size={16} />
+          Regenerate
         </button>
       </div>
     </div>
@@ -991,13 +997,18 @@ export function Step2ConceptReview({
 
   // User comments state - tracks comments for each section
   const [userComments, setUserComments] = useState<{ [key: string]: string }>({})
+  const userCommentsRef = useRef(userComments)
+  userCommentsRef.current = userComments
+
+  // Debounce timer for comment notifications to parent
+  const commentDebounceRef = useRef<NodeJS.Timeout | null>(null)
 
   // Manage selected sections (which sections user wants to elaborate)
   const [selectedSections, setSelectedSections] = useSelectedSections(
     conceptAnalysis,
     conceptEvaluationData,
     onConceptEvaluationChange,
-    userComments
+    userCommentsRef
   )
 
   // Manage expanded sections (which section details are currently visible)
@@ -1014,7 +1025,7 @@ export function Step2ConceptReview({
   // ========================================
   const [, setIsRegeneratingAnalysis] = useState(false)
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
-  const [, setProgressMessage] = useState<string | null>(null)
+  const [progressMessage, setProgressMessage] = useState<string | null>(null)
 
   // ========================================
   // REGENERATION & GENERATION HANDLERS
@@ -1267,15 +1278,37 @@ export function Step2ConceptReview({
 
   /**
    * Handles changes to user comments for a section
-   * Updates the userComments state with the new comment
-   * Note: Document invalidation is handled by the parent's useEffect that watches conceptEvaluationData
+   * Debounces parent notification to avoid re-renders on every keystroke
    */
-  const handleCommentChange = (sectionName: string, comment: string) => {
-    setUserComments(prev => ({
-      ...prev,
-      [sectionName]: comment,
-    }))
-  }
+  const handleCommentChange = useCallback(
+    (sectionName: string, comment: string) => {
+      setUserComments(prev => ({
+        ...prev,
+        [sectionName]: comment,
+      }))
+
+      // Debounce parent notification (500ms after last keystroke)
+      if (commentDebounceRef.current) {
+        clearTimeout(commentDebounceRef.current)
+      }
+      commentDebounceRef.current = setTimeout(() => {
+        onConceptEvaluationChange?.({
+          selectedSections,
+          userComments: userCommentsRef.current,
+        })
+      }, 500)
+    },
+    [selectedSections, onConceptEvaluationChange]
+  )
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (commentDebounceRef.current) {
+        clearTimeout(commentDebounceRef.current)
+      }
+    }
+  }, [])
 
   // ========================================
   // REUPLOAD HANDLERS
@@ -1441,320 +1474,12 @@ export function Step2ConceptReview({
   }, [])
 
   // ========================================
-  // DOCUMENT UTILITIES
+  // DOCUMENT UTILITIES (uses module-level extractDocumentContent)
   // ========================================
 
   /**
-   * Extracts content from various possible document structures
-   */
-  const extractDocumentContent = useCallback(
-    (doc: import('../types/analysis').ConceptDocument | null | undefined): string => {
-      if (!doc) {
-        return ''
-      }
-      if (typeof doc === 'string') {
-        return doc
-      }
-      if (doc.generated_concept_document) {
-        return doc.generated_concept_document
-      }
-      if (doc.content) {
-        return doc.content
-      }
-      if (doc.document) {
-        return doc.document
-      }
-
-      if (doc.proposal_outline && Array.isArray(doc.proposal_outline)) {
-        return doc.proposal_outline
-          .map(
-            (section: {
-              section_title?: string
-              purpose?: string
-              recommended_word_count?: string
-              guiding_questions?: string[]
-            }) => {
-              const title = section.section_title || ''
-              const purpose = section.purpose || ''
-              const wordCount = section.recommended_word_count || ''
-              const questions = Array.isArray(section.guiding_questions)
-                ? section.guiding_questions.map((q: string) => `- ${q}`).join('\n')
-                : ''
-              return `## ${title}\n\n**Purpose:** ${purpose}\n\n**Recommended Word Count:** ${wordCount}\n\n**Guiding Questions:**\n${questions}`
-            }
-          )
-          .join('\n\n')
-      }
-
-      if (doc.sections && typeof doc.sections === 'object') {
-        return Object.entries(doc.sections)
-          .map(([key, value]) => `## ${key}\n\n${value}`)
-          .join('\n\n')
-      }
-
-      return JSON.stringify(doc, null, 2)
-    },
-    []
-  )
-
-  // Removed unused formatInlineMarkdown - it's defined in UpdatedConceptDocumentCard
-
-  /**
-   * Converts markdown to DOCX Paragraph objects
-   */
-  const parseInlineFormatting = useCallback((text: string): TextRun[] => {
-    const runs: TextRun[] = []
-    const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`|[^*`]+)/g
-    const matches = text.match(regex)
-
-    if (!matches) {
-      return [new TextRun({ text })]
-    }
-
-    matches.forEach(match => {
-      if (match.startsWith('**') && match.endsWith('**')) {
-        // Bold text
-        runs.push(
-          new TextRun({
-            text: match.slice(2, -2),
-            bold: true,
-          })
-        )
-      } else if (match.startsWith('*') && match.endsWith('*')) {
-        // Italic text
-        runs.push(
-          new TextRun({
-            text: match.slice(1, -1),
-            italics: true,
-          })
-        )
-      } else if (match.startsWith('`') && match.endsWith('`')) {
-        // Code text
-        runs.push(
-          new TextRun({
-            text: match.slice(1, -1),
-            font: 'Courier New',
-            color: '166534',
-          })
-        )
-      } else {
-        // Normal text
-        runs.push(new TextRun({ text: match }))
-      }
-    })
-
-    return runs
-  }, [])
-
-  const markdownToParagraphs = useCallback(
-    (markdown: string): (Paragraph | Table)[] => {
-      const lines = markdown.split('\n')
-      const elements: (Paragraph | Table)[] = []
-      let tableRows: string[][] = []
-      let tableHeaders: string[] = []
-      let inTable = false
-
-      // Helper to check if line is a table row
-      const isTableRow = (line: string): boolean => {
-        const trimmed = line.trim()
-        return trimmed.includes('|') && (trimmed.startsWith('|') || trimmed.split('|').length >= 2)
-      }
-
-      // Helper to check if line is table separator
-      const isTableSeparator = (line: string): boolean => {
-        const trimmed = line.trim()
-        return /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(trimmed)
-      }
-
-      // Helper to parse table row into cells
-      const parseTableRow = (line: string): string[] => {
-        return line
-          .split('|')
-          .map(cell => cell.trim())
-          .filter((_, index, arr) => {
-            if (index === 0 && arr[0] === '') {
-              return false
-            }
-            if (index === arr.length - 1 && arr[arr.length - 1] === '') {
-              return false
-            }
-            return true
-          })
-      }
-
-      // Helper to flush table to elements
-      const flushTable = () => {
-        if (tableHeaders.length > 0 || tableRows.length > 0) {
-          const rows: TableRow[] = []
-
-          // Add header row
-          if (tableHeaders.length > 0) {
-            rows.push(
-              new TableRow({
-                tableHeader: true,
-                children: tableHeaders.map(
-                  header =>
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: [
-                            new TextRun({
-                              text: header,
-                              bold: true,
-                              size: 22,
-                            }),
-                          ],
-                        }),
-                      ],
-                      shading: { fill: 'F3F4F6' },
-                    })
-                ),
-              })
-            )
-          }
-
-          // Add data rows
-          tableRows.forEach(row => {
-            rows.push(
-              new TableRow({
-                children: row.map(
-                  cell =>
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: parseInlineFormatting(cell),
-                        }),
-                      ],
-                    })
-                ),
-              })
-            )
-          })
-
-          // Create table with borders
-          elements.push(
-            new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE },
-              rows,
-              borders: {
-                top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-                bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-                left: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-                right: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-                insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-                insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
-              },
-            })
-          )
-
-          // Add spacing after table
-          elements.push(new Paragraph({ text: '', spacing: { after: 200 } }))
-
-          tableHeaders = []
-          tableRows = []
-          inTable = false
-        }
-      }
-
-      lines.forEach(line => {
-        // Check for table rows
-        if (isTableRow(line)) {
-          if (isTableSeparator(line)) {
-            inTable = true
-            return
-          }
-
-          if (!inTable && tableHeaders.length === 0) {
-            tableHeaders = parseTableRow(line)
-          } else {
-            inTable = true
-            tableRows.push(parseTableRow(line))
-          }
-          return
-        }
-
-        // Flush table if we hit a non-table line
-        if (inTable || tableHeaders.length > 0) {
-          flushTable()
-        }
-
-        if (line.startsWith('#### ')) {
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(line.substring(5)),
-              heading: HeadingLevel.HEADING_4,
-              spacing: { before: 200, after: 100 },
-            })
-          )
-        } else if (line.startsWith('### ')) {
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(line.substring(4)),
-              heading: HeadingLevel.HEADING_3,
-              spacing: { before: 240, after: 120 },
-            })
-          )
-        } else if (line.startsWith('## ')) {
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(line.substring(3)),
-              heading: HeadingLevel.HEADING_2,
-              spacing: { before: 360, after: 160 },
-            })
-          )
-        } else if (line.startsWith('# ')) {
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(line.substring(2)),
-              heading: HeadingLevel.HEADING_1,
-              spacing: { before: 480, after: 240 },
-            })
-          )
-        } else if (line.match(/^[*-]\s+/)) {
-          const bulletText = line.replace(/^[*-]\s+/, '')
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(bulletText),
-              bullet: { level: 0 },
-              spacing: { after: 60, line: 276 },
-            })
-          )
-        } else if (line.match(/^\s{2,}[*-]\s+/)) {
-          const bulletText = line.replace(/^\s{2,}[*-]\s+/, '')
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(bulletText),
-              bullet: { level: 1 },
-              spacing: { after: 60, line: 276 },
-            })
-          )
-        } else if (line.trim() === '') {
-          elements.push(
-            new Paragraph({
-              text: '',
-              spacing: { after: 120 },
-            })
-          )
-        } else if (line.trim()) {
-          elements.push(
-            new Paragraph({
-              children: parseInlineFormatting(line.trim()),
-              spacing: { after: 140, line: 276 },
-            })
-          )
-        }
-      })
-
-      // Flush any remaining table
-      flushTable()
-
-      return elements.length > 0 ? elements : [new Paragraph({ text: 'No content available' })]
-    },
-    [parseInlineFormatting]
-  )
-
-  /**
    * Handles document download as DOCX file
+   * Dynamically imports docx library to avoid loading it until needed
    */
   const handleDownloadDocument = useCallback(
     async (e?: React.MouseEvent) => {
@@ -1766,6 +1491,21 @@ export function Step2ConceptReview({
       setIsDownloading(true)
 
       try {
+        // Dynamic import - docx library is only loaded when user clicks Download
+        const {
+          Document,
+          Packer,
+          Paragraph,
+          HeadingLevel,
+          TextRun,
+          AlignmentType,
+          Table,
+          TableRow,
+          TableCell,
+          WidthType,
+          BorderStyle,
+        } = await import('docx')
+
         const content = extractDocumentContent(conceptDocument)
         const currentDate = new Date().toLocaleDateString('en-US', {
           year: 'numeric',
@@ -1773,11 +1513,166 @@ export function Step2ConceptReview({
           day: 'numeric',
         })
 
-        // Build document with header and formatted content
-        const documentParagraphs: (Paragraph | Table)[] = []
+        // Inline markdown-to-DOCX converter
+        const toRuns = (text: string) => {
+          const runs: InstanceType<typeof TextRun>[] = []
+          const matches = text.match(/(\*\*.*?\*\*|\*.*?\*|`.*?`|[^*`]+)/g)
+          if (!matches) {
+            return [new TextRun({ text })]
+          }
 
-        // Add title
-        documentParagraphs.push(
+          matches.forEach(match => {
+            if (match.startsWith('**') && match.endsWith('**')) {
+              runs.push(new TextRun({ text: match.slice(2, -2), bold: true }))
+            } else if (match.startsWith('*') && match.endsWith('*')) {
+              runs.push(new TextRun({ text: match.slice(1, -1), italics: true }))
+            } else if (match.startsWith('`') && match.endsWith('`')) {
+              runs.push(
+                new TextRun({ text: match.slice(1, -1), font: 'Courier New', color: '166534' })
+              )
+            } else {
+              runs.push(new TextRun({ text: match }))
+            }
+          })
+          return runs
+        }
+
+        // Convert markdown lines to DOCX paragraphs
+        const lines = content.split('\n')
+        const docElements: (ParagraphType | TableType)[] = []
+        let tblRows: string[][] = []
+        let tblHeaders: string[] = []
+        let inTbl = false
+
+        const flushTbl = () => {
+          if (tblHeaders.length > 0 || tblRows.length > 0) {
+            const rows = []
+            if (tblHeaders.length > 0) {
+              rows.push(
+                new TableRow({
+                  tableHeader: true,
+                  children: tblHeaders.map(
+                    h =>
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun({ text: h, bold: true, size: 22 })],
+                          }),
+                        ],
+                        shading: { fill: 'F3F4F6' },
+                      })
+                  ),
+                })
+              )
+            }
+            tblRows.forEach(row => {
+              rows.push(
+                new TableRow({
+                  children: row.map(
+                    cell => new TableCell({ children: [new Paragraph({ children: toRuns(cell) })] })
+                  ),
+                })
+              )
+            })
+            docElements.push(
+              new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                rows,
+                borders: {
+                  top: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                  bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                  left: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                  right: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                  insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                  insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'E5E7EB' },
+                },
+              })
+            )
+            docElements.push(new Paragraph({ text: '', spacing: { after: 200 } }))
+            tblHeaders = []
+            tblRows = []
+            inTbl = false
+          }
+        }
+
+        lines.forEach(line => {
+          if (isTableRow(line)) {
+            if (isTableSeparator(line)) {
+              inTbl = true
+              return
+            }
+            if (!inTbl && tblHeaders.length === 0) {
+              tblHeaders = parseTableCells(line)
+            } else {
+              inTbl = true
+              tblRows.push(parseTableCells(line))
+            }
+            return
+          }
+          if (inTbl || tblHeaders.length > 0) {
+            flushTbl()
+          }
+
+          if (line.startsWith('#### ')) {
+            docElements.push(
+              new Paragraph({
+                children: toRuns(line.substring(5)),
+                heading: HeadingLevel.HEADING_4,
+                spacing: { before: 200, after: 100 },
+              })
+            )
+          } else if (line.startsWith('### ')) {
+            docElements.push(
+              new Paragraph({
+                children: toRuns(line.substring(4)),
+                heading: HeadingLevel.HEADING_3,
+                spacing: { before: 240, after: 120 },
+              })
+            )
+          } else if (line.startsWith('## ')) {
+            docElements.push(
+              new Paragraph({
+                children: toRuns(line.substring(3)),
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 360, after: 160 },
+              })
+            )
+          } else if (line.startsWith('# ')) {
+            docElements.push(
+              new Paragraph({
+                children: toRuns(line.substring(2)),
+                heading: HeadingLevel.HEADING_1,
+                spacing: { before: 480, after: 240 },
+              })
+            )
+          } else if (line.match(/^[*-]\s+/)) {
+            docElements.push(
+              new Paragraph({
+                children: toRuns(line.replace(/^[*-]\s+/, '')),
+                bullet: { level: 0 },
+                spacing: { after: 60, line: 276 },
+              })
+            )
+          } else if (line.match(/^\s{2,}[*-]\s+/)) {
+            docElements.push(
+              new Paragraph({
+                children: toRuns(line.replace(/^\s{2,}[*-]\s+/, '')),
+                bullet: { level: 1 },
+                spacing: { after: 60, line: 276 },
+              })
+            )
+          } else if (line.trim() === '') {
+            docElements.push(new Paragraph({ text: '', spacing: { after: 120 } }))
+          } else if (line.trim()) {
+            docElements.push(
+              new Paragraph({ children: toRuns(line.trim()), spacing: { after: 140, line: 276 } })
+            )
+          }
+        })
+        flushTbl()
+
+        // Build full document
+        const documentParagraphs: (ParagraphType | TableType)[] = [
           new Paragraph({
             children: [
               new TextRun({
@@ -1789,49 +1684,25 @@ export function Step2ConceptReview({
             ],
             spacing: { after: 200 },
             alignment: AlignmentType.CENTER,
-          })
-        )
-
-        // Add metadata section
-        documentParagraphs.push(
+          }),
           new Paragraph({
             children: [
-              new TextRun({
-                text: `Generated: ${currentDate}`,
-                size: 20,
-                color: '6B7280',
-              }),
+              new TextRun({ text: `Generated: ${currentDate}`, size: 20, color: '6B7280' }),
             ],
             spacing: { after: 100 },
             alignment: AlignmentType.CENTER,
-          })
-        )
-
-        if (proposalId) {
-          documentParagraphs.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Proposal ID: ${proposalId}`,
-                  size: 20,
-                  color: '6B7280',
+          }),
+          ...(proposalId
+            ? [
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: `Proposal ID: ${proposalId}`, size: 20, color: '6B7280' }),
+                  ],
+                  spacing: { after: 400 },
+                  alignment: AlignmentType.CENTER,
                 }),
-              ],
-              spacing: { after: 400 },
-              alignment: AlignmentType.CENTER,
-            })
-          )
-        } else {
-          documentParagraphs.push(
-            new Paragraph({
-              text: '',
-              spacing: { after: 200 },
-            })
-          )
-        }
-
-        // Add horizontal line separator
-        documentParagraphs.push(
+              ]
+            : [new Paragraph({ text: '', spacing: { after: 200 } })]),
           new Paragraph({
             children: [
               new TextRun({
@@ -1841,22 +1712,9 @@ export function Step2ConceptReview({
             ],
             spacing: { after: 400 },
             alignment: AlignmentType.CENTER,
-          })
-        )
-
-        // Add content sections
-        const contentSections = markdownToParagraphs(content)
-        documentParagraphs.push(...contentSections)
-
-        // Add footer separator
-        documentParagraphs.push(
-          new Paragraph({
-            text: '',
-            spacing: { before: 400, after: 200 },
-          })
-        )
-
-        documentParagraphs.push(
+          }),
+          ...docElements,
+          new Paragraph({ text: '', spacing: { before: 400, after: 200 } }),
           new Paragraph({
             children: [
               new TextRun({
@@ -1866,11 +1724,7 @@ export function Step2ConceptReview({
             ],
             spacing: { after: 200 },
             alignment: AlignmentType.CENTER,
-          })
-        )
-
-        // Add footer
-        documentParagraphs.push(
+          }),
           new Paragraph({
             children: [
               new TextRun({
@@ -1881,22 +1735,15 @@ export function Step2ConceptReview({
               }),
             ],
             alignment: AlignmentType.CENTER,
-          })
-        )
+          }),
+        ]
 
         const doc = new Document({
           sections: [
             {
               children: documentParagraphs,
               properties: {
-                page: {
-                  margin: {
-                    top: 1440, // 1 inch
-                    right: 1440,
-                    bottom: 1440,
-                    left: 1440,
-                  },
-                },
+                page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } },
               },
             },
           ],
@@ -1910,13 +1757,12 @@ export function Step2ConceptReview({
         a.click()
         URL.revokeObjectURL(url)
       } catch (error) {
-        // Removed console.errorDownload error:', error)
         showError('Download failed', 'Error generating document. Please try again.')
       } finally {
         setIsDownloading(false)
       }
     },
-    [conceptDocument, extractDocumentContent, markdownToParagraphs, proposalId, showError]
+    [conceptDocument, proposalId, showError]
   )
 
   // ========================================
@@ -1976,15 +1822,12 @@ export function Step2ConceptReview({
         {/* Strategic Verdict (if available) */}
         <StrategicVerdict verdict={strategic_verdict} />
 
-        {/* Updated Concept Document (if available) - NEW */}
+        {/* Updated Concept Document (if available) */}
         {conceptDocument && (
           <UpdatedConceptDocumentCard
             conceptDocument={conceptDocument}
-            proposalId={proposalId}
-            onRegenerateDocument={handleGenerateDocument}
             onRegenerateAnalysis={() => setShowRegenerateConfirmModal(true)}
             selectedSections={selectedSections}
-            userComments={userComments}
             isDownloading={isDownloading}
             onDownload={handleDownloadDocument}
             onReuploadClick={handleReuploadClick}
@@ -1998,6 +1841,7 @@ export function Step2ConceptReview({
               className={styles.generateConceptButton}
               onClick={() => handleGenerateDocument(selectedSections, userComments)}
               disabled={isGeneratingDocument || selectedSections.length === 0}
+              aria-busy={isGeneratingDocument}
               title={
                 selectedSections.length === 0
                   ? 'Please select at least one section to generate'
@@ -2016,7 +1860,10 @@ export function Step2ConceptReview({
                 </>
               )}
             </button>
-            {selectedSections.length === 0 && (
+            {isGeneratingDocument && progressMessage && (
+              <p className={styles.progressMessage}>{progressMessage}</p>
+            )}
+            {!isGeneratingDocument && selectedSections.length === 0 && (
               <p className={styles.generateButtonHint}>
                 Select at least one section above to generate the updated concept
               </p>

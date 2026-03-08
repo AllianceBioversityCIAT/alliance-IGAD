@@ -109,7 +109,7 @@ def extract_text_from_file(file_bytes: bytes, filename: str) -> Optional[str]:
         return None
 
 
-def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
+def chunk_text(text: str, chunk_size: int = 2000, overlap: int = 200) -> list[str]:
     """
     Split text into chunks with optional overlap
 

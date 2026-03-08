@@ -44,7 +44,7 @@ Usage:
 
 CONCEPT_DOCUMENT_GENERATION_SETTINGS = {
     # ==================== AI Model Configuration ====================
-    "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",  # Claude Sonnet 4
+    "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",  # Claude Sonnet 4.5
     "max_tokens": 2000,  # Maximum tokens for response (~1,500 words)
     "temperature": 0.1,  # Balanced temperature for creative document generation
     "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)

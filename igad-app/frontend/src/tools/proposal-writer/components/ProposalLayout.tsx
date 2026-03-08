@@ -19,6 +19,8 @@ interface ProposalLayoutProps {
   onNavigateAway?: () => void
   /** Step from which invalidation occurred (null if no invalidation) */
   lastModifiedStep?: number | null
+  /** Number of completed required fields in Step 1 (0-3) */
+  step1CompletedFields?: number
 }
 
 export function ProposalLayout({
@@ -33,6 +35,7 @@ export function ProposalLayout({
   isLoadingStepData = false,
   onNavigateAway,
   lastModifiedStep = null,
+  step1CompletedFields,
 }: ProposalLayoutProps) {
   const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
@@ -105,6 +108,7 @@ export function ProposalLayout({
           completedSteps={completedSteps}
           isLoading={isLoadingStepData}
           lastModifiedStep={lastModifiedStep}
+          step1CompletedFields={step1CompletedFields}
         />
         <div className={styles.contentArea}>
           {children}

@@ -34,7 +34,7 @@ Usage:
 
 PROPOSAL_DOCUMENT_GENERATION_SETTINGS = {
     # ==================== AI Model Configuration ====================
-    "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",  # Claude Sonnet 4
+    "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",  # Claude Sonnet 4.5
     "max_tokens": 25000,  # Maximum tokens for response (~24,000 words)
     "temperature": 0.1,  # Low temperature for consistent, conservative refinement
     "top_p": 0.9,  # Nucleus sampling

@@ -45,16 +45,29 @@ const AnalysisProgressModal: React.FC<AnalysisProgressModalProps> = ({ isOpen, p
             />
           </div>
         )}
+        <p className={styles.estimatedTime}>
+          {progress && progress.step < progress.total
+            ? 'Typically 1-2 minutes remaining'
+            : progress ? 'Almost done...' : ''}
+        </p>
         <div className={styles.steps}>
-          {steps.map((stepText, index) => (
-            <div
-              key={index}
-              className={`${styles.step} ${progress && progress.step >= index + 1 ? styles.stepActive : ''}`}
-            >
-              <div className={styles.stepIcon}>{index + 1}</div>
-              <div className={styles.stepText}>{stepText}</div>
-            </div>
-          ))}
+          {steps.map((stepText, index) => {
+            const stepNumber = index + 1
+            const isCompleted = progress && progress.step > stepNumber
+            const isActive = progress && progress.step === stepNumber
+
+            return (
+              <div
+                key={index}
+                className={`${styles.step} ${isCompleted ? styles.stepCompleted : ''} ${isActive ? styles.stepActive : ''}`}
+              >
+                <div className={styles.stepIcon}>
+                  {isCompleted ? '✓' : stepNumber}
+                </div>
+                <div className={styles.stepText}>{stepText}</div>
+              </div>
+            )
+          })}
         </div>
         <p className={styles.note}>
           {progress

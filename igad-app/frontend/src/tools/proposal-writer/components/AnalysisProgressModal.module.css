@@ -113,12 +113,44 @@
   transition: width 0.3s ease;
 }
 
+.step {
+  transition: all 0.3s ease;
+}
+
+.stepCompleted .stepIcon {
+  background: #00a63e;
+  color: white;
+}
+
+.stepCompleted .stepText {
+  color: #6b7280;
+  text-decoration: line-through;
+  text-decoration-color: #d1d5db;
+}
+
 .stepActive .stepIcon {
   background: #00a63e;
   color: white;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 166, 62, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(0, 166, 62, 0);
+  }
 }
 
 .stepActive .stepText {
   color: #00a63e;
   font-weight: 600;
+}
+
+.estimatedTime {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0 0 16px 0;
+  text-align: center;
 }

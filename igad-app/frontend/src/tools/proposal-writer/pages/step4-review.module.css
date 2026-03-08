@@ -279,34 +279,6 @@
 }
 
 /* ============================================
-   DOWNLOAD FEEDBACK BUTTON
-   ============================================ */
-
-.downloadFeedbackButton {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 8px 16px;
-  background: #ffffff;
-  border: 1.26px solid #e6e6e6;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #111827;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.downloadFeedbackButton:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: #d1d5dc;
-}
-
-.downloadFeedbackButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ============================================
    ANALYZING STATE
    ============================================ */
 
@@ -332,12 +304,6 @@
   border-top-color: #00a63e;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* ============================================
@@ -1331,10 +1297,7 @@
   .overallScore {
     align-self: center;
   }
-}
 
-/* Tablet screens */
-@media (max-width: 1024px) {
   .stepMainTitle {
     font-size: 28px;
   }
@@ -1900,8 +1863,6 @@
 }
 
 .documentContent {
-  max-height: 500px;
-  overflow-y: auto;
   padding: 24px;
   background: white;
 }

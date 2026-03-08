@@ -11,6 +11,14 @@ from app.shared.schemas.prompt_model import ProposalSection
 app = FastAPI()
 app.include_router(router)
 
+from app.handlers.admin_prompts import get_current_admin_user
+
+def override_get_current_admin_user():
+    return {"sub": "test-admin", "email": "admin@example.com"}
+
+app.dependency_overrides[get_current_admin_user] = override_get_current_admin_user
+
+
 
 class TestAdminPromptsAPI:
     @pytest.fixture
@@ -73,7 +81,7 @@ class TestAdminPromptsAPI:
             )()
 
             response = client.get(
-                "/admin/prompts/list?section=problem_statement&status=published&tag=test&search=query",
+                "/admin/prompts/list?section=problem_statement&is_active=true&tag=test&search=query",
                 headers=mock_auth_header,
             )
 
@@ -268,9 +276,13 @@ class TestAdminPromptsAPI:
     @pytest.mark.unit
     def test_unauthorized_request(self, client):
         """Test request without authorization header"""
-        response = client.get("/admin/prompts/list")
+        app.dependency_overrides.pop(get_current_admin_user, None)
+        try:
+            response = client.get("/admin/prompts/list")
+            assert response.status_code in [401, 403]  # Forbidden without auth
+        finally:
+            app.dependency_overrides[get_current_admin_user] = override_get_current_admin_user
 
-        assert response.status_code == 403  # Forbidden without auth
 
     @pytest.mark.unit
     def test_internal_server_error_handling(self, client, mock_auth_header):

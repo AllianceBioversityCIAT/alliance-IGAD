@@ -1003,6 +1003,16 @@ class ProposalService {
     return response.data
   }
 
+  async retryVectorization(
+    proposalId: string,
+    filename: string
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post(
+      `/api/proposals/${proposalId}/documents/retry-vectorization/${encodeURIComponent(filename)}`
+    )
+    return response.data
+  }
+
   /**
    * Update proposal status
    *

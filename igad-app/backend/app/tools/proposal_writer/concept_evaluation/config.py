@@ -45,7 +45,7 @@ Usage:
 
 CONCEPT_EVALUATION_SETTINGS = {
     # ==================== AI Model Configuration ====================
-    "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",  # Claude Sonnet 4
+    "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",  # Claude Sonnet 4.5
     "max_tokens": 15000,  # Maximum tokens for response (~11,000 words)
     "temperature": 0.2,  # Low temperature for consistent evaluation
     "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)
