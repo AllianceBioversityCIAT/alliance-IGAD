@@ -26,7 +26,7 @@ import {
 import { RadialBarChart, RadialBar, ResponsiveContainer, Tooltip } from 'recharts'
 import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
-import AnalysisProgressModal from '@/tools/proposal-writer/components/AnalysisProgressModal'
+import AnalysisProgressModal, { PROGRESS_CONFIGS, type ProgressConfig } from '@/tools/proposal-writer/components/AnalysisProgressModal'
 import styles from './step4-review.module.css'
 
 // ============================================================================
@@ -137,18 +137,6 @@ const STATUS_CONFIG: Record<
 
 const POLLING_INTERVAL = 3000 // 3 seconds
 const MAX_POLLING_TIME = 300000 // 5 minutes
-const DOCUMENT_GENERATION_STEPS = [
-  'Initiating AI refinement',
-  'AI is refining your proposal',
-  'Processing refined document',
-  'Generating DOCX file',
-]
-const DRAFT_FEEDBACK_STEPS = [
-  'Step 1: Extracting document content',
-  'Step 2: Analyzing proposal sections',
-]
-const DRAFT_FEEDBACK_DESCRIPTION =
-  'Our AI is analyzing your draft proposal against RFP requirements to provide section-by-section feedback. This may take 2-3 minutes.'
 
 // ============================================================================
 // SKELETON COMPONENT
@@ -1147,25 +1135,13 @@ export function Step4ProposalReview({
   const [isDownloadingDraft, setIsDownloadingDraft] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [feedbackData, setFeedbackData] = useState<SectionFeedback[]>([])
-  const [analysisProgress, setAnalysisProgress] = useState<{
-    step: number
-    total: number
-    message: string
-    description?: string
-    steps?: string[]
-  } | null>(null)
+  const [step4ProgressConfig, setStep4ProgressConfig] = useState<ProgressConfig | null>(null)
+  const [step4CompletedStep, setStep4CompletedStep] = useState(0)
 
   // Section selection state for "Download with AI feedback"
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [userComments, setUserComments] = useState<Record<string, string>>({})
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
-  const [generationProgress, setGenerationProgress] = useState<{
-    step: number
-    total: number
-    message: string
-    description: string
-    steps?: string[]
-  } | null>(null)
 
   // Refined proposal document state (after generation)
   const [refinedProposalDocument, setRefinedProposalDocument] = useState<string | null>(null)
@@ -1368,13 +1344,8 @@ export function Step4ProposalReview({
         if (status.status === 'processing') {
           // Analysis is in progress - resume polling using shared pollAnalysisStatus
           setIsAnalyzing(true)
-          setAnalysisProgress({
-            step: 2,
-            total: 2,
-            message: 'Resuming Analysis...',
-            description: 'Waiting for draft feedback analysis to complete.',
-            steps: DRAFT_FEEDBACK_STEPS,
-          })
+          setStep4ProgressConfig(PROGRESS_CONFIGS.draftFeedback)
+          setStep4CompletedStep(1)
 
           // Start polling via the shared ref (always points to latest callback)
           isPollingActiveRef.current = true
@@ -1426,13 +1397,7 @@ export function Step4ProposalReview({
       // Update progress
       const elapsedTime = Date.now() - pollingStartTimeRef.current
 
-      setAnalysisProgress({
-        step: 2,
-        total: 2,
-        message: 'Analyzing Your Draft Proposal',
-        description: DRAFT_FEEDBACK_DESCRIPTION,
-        steps: DRAFT_FEEDBACK_STEPS,
-      })
+      setStep4CompletedStep(1)
 
       if (status.status === 'completed') {
         // Stop polling
@@ -1443,7 +1408,8 @@ export function Step4ProposalReview({
         }
 
         setIsAnalyzing(false)
-        setAnalysisProgress(null)
+        setStep4ProgressConfig(null)
+        setStep4CompletedStep(0)
 
         // Extract and set feedback data
         // Handle both nested (draft_feedback_analysis) and direct (section_feedback) structures
@@ -1464,7 +1430,8 @@ export function Step4ProposalReview({
         }
 
         setIsAnalyzing(false)
-        setAnalysisProgress(null)
+        setStep4ProgressConfig(null)
+        setStep4CompletedStep(0)
         showError('Analysis Failed', status.error || 'Unknown error')
       }
 
@@ -1476,7 +1443,8 @@ export function Step4ProposalReview({
           pollingRef.current = null
         }
         setIsAnalyzing(false)
-        setAnalysisProgress(null)
+        setStep4ProgressConfig(null)
+        setStep4CompletedStep(0)
         showError('Timeout', 'Analysis timed out. Please try again.')
       }
     } catch (error) {
@@ -1509,13 +1477,8 @@ export function Step4ProposalReview({
         }
 
         setIsAnalyzing(true)
-        setAnalysisProgress({
-          step: 1,
-          total: 2,
-          message: 'Analyzing Your Draft Proposal',
-          description: DRAFT_FEEDBACK_DESCRIPTION,
-          steps: DRAFT_FEEDBACK_STEPS,
-        })
+        setStep4ProgressConfig(PROGRESS_CONFIGS.draftFeedback)
+        setStep4CompletedStep(0)
 
         const result = await proposalService.analyzeDraftFeedback(proposalId, force)
 
@@ -1530,7 +1493,8 @@ export function Step4ProposalReview({
         } else if (result.status === 'completed') {
           // Already completed (cached)
           setIsAnalyzing(false)
-          setAnalysisProgress(null)
+          setStep4ProgressConfig(null)
+          setStep4CompletedStep(0)
 
           // Fetch the completed data
           const status = await proposalService.getDraftFeedbackStatus(proposalId)
@@ -1547,7 +1511,8 @@ export function Step4ProposalReview({
       } catch (error: unknown) {
         // Removed console.error
         setIsAnalyzing(false)
-        setAnalysisProgress(null)
+        setStep4ProgressConfig(null)
+        setStep4CompletedStep(0)
 
         // Get error message from response
         const err = error as { response?: { data?: { message?: string; detail?: string } } }
@@ -2412,34 +2377,17 @@ export function Step4ProposalReview({
     }
 
     setIsGeneratingDocument(true)
-    setGenerationProgress({
-      step: 1,
-      total: 4,
-      message: 'Starting document generation...',
-      description: 'Preparing your refined proposal',
-      steps: DOCUMENT_GENERATION_STEPS,
-    })
+    setStep4ProgressConfig(PROGRESS_CONFIGS.proposalDocGeneration)
+    setStep4CompletedStep(0)
 
     try {
       // Step 1: Start generation
-      setGenerationProgress({
-        step: 1,
-        total: 4,
-        message: 'Initiating AI refinement...',
-        description: 'Sending selected sections and comments to AI',
-        steps: DOCUMENT_GENERATION_STEPS,
-      })
+      setStep4CompletedStep(0)
 
       await proposalService.generateProposalDocument(proposalId, selectedSections, userComments)
 
       // Step 2: Poll for completion
-      setGenerationProgress({
-        step: 2,
-        total: 4,
-        message: 'AI is refining your proposal...',
-        description: 'This may take 2-3 minutes for large proposals',
-        steps: DOCUMENT_GENERATION_STEPS,
-      })
+      setStep4CompletedStep(1)
 
       // Step 2: Poll via setInterval (cancellable on unmount) instead of while-loop
       const maxAttempts = 60 // 3 minutes with 3-second intervals
@@ -2474,13 +2422,7 @@ export function Step4ProposalReview({
               isGenerationActiveRef.current = false
 
               // Step 3: Process result
-              setGenerationProgress({
-                step: 3,
-                total: 4,
-                message: 'Processing refined document...',
-                description: 'Preparing document for download',
-                steps: DOCUMENT_GENERATION_STEPS,
-              })
+              setStep4CompletedStep(2)
 
               const refinedProposal = statusResponse.data?.generated_proposal
               if (!refinedProposal) {
@@ -2493,13 +2435,7 @@ export function Step4ProposalReview({
               setOriginalUserComments({ ...userComments })
 
               // Step 4: Generate and download DOCX
-              setGenerationProgress({
-                step: 4,
-                total: 4,
-                message: 'Generating DOCX file...',
-                description: 'Your download will begin shortly',
-                steps: DOCUMENT_GENERATION_STEPS,
-              })
+              setStep4CompletedStep(3)
 
               const filename = `Refined_Proposal_${proposalId}_${new Date().toISOString().slice(0, 10)}.docx`
               await generateAndDownloadDocx(refinedProposal, filename)
@@ -2516,17 +2452,7 @@ export function Step4ProposalReview({
               isGenerationActiveRef.current = false
               reject(new Error('Document generation timed out. Please try again.'))
             } else {
-              // Still processing, update elapsed time
-              const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000)
-              const elapsedMinutes = Math.floor(elapsedSeconds / 60)
-              const remainingSeconds = elapsedSeconds % 60
-              setGenerationProgress({
-                step: 2,
-                total: 4,
-                message: 'AI is refining your proposal...',
-                description: `Elapsed: ${elapsedMinutes}m ${remainingSeconds}s`,
-                steps: DOCUMENT_GENERATION_STEPS,
-              })
+              // Still processing - progress bar animates automatically via requestAnimationFrame
             }
           } catch (err) {
             if (isGenerationActiveRef.current) {
@@ -2554,7 +2480,8 @@ export function Step4ProposalReview({
         generationIntervalRef.current = null
       }
       setIsGeneratingDocument(false)
-      setGenerationProgress(null)
+      setStep4ProgressConfig(null)
+      setStep4CompletedStep(0)
     }
   }, [selectedSections, userComments, proposalId, generateAndDownloadDocx, showError, showSuccess])
 
@@ -2588,7 +2515,8 @@ export function Step4ProposalReview({
       {/* Analysis Progress Modal - handles both analysis and document generation */}
       <AnalysisProgressModal
         isOpen={isAnalyzing || isGeneratingDocument}
-        progress={isGeneratingDocument ? generationProgress : analysisProgress}
+        config={step4ProgressConfig}
+        completedStep={step4CompletedStep}
       />
 
       {/* Hidden input for new version upload */}

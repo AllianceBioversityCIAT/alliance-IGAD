@@ -1096,30 +1096,25 @@ export function Step3StructureWorkplan({
                             {isSelected && <Check size={14} color="white" />}
                           </div>
                           <div className={styles.sectionItemInfo}>
-                            <h3 className={styles.sectionItemTitle}>{section.section_title}</h3>
-                            {isMandatory && (
-                              <span
-                                className={styles.badge}
-                                style={{
-                                  backgroundColor: '#FFE2E2',
-                                  border: '1px solid #FFC9C9',
-                                  color: '#9F0712',
-                                }}
-                              >
-                                Mandatory
-                              </span>
-                            )}
+                            <div className={styles.sectionItemTitleRow}>
+                              <h3 className={styles.sectionItemTitle}>{section.section_title}</h3>
+                              {isMandatory && (
+                                <span
+                                  className={styles.badge}
+                                  style={{
+                                    backgroundColor: '#FFE2E2',
+                                    border: '1px solid #FFC9C9',
+                                    color: '#9F0712',
+                                  }}
+                                >
+                                  Mandatory
+                                </span>
+                              )}
+                            </div>
                             {section.recommended_word_count && (
-                              <span
-                                className={styles.badge}
-                                style={{
-                                  backgroundColor: '#F3F4F6',
-                                  border: '1px solid #E5E7EB',
-                                  color: '#6B7280',
-                                }}
-                              >
+                              <p className={styles.sectionItemDescription}>
                                 {section.recommended_word_count}
-                              </span>
+                              </p>
                             )}
                           </div>
                         </div>

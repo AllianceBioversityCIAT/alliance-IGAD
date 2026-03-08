@@ -116,32 +116,54 @@ class BedrockService:
         """
         return [{"role": "user", "content": user_prompt}]
 
+    def _is_openai_compatible_model(self, model_id: str) -> bool:
+        """Check if model uses OpenAI-compatible API format (e.g., Kimi K2.5)."""
+        openai_providers = ["moonshotai.", "kimi"]
+        return any(provider in model_id.lower() for provider in openai_providers)
+
     def _build_request_body(
         self,
         system_prompt: str,
         messages: List[Dict[str, str]],
         max_tokens: int,
         temperature: float,
+        model_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Build request body for Bedrock Claude invocation.
+        Build request body for Bedrock invocation.
+
+        Supports both Anthropic Messages API format and OpenAI-compatible format
+        (used by Kimi K2.5 and similar models).
 
         Args:
-            system_prompt: System instructions for Claude
+            system_prompt: System instructions
             messages: Message array with user/assistant conversation
             max_tokens: Maximum tokens in response
             temperature: Temperature for response randomness (0-1)
+            model_id: Model ID to determine format
 
         Returns:
             Complete request body dict for Bedrock API
         """
-        return {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-            "system": system_prompt,
-            "messages": messages,
-        }
+        actual_model_id = model_id or self.model_id
+
+        if self._is_openai_compatible_model(actual_model_id):
+            # OpenAI-compatible format (Kimi K2.5, etc.)
+            full_messages = [{"role": "system", "content": system_prompt}] + messages
+            return {
+                "messages": full_messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+        else:
+            # Anthropic Messages API format (Claude models)
+            return {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "system": system_prompt,
+                "messages": messages,
+            }
 
     def _sanitize_output(self, output: str) -> str:
         """
@@ -176,24 +198,34 @@ class BedrockService:
         """
         Extract content and token count from Bedrock response.
 
+        Supports both Anthropic format and OpenAI-compatible format.
+
         Args:
             response_body: Parsed JSON response from Bedrock API
 
         Returns:
             Tuple of (output_text, tokens_used)
         """
-        # Extract content with proper validation
         output = "No response generated"
+
+        # OpenAI-compatible format (Kimi K2.5, etc.)
+        if "choices" in response_body:
+            choices = response_body["choices"]
+            if isinstance(choices, list) and len(choices) > 0:
+                message = choices[0].get("message", {})
+                if "content" in message and message["content"]:
+                    output = message["content"]
+            tokens_used = response_body.get("usage", {}).get("completion_tokens", 0)
+            return output, tokens_used
+
+        # Anthropic Messages format (Claude models)
         if "content" in response_body and response_body["content"]:
             content = response_body["content"]
-            # Validate that content is a list with at least one element
             if isinstance(content, list) and len(content) > 0:
                 first_item = content[0]
-                # Validate that the first item has a "text" key
                 if isinstance(first_item, dict) and "text" in first_item:
                     output = first_item["text"]
 
-        # Extract token usage
         tokens_used = response_body.get("usage", {}).get("output_tokens", 0)
 
         return output, tokens_used
@@ -327,7 +359,8 @@ class BedrockService:
             # Build messages and request body
             messages = self._build_messages(user_prompt)
             body = self._build_request_body(
-                system_prompt, messages, actual_max_tokens, actual_temperature
+                system_prompt, messages, actual_max_tokens, actual_temperature,
+                model_id=actual_model_id,
             )
 
             # Call Bedrock

@@ -47,7 +47,7 @@ Usage:
 
 PROPOSAL_DRAFT_FEEDBACK_SETTINGS = {
     # ==================== AI Model Configuration ====================
-    "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",  # Claude Sonnet 4.5
+    "model": "moonshotai.kimi-k2.5",  # Kimi K2.5 (smart reasoning)
     "max_tokens": 16000,  # Maximum tokens for response (~12,000 words)
     "temperature": 0.3,  # Low temperature for constructive, consistent feedback
     "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)

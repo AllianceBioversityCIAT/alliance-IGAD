@@ -12,7 +12,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ProposalLayout } from '../components/ProposalLayout'
 import { DraftConfirmationModal } from '../components/DraftConfirmationModal'
-import AnalysisProgressModal from '@/tools/proposal-writer/components/AnalysisProgressModal'
+import AnalysisProgressModal, { PROGRESS_CONFIGS, type ProgressConfig } from '@/tools/proposal-writer/components/AnalysisProgressModal'
 import { Step1InformationConsolidation } from './Step1InformationConsolidation'
 import { Step2ConceptReview } from './Step2ConceptReview'
 import { Step3StructureWorkplan } from './Step3StructureWorkplan'
@@ -49,17 +49,16 @@ export function ProposalWriterPage() {
   const [proposalStatus, setProposalStatus] = useState<
     'draft' | 'in_progress' | 'review' | 'completed' | 'archived'
   >('draft')
-  const [analysisProgress, setAnalysisProgress] = useState<{
-    step: number
-    total: number
-    message: string
-  } | null>(null)
+  // Progress modal state (unified for all AI operations)
+  const [progressConfig, setProgressConfig] = useState<ProgressConfig | null>(null)
+  const [progressCompletedStep, setProgressCompletedStep] = useState(0)
+  const [progressError, setProgressError] = useState<{ message: string } | null>(null)
+
   const [conceptEvaluationData, setConceptEvaluationData] = useState<{
     selectedSections: string[]
     userComments?: { [key: string]: string }
   } | null>(null)
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
-  const [generationProgressStep, setGenerationProgressStep] = useState(1)
   const [isRegeneratingConcept, setIsRegeneratingConcept] = useState(false)
   const [conceptDocument, setConceptDocument] = useState<ConceptDocument | null>(null)
   const [proposalTemplate, setProposalTemplate] = useState<ProposalTemplate | null>(null)
@@ -142,7 +141,7 @@ export function ProposalWriterPage() {
   // ========================================
   // PROCESSING RESUMPTION (for page refresh)
   // ========================================
-  const { isResuming, resumingOperations } = useProcessingResumption({
+  const { isResuming } = useProcessingResumption({
     proposalId,
     enabled: !!proposalId && !isCreating && localStorageLoaded && !isLoadingStepData,
 
@@ -1373,6 +1372,8 @@ export function ProposalWriterPage() {
     }
 
     setIsGeneratingDocument(true)
+    setProgressConfig(PROGRESS_CONFIGS.conceptDocGeneration)
+    setProgressCompletedStep(0)
 
     try {
       // Save structure selection data (removed - function doesn't exist)
@@ -1395,6 +1396,7 @@ export function ProposalWriterPage() {
 
       setProposalTemplate(mockTemplate)
       setIsGeneratingDocument(false)
+      setProgressConfig(null)
 
       // Save to localStorage
       if (proposalId) {
@@ -1451,50 +1453,26 @@ export function ProposalWriterPage() {
       // Start 3-step sequential analysis: RFP → Reference Proposals → Concept
       // Removed console.log'🟢 Starting 3-step sequential analysis...')
       setIsAnalyzingRFP(true)
-      setAnalysisProgress({ step: 1, total: 3, message: 'Analyzing RFP...' })
+      setProgressConfig(PROGRESS_CONFIGS.step1Analysis)
+      setProgressCompletedStep(0)
+      setProgressError(null)
 
       try {
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
 
         // STEP 1: RFP Analysis ONLY
         if (!rfpAnalysis) {
-          // Removed console.log'📡 Step 1/3: Starting RFP analysis...')
           await proposalService.analyzeStep1(proposalId!)
-
-          // Removed console.log'📊 Step 1 (RFP) launched:', _step1Result)
-
-          // Poll for Step 1 completion (RFP only)
           await pollStep1Status(proposalService)
         }
 
+        setProgressCompletedStep(1)
+
         // STEP 2: Reference Proposals + Existing Work
-        // Removed console.log'📡 Step 2/3: Starting Reference Proposals + Existing Work analysis...')
-
-        // Check if there are documents to analyze
-        const hasReferenceProposals =
-          (formData.uploadedFiles['reference-proposals'] || []).length > 0
-        const hasSupportingDocs = (formData.uploadedFiles['supporting-docs'] || []).length > 0
-
-        let step2Message = 'Analyzing Reference Proposals & Existing Work...'
-        if (!hasReferenceProposals && !hasSupportingDocs) {
-          step2Message = 'Skipping optional analyses (no documents uploaded)...'
-        } else if (!hasReferenceProposals) {
-          step2Message = 'Analyzing Existing Work (no reference proposals)...'
-        } else if (!hasSupportingDocs) {
-          step2Message = 'Analyzing Reference Proposals (no existing work)...'
-        }
-
-        setAnalysisProgress({ step: 2, total: 3, message: step2Message })
-
         await proposalService.analyzeStep2(proposalId!)
-        // Removed console.log'📊 Step 2 (Reference Proposals + Existing Work) launched:', _step2Result)
-
-        // Poll for Step 2 completion
         await pollStep2Status(proposalService)
 
-        // STEP 3: Concept Analysis
-        // Removed console.log'📡 Step 3/3: Starting Concept analysis...')
-        setAnalysisProgress({ step: 3, total: 3, message: 'Analyzing Initial Concept...' })
+        setProgressCompletedStep(2)
 
         if (!conceptAnalysis) {
           const conceptResult = await proposalService.analyzeConcept(proposalId!)
@@ -1520,14 +1498,14 @@ export function ProposalWriterPage() {
         }
 
         // All analyses complete!
-        // Removed console.log'✅ All analyses completed!')
+        setProgressCompletedStep(3)
         setIsAnalyzingRFP(false)
-        setAnalysisProgress(null)
+        setProgressConfig(null)
         proceedToNextStep()
       } catch (error: unknown) {
-        // Removed console.error❌ Analysis failed:', error)
         setIsAnalyzingRFP(false)
-        setAnalysisProgress(null)
+        setProgressConfig(null)
+        setProgressCompletedStep(0)
         const err = error as { message?: string }
         showError('Analysis failed', err.message || 'Unknown error')
       }
@@ -1547,11 +1525,9 @@ export function ProposalWriterPage() {
       }
 
       setIsAnalyzingRFP(true)
-      setAnalysisProgress({
-        step: 1,
-        total: 1,
-        message: 'Generating Proposal Structure',
-      })
+      setProgressConfig(PROGRESS_CONFIGS.structureWorkplan)
+      setProgressCompletedStep(0)
+      setProgressError(null)
 
       try {
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
@@ -1580,8 +1556,9 @@ export function ProposalWriterPage() {
             'Structure Workplan'
           )
 
+          setProgressCompletedStep(1)
           setIsAnalyzingRFP(false)
-          setAnalysisProgress(null)
+          setProgressConfig(null)
           proceedToNextStep()
         } else if (result.status === 'completed') {
           // Already completed
@@ -1592,8 +1569,9 @@ export function ProposalWriterPage() {
               JSON.stringify(result.data)
             )
           }
+          setProgressCompletedStep(1)
           setIsAnalyzingRFP(false)
-          setAnalysisProgress(null)
+          setProgressConfig(null)
           proceedToNextStep()
         } else {
           throw new Error('Failed to start structure and workplan analysis')
@@ -1601,7 +1579,8 @@ export function ProposalWriterPage() {
       } catch (error: unknown) {
         // Removed console.error❌ Structure and Workplan analysis failed:', error)
         setIsAnalyzingRFP(false)
-        setAnalysisProgress(null)
+        setProgressConfig(null)
+        setProgressCompletedStep(0)
 
         // Show detailed error message
         const err = error as { response?: { data?: { detail?: unknown } }; message?: string }
@@ -1791,37 +1770,37 @@ export function ProposalWriterPage() {
 
       // Update progress step based on polling attempts for better UX
       if (attempts === 2) {
-        setGenerationProgressStep(2) // Move to step 2 after first check
+        setProgressCompletedStep(1) // Move to step 2 after first check
       } else if (attempts === 4) {
-        setGenerationProgressStep(3) // Move to step 3 after a few more checks
+        setProgressCompletedStep(2) // Move to step 3 after a few more checks
       }
 
       try {
         const status = await proposalService.getConceptDocumentStatus(proposalId)
 
         if (status.status === 'completed' && status.concept_document) {
-          setGenerationProgressStep(3) // Ensure we're at final step
+          setProgressCompletedStep(3) // Ensure we're at final step
           setConceptDocument(status.concept_document)
           setIsGeneratingDocument(false)
-          setGenerationProgressStep(1) // Reset for next time
+          setProgressCompletedStep(0) // Reset for next time
           // Only proceed to next step if not regenerating
           if (!isRegenerating) {
             proceedToNextStep()
           }
         } else if (status.status === 'failed') {
           setIsGeneratingDocument(false)
-          setGenerationProgressStep(1) // Reset on failure
+          setProgressCompletedStep(0) // Reset on failure
           showError('Generation failed', status.error || 'Unknown error')
         } else if (attempts >= maxAttempts) {
           setIsGeneratingDocument(false)
-          setGenerationProgressStep(1) // Reset on timeout
+          setProgressCompletedStep(0) // Reset on timeout
           showError('Generation timeout', 'Please try again.')
         } else {
           setTimeout(poll, 3000)
         }
       } catch (error) {
         setIsGeneratingDocument(false)
-        setGenerationProgressStep(1) // Reset on error
+        setProgressCompletedStep(0) // Reset on error
         showError('Generation error', 'Failed to check generation status')
       }
     }
@@ -1847,7 +1826,7 @@ export function ProposalWriterPage() {
     }
 
     setIsGeneratingDocument(true)
-    setGenerationProgressStep(1)
+    setProgressCompletedStep(1)
 
     try {
       const evaluationData = overrideData || conceptEvaluationData
@@ -1878,21 +1857,21 @@ export function ProposalWriterPage() {
       })
 
       // Generate
-      setGenerationProgressStep(2)
+      setProgressCompletedStep(2)
       const result = await proposalService.generateConceptDocument(proposalId, updatePayload)
 
       if (result.status === 'completed' && result.concept_document) {
-        setGenerationProgressStep(3)
+        setProgressCompletedStep(3)
         setConceptDocument(result.concept_document)
         setIsGeneratingDocument(false)
-        setGenerationProgressStep(1)
+        setProgressCompletedStep(1)
         proceedToNextStep()
       } else {
         await pollConceptDocumentStatus(false)
       }
     } catch (error: unknown) {
       setIsGeneratingDocument(false)
-      setGenerationProgressStep(1)
+      setProgressCompletedStep(1)
       const err = error as { message?: string }
       showError('Generation failed', err.message || 'Unknown error')
     }
@@ -2366,8 +2345,8 @@ export function ProposalWriterPage() {
       ) : isAnalyzingRFP ? (
         <>
           <span className={styles.spinner}></span>
-          {analysisProgress
-            ? `${analysisProgress.message} (${analysisProgress.step}/${analysisProgress.total})`
+          {progressConfig
+            ? `${progressConfig.title} (${progressCompletedStep + 1}/${progressConfig.phases.length})`
             : 'Analyzing...'}
         </>
       ) : currentStep === 1 && isVectorizingFiles ? (
@@ -2423,52 +2402,24 @@ export function ProposalWriterPage() {
           isPreparingDraft ||
           isResuming
         }
-        progress={
+        config={
           isResuming
-            ? {
-                step: 1,
-                total: resumingOperations.length,
-                message: 'Resuming Analysis...',
-                description:
-                  'We detected an analysis that was in progress. Waiting for it to complete.',
-                steps: resumingOperations,
-              }
+            ? PROGRESS_CONFIGS.resuming
             : isPreparingDraft
-              ? {
-                  step: 1,
-                  total: 2,
-                  message: 'Preparing Draft for Review...',
-                  description:
-                    'Your AI-generated proposal draft is being prepared for the review process. This will only take a moment.',
-                  steps: ['Transferring AI-generated content', 'Setting up for analysis'],
-                }
+              ? PROGRESS_CONFIGS.preparingDraft
               : isRegeneratingConcept
-                ? {
-                    step: 1,
-                    total: 2,
-                    message: 'Regenerating Concept Analysis...',
-                    description:
-                      'Our AI is re-analyzing your concept note against the RFP requirements. This typically takes 1-2 minutes.',
-                    steps: [
-                      'Analyzing concept note and RFP alignment',
-                      'Generating fit assessment and improvement areas',
-                    ],
-                  }
+                ? PROGRESS_CONFIGS.conceptRegeneration
                 : isGeneratingDocument
-                  ? {
-                      step: generationProgressStep,
-                      total: 3,
-                      message: 'Generating Enhanced Concept Document...',
-                      description:
-                        'Our AI is creating comprehensive, donor-aligned content for your selected sections with detailed guidance and examples. This typically takes 3-5 minutes depending on the number of sections.',
-                      steps: [
-                        'Analyzing RFP requirements and selected sections',
-                        'Generating detailed narrative content with examples',
-                        'Finalizing and validating concept document',
-                      ],
-                    }
-                  : analysisProgress
+                  ? PROGRESS_CONFIGS.conceptDocGeneration
+                  : progressConfig
         }
+        completedStep={progressCompletedStep}
+        error={progressError}
+        onRetry={() => {
+          setProgressError(null)
+          setProgressCompletedStep(0)
+        }}
+        onKeepWaiting={() => setProgressError(null)}
       />
       <DraftConfirmationModal
         isOpen={showExitModal}
