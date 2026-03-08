@@ -440,7 +440,7 @@ export function Step1InformationConsolidation({
                 vecStatus[filename] = {
                   ...fileStatus,
                   status: 'failed',
-                  error: 'Vectorization timed out. Please delete and re-upload the file.',
+                  error: 'Processing timed out. Please delete and re-upload the file.',
                 }
               }
             }
@@ -1178,7 +1178,7 @@ export function Step1InformationConsolidation({
       setHasVectorizingFiles(true)
 
       // Show success message
-      showSuccess('File uploaded! Vectorization in progress...')
+      showSuccess('File uploaded! Preparing document for AI analysis...')
 
       // Invalidate analyses when reference documents are updated
       window.dispatchEvent(new CustomEvent('documents-updated'))
@@ -1385,7 +1385,7 @@ export function Step1InformationConsolidation({
       setHasVectorizingFiles(true)
 
       // Show success message
-      showSuccess('File uploaded! Vectorization in progress...')
+      showSuccess('File uploaded! Preparing document for AI analysis...')
 
       // Invalidate analyses when supporting documents are updated
       window.dispatchEvent(new CustomEvent('documents-updated'))
@@ -2026,30 +2026,44 @@ export function Step1InformationConsolidation({
                       </p>
                       <div className={styles.fileMetadata}>
                         {isVectorizing ? (
-                          <span className={styles.fileStatus} style={{ color: '#2563eb' }}>
-                            <Loader2 size={12} className={styles.spinningIcon} />
-                            Vectorizing...
-                            {fileVecStatus?.total_chunks > 0 && (
-                              <span style={{ marginLeft: '4px', fontSize: '11px' }}>
-                                ({fileVecStatus.chunks_processed}/{fileVecStatus.total_chunks})
-                              </span>
-                            )}
-                          </span>
+                          <>
+                            <span className={styles.fileStatus} style={{ color: '#2563eb' }}>
+                              <Loader2 size={12} className={styles.spinningIcon} />
+                              Preparing for AI...
+                            </span>
+                            <div className={styles.miniProgressContainer}>
+                              <div className={styles.miniProgressBar}>
+                                {fileVecStatus?.total_chunks > 0 && fileVecStatus.chunks_processed > 0 ? (
+                                  <div
+                                    className={styles.miniProgressFill}
+                                    style={{ width: `${Math.round((fileVecStatus.chunks_processed / fileVecStatus.total_chunks) * 100)}%` }}
+                                  />
+                                ) : (
+                                  <div className={styles.miniProgressIndeterminate} />
+                                )}
+                              </div>
+                              {fileVecStatus?.total_chunks > 0 && fileVecStatus.chunks_processed > 0 && (
+                                <span className={styles.miniProgressPercent}>
+                                  {Math.round((fileVecStatus.chunks_processed / fileVecStatus.total_chunks) * 100)}%
+                                </span>
+                              )}
+                            </div>
+                          </>
                         ) : vectorizationFailed ? (
                           <>
                             <span
                               className={styles.fileStatus}
                               style={{ color: '#dc2626' }}
-                              title={fileVecStatus?.error || 'Vectorization failed'}
+                              title={fileVecStatus?.error || 'Processing failed'}
                             >
                               <AlertTriangle size={12} />
-                              Vectorization failed
+                              Processing failed
                             </span>
                             <button
                               type="button"
                               className={styles.retryButton}
                               onClick={() => handleRetryVectorization(filename)}
-                              title="Retry vectorization"
+                              title="Retry processing"
                             >
                               <RefreshCw size={12} />
                               Retry
@@ -2067,7 +2081,7 @@ export function Step1InformationConsolidation({
                                 strokeLinejoin="round"
                               />
                             </svg>
-                            {vectorizationCompleted ? 'Ready' : 'Uploaded'}
+                            {vectorizationCompleted ? 'Ready for AI' : 'Uploaded'}
                           </span>
                         )}
                         <span className={styles.fileDivider}>•</span>
@@ -2316,30 +2330,44 @@ export function Step1InformationConsolidation({
                         </p>
                         <div className={styles.fileMetadata}>
                           {isVectorizing ? (
-                            <span className={styles.fileStatus} style={{ color: '#2563eb' }}>
-                              <Loader2 size={12} className={styles.spinningIcon} />
-                              Vectorizing...
-                              {fileVecStatus?.total_chunks > 0 && (
-                                <span style={{ marginLeft: '4px', fontSize: '11px' }}>
-                                  ({fileVecStatus.chunks_processed}/{fileVecStatus.total_chunks})
-                                </span>
-                              )}
-                            </span>
+                            <>
+                              <span className={styles.fileStatus} style={{ color: '#2563eb' }}>
+                                <Loader2 size={12} className={styles.spinningIcon} />
+                                Preparing for AI...
+                              </span>
+                              <div className={styles.miniProgressContainer}>
+                                <div className={styles.miniProgressBar}>
+                                  {fileVecStatus?.total_chunks > 0 && fileVecStatus.chunks_processed > 0 ? (
+                                    <div
+                                      className={styles.miniProgressFill}
+                                      style={{ width: `${Math.round((fileVecStatus.chunks_processed / fileVecStatus.total_chunks) * 100)}%` }}
+                                    />
+                                  ) : (
+                                    <div className={styles.miniProgressIndeterminate} />
+                                  )}
+                                </div>
+                                {fileVecStatus?.total_chunks > 0 && fileVecStatus.chunks_processed > 0 && (
+                                  <span className={styles.miniProgressPercent}>
+                                    {Math.round((fileVecStatus.chunks_processed / fileVecStatus.total_chunks) * 100)}%
+                                  </span>
+                                )}
+                              </div>
+                            </>
                           ) : vectorizationFailed ? (
                             <>
                               <span
                                 className={styles.fileStatus}
                                 style={{ color: '#dc2626' }}
-                                title={fileVecStatus?.error || 'Vectorization failed'}
+                                title={fileVecStatus?.error || 'Processing failed'}
                               >
                                 <AlertTriangle size={12} />
-                                Vectorization failed
+                                Processing failed
                               </span>
                               <button
                                 type="button"
                                 className={styles.retryButton}
                                 onClick={() => handleRetryVectorization(filename)}
-                                title="Retry vectorization"
+                                title="Retry processing"
                               >
                                 <RefreshCw size={12} />
                                 Retry
@@ -2357,7 +2385,7 @@ export function Step1InformationConsolidation({
                                   strokeLinejoin="round"
                                 />
                               </svg>
-                              {vectorizationCompleted ? 'Ready' : 'Uploaded'}
+                              {vectorizationCompleted ? 'Ready for AI' : 'Uploaded'}
                             </span>
                           )}
                           <span className={styles.fileDivider}>•</span>

@@ -3,7 +3,7 @@
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -41,10 +41,20 @@ class VectorEmbeddingsService:
                     raise
 
     def generate_embeddings_batch(
-        self, texts: List[str], max_workers: int = 5
+        self,
+        texts: List[str],
+        max_workers: int = 5,
+        on_progress: Optional[Callable] = None,
     ) -> List[List[float]]:
-        """Generate embeddings in parallel using ThreadPoolExecutor"""
+        """Generate embeddings in parallel using ThreadPoolExecutor.
+
+        Args:
+            texts: List of texts to embed
+            max_workers: Number of parallel workers
+            on_progress: Optional callback(completed_count, total) called as embeddings complete
+        """
         embeddings = [None] * len(texts)
+        completed = 0
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_idx = {
@@ -54,17 +64,25 @@ class VectorEmbeddingsService:
             for future in as_completed(future_to_idx):
                 idx = future_to_idx[future]
                 embeddings[idx] = future.result()
+                completed += 1
+                if on_progress and completed % 5 == 0:
+                    on_progress(completed, len(texts))
 
         return embeddings
 
     def insert_reference_proposals_batch(
-        self, proposal_id: str, chunks: List[Dict[str, Any]]
+        self,
+        proposal_id: str,
+        chunks: List[Dict[str, Any]],
+        on_progress: Optional[Callable] = None,
     ) -> bool:
         """Batch insert reference proposal vectors with parallel embeddings"""
         try:
             texts = [c["text"] for c in chunks]
             print(f"Generating {len(texts)} embeddings in parallel...")
-            embeddings = self.generate_embeddings_batch(texts)
+            embeddings = self.generate_embeddings_batch(
+                texts, on_progress=on_progress
+            )
 
             # Build vectors and insert in batches of 25
             vectors = []
@@ -101,13 +119,18 @@ class VectorEmbeddingsService:
             raise
 
     def insert_existing_work_batch(
-        self, proposal_id: str, chunks: List[Dict[str, Any]]
+        self,
+        proposal_id: str,
+        chunks: List[Dict[str, Any]],
+        on_progress: Optional[Callable] = None,
     ) -> bool:
         """Batch insert existing work vectors with parallel embeddings"""
         try:
             texts = [c["text"] for c in chunks]
             print(f"Generating {len(texts)} embeddings in parallel...")
-            embeddings = self.generate_embeddings_batch(texts)
+            embeddings = self.generate_embeddings_batch(
+                texts, on_progress=on_progress
+            )
 
             vectors = []
             for i, chunk in enumerate(chunks):

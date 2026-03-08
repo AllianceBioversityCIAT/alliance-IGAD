@@ -10,7 +10,6 @@ import {
   Lightbulb,
   BookOpen,
   Download,
-  Loader2,
   AlertTriangle,
 } from 'lucide-react'
 import type {
@@ -24,6 +23,7 @@ import { StepProps } from './stepConfig'
 import { proposalService } from '../services/proposalService'
 import { useToast } from '@/shared/components/ui/ToastContainer'
 import { StructureWorkplanAnalysis } from '../types/analysis'
+import AnalysisProgressModal, { PROGRESS_CONFIGS, type ProgressConfig } from '../components/AnalysisProgressModal'
 
 // Removed unused Section interface
 
@@ -316,6 +316,8 @@ export function Step3StructureWorkplan({
     'idle' | 'processing' | 'completed' | 'failed'
   >(initialGeneratedContent ? 'completed' : 'idle')
   const [generationError, setGenerationError] = useState<string | null>(null)
+  const [step3ProgressConfig, setStep3ProgressConfig] = useState<ProgressConfig | null>(null)
+  const [step3CompletedStep, setStep3CompletedStep] = useState(0)
   // Track the sections used for last successful generation
   const [lastGeneratedSections, setLastGeneratedSections] = useState<string[]>(
     initialSelectedSections || []
@@ -489,6 +491,8 @@ export function Step3StructureWorkplan({
           setGeneratedProposal(content)
           setGenerationStatus('completed')
           setIsGenerating(false)
+          setStep3ProgressConfig(null)
+          setStep3CompletedStep(0)
           // Save the sections used for this generation
           setLastGeneratedSections([...selectedSections])
           // Mark polling as complete
@@ -507,11 +511,15 @@ export function Step3StructureWorkplan({
           setGenerationError(status.error || 'Generation failed')
           setGenerationStatus('failed')
           setIsGenerating(false)
+          setStep3ProgressConfig(null)
+          setStep3CompletedStep(0)
           isPollingRef.current = false
         } else if (attempts >= maxAttempts) {
           setGenerationError('Generation timeout. Please try again.')
           setGenerationStatus('failed')
           setIsGenerating(false)
+          setStep3ProgressConfig(null)
+          setStep3CompletedStep(0)
           isPollingRef.current = false
         } else {
           // Continue polling only if still active
@@ -523,6 +531,8 @@ export function Step3StructureWorkplan({
         setGenerationError('Failed to check generation status')
         setGenerationStatus('failed')
         setIsGenerating(false)
+        setStep3ProgressConfig(null)
+        setStep3CompletedStep(0)
         isPollingRef.current = false
       }
     }
@@ -561,6 +571,8 @@ export function Step3StructureWorkplan({
     setIsGenerating(true)
     setGenerationStatus('processing')
     setGenerationError(null)
+    setStep3ProgressConfig(PROGRESS_CONFIGS.templateGeneration)
+    setStep3CompletedStep(0)
 
     try {
       // Call the AI generation API
@@ -577,6 +589,8 @@ export function Step3StructureWorkplan({
           setGeneratedProposal(content)
           setGenerationStatus('completed')
           setIsGenerating(false)
+          setStep3ProgressConfig(null)
+          setStep3CompletedStep(0)
 
           if (onGeneratedContentChange) {
             onGeneratedContentChange(content)
@@ -594,6 +608,8 @@ export function Step3StructureWorkplan({
       setGenerationError(err.message || 'Failed to generate template')
       setGenerationStatus('failed')
       setIsGenerating(false)
+      setStep3ProgressConfig(null)
+      setStep3CompletedStep(0)
       showError(
         'Generation failed',
         `Failed to generate template: ${err.message || 'Unknown error'}`
@@ -1190,35 +1206,12 @@ export function Step3StructureWorkplan({
             </div>
           </div>
 
-          {/* U7 — Generating state with role="status" and aria-live */}
-          {isGenerating && generationStatus === 'processing' && (
-            <div className={styles.generatingState} role="status" aria-live="polite">
-              <div className={styles.generatingSpinner}>
-                <Loader2 className={styles.spinnerIcon} size={24} />
-              </div>
-              <div className={styles.generatingInfo}>
-                <h4 className={styles.generatingTitle}>Generating your proposal draft...</h4>
-                <p className={styles.generatingText}>
-                  Our AI is analyzing your RFP requirements, concept document, and selected sections
-                  to create a comprehensive proposal draft. This typically takes 3-5 minutes.
-                </p>
-                <div className={styles.generatingSteps}>
-                  <div className={styles.generatingStep}>
-                    <span className={styles.stepDot}></span>
-                    Analyzing all input documents and context
-                  </div>
-                  <div className={styles.generatingStep}>
-                    <span className={styles.stepDot}></span>
-                    Generating content for {selectedSections.length} sections
-                  </div>
-                  <div className={styles.generatingStep}>
-                    <span className={styles.stepDot}></span>
-                    Ensuring alignment with donor requirements
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Progress Modal for template generation */}
+          <AnalysisProgressModal
+            isOpen={isGenerating && generationStatus === 'processing'}
+            config={step3ProgressConfig}
+            completedStep={step3CompletedStep}
+          />
 
           {/* U8 — Error state with role="alert" */}
           {generationStatus === 'failed' && generationError && (

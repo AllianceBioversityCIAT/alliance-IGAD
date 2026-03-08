@@ -42,6 +42,9 @@ import {
 // Services
 import { proposalService } from '../services/proposalService'
 
+// Progress Modal
+import AnalysisProgressModal, { PROGRESS_CONFIGS, type ProgressConfig } from '../components/AnalysisProgressModal'
+
 // Toast notifications
 import { useToast } from '@/shared/components/ui/ToastContainer'
 
@@ -1025,7 +1028,8 @@ export function Step2ConceptReview({
   // ========================================
   const [, setIsRegeneratingAnalysis] = useState(false)
   const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
-  const [progressMessage, setProgressMessage] = useState<string | null>(null)
+  const [step2ProgressConfig, setStep2ProgressConfig] = useState<ProgressConfig | null>(null)
+  const [step2CompletedStep, setStep2CompletedStep] = useState(0)
 
   // ========================================
   // REGENERATION & GENERATION HANDLERS
@@ -1042,7 +1046,6 @@ export function Step2ConceptReview({
     }
 
     setIsRegeneratingAnalysis(true)
-    setProgressMessage('Regenerating concept analysis...')
     // Notify parent to show progress modal
     onRegenerationStateChanged?.(true)
 
@@ -1102,7 +1105,6 @@ export function Step2ConceptReview({
       showError('Regeneration failed', 'Error regenerating analysis. Please try again.')
     } finally {
       setIsRegeneratingAnalysis(false)
-      setProgressMessage(null)
       // Notify parent to hide progress modal
       onRegenerationStateChanged?.(false)
     }
@@ -1142,7 +1144,8 @@ export function Step2ConceptReview({
       }
 
       setIsGeneratingDocument(true)
-      setProgressMessage('Preparing concept evaluation...')
+      setStep2ProgressConfig(PROGRESS_CONFIGS.conceptDocGeneration)
+      setStep2CompletedStep(0)
 
       try {
         // Step 1: Unwrap conceptAnalysis (handle nested structure from backend)
@@ -1195,13 +1198,13 @@ export function Step2ConceptReview({
         }
 
         // Step 5: Save concept evaluation to DynamoDB
-        setProgressMessage('Saving concept evaluation...')
+        setStep2CompletedStep(1)
         // Removed console.log'💾 Saving concept evaluation to DynamoDB...')
         await proposalService.updateConceptEvaluation(proposalId, updatePayload)
         // Removed console.log'✅ Concept evaluation saved')
 
         // Step 6: Start document generation
-        setProgressMessage('Generating updated concept document...')
+        setStep2CompletedStep(2)
         // Removed console.log'📄 Starting document generation...')
         await proposalService.generateConceptDocument(proposalId, updatePayload)
 
@@ -1237,7 +1240,8 @@ export function Step2ConceptReview({
         )
       } finally {
         setIsGeneratingDocument(false)
-        setProgressMessage(null)
+        setStep2ProgressConfig(null)
+        setStep2CompletedStep(0)
       }
     },
     [
@@ -1860,9 +1864,11 @@ export function Step2ConceptReview({
                 </>
               )}
             </button>
-            {isGeneratingDocument && progressMessage && (
-              <p className={styles.progressMessage}>{progressMessage}</p>
-            )}
+            <AnalysisProgressModal
+              isOpen={isGeneratingDocument}
+              config={step2ProgressConfig}
+              completedStep={step2CompletedStep}
+            />
             {!isGeneratingDocument && selectedSections.length === 0 && (
               <p className={styles.generateButtonHint}>
                 Select at least one section above to generate the updated concept

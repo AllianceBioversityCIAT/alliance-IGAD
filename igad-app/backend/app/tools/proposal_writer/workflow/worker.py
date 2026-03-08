@@ -1320,6 +1320,16 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
 
         logger.info(f"🔄 Starting batch vectorization for {total_chunks} chunks...")
 
+        # Progress callback to update DynamoDB as embeddings complete
+        def on_embedding_progress(completed: int, total: int):
+            _update_vectorization_status(
+                proposal_code,
+                filename,
+                "processing",
+                chunks_processed=completed,
+                total_chunks=total,
+            )
+
         if document_type == "reference":
             chunks_data = [
                 {
@@ -1337,7 +1347,9 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
                 for idx, chunk in enumerate(text_chunks)
             ]
             vector_service.insert_reference_proposals_batch(
-                proposal_id=proposal_code, chunks=chunks_data
+                proposal_id=proposal_code,
+                chunks=chunks_data,
+                on_progress=on_embedding_progress,
             )
         else:  # supporting
             chunks_data = [
@@ -1355,7 +1367,9 @@ def _handle_document_vectorization(event: Dict[str, Any]) -> Dict[str, Any]:
                 for idx, chunk in enumerate(text_chunks)
             ]
             vector_service.insert_existing_work_batch(
-                proposal_id=proposal_code, chunks=chunks_data
+                proposal_id=proposal_code,
+                chunks=chunks_data,
+                on_progress=on_embedding_progress,
             )
 
         logger.info(f"   ✅ All {total_chunks} chunks vectorized in batch")

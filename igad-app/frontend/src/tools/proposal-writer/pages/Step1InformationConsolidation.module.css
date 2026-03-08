@@ -480,9 +480,64 @@
   }
 }
 
-/* Spinning icon for vectorization */
+/* Spinning icon for processing */
 .spinningIcon {
   animation: spin 1s linear infinite;
+}
+
+/* Mini progress bar for document processing */
+.miniProgressContainer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 120px;
+}
+
+.miniProgressBar {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.miniProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/* Indeterminate animation when progress is 0% */
+.miniProgressIndeterminate {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  border-radius: 2px;
+  animation: indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes indeterminate {
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.miniProgressPercent {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+  white-space: nowrap;
+  min-width: 28px;
+  text-align: right;
 }
 
 /* Skeleton Loading */
