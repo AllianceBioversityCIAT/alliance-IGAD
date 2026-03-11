@@ -21,6 +21,8 @@ interface ProposalLayoutProps {
   lastModifiedStep?: number | null
   /** Number of completed required fields in Step 1 (0-3) */
   step1CompletedFields?: number
+  /** Hint text shown below the next button when it's disabled */
+  nextButtonHint?: string
 }
 
 export function ProposalLayout({
@@ -36,6 +38,7 @@ export function ProposalLayout({
   onNavigateAway,
   lastModifiedStep = null,
   step1CompletedFields,
+  nextButtonHint,
 }: ProposalLayoutProps) {
   const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
@@ -119,6 +122,9 @@ export function ProposalLayout({
             <div className={styles.stepIndicator}>Step {currentStep} of 4</div>
             <div className={styles.navButtonRight}>
               {navigationButtons && React.Children.toArray(navigationButtons)[1]}
+              {nextButtonHint && (
+                <span className={styles.navButtonHint}>{nextButtonHint}</span>
+              )}
             </div>
           </div>
         </div>

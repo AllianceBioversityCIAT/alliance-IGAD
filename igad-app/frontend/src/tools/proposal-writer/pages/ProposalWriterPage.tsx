@@ -9,7 +9,7 @@ import type {
   ProposalTemplate,
 } from '../types/analysis'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Lock } from 'lucide-react'
 import { ProposalLayout } from '../components/ProposalLayout'
 import { DraftConfirmationModal } from '../components/DraftConfirmationModal'
 import AnalysisProgressModal, { PROGRESS_CONFIGS, type ProgressConfig } from '@/tools/proposal-writer/components/AnalysisProgressModal'
@@ -1444,14 +1444,12 @@ export function ProposalWriterPage() {
       }
 
       // If all analyses already exist, just proceed
-      if (rfpAnalysis && conceptAnalysis) {
-        // Removed console.log'✅ All analyses already complete, proceeding to next step')
+      if (rfpAnalysis && referenceProposalsAnalysis && conceptAnalysis) {
         proceedToNextStep()
         return
       }
 
-      // Start 3-step sequential analysis: RFP → Reference Proposals → Concept
-      // Removed console.log'🟢 Starting 3-step sequential analysis...')
+      // Start sequential analysis, skipping steps that are already complete
       setIsAnalyzingRFP(true)
       setProgressConfig(PROGRESS_CONFIGS.step1Analysis)
       setProgressCompletedStep(0)
@@ -1460,7 +1458,7 @@ export function ProposalWriterPage() {
       try {
         const { proposalService } = await import('@/tools/proposal-writer/services/proposalService')
 
-        // STEP 1: RFP Analysis ONLY
+        // STEP 1: RFP Analysis (skip if already done)
         if (!rfpAnalysis) {
           await proposalService.analyzeStep1(proposalId!)
           await pollStep1Status(proposalService)
@@ -1468,17 +1466,19 @@ export function ProposalWriterPage() {
 
         setProgressCompletedStep(1)
 
-        // STEP 2: Reference Proposals + Existing Work
-        await proposalService.analyzeStep2(proposalId!)
-        await pollStep2Status(proposalService)
+        // STEP 2: Reference Proposals + Existing Work (skip if already done)
+        if (!referenceProposalsAnalysis) {
+          await proposalService.analyzeStep2(proposalId!)
+          await pollStep2Status(proposalService)
+        }
 
         setProgressCompletedStep(2)
 
+        // STEP 3: Concept Analysis (skip if already done)
         if (!conceptAnalysis) {
           const conceptResult = await proposalService.analyzeConcept(proposalId!)
 
           if (conceptResult.status === 'processing') {
-            // Poll for Concept completion
             await pollAnalysisStatus(
               () => proposalService.getConceptStatus(proposalId!),
               (result: { concept_analysis?: ConceptAnalysis }) => {
@@ -2318,23 +2318,27 @@ export function ProposalWriterPage() {
             isVectorizingFiles))
       }
       title={
-        currentStep === 1 && isVectorizingFiles
-          ? 'Please wait for document vectorization to complete'
-          : currentStep === 1 &&
-              (isUploadingRFP ||
-                isUploadingReference ||
-                isUploadingSupporting ||
-                isUploadingConcept)
-            ? 'Please wait for file uploads to complete'
-            : currentStep === 1 &&
-                (!(formData.textInputs['proposal-title'] || '').trim() ||
-                  !formData.uploadedFiles['rfp-document'] ||
-                  formData.uploadedFiles['rfp-document'].length === 0 ||
-                  ((formData.textInputs['initial-concept'] || '').length < 100 &&
-                    (!formData.uploadedFiles['concept-document'] ||
-                      formData.uploadedFiles['concept-document'].length === 0)))
-              ? 'Please provide a title, upload an RFP document, and provide an initial concept'
-              : ''
+        currentStep === 3 && !proposalTemplate
+          ? 'Generate a proposal template above before continuing to Step 4'
+          : currentStep === 2 && !conceptDocument
+            ? 'Generate a concept document before continuing to Step 3'
+            : currentStep === 1 && isVectorizingFiles
+              ? 'Please wait for document processing to complete'
+              : currentStep === 1 &&
+                  (isUploadingRFP ||
+                    isUploadingReference ||
+                    isUploadingSupporting ||
+                    isUploadingConcept)
+                ? 'Please wait for file uploads to complete'
+                : currentStep === 1 &&
+                    (!(formData.textInputs['proposal-title'] || '').trim() ||
+                      !formData.uploadedFiles['rfp-document'] ||
+                      formData.uploadedFiles['rfp-document'].length === 0 ||
+                      ((formData.textInputs['initial-concept'] || '').length < 100 &&
+                        (!formData.uploadedFiles['concept-document'] ||
+                          formData.uploadedFiles['concept-document'].length === 0)))
+                  ? 'Please provide a title, upload an RFP document, and provide an initial concept'
+                  : ''
       }
     >
       {isGeneratingDocument ? (
@@ -2367,7 +2371,15 @@ export function ProposalWriterPage() {
           <ChevronRight size={16} />
         </>
       ) : currentStep === 3 ? (
-        'Generate Template First'
+        <>
+          <Lock size={14} />
+          Generate Template First
+        </>
+      ) : currentStep === 2 && !conceptDocument ? (
+        <>
+          <Lock size={14} />
+          Generate Concept First
+        </>
       ) : currentStep === 2 ? (
         <>
           Continue to Structure
@@ -2442,6 +2454,13 @@ export function ProposalWriterPage() {
         onNavigateAway={handleNavigateAway}
         lastModifiedStep={lastModifiedStep}
         step1CompletedFields={step1CompletedFields}
+        nextButtonHint={
+          currentStep === 3 && !proposalTemplate
+            ? 'Use the "Generate Proposal Template" button above to unlock this step'
+            : currentStep === 2 && !conceptDocument
+              ? 'Generate a concept document above to unlock this step'
+              : undefined
+        }
       >
         <StepErrorBoundary>
           {renderCurrentStep()}
