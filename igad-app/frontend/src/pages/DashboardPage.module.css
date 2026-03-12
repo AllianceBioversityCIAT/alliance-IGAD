@@ -108,7 +108,94 @@
   margin: 0 auto;
 }
 
-/* Controls Card */
+/* ========================================
+   STATS CARDS
+   ======================================== */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  text-align: left;
+}
+
+.statCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.statCardActive {
+  border-color: #00a63e;
+  box-shadow: 0 0 0 1px #00a63e, 0 4px 12px rgba(0, 166, 62, 0.12);
+}
+
+.statIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statIconTotal {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.statIconProgress {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.statIconReview {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.statIconCompleted {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.statContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statNumber {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* ========================================
+   CONTROLS CARD
+   ======================================== */
+
 .controlsCard {
   background: white;
   border-radius: 14px;
@@ -216,7 +303,10 @@
   font-weight: 500;
 }
 
-/* Table Card */
+/* ========================================
+   TABLE
+   ======================================== */
+
 .tableCard {
   background: white;
   border-radius: 14px;
@@ -252,6 +342,40 @@
   letter-spacing: 0.05em;
 }
 
+.sortableHeader {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.sortableHeader:hover {
+  color: #111827;
+}
+
+.sortableHeader span {
+  display: inline;
+}
+
+.sortIconInactive {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+  opacity: 0.3;
+  transition: opacity 0.2s;
+}
+
+.sortableHeader:hover .sortIconInactive {
+  opacity: 0.6;
+}
+
+.sortIconActive {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+  color: #00a63e;
+  opacity: 1;
+}
+
 .tableBody tr {
   border-bottom: 1px solid #f3f4f6;
   transition: background-color 0.2s;
@@ -261,8 +385,12 @@
   border-bottom: none;
 }
 
-.tableBody tr:hover {
-  background: #fafbfc;
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:hover {
+  background: #f0fdf4;
 }
 
 .tableBody td {
@@ -282,7 +410,7 @@
 .titleCell {
   font-weight: 500;
   color: #111827;
-  max-width: 300px;
+  max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -291,6 +419,7 @@
 .dateCell {
   color: #6b7280;
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .actionsColumn {
@@ -305,7 +434,46 @@
   justify-content: center;
 }
 
-/* Action Buttons */
+/* ========================================
+   PROGRESS BAR
+   ======================================== */
+
+.progressCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 100px;
+}
+
+.progressBarTrack {
+  width: 100%;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #00a63e, #16a34a);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.progressComplete {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+.progressLabel {
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* ========================================
+   ACTION BUTTONS
+   ======================================== */
+
 .actionButton {
   display: flex;
   align-items: center;
@@ -318,6 +486,7 @@
   cursor: pointer;
   transition: all 0.2s;
   color: #6b7280;
+  gap: 6px;
 }
 
 .actionButton:hover {
@@ -342,7 +511,10 @@
   color: #b91c1c;
 }
 
-/* Status Badges */
+/* ========================================
+   STATUS BADGES
+   ======================================== */
+
 .statusBadge {
   display: inline-flex;
   align-items: center;
@@ -383,7 +555,196 @@
   border: 1px solid #d1d5db;
 }
 
-/* Loading State */
+/* ========================================
+   PAGINATION
+   ======================================== */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-top: 1px solid #f3f4f6;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.paginationInfo {
+  font-size: 13px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pageSizeSelector {
+  position: relative;
+}
+
+.pageSizeSelect {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #374151;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pageSizeSelect:focus {
+  outline: none;
+  border-color: #00a63e;
+}
+
+.pageButtons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pageButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pageButton:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.pageButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageButtonActive {
+  background: #00a63e;
+  border-color: #00a63e;
+  color: white;
+}
+
+.pageButtonActive:hover:not(:disabled) {
+  background: #008236;
+  border-color: #008236;
+}
+
+.pageEllipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* ========================================
+   MOBILE CARD VIEW
+   ======================================== */
+
+.mobileCards {
+  display: none;
+}
+
+.mobileCard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.mobileCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.mobileCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.mobileCardCode {
+  font-family: var(--font-mono, 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace);
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.mobileCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.mobileCardProgress {
+  margin-bottom: 12px;
+}
+
+.mobileCardDates {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.mobileCardActions {
+  display: flex;
+  gap: 12px;
+}
+
+.mobileCardActions .actionButton {
+  width: auto;
+  height: auto;
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  justify-content: center;
+}
+
+.mobileCardActions .editButton {
+  border-color: #dcfce7;
+  background: #f0fdf4;
+}
+
+.mobileCardActions .deleteButton {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+/* ========================================
+   LOADING STATE
+   ======================================== */
+
 .loadingContainer {
   display: flex;
   flex-direction: column;
@@ -418,7 +779,10 @@
   margin: 0;
 }
 
-/* Empty State */
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
 .emptyState {
   display: flex;
   flex-direction: column;
@@ -480,7 +844,10 @@
   box-shadow: 0 4px 12px rgba(0, 166, 62, 0.3);
 }
 
-/* No Results */
+/* ========================================
+   NO RESULTS
+   ======================================== */
+
 .noResults {
   display: flex;
   flex-direction: column;
@@ -496,7 +863,10 @@
   font-size: 14px;
 }
 
-/* Responsive Design */
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
 @media (max-width: 1200px) {
   .header {
     padding: 24px 32px;
@@ -504,6 +874,10 @@
 
   .content {
     padding: 24px 32px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -526,6 +900,20 @@
     padding: 20px 16px;
   }
 
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .statCard {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .statNumber {
+    font-size: 20px;
+  }
+
   .controlsBar {
     flex-direction: column;
     gap: 12px;
@@ -545,18 +933,29 @@
     text-align: center;
   }
 
-  /* Make table horizontally scrollable */
+  /* Hide desktop table, show mobile cards */
   .tableCard {
-    overflow-x: auto;
+    display: none;
   }
 
-  .proposalTable {
-    min-width: 600px;
+  .mobileCards {
+    display: block;
   }
 
-  .tableHeader th,
-  .tableBody td {
-    padding: 12px 16px;
+  .pagination {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(185, 248, 207, 0.3);
+    margin-top: 12px;
+  }
+
+  .paginationControls {
+    flex-direction: column;
+    gap: 12px;
   }
 }
 
@@ -565,11 +964,20 @@
     font-size: 24px;
   }
 
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .emptyState {
     padding: 48px 24px;
   }
 
   .loadingContainer {
     padding: 48px 24px;
+  }
+
+  .mobileCardDates {
+    flex-direction: column;
+    gap: 4px;
   }
 }
