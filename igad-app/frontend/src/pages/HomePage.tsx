@@ -148,39 +148,31 @@ export function HomePage() {
               </button>
             </article>
 
-            {/* Tool Card: Newsletter Generator (Available) */}
-            <article
-              className={`${styles.toolCard} ${styles.toolCardAvailable}`}
-              role="listitem"
-              tabIndex={0}
-              style={{ cursor: 'pointer' }}
-              onClick={() => navigate('/newsletter-generator')}
-              onKeyDown={e => handleCardKeyDown(e, () => navigate('/newsletter-generator'))}
-            >
+            {/* Tool Card: Newsletter Generator (Coming Soon) */}
+            <article className={`${styles.toolCard} ${styles.toolCardDisabled}`} role="listitem">
               <span
-                className={`${styles.badge} ${styles.badgeAvailable}`}
-                aria-label="Status: Available"
+                className={`${styles.badge} ${styles.badgeComingSoon}`}
+                aria-label="Status: Coming Soon"
               >
-                Available
+                Coming Soon
               </span>
               <div
-                className={`${styles.iconContainer} ${styles.iconContainerAvailable}`}
+                className={`${styles.iconContainer} ${styles.iconContainerDisabled}`}
                 aria-hidden="true"
               >
-                <Mail size={iconSize} color="#008236" strokeWidth={2.67} />
+                <Mail size={iconSize} color="#6A7282" strokeWidth={2.67} />
               </div>
               <h3 className={styles.toolTitle}>Newsletter Generator</h3>
               <p className={styles.toolDescription}>
                 Create engaging newsletters on agricultural innovations and policy updates
               </p>
-              <Link
-                to="/newsletter-generator"
-                className={`${styles.toolButton} ${styles.toolButtonAvailable}`}
-                aria-label="Launch Newsletter Generator tool"
+              <button
+                className={`${styles.toolButton} ${styles.toolButtonDisabled}`}
+                disabled
+                aria-label="Newsletter Generator tool coming soon"
               >
-                Launch Tool
-                <ArrowRight size={16} aria-hidden="true" />
-              </Link>
+                Coming Soon
+              </button>
             </article>
 
             {/* Tool Card: Report Generator (Coming Soon) */}
@@ -293,9 +285,8 @@ export function HomePage() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/newsletter-generator" className={styles.footerLink}>
-                    Newsletter Generator
-                  </Link>
+                  <span className={styles.footerLinkDisabled}>Newsletter Generator</span>
+                  <span className={styles.comingSoonBadge}>Coming Soon</span>
                 </li>
                 <li>
                   <span className={styles.footerLinkDisabled}>Report Generator</span>
