@@ -45,7 +45,7 @@ Usage:
 
 RFP_ANALYSIS_SETTINGS = {
     # ==================== AI Model Configuration ====================
-    "model": "us.anthropic.claude-3-5-haiku-20241022-v1:0",  # Haiku 3.5 (fast extraction)
+    "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",  # Haiku 4.5 (fast extraction)
     "max_tokens": 12000,  # Maximum tokens for response (~9,000 words)
     "temperature": 0.2,  # Low temperature for consistent, factual analysis
     "top_p": 0.9,  # Nucleus sampling (0.9 = consider top 90% probability mass)
