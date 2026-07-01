@@ -59,3 +59,18 @@
 - **Issues:** None.
 - **Final verification:** PASS on first attempt.
 - **Commit:** `[SPEC:bugfix/step1-semantic-query-required] T3 RFP-only empty-corpus regression tests`
+
+### T4: Deploy to testing and validate the reproduction — 🔶 IN PROGRESS (awaiting user)
+
+- **Date:** 2026-07-01
+- **Status:** `[~]` — handed off to the user. This is a cloud deploy (AWS profile `IBD-DEV`,
+  `us-east-1`, outward-facing) plus manual browser + CloudWatch validation; it requires the
+  user's environment and cannot be completed by the Leader from CI-less local automation.
+- **Deploy command:** `cd igad-app && AWS_PROFILE=IBD-DEV ./scripts/deploy-fullstack-testing.sh --backend-only`
+- **Manual validation (REQ-1/REQ-2/REQ-3, NFR-4):** create a fresh proposal, upload **only**
+  RFP + initial concept, click **Analyze & Continue**, confirm it advances past Step 2 with no
+  `400`; repeat several fast fresh runs; confirm the multi-document path still works; inspect
+  CloudWatch for the `↻ semantic_query not visible yet…` retry logs (should appear only under
+  contention) and confirm no remaining prerequisite 400s → root-cause confirmation.
+- **Pivot watch:** if the 400 still reproduces after deploy, the root cause is NOT the stale
+  read (e.g. RFP analysis emitting an empty `semantic_query`) → trigger the Pivot Protocol.

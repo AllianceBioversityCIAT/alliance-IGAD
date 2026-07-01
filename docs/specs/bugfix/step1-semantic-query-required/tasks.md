@@ -69,7 +69,7 @@
 - **Done when:** RFP-only Step 2 path is covered and green; multi-document path test still green.
 - **Skills:** `fastapi-serverless`, `systematic-debugging`
 
-### [ ] T4: Deploy to testing and validate the reproduction
+### [~] T4: Deploy to testing and validate the reproduction
 - **Requirements:** REQ-1, REQ-2, REQ-3, NFR-4
 - **Design:** design.md §"Risks, Observability, Rollback"
 - **Layer:** deploy / verification
