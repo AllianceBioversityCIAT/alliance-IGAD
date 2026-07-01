@@ -69,7 +69,7 @@
 - **Done when:** RFP-only Step 2 path is covered and green; multi-document path test still green.
 - **Skills:** `fastapi-serverless`, `systematic-debugging`
 
-### [~] T4: Deploy to testing and validate the reproduction
+### [x] T4: Deploy to testing and validate the reproduction
 - **Requirements:** REQ-1, REQ-2, REQ-3, NFR-4
 - **Design:** design.md §"Risks, Observability, Rollback"
 - **Layer:** deploy / verification
@@ -136,7 +136,7 @@
 - **Done when:** empty-query path raises; happy path returns completed with non-empty query; tests pass.
 - **Skills:** `fastapi-serverless`, `error-handling-patterns`
 
-### [~] T7: Redeploy to testing and re-validate the RFP-only flow
+### [x] T7: Redeploy to testing and re-validate the RFP-only flow
 - **Requirements:** REQ-2, REQ-3, REQ-4, REQ-5, NFR-4
 - **Design:** design.md §"Note on already-cached broken proposals"
 - **Layer:** deploy / verification

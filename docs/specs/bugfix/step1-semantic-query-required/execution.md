@@ -181,3 +181,33 @@
   `PROP-20260701-2BF9` has a cached empty-`semantic_query` `rfp_analysis` and will not
   self-heal). Expected: RFP + concept only → Analyze & Continue advances past Step 2;
   `semantic_query` populated; a genuinely unparseable RFP now fails at Step 1 (not a Step-2 400).
+- **2026-07-01 — VALIDATED ✅:** User confirmed on a fresh proposal (RFP + concept only): Analyze &
+  Continue now advances past Step 2, no `400`. T7 and T4 marked `[x]`.
+
+## Summary — Spec Complete
+
+**Outcome:** Fixed. A proposal started with only an RFP + initial concept now completes Step 1 →
+Step 2 → Step 3 on the testing environment.
+
+**Real root cause:** `SimpleRFPAnalyzer.parse_response` failed on the Bedrock JSON (trailing
+"Extra data" / fragile non-greedy regex), producing an empty `semantic_query` while the pipeline
+still marked RFP `completed`; `analyze-step-2` then correctly rejected the empty query. The
+initial eventual-consistency hypothesis was disproven by T4 validation and pivoted.
+
+**Tasks:** T1 ✅, T2 ✅, T3 ✅, T4 ✅ (validation that triggered the pivot), T5 ✅, T6 ✅, T7 ✅.
+All Reviewer PASSes on first attempt; zero rework loops.
+
+**Shipped changes:**
+- `database/client.py` — `get_item(consistent=…)` (T1, hardening).
+- `proposal_writer/routes.py` — authoritative `analyze-step-2` gate, consistent read + bounded
+  retry (T2, hardening).
+- `proposal_writer/rfp_analysis/service.py` — **primary fix:** robust `parse_response`
+  (`raw_decode`, tolerant of fences/trailing-data/nested JSON) + fail-loud `analyze_rfp` (T5/T6).
+- `requirements.txt` — `Pillow>=11,<12` (unblocked the py3.11 Lambda `sam build`).
+- 29 backend tests passing; deployed and validated on testing (`igad-backend-testing`).
+
+**Known follow-ups (out of scope, flagged):**
+1. `scripts/deploy-fullstack-testing.sh` masks a failed `sam deploy` as "no changes detected".
+2. Cached broken proposals (e.g. `PROP-20260701-2BF9`) won't self-heal — a backfill/re-analysis
+   trigger could clear stale empty-`semantic_query` records.
+3. Backend Cognito JWT signature/JWKS verification gap (from the constitution audit).
