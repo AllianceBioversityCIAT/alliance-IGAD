@@ -62,10 +62,16 @@ class DynamoDBClient:
             logger.error(f"Error updating item: {e}")
             raise
 
-    async def get_item(self, pk: str, sk: str) -> Optional[Dict[str, Any]]:
-        """Get single item by primary key"""
+    # @sdd-spec bugfix/step1-semantic-query-required
+    async def get_item(
+        self, pk: str, sk: str, consistent: bool = False
+    ) -> Optional[Dict[str, Any]]:
+        """Get single item by primary key. Set consistent=True for a strongly consistent read."""
         try:
-            response = self.table.get_item(Key={"PK": pk, "SK": sk})
+            kwargs: Dict[str, Any] = {"Key": {"PK": pk, "SK": sk}}
+            if consistent:
+                kwargs["ConsistentRead"] = True
+            response = self.table.get_item(**kwargs)
             return response.get("Item")
         except ClientError as e:
             logger.error(f"Error getting item: {e}")
