@@ -44,3 +44,18 @@
 - **Issues:** None blocking.
 - **Final verification:** PASS on first attempt.
 - **Commit:** `[SPEC:bugfix/step1-semantic-query-required] T2 authoritative analyze-step-2 prerequisite`
+
+### T3: RFP-only end-to-end regression test (Step 2 empty corpus) — ✅ PASS (attempt 1/3)
+
+- **Date:** 2026-07-01
+- **Requirements covered:** REQ-2, REQ-3
+- **Implementer attempts:** 1
+- **Attempt 1**
+  - **Files changed (test-only):**
+    - `igad-app/backend/tests/app/tools/proposal_writer/test_step2_empty_corpus.py` — new, 5 tests. Empty-corpus reference-proposals & existing-work → `status=="completed"`, `documents_analyzed==0`, `structured_data.status=="skipped"` with exact reason strings, and Bedrock `invoke_claude` NOT called (REQ-2); a semantic_query-gate-ordering test; and two ≥1-document tests taking the real analysis path (`invoke_claude` called once, non-skipped result) (REQ-3). Hermetic — patches `db_client`, `VectorEmbeddingsService`, `BedrockService`, `boto3`, `_load_prompt`; no AWS.
+  - **Verification command + result:** `flake8 …/test_step2_empty_corpus.py` → exit 0; `pytest …/test_step2_empty_corpus.py -q` → **5 passed**; `pytest tests/app/tools/proposal_writer/ -q` → **23 passed** (no regression).
+  - **Reviewer verdict:** **PASS** — test-only scope confirmed (no production `.py` touched); REQ-2 assertions genuine and matched to the real service contracts (`reference_proposals_analysis/service.py:142-154`, `existing_work_analysis/service.py:142-154`); REQ-3 guard meaningful; fully isolated.
+- **Decisions:** No production change needed — the graceful-degradation contract was testable via existing seams (confirms design.md §"Why the async workers need no change").
+- **Issues:** None.
+- **Final verification:** PASS on first attempt.
+- **Commit:** `[SPEC:bugfix/step1-semantic-query-required] T3 RFP-only empty-corpus regression tests`

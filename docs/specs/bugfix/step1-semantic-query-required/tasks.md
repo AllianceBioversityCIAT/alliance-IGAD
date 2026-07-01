@@ -52,7 +52,7 @@
   short-circuits the true-missing case.
 - **Skills:** `fastapi-serverless`, `error-handling-patterns`, `systematic-debugging`
 
-### [ ] T3: RFP-only end-to-end regression test (Step 2 with empty corpus)
+### [x] T3: RFP-only end-to-end regression test (Step 2 with empty corpus)
 - **Requirements:** REQ-2, REQ-3
 - **Design:** design.md §"Why the async workers need no change"
 - **Layer:** backend (test)
