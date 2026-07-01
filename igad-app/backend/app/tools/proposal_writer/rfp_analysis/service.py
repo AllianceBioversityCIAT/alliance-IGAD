@@ -124,6 +124,20 @@ class SimpleRFPAnalyzer:
             # Step 7: Generate semantic query for vector search
             print("🔍 Generating semantic query for vector search...")
             semantic_query = self._build_semantic_query(result)
+
+            # @sdd-spec bugfix/step1-semantic-query-required
+            # Fail loudly when no semantic query can be derived (e.g. the AI
+            # response was unparseable). This prevents marking the RFP
+            # "completed" with an empty semantic_query, which would break the
+            # downstream analyze-step-2 vector search.
+            if not semantic_query:
+                parse_err = result.get("summary", {}).get(
+                    "details", "no semantic_query derived"
+                )
+                raise Exception(
+                    f"RFP analysis produced no semantic_query ({parse_err})"
+                )
+
             result["semantic_query"] = semantic_query
             print(f"✅ Semantic query generated ({len(semantic_query)} chars)")
 
@@ -374,11 +388,12 @@ Use this structure:
         """
         Parse Claude's response into structured JSON.
 
-        Handles multiple response formats:
-        1. Valid JSON object
-        2. JSON in markdown code block (```json ... ```)
-        3. JSON with markdown markers
-        4. Falls back to error structure if parsing fails
+        Tolerant of common LLM response quirks:
+        1. Valid JSON object (possibly with nested objects)
+        2. JSON wrapped in a markdown code fence (```json ... ``` or ``` ... ```)
+        3. JSON followed by trailing prose (ignores "Extra data")
+        4. Falls back to an error structure only when no JSON object can be
+           decoded
 
         Args:
             response: Raw response from Claude
@@ -386,28 +401,18 @@ Use this structure:
         Returns:
             Parsed JSON dict or error structure
         """
+        # @sdd-spec bugfix/step1-semantic-query-required
         try:
-            response = response.strip()
-
-            # Try to extract JSON from code block
-            json_match = re.search(r"```json\s*(\{.*?\})\s*```", response, re.DOTALL)
-            if json_match:
-                response = json_match.group(1)
-            else:
-                # Try to find JSON object directly
-                json_match = re.search(r"\{.*?\}", response, re.DOTALL)
-                if json_match:
-                    response = json_match.group(0)
-                else:
-                    # Remove markdown markers if present
-                    response = (
-                        response.removeprefix("```json")
-                        .removeprefix("```")
-                        .removesuffix("```")
-                    )
-
-            response = response.strip()
-            parsed = json.loads(response)
+            text = response.strip()
+            fence = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL)
+            if fence:
+                text = fence.group(1).strip()
+            start = text.find("{")
+            if start == -1:
+                raise json.JSONDecodeError(
+                    "No JSON object found in response", text, 0
+                )
+            parsed, _end = json.JSONDecoder().raw_decode(text, start)
             print("✅ Response parsed successfully")
             return parsed
 

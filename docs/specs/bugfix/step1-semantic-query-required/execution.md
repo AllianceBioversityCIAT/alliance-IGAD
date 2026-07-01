@@ -136,3 +136,35 @@
      downstream Step-2 400.
 - **Action:** HALT execution; requirements/design/tasks to be revised for the real root cause
   after user approval of this pivot.
+- **Resolution:** User approved "Update spec + fix parser." Spec revised (REQ-4/REQ-5, design
+  Change 3/4, tasks T5/T6/T7). Proceeding with the real fix below.
+
+### T5 + T6: Robust RFP parser + fail-loud — ✅ PASS (attempt 1/3)
+
+- **Date:** 2026-07-01
+- **Requirements covered:** REQ-4 (T5), REQ-5 (T6)
+- **Implementer attempts:** 1 (both tasks in one change — same file `rfp_analysis/service.py`)
+- **Attempt 1**
+  - **Files changed:**
+    - `igad-app/backend/app/tools/proposal_writer/rfp_analysis/service.py` — **T5:**
+      `parse_response` rewritten to strip a ```json fence, then `json.JSONDecoder().raw_decode()`
+      from the first `{` (parses first complete object, ignores trailing "Extra data", handles
+      nested objects); error-fallback only when no JSON decodable. **T6:** `analyze_rfp` raises
+      when `_build_semantic_query` returns empty (worker → `analysis_status_rfp="failed"`) instead
+      of completing with `semantic_query=""`. `# @sdd-spec` markers added.
+    - `tests/app/tools/proposal_writer/test_rfp_parse_response.py` — new, 4 tests (trailing-data,
+      fenced+prose, nested, non-JSON fallback).
+    - `tests/app/tools/proposal_writer/test_rfp_analyze_fail_loud.py` — new, 2 tests (empty→raise,
+      good→completed with non-empty query).
+  - **Verification command + result:** `flake8` on service + 2 test files → exit 0;
+    `pytest <2 new modules> -q` → **6 passed**; `pytest tests/app/tools/proposal_writer/ -q` →
+    **29 passed** (no regression).
+  - **Reviewer verdict:** **PASS** — REQ-4 fully met (raw_decode fixes the exact "Extra data"
+    failure; nested objects no longer truncated by the old non-greedy `\{.*?\}`; non-JSON still
+    falls back); REQ-5 guard correctly placed before the `completed` return; tests genuine, AWS
+    mocked; scope confined; flake8 clean.
+- **Decisions:** T5+T6 implemented in a single change (same file) to avoid conflicts. T1/T2
+  consistent-read hardening retained.
+- **Issues:** None.
+- **Final verification:** PASS on first attempt.
+- **Commit:** `[SPEC:bugfix/step1-semantic-query-required] T5+T6 robust RFP parser + fail-loud`

@@ -101,7 +101,7 @@
 - T6 → (none)   # independent of T5; both in rfp_analysis/service.py
 - T7 → T5, T6
 
-### [ ] T5: Robust `parse_response` (tolerate fences, trailing data, nested JSON)
+### [x] T5: Robust `parse_response` (tolerate fences, trailing data, nested JSON)
 - **Requirements:** REQ-4
 - **Design:** design.md §"Change 3"
 - **Layer:** backend
@@ -120,7 +120,7 @@
 - **Done when:** all four parse tests pass; flake8 clean.
 - **Skills:** `fastapi-serverless`, `systematic-debugging`, `error-handling-patterns`
 
-### [ ] T6: Fail loudly instead of completing with empty semantic_query
+### [x] T6: Fail loudly instead of completing with empty semantic_query
 - **Requirements:** REQ-5
 - **Design:** design.md §"Change 4"
 - **Layer:** backend
