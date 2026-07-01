@@ -89,6 +89,71 @@
   into the spec via the Pivot Protocol).
 - **Skills:** `aws-serverless`, `verify`
 
+---
+
+## Pivot Tasks (2026-07-01) — real root cause: RFP response parser
+
+> T4 disproved the stale-read hypothesis (see `execution.md` Pivot Record). T1/T2 kept as
+> hardening. The following tasks implement the real fix (REQ-4, REQ-5).
+
+### Task Graph (pivot)
+- T5 → (none)
+- T6 → (none)   # independent of T5; both in rfp_analysis/service.py
+- T7 → T5, T6
+
+### [ ] T5: Robust `parse_response` (tolerate fences, trailing data, nested JSON)
+- **Requirements:** REQ-4
+- **Design:** design.md §"Change 3"
+- **Layer:** backend
+- **Size:** S
+- **Dependencies:** none
+- **Scope:** `igad-app/backend/app/tools/proposal_writer/rfp_analysis/service.py` `parse_response`
+  (lines 373-420). Replace the non-greedy `\{.*?\}` + strict `json.loads` with fence-stripping +
+  `json.JSONDecoder().raw_decode()` from the first `{`; keep the error-fallback only when no JSON
+  object can be decoded. Add `# @sdd-spec` comment.
+- **Tests:** unit tests for `parse_response`: (a) JSON + trailing "Extra data" → parses first
+  object; (b) ```json fenced object (with surrounding prose) → parses; (c) nested-object JSON →
+  full object, not a fragment; (d) genuinely non-JSON → error-fallback dict. Add e.g.
+  `tests/app/tools/proposal_writer/test_rfp_parse_response.py`.
+- **Verification (backend, venv):** `flake8 <changed files>`; `pytest <new test module> -q`.
+  Do NOT run mypy on routes.py (unrelated); mypy on this service file is fine but optional.
+- **Done when:** all four parse tests pass; flake8 clean.
+- **Skills:** `fastapi-serverless`, `systematic-debugging`, `error-handling-patterns`
+
+### [ ] T6: Fail loudly instead of completing with empty semantic_query
+- **Requirements:** REQ-5
+- **Design:** design.md §"Change 4"
+- **Layer:** backend
+- **Size:** XS
+- **Dependencies:** none (logically pairs with T5)
+- **Scope:** `rfp_analysis/service.py` `analyze_rfp` (~122-132). If `_build_semantic_query`
+  returns empty, raise so the worker marks `analysis_status_rfp = "failed"` (worker RFP failure
+  path) instead of returning `status: "completed"` with `semantic_query == ""`.
+- **Tests:** unit test(s): given a response that yields an empty semantic_query (e.g. the error
+  fallback), `analyze_rfp` raises; given a good parse, it returns `status "completed"` with a
+  non-empty `semantic_query`. Mock S3/PDF extraction + Bedrock so no AWS.
+- **Verification (backend, venv):** `flake8`; `pytest <test module> -q`.
+- **Done when:** empty-query path raises; happy path returns completed with non-empty query; tests pass.
+- **Skills:** `fastapi-serverless`, `error-handling-patterns`
+
+### [~] T7: Redeploy to testing and re-validate the RFP-only flow
+- **Requirements:** REQ-2, REQ-3, REQ-4, REQ-5, NFR-4
+- **Design:** design.md §"Note on already-cached broken proposals"
+- **Layer:** deploy / verification
+- **Size:** S
+- **Dependencies:** T5, T6
+- **Scope:** Redeploy backend to testing (Docker must be running):
+  `cd igad-app && AWS_PROFILE=IBD-DEV ./scripts/deploy-fullstack-testing.sh --backend-only`.
+  Re-validate with a **fresh** proposal, RFP + concept only, Analyze & Continue → advances past
+  Step 2 with no 400; confirm `semantic_query` is now populated (DynamoDB or CloudWatch); confirm
+  a deliberately-broken/unparseable RFP now fails at Step 1 (not a Step-2 400); multi-document
+  path still works.
+- **Verification:** manual — fresh RFP-only proposal reaches Step 3; DynamoDB item shows
+  non-empty `semantic_query`; multi-doc path unaffected.
+- **Done when:** the reported error no longer reproduces on a fresh proposal and `semantic_query`
+  is populated.
+- **Skills:** `aws-serverless`, `verify`
+
 ## Notes
 
 - **Do not deploy to production** as part of this spec (NFR-4). Production is a separate

@@ -196,6 +196,92 @@ caller is affected.
 - **Decision:** Rejected as a primary fix — it masks the backend race, adds UI complexity, and
   is unnecessary once DD-1 lands.
 
+## Pivot Update — Real Root Cause & Fix (2026-07-01)
+
+T4 validation disproved the stale-read hypothesis. The persisted `rfp_analysis` for a failing
+proposal had `summary.error = "Failed to parse response"` and `semantic_query = ""`, yet
+`analysis_status_rfp = "completed"`. The real defect is in
+`igad-app/backend/app/tools/proposal_writer/rfp_analysis/service.py`:
+
+- `parse_response` (lines 373-420) uses `re.search(r"\{.*?\}", ...)` (non-greedy → mangles
+  nested JSON) and strict `json.loads` (→ rejects trailing "Extra data"). On failure it returns
+  an error-fallback dict.
+- `analyze_rfp` (lines ~122-132) then calls `_build_semantic_query` on that error dict → empty
+  string, sets `result["semantic_query"] = ""`, and returns `status: "completed"`.
+
+### Change 3 — Robust `parse_response` (REQ-4)
+
+Replace the fragile extraction with fence-stripping + `json.JSONDecoder().raw_decode()` from the
+first `{`, which parses the first complete, brace-balanced JSON object and ignores trailing data:
+
+```python
+def parse_response(self, response: str) -> Dict[str, Any]:
+    """Parse Claude's response into structured JSON.
+
+    Tolerant of markdown code fences, leading prose, trailing 'Extra data' after the
+    JSON object, and nested objects. Falls back to an error structure only if no valid
+    JSON object can be decoded.
+    """
+    # @sdd-spec bugfix/step1-semantic-query-required
+    try:
+        text = response.strip()
+        # Prefer JSON inside a ```json ... ``` fence when present.
+        fence = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL)
+        if fence:
+            text = fence.group(1).strip()
+        start = text.find("{")
+        if start == -1:
+            raise json.JSONDecodeError("No JSON object found in response", text, 0)
+        # raw_decode reads ONE complete JSON value and ignores any trailing content.
+        parsed, _end = json.JSONDecoder().raw_decode(text, start)
+        print("✅ Response parsed successfully")
+        return parsed
+    except json.JSONDecodeError as e:
+        print(f"⚠️  JSON parsing failed: {str(e)}")
+        return {
+            "summary": {"error": "Failed to parse response", "details": str(e)},
+            "extracted_data": {"raw_response": response},
+        }
+```
+
+Notes: the fence regex uses a greedy `\{.*\}` inside the fence to capture the whole object;
+`raw_decode` handles the general (unfenced, trailing-data, nested) case correctly. `re`/`json`
+already imported in this module.
+
+### Change 4 — Fail loudly instead of completing empty (REQ-5)
+
+In `analyze_rfp`, after building the semantic query, treat an empty query (or an error-fallback
+parse) as a real failure so the worker marks `analysis_status_rfp = "failed"` (the worker's
+existing RFP failure path) rather than storing a `completed` record with `semantic_query == ""`:
+
+```python
+result = self.parse_response(ai_response)
+semantic_query = self._build_semantic_query(result)
+if not semantic_query:
+    # Parsing failed or produced no usable query — do not complete-empty.
+    parse_err = result.get("summary", {}).get("details", "no semantic_query derived")
+    raise Exception(f"RFP analysis produced no semantic_query ({parse_err})")
+result["semantic_query"] = semantic_query
+return {"rfp_analysis": result, "status": "completed"}
+```
+
+The worker (`workflow/worker.py`) already catches analyzer exceptions and marks the RFP analysis
+`failed` with `rfp_analysis_error`, so Step 1 surfaces a genuine error instead of a misleading
+Step-2 400.
+
+### Interaction with T1/T2
+
+The consistent-read gate stays (harmless hardening). With Change 3, `semantic_query` is
+populated for parseable RFPs; with Change 4, an unparseable RFP fails at Step 1 (never reaching
+the Step-2 gate with an empty query). Net: the RFP-only path completes for valid RFPs.
+
+### Note on already-cached broken proposals
+
+`analyze-step-1` skips re-analysis when `rfp_analysis` already exists. Proposals that already
+persisted an empty-`semantic_query` `rfp_analysis` (e.g. `PROP-20260701-2BF9`) will not
+self-heal; re-validate with a **fresh** proposal (or by replacing the RFP document, which
+re-triggers analysis).
+
 ## Risks, Observability, Rollback
 
 - **Risk:** If, contrary to the hypothesis, the 400 is caused by RFP analysis producing an

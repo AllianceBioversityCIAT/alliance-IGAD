@@ -24,6 +24,20 @@ DynamoDB read immediately after Step 1 flips to `completed`, so it can observe t
 `semantic_query`) is visible on the replica it reads. This spec makes that prerequisite read
 **authoritative** so the RFP-only path is reliable, while keeping reference proposals optional.
 
+## Pivot Update (2026-07-01)
+
+Field validation on the testing deploy **disproved** the original eventual-consistency
+hypothesis. The 400 persisted after ~100s of Step-1 polling. Live DynamoDB inspection showed
+`rfp_analysis.summary.error = "Failed to parse response"` (`Extra data: line 121 …`) and
+`rfp_analysis.semantic_query = ""`, with `analysis_status_rfp = "completed"`. **Real root
+cause:** `SimpleRFPAnalyzer.parse_response` fails on the Bedrock JSON (trailing "Extra data" /
+fragile non-greedy `\{.*?\}` regex), so `_build_semantic_query` yields an empty string, yet the
+pipeline marks RFP "completed". `analyze-step-2` then correctly rejects the empty `semantic_query`.
+
+- **REQ-1..REQ-3** (authoritative consistent read) are retained as **hardening** (already
+  shipped) but are **not** the fix for this defect.
+- **REQ-4, REQ-5** below capture the real fix and are the primary requirements now.
+
 ## Glossary
 
 | Term | Meaning |
@@ -107,6 +121,49 @@ and/or existing work.
 - THEN Step 1 → Step 2 → Step 3 SHALL complete as they do today, with reference-proposals
   analysis producing real results
 
+### REQ-4: Robust RFP response parsing (PRIMARY FIX)
+
+The system SHALL parse the Bedrock RFP-analysis response into structured JSON even when the
+model output includes markdown code fences, leading prose, or **trailing content after the
+JSON object** ("Extra data"), and even when the JSON contains nested objects — so that a
+well-formed RFP analysis reliably yields a non-empty `semantic_query`.
+
+#### Scenario: JSON followed by trailing text
+- GIVEN a Bedrock response consisting of a valid JSON object followed by extra characters/prose
+- WHEN `parse_response` runs
+- THEN it SHALL return the first complete JSON object (ignoring the trailing content)
+- AND SHALL NOT fall back to the "Failed to parse response" error structure
+
+#### Scenario: JSON in a code fence
+- GIVEN a response wrapped in a ```json … ``` fence (with or without surrounding prose)
+- WHEN `parse_response` runs
+- THEN it SHALL return the parsed object
+
+#### Scenario: Nested-object JSON
+- GIVEN a valid JSON object containing nested objects/arrays
+- WHEN `parse_response` runs
+- THEN it SHALL return the full object (not a fragment truncated at the first `}`)
+
+### REQ-5: RFP analysis must not "complete" without a usable semantic_query (FAIL-LOUD)
+
+The system SHALL NOT mark RFP analysis `completed` while storing an empty `semantic_query`.
+If parsing genuinely fails or no `semantic_query` can be derived, the system SHALL surface RFP
+analysis as **failed** (so the user sees a real Step-1 error) rather than silently completing
+and producing a confusing Step-2 400.
+
+#### Scenario: Unparseable response
+- GIVEN a Bedrock response that cannot be parsed into a usable RFP analysis
+- WHEN RFP analysis runs to completion
+- THEN `analysis_status_rfp` SHALL be set to `failed` with an error message
+- AND SHALL NOT be `completed` with `semantic_query == ""`
+
+#### Scenario: Successful parse yields a query
+- GIVEN a parseable RFP response with donor/focus/geography/beneficiary fields
+- WHEN RFP analysis runs
+- THEN `semantic_query` SHALL be a non-empty string
+- AND `analysis_status_rfp` SHALL be `completed`
+- AND a subsequent `analyze-step-2` SHALL pass the prerequisite gate
+
 ## Non-Functional Requirements
 
 - **NFR-1 (Correctness):** The prerequisite decision MUST be deterministic given committed
@@ -125,9 +182,11 @@ and/or existing work.
 
 | ID | Title | Covered by tasks |
 |---|---|---|
-| REQ-1 | Authoritative Step 2 prerequisite read | T1, T2, T4 |
-| REQ-2 | RFP-only path completes end-to-end | T3, T4 |
-| REQ-3 | No regression for multi-document path | T3, T4 |
+| REQ-1 | Authoritative Step 2 prerequisite read (hardening) | T1, T2, T4 |
+| REQ-2 | RFP-only path completes end-to-end | T3, T7 |
+| REQ-3 | No regression for multi-document path | T3, T7 |
+| REQ-4 | Robust RFP response parsing (primary fix) | T5, T7 |
+| REQ-5 | RFP must not complete without usable semantic_query | T6, T7 |
 | NFR-1 | Deterministic correctness | T1, T2 |
 | NFR-2 | Latency/cost | T1 |
 | NFR-3 | Observability | T2 |
