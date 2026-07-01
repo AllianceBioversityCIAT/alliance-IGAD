@@ -10,4 +10,7 @@ mangum==0.17.0
 aws-lambda-powertools==2.25.0
 PyPDF2==3.0.1
 pdfplumber==0.10.3
+# Cap Pillow below 12: pdfplumber leaves it unpinned, and Pillow 12.x drops
+# Python 3.11 wheels, breaking the Lambda (py3.11/arm64) sam build.
+Pillow>=11,<12
 python-docx==0.8.11
