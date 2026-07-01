@@ -74,3 +74,28 @@
   contention) and confirm no remaining prerequisite 400s → root-cause confirmation.
 - **Pivot watch:** if the 400 still reproduces after deploy, the root cause is NOT the stale
   read (e.g. RFP analysis emitting an empty `semantic_query`) → trigger the Pivot Protocol.
+- **2026-07-01 — DEPLOY BLOCKED (environmental, unrelated to this spec):** `AWS_PROFILE=IBD-DEV
+  ./scripts/deploy-fullstack-testing.sh --backend-only` failed at `sam build`:
+  `PythonPipBuilder:ResolveDependencies - {pillow==12.3.0(wheel)}`. Cause: `pdfplumber==0.10.3`
+  in `requirements.txt` leaves **Pillow unpinned**, so pip resolves to Pillow **12.3.0**, whose
+  wheel does not build/resolve for the Lambda arm64/py3.11 target in the SAM builder. This is a
+  pre-existing dependency/build issue — the T1–T3 change never touched `requirements.txt`.
+  (iCloud `.aws-sam/build/* [0-9]` duplicate folders were cleaned before the run and were NOT
+  the cause.) T4 remains `[~]` pending resolution of the Pillow pin (a build/prod-affecting
+  change requiring separate approval) or an alternative deploy path. The code fix (T1–T3) is
+  committed and locally verified and does not depend on this deploy to be correct.
+- **2026-07-01 — DEPLOY UNBLOCKED & SUCCEEDED:** Two environmental blockers resolved (both
+  unrelated to the spec):
+  1. Pinned `Pillow>=11,<12` in `requirements.txt` (separate commit `979cd52`) → `sam build`
+     **Build Succeeded**.
+  2. `sam deploy` requires a running container runtime; Docker was installed but stopped.
+     Started Docker Desktop (server 29.2.0) → deploy proceeded.
+  CloudFormation: `ApiFunction` + `AnalysisWorkerFunction` both `UPDATE_COMPLETE`;
+  "Successfully created/updated stack - igad-backend-testing". Independent check:
+  `ApiFunction` LastModified `2026-07-01T14:14:18Z`, State Active, LastUpdateStatus Successful,
+  python3.11/arm64. API: `https://c37x0xp38k.execute-api.us-east-1.amazonaws.com/prod/`.
+  **The T2 fix is now live in the testing environment.** T4 remains `[~]` pending the user's
+  manual browser + CloudWatch validation (below).
+- Note: `scripts/deploy-fullstack-testing.sh` masks a failed `sam deploy` as
+  "⚠️ Backend deployment skipped (no changes detected)" (its `else` branch), which produced a
+  false "success" on the first Docker-less attempt. Worth hardening separately.
