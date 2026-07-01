@@ -99,3 +99,40 @@
 - Note: `scripts/deploy-fullstack-testing.sh` masks a failed `sam deploy` as
   "⚠️ Backend deployment skipped (no changes detected)" (its `else` branch), which produced a
   false "success" on the first Docker-less attempt. Worth hardening separately.
+
+## Pivot Record: T4 — root cause is RFP response parse failure, not a stale read
+
+- **Date:** 2026-07-01
+- **Trigger:** T4 manual validation on testing still reproduced the exact 400
+  (`analyze-step-2` on proposal `PROP-20260701-2BF9` / id `35b98b59-…`), after ~18
+  `step-1-status` polls over ~100s — far beyond any eventual-consistency window.
+- **Evidence (live DynamoDB item `PROPOSAL#PROP-20260701-2BF9`):**
+  - `analysis_status_rfp = "completed"`, `rfp_analysis_completed_at = 2026-07-01T14:38:35Z`.
+  - `rfp_analysis` top-level keys: `summary`, `extracted_data`, `semantic_query`.
+  - `rfp_analysis.summary = { "error": "Failed to parse response", "details": "Extra data: line 121 column 4 (char 19546)" }`.
+  - `rfp_analysis.semantic_query = ""` (empty string). `extracted_data.raw_response` holds the raw model output.
+- **Actual root cause:** `SimpleRFPAnalyzer.parse_response` (`rfp_analysis/service.py:373-420`)
+  failed `json.loads` on the Bedrock output (`json.JSONDecodeError: Extra data …`) and returned
+  its error-fallback dict. `_build_semantic_query` then ran on that error dict, produced an
+  **empty** string, and the pipeline stored `semantic_query=""` while still marking RFP
+  `completed` (`service.py:126-132`, worker `worker.py:191-206`). `analyze-step-2` is therefore
+  *correctly* rejecting an absent `semantic_query`. The fragile parser uses a non-greedy
+  `re.search(r"\{.*?\}")` (line 398) and a strict `json.loads`, neither of which tolerates
+  nested braces or trailing "Extra data".
+- **Why the earlier "works with references" clue was misleading:** it was coincidental — a
+  different RFP/response that happened to parse. The proposal explicitly flagged this exact
+  alternative as the risk to confirm in T4; T4 confirmed it.
+- **Status of T1/T2/T3 work:** the consistent-read gate (T1/T2) is harmless hardening but does
+  **not** fix this bug; T3 tests remain valid. Kept as-is (can be reverted if undesired).
+- **Revised direction (pending user approval):**
+  1. **Robust RFP response parsing** — replace the fragile regex + `json.loads` with tolerant
+     extraction: strip markdown fences, then `json.JSONDecoder().raw_decode()` from the first
+     `{` to parse the first complete, balanced JSON object and ignore trailing "Extra data";
+     fall back to balanced-brace extraction. Result: `_build_semantic_query` gets real data.
+  2. **Fail loudly, don't complete-empty** — if RFP parsing genuinely fails (or the built
+     `semantic_query` is empty), do NOT mark `analysis_status_rfp="completed"` with an empty
+     `semantic_query`; surface a real failure (status `failed`) and/or derive a fallback
+     semantic query from the raw RFP text so Step 2 can proceed. This prevents the confusing
+     downstream Step-2 400.
+- **Action:** HALT execution; requirements/design/tasks to be revised for the real root cause
+  after user approval of this pivot.
