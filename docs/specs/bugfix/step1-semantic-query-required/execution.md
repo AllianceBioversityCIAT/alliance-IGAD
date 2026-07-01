@@ -168,3 +168,16 @@
 - **Issues:** None.
 - **Final verification:** PASS on first attempt.
 - **Commit:** `[SPEC:bugfix/step1-semantic-query-required] T5+T6 robust RFP parser + fail-loud`
+
+### T7: Redeploy to testing and re-validate — 🔶 IN PROGRESS (awaiting user validation)
+
+- **Date:** 2026-07-01
+- **Deploy:** `./scripts/deploy-fullstack-testing.sh --backend-only` (Docker running) →
+  "Successfully created/updated stack - igad-backend-testing". Independent check:
+  **worker** `AnalysisWorkerFunction-UQrUNFZE14lb` LastModified `2026-07-01T14:56:53Z`,
+  **ApiFunction** `…-Hm1AiHFKEeWy` LastModified `2026-07-01T14:57:07Z` — both Active/Successful.
+  The RFP parser fix (runs in the worker) is live.
+- **Awaiting:** user manual validation on a **fresh** proposal (the previously-broken
+  `PROP-20260701-2BF9` has a cached empty-`semantic_query` `rfp_analysis` and will not
+  self-heal). Expected: RFP + concept only → Analyze & Continue advances past Step 2;
+  `semantic_query` populated; a genuinely unparseable RFP now fails at Step 1 (not a Step-2 400).
