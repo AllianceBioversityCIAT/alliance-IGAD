@@ -2,11 +2,12 @@
 Proposals Router
 """
 
+import asyncio
 import json
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import boto3
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -1510,6 +1511,109 @@ async def analyze_step_1(proposal_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Step 1 analysis failed: {str(e)}")
 
 
+# Bounded retry configuration for the Step 2 prerequisite gate.
+MAX_PREREQ_ATTEMPTS = 3
+PREREQ_RETRY_SECONDS = 0.6
+
+
+def _extract_semantic_query(rfp_analysis: dict) -> Optional[str]:
+    """Extract semantic_query from an RFP analysis blob.
+
+    Preserves support for both the flat structure
+    (``rfp_analysis.semantic_query``) and the nested structure
+    (``rfp_analysis.rfp_analysis.semantic_query``).
+
+    Args:
+        rfp_analysis: The RFP analysis blob stored on the proposal item.
+
+    Returns:
+        The semantic query string if present, otherwise ``None``.
+    """
+    semantic_query = rfp_analysis.get("semantic_query")
+    if not semantic_query and "rfp_analysis" in rfp_analysis:
+        nested_rfp = rfp_analysis.get("rfp_analysis", {})
+        semantic_query = nested_rfp.get("semantic_query")
+    return semantic_query
+
+
+async def _await_step2_prerequisite(
+    pk: str, user_id: str
+) -> Tuple[Dict[str, Any], str, str]:
+    """Read committed proposal state and enforce the Step 2 prerequisite.
+
+    Performs strongly consistent reads with a small bounded retry so a stale
+    eventually-consistent replica cannot make the gate reject a
+    genuinely-completed Step 1 (REQ-1, NFR-1, NFR-3).
+
+    Args:
+        pk: The proposal partition key (``PROPOSAL#<code>``).
+        user_id: The requesting user's id, for the ownership check.
+
+    Returns:
+        A tuple of ``(proposal, proposal_code, semantic_query)``.
+
+    Raises:
+        HTTPException: 404 if missing, 403 on ownership mismatch, 400 if the
+            RFP prerequisite (or its ``semantic_query``) is not available.
+    """
+    # @sdd-spec bugfix/step1-semantic-query-required
+    proposal: Optional[Dict[str, Any]] = None
+    rfp_analysis: Optional[Dict[str, Any]] = None
+    semantic_query: Optional[str] = None
+    proposal_code: Optional[str] = None
+    for attempt in range(1, MAX_PREREQ_ATTEMPTS + 1):
+        proposal = await db_client.get_item(pk=pk, sk="METADATA", consistent=True)
+
+        if not proposal:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        if proposal.get("user_id") != user_id:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        proposal_code = proposal.get("proposalCode")
+        if not proposal_code:
+            raise HTTPException(status_code=400, detail="Proposal code not found")
+
+        rfp_analysis = proposal.get("rfp_analysis")
+        if rfp_analysis:
+            semantic_query = _extract_semantic_query(rfp_analysis)
+            if semantic_query:
+                break
+
+        # Only retry while RFP reports "completed" but the semantic_query is
+        # not yet visible; a genuinely-missing prerequisite exits fast.
+        if proposal.get("analysis_status_rfp") != "completed":
+            break
+
+        if attempt < MAX_PREREQ_ATTEMPTS:
+            print(
+                f"↻ semantic_query not visible yet for {proposal_code}, "
+                f"retry {attempt}/{MAX_PREREQ_ATTEMPTS}"
+            )
+            await asyncio.sleep(PREREQ_RETRY_SECONDS)
+
+    if not rfp_analysis:
+        raise HTTPException(
+            status_code=400,
+            detail="Step 1 (RFP analysis) must be completed before Step 2.",
+        )
+
+    if not semantic_query:
+        # Log the structure for debugging
+        print(f"❌ No semantic_query found in RFP analysis for {proposal_code}")
+        print(f"   Available keys in rfp_analysis: {list(rfp_analysis.keys())}")
+        if "rfp_analysis" in rfp_analysis:
+            nested_keys = list(rfp_analysis.get("rfp_analysis", {}).keys())
+            print(f"   Available keys in nested rfp_analysis: {nested_keys}")
+        raise HTTPException(
+            status_code=400,
+            detail="Step 1 (RFP analysis) must be completed with semantic_query before Step 2.",
+        )
+
+    # proposal_code is guaranteed non-None here (checked inside the loop).
+    return proposal, proposal_code, semantic_query  # type: ignore[return-value]
+
+
 @router.post("/{proposal_id}/analyze-step-2")
 async def analyze_step_2(proposal_id: str, user=Depends(get_current_user)):
     """
@@ -1547,49 +1651,12 @@ async def analyze_step_2(proposal_id: str, user=Depends(get_current_user)):
             pk = proposal_item["PK"]
             proposal_code = proposal_item.get("proposalCode", proposal_id)
 
-        proposal = await db_client.get_item(pk=pk, sk="METADATA")
-
-        if not proposal:
-            raise HTTPException(status_code=404, detail="Proposal not found")
-
-        if proposal.get("user_id") != user.get("user_id"):
-            raise HTTPException(status_code=403, detail="Access denied")
-
-        proposal_code = proposal.get("proposalCode")
-        if not proposal_code:
-            raise HTTPException(status_code=400, detail="Proposal code not found")
-
         # ========== PREREQUISITE CHECK: RFP MUST BE COMPLETED ==========
-        rfp_analysis = proposal.get("rfp_analysis")
-        if not rfp_analysis:
-            raise HTTPException(
-                status_code=400,
-                detail="Step 1 (RFP analysis) must be completed before Step 2.",
-            )
-
-        # Handle nested structure (rfp_analysis.rfp_analysis.semantic_query)
-        # or flat structure (rfp_analysis.semantic_query)
-        semantic_query = rfp_analysis.get("semantic_query")
-        if not semantic_query and "rfp_analysis" in rfp_analysis:
-            # Try nested structure
-            nested_rfp = rfp_analysis.get("rfp_analysis", {})
-            semantic_query = nested_rfp.get("semantic_query")
-            if semantic_query:
-                print(
-                    f"ℹ️  Found semantic_query in nested structure for {proposal_code}"
-                )
-
-        if not semantic_query:
-            # Log the structure for debugging
-            print(f"❌ No semantic_query found in RFP analysis for {proposal_code}")
-            print(f"   Available keys in rfp_analysis: {list(rfp_analysis.keys())}")
-            if "rfp_analysis" in rfp_analysis:
-                nested_keys = list(rfp_analysis.get("rfp_analysis", {}).keys())
-                print(f"   Available keys in nested rfp_analysis: {nested_keys}")
-            raise HTTPException(
-                status_code=400,
-                detail="Step 1 (RFP analysis) must be completed with semantic_query before Step 2.",
-            )
+        # Authoritative (strongly consistent) read with bounded retry so a
+        # stale replica cannot reject a genuinely-completed Step 1.
+        proposal, proposal_code, semantic_query = await _await_step2_prerequisite(
+            pk, user.get("user_id")
+        )
 
         print(f"✓ RFP analysis completed with semantic_query for {proposal_code}")
         print(f"  Semantic query: {semantic_query[:100]}...")

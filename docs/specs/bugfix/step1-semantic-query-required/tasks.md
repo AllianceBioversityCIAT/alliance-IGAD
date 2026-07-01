@@ -28,7 +28,7 @@
 - **Done when:** `get_item(consistent=True)` sets `ConsistentRead`; existing callers unchanged; tests pass.
 - **Skills:** `fastapi-serverless`, `aws-serverless`
 
-### [ ] T2: Make `analyze-step-2` prerequisite authoritative (consistent read + bounded retry)
+### [x] T2: Make `analyze-step-2` prerequisite authoritative (consistent read + bounded retry)
 - **Requirements:** REQ-1, NFR-1, NFR-3
 - **Design:** design.md §"Change 2"
 - **Layer:** backend

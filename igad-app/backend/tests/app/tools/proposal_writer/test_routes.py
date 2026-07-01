@@ -329,3 +329,116 @@ async def test_get_analysis_status_completed():
          response = await get_analysis_status(proposal_id, MOCK_USER)
          assert response["status"] == "completed"
          assert response["rfp_analysis"] == {"result": "success"}
+
+
+@pytest.mark.asyncio
+async def test_analyze_step_2_semantic_query_present_first_read():
+    """semantic_query available on the first consistent read -> 200/processing."""
+    from app.tools.proposal_writer.routes import analyze_step_2
+
+    proposal_id = "PROP-123"
+    proposal = {
+        "PK": "PROPOSAL#PROP-123",
+        "SK": "METADATA",
+        "proposalCode": "PROP-123",
+        "user_id": MOCK_USER["user_id"],
+        "analysis_status_rfp": "completed",
+        "rfp_analysis": {"semantic_query": "find relevant reference proposals"},
+    }
+
+    with (
+        patch("app.tools.proposal_writer.routes.db_client") as mock_db,
+        patch("app.tools.proposal_writer.routes.lambda_client") as mock_lambda,
+        patch(
+            "app.tools.proposal_writer.routes.asyncio.sleep", new=AsyncMock()
+        ) as mock_sleep,
+        patch.dict("os.environ", {"WORKER_FUNCTION_NAME": "test-worker"}),
+    ):
+        mock_db.get_item = AsyncMock(return_value=proposal)
+        mock_db.update_item = AsyncMock()
+        mock_lambda.invoke.return_value = {"StatusCode": 202}
+
+        response = await analyze_step_2(proposal_id, MOCK_USER)
+
+        assert response["status"] == "processing"
+        assert len(response["analyses"]) == 2
+        # Single consistent read was enough; no retry sleep happened.
+        mock_db.get_item.assert_called_once_with(
+            pk="PROPOSAL#PROP-123", sk="METADATA", consistent=True
+        )
+        mock_sleep.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_analyze_step_2_semantic_query_visible_on_retry():
+    """Blob missing on first read (status completed), present on retry -> 200."""
+    from app.tools.proposal_writer.routes import analyze_step_2
+
+    proposal_id = "PROP-123"
+    stale_proposal = {
+        "PK": "PROPOSAL#PROP-123",
+        "SK": "METADATA",
+        "proposalCode": "PROP-123",
+        "user_id": MOCK_USER["user_id"],
+        "analysis_status_rfp": "completed",
+        # rfp_analysis blob not yet visible on this stale replica read
+    }
+    fresh_proposal = {
+        **stale_proposal,
+        "rfp_analysis": {"semantic_query": "find relevant reference proposals"},
+    }
+
+    with (
+        patch("app.tools.proposal_writer.routes.db_client") as mock_db,
+        patch("app.tools.proposal_writer.routes.lambda_client") as mock_lambda,
+        patch(
+            "app.tools.proposal_writer.routes.asyncio.sleep", new=AsyncMock()
+        ) as mock_sleep,
+        patch.dict("os.environ", {"WORKER_FUNCTION_NAME": "test-worker"}),
+    ):
+        mock_db.get_item = AsyncMock(side_effect=[stale_proposal, fresh_proposal])
+        mock_db.update_item = AsyncMock()
+        mock_lambda.invoke.return_value = {"StatusCode": 202}
+
+        response = await analyze_step_2(proposal_id, MOCK_USER)
+
+        assert response["status"] == "processing"
+        assert mock_db.get_item.call_count == 2
+        # Retried once (slept once) before the blob became visible.
+        mock_sleep.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_analyze_step_2_missing_prereq_no_retry():
+    """rfp_analysis absent and status != completed -> 400, exits fast (no loop)."""
+    from app.tools.proposal_writer.routes import analyze_step_2
+
+    proposal_id = "PROP-123"
+    proposal = {
+        "PK": "PROPOSAL#PROP-123",
+        "SK": "METADATA",
+        "proposalCode": "PROP-123",
+        "user_id": MOCK_USER["user_id"],
+        "analysis_status_rfp": "processing",
+        # no rfp_analysis blob and RFP is not completed
+    }
+
+    with (
+        patch("app.tools.proposal_writer.routes.db_client") as mock_db,
+        patch("app.tools.proposal_writer.routes.lambda_client"),
+        patch(
+            "app.tools.proposal_writer.routes.asyncio.sleep", new=AsyncMock()
+        ) as mock_sleep,
+        patch.dict("os.environ", {"WORKER_FUNCTION_NAME": "test-worker"}),
+    ):
+        mock_db.get_item = AsyncMock(return_value=proposal)
+        mock_db.update_item = AsyncMock()
+
+        with pytest.raises(HTTPException) as exc_info:
+            await analyze_step_2(proposal_id, MOCK_USER)
+
+        assert exc_info.value.status_code == 400
+        assert "must be completed before Step 2" in exc_info.value.detail
+        # Genuinely-missing prerequisite must not loop/retry.
+        mock_db.get_item.assert_called_once()
+        mock_sleep.assert_not_called()
