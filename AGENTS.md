@@ -7,6 +7,21 @@ This file outlines the global guidelines and available AI skills for agents work
 > **Parent:** [`/CLAUDE.md`](./CLAUDE.md)
 > **Children:** [`igad-app/AGENTS.md`](./igad-app/AGENTS.md)
 
+## SDD Baseline & Execution Personas
+
+Before non-trivial feature work, consult the constitutional baseline in `docs/`
+(`prd.md`, `system-design/design.md`, `detailed-design/detailed-design.md`,
+`specs/general-setup/`) — described in [`/CLAUDE.md`](./CLAUDE.md).
+
+The `.agents/` directory holds the tool-agnostic execution triad that `/sdd-execute`
+orchestrates in a Leader → Implementer → Reviewer rework loop (3-attempt ceiling):
+
+- `.agents/leader.md` — orchestration, task tracking, `execution.md` audit trail,
+  `[SPEC:<spec-path>]` commit standard.
+- `.agents/implementer.md` — coding to spec, IGAD idioms, design-token compliance,
+  per-layer verification commands.
+- `.agents/reviewer.md` — read-only spec/token/technical audit with structured PASS/FAIL.
+
 ## Available Skills
 
 This repository contains an extensive set of agent skills in `.claude/skills/`. When performing a task that matches one of these domains, **you MUST use the `default_api:skill` tool** to load the specialized instructions before proceeding.

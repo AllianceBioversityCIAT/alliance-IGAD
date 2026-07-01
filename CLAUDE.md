@@ -19,10 +19,35 @@ To maintain clarity and specific context, this repository uses a strict hierarch
 ## Project Structure
 
 - `igad-app/`: The core application source code (frontend, backend, infrastructure).
+- `docs/`: **SDD constitutional baseline** (see below) — the source of truth for product, UX, and technical design.
 - `planning/`: Planning notes, requirements, and debug logs.
 - `prompts/`: Prompt templates and experiments for AI features.
-- `specs/`: Designs, user flows, and mockups.
+- `specs/`: Legacy architecture notes, designs, user flows, and mockups (some aspirational — cross-check against `docs/` before trusting).
+- `.agents/`: SDD execution personas (`leader.md`, `implementer.md`, `reviewer.md`) used by `/sdd-execute`.
 - `.claude/skills/` & `.opencode/skills/`: Custom instructions/skills for AI agents.
+
+## SDD Constitutional Baseline (`docs/`)
+
+These four documents are the foundation all module-level SDD work depends on. Read the
+relevant one before specifying or implementing a change:
+
+- [`docs/prd.md`](./docs/prd.md) — **why** the product exists: problem, personas, goals,
+  scope, success metrics. Consult when scoping features or writing requirements.
+- [`docs/system-design/design.md`](./docs/system-design/design.md) — the **UI/UX system**:
+  design tokens (IGAD brand + semantic colors, Inter, 8px grid, radii), components,
+  navigation, accessibility. Consult for any frontend/visual work; use these tokens, never hardcode.
+- [`docs/detailed-design/detailed-design.md`](./docs/detailed-design/detailed-design.md) —
+  the **technical blueprint**: modules, single-table data model (PK/SK + GSI1), API
+  contracts, async AI worker pattern, model IDs, security model. Consult before backend/data changes.
+- [`docs/specs/general-setup/`](./docs/specs/general-setup/) — **templates** (`requirements.md`,
+  `design.md`, `task.md`) that `/sdd-specify` must follow, plus the spec taxonomy.
+
+Feature specs live under `docs/specs/<category>/<slug>/` (categories: `changes/`, `bugfix/`,
+`enhancements/`, `tools/<tool>/`, `epic/`). The `/sdd-*` commands (`propose`, `specify`,
+`execute`, `test`, `validate`, `archive`) operate on these.
+
+**CodeGraph:** not initialized (`.codegraph/` absent). Use `Grep`/`Glob`/Explore for
+repository analysis, or ask the user to run `codegraph init -i` if graph lookups would help.
 
 ## Core Mandates for Agents
 1. **Always trace down the hierarchy:** If asked to work on the frontend, first read `igad-app/frontend/CLAUDE.md` and its `AGENTS.md`.
